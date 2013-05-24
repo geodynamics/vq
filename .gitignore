@@ -1,3 +1,5 @@
 **/.DS_Store
 **/build
 **/*.pyc
+**/trunk/vcal_webgui/media/vc_data/*_images
+**/trunk/vcal_webgui/media/vc_data/*_cache
