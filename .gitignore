@@ -3,3 +3,6 @@
 **/*.pyc
 **/trunk/vcal_webgui/media/vc_data/*_images
 **/trunk/vcal_webgui/media/vc_data/*_cache
+**/trunk/vcal_webgui/static
+**/trunk/vcal_webgui/vcal_webgui.db
+**/UserInterfaceState.xcuserstate
