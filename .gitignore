@@ -3,7 +3,10 @@
 **/*.pyc
 **/trunk/vcal_webgui/media/vc_data/*_images
 **/trunk/vcal_webgui/media/vc_data/*_cache
+**/trunk/vcal_webgui/media/vc_data/*_dat
+**/trunk/vcal_webgui/media/vc_data/*_eqsim
 **/trunk/vcal_webgui/static
 **/trunk/vcal_webgui/vcal_webgui.db
 **/UserInterfaceState.xcuserstate
 **/trunk/vcal_webgui/vcal_webgui/settings.py
+**/DerivedData
