@@ -1,0 +1,574 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA902F0B1603A6400076069E /* QuakeLibCondition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F011603A6400076069E /* QuakeLibCondition.cpp */; };
+		AA902F0C1603A6400076069E /* QuakeLibElement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F021603A6400076069E /* QuakeLibElement.cpp */; };
+		AA902F0D1603A6400076069E /* QuakeLibEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F031603A6400076069E /* QuakeLibEvent.cpp */; };
+		AA902F0E1603A6400076069E /* QuakeLibFriction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F041603A6400076069E /* QuakeLibFriction.cpp */; };
+		AA902F0F1603A6400076069E /* QuakeLibGeometry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F051603A6400076069E /* QuakeLibGeometry.cpp */; };
+		AA902F101603A6400076069E /* QuakeLibMetadata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F061603A6400076069E /* QuakeLibMetadata.cpp */; };
+		AA902F111603A6400076069E /* QuakeLibOkada.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F071603A6400076069E /* QuakeLibOkada.cpp */; };
+		AA902F121603A6400076069E /* QuakeLibUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA902F091603A6400076069E /* QuakeLibUtil.cpp */; };
+		AAAB61261429434B005BBD21 /* HDF5Data.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB61221429434B005BBD21 /* HDF5Data.cpp */; };
+		AAAB61271429434B005BBD21 /* HDF5DataShare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB61241429434B005BBD21 /* HDF5DataShare.cpp */; };
+		AAAB63D514314A1A005BBD21 /* GracefulQuit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB63D414314A1A005BBD21 /* GracefulQuit.cpp */; };
+		AAAB64B914339127005BBD21 /* CheckpointFileOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB64B514339127005BBD21 /* CheckpointFileOutput.cpp */; };
+		AAAB64BA14339127005BBD21 /* CheckpointFileParse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB64B714339127005BBD21 /* CheckpointFileParse.cpp */; };
+		B88F20621795D9BD00FBD672 /* QuakeLibSectionParams.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */; };
+		B89C517813E372A900DE7F49 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA471F051185FB6800676D59 /* main.cpp */; };
+		B89C517E13E372A900DE7F49 /* ConfigFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187DE11F7721F00ECF135 /* ConfigFile.cpp */; };
+		B89C518013E372A900DE7F49 /* MPIDebugOutputStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187E211F7721F00ECF135 /* MPIDebugOutputStream.cpp */; };
+		B89C518313E372A900DE7F49 /* SimFramework.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187FB11F772B400ECF135 /* SimFramework.cpp */; };
+		B89C518413E372A900DE7F49 /* VCBlock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187FD11F772B400ECF135 /* VCBlock.cpp */; };
+		B89C518513E372A900DE7F49 /* VCEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187FF11F772B400ECF135 /* VCEvent.cpp */; };
+		B89C518613E372A900DE7F49 /* VCInitBlocks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1880111F772B400ECF135 /* VCInitBlocks.cpp */; };
+		B89C518713E372A900DE7F49 /* VCParams.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1880311F772B400ECF135 /* VCParams.cpp */; };
+		B89C518813E372A900DE7F49 /* VCSimData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1880711F772B400ECF135 /* VCSimData.cpp */; };
+		B89C518913E372A900DE7F49 /* VCSimulation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1880911F772B400ECF135 /* VCSimulation.cpp */; };
+		B89C518B13E372A900DE7F49 /* EqSimFileOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1881611F7817500ECF135 /* EqSimFileOutput.cpp */; };
+		B89C518C13E372A900DE7F49 /* EqSimFileParse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1881811F7817500ECF135 /* EqSimFileParse.cpp */; };
+		B89C518D13E372A900DE7F49 /* GreensFileOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1881A11F7817500ECF135 /* GreensFileOutput.cpp */; };
+		B89C519113E372A900DE7F49 /* SystemFileOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1882211F7817500ECF135 /* SystemFileOutput.cpp */; };
+		B89C519313E372A900DE7F49 /* AddAsperities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1882E11F781C100ECF135 /* AddAsperities.cpp */; };
+		B89C519413E372A900DE7F49 /* AddNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883011F781C100ECF135 /* AddNoise.cpp */; };
+		B89C519513E372A900DE7F49 /* BASSAftershocks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883211F781C100ECF135 /* BASSAftershocks.cpp */; };
+		B89C519613E372A900DE7F49 /* BlockValCompute.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883411F781C100ECF135 /* BlockValCompute.cpp */; };
+		B89C519713E372A900DE7F49 /* DepthDepVelocity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883611F781C100ECF135 /* DepthDepVelocity.cpp */; };
+		B89C519813E372A900DE7F49 /* EventRecorder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883811F781C100ECF135 /* EventRecorder.cpp */; };
+		B89C519913E372A900DE7F49 /* GreensKillInteraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883C11F781C100ECF135 /* GreensKillInteraction.cpp */; };
+		B89C519A13E372A900DE7F49 /* ProgressMonitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1883E11F781C100ECF135 /* ProgressMonitor.cpp */; };
+		B89C519B13E372A900DE7F49 /* RunEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1884011F781C100ECF135 /* RunEvent.cpp */; };
+		B89C519C13E372A900DE7F49 /* SanityCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1884211F781C100ECF135 /* SanityCheck.cpp */; };
+		B89C519D13E372A900DE7F49 /* UpdateBlockStress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1884411F781C100ECF135 /* UpdateBlockStress.cpp */; };
+		B89C51A013E372A900DE7F49 /* GreensFunctions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD1959E12020BC900ECF135 /* GreensFunctions.cpp */; };
+		B89C51A113E372A900DE7F49 /* BGPoissonEvents.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA31E39A120CA6970021016F /* BGPoissonEvents.cpp */; };
+		B89C51A213E372A900DE7F49 /* GreensInit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA40C27D12109BA30000F71B /* GreensInit.cpp */; };
+		B89C51A513E372A900DE7F49 /* VCSimDataBlocks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAA4E621130E87950004871F /* VCSimDataBlocks.cpp */; };
+		B89C51A613E372A900DE7F49 /* VCCommPartition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA9CCCA8130EA2E2005B707D /* VCCommPartition.cpp */; };
+		B89C51A713E372A900DE7F49 /* VCCommSpecExec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA9CCD11130EABC8005B707D /* VCCommSpecExec.cpp */; };
+		B89C51A813E372A900DE7F49 /* VCSimDataEvents.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA9CCD2E130EB6F2005B707D /* VCSimDataEvents.cpp */; };
+		B89C51A913E372A900DE7F49 /* BadFaultKill.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45DE51318345700C111BF /* BadFaultKill.cpp */; };
+		B89C51AA13E372A900DE7F49 /* SimTimer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45E701319096400C111BF /* SimTimer.cpp */; };
+		B89C51AB13E372A900DE7F49 /* VCComm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45EB213196A5E00C111BF /* VCComm.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B89C51B313E372A900DE7F49 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA304E5C122D868C0040EA88 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		AA31E399120CA6970021016F /* BGPoissonEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGPoissonEvents.h; path = src/simulation/BGPoissonEvents.h; sourceTree = "<group>"; };
+		AA31E39A120CA6970021016F /* BGPoissonEvents.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGPoissonEvents.cpp; path = src/simulation/BGPoissonEvents.cpp; sourceTree = "<group>"; };
+		AA40C27D12109BA30000F71B /* GreensInit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GreensInit.cpp; path = src/simulation/GreensInit.cpp; sourceTree = "<group>"; };
+		AA40C27E12109BA30000F71B /* GreensInit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GreensInit.h; path = src/simulation/GreensInit.h; sourceTree = "<group>"; };
+		AA471F051185FB6800676D59 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = src/main.cpp; sourceTree = "<group>"; };
+		AA902F001603A6400076069E /* QuakeLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QuakeLib.h; path = quakelib/src/QuakeLib.h; sourceTree = "<group>"; };
+		AA902F011603A6400076069E /* QuakeLibCondition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibCondition.cpp; path = quakelib/src/QuakeLibCondition.cpp; sourceTree = "<group>"; };
+		AA902F021603A6400076069E /* QuakeLibElement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibElement.cpp; path = quakelib/src/QuakeLibElement.cpp; sourceTree = "<group>"; };
+		AA902F031603A6400076069E /* QuakeLibEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibEvent.cpp; path = quakelib/src/QuakeLibEvent.cpp; sourceTree = "<group>"; };
+		AA902F041603A6400076069E /* QuakeLibFriction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibFriction.cpp; path = quakelib/src/QuakeLibFriction.cpp; sourceTree = "<group>"; };
+		AA902F051603A6400076069E /* QuakeLibGeometry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibGeometry.cpp; path = quakelib/src/QuakeLibGeometry.cpp; sourceTree = "<group>"; };
+		AA902F061603A6400076069E /* QuakeLibMetadata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibMetadata.cpp; path = quakelib/src/QuakeLibMetadata.cpp; sourceTree = "<group>"; };
+		AA902F071603A6400076069E /* QuakeLibOkada.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibOkada.cpp; path = quakelib/src/QuakeLibOkada.cpp; sourceTree = "<group>"; };
+		AA902F081603A6400076069E /* QuakeLibOkada.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QuakeLibOkada.h; path = quakelib/src/QuakeLibOkada.h; sourceTree = "<group>"; };
+		AA902F091603A6400076069E /* QuakeLibUtil.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibUtil.cpp; path = quakelib/src/QuakeLibUtil.cpp; sourceTree = "<group>"; };
+		AA902F0A1603A6400076069E /* QuakeLibUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QuakeLibUtil.h; path = quakelib/src/QuakeLibUtil.h; sourceTree = "<group>"; };
+		AA9CCCA7130EA2E2005B707D /* VCCommPartition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCCommPartition.h; path = src/core/VCCommPartition.h; sourceTree = "<group>"; };
+		AA9CCCA8130EA2E2005B707D /* VCCommPartition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCCommPartition.cpp; path = src/core/VCCommPartition.cpp; sourceTree = "<group>"; };
+		AA9CCD10130EABC8005B707D /* VCCommSpecExec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCCommSpecExec.h; path = src/core/VCCommSpecExec.h; sourceTree = "<group>"; };
+		AA9CCD11130EABC8005B707D /* VCCommSpecExec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCCommSpecExec.cpp; path = src/core/VCCommSpecExec.cpp; sourceTree = "<group>"; };
+		AA9CCD2D130EB6F2005B707D /* VCSimDataEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCSimDataEvents.h; path = src/core/VCSimDataEvents.h; sourceTree = "<group>"; };
+		AA9CCD2E130EB6F2005B707D /* VCSimDataEvents.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCSimDataEvents.cpp; path = src/core/VCSimDataEvents.cpp; sourceTree = "<group>"; };
+		AAA4E620130E87950004871F /* VCSimDataBlocks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCSimDataBlocks.h; path = src/core/VCSimDataBlocks.h; sourceTree = "<group>"; };
+		AAA4E621130E87950004871F /* VCSimDataBlocks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCSimDataBlocks.cpp; path = src/core/VCSimDataBlocks.cpp; sourceTree = "<group>"; };
+		AAAB61221429434B005BBD21 /* HDF5Data.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HDF5Data.cpp; path = src/io/HDF5Data.cpp; sourceTree = "<group>"; };
+		AAAB61231429434B005BBD21 /* HDF5Data.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HDF5Data.h; path = src/io/HDF5Data.h; sourceTree = "<group>"; };
+		AAAB61241429434B005BBD21 /* HDF5DataShare.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HDF5DataShare.cpp; path = src/io/HDF5DataShare.cpp; sourceTree = "<group>"; };
+		AAAB61251429434B005BBD21 /* HDF5DataShare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HDF5DataShare.h; path = src/io/HDF5DataShare.h; sourceTree = "<group>"; };
+		AAAB63D314314A1A005BBD21 /* GracefulQuit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GracefulQuit.h; path = src/simulation/GracefulQuit.h; sourceTree = "<group>"; };
+		AAAB63D414314A1A005BBD21 /* GracefulQuit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GracefulQuit.cpp; path = src/simulation/GracefulQuit.cpp; sourceTree = "<group>"; };
+		AAAB64B514339127005BBD21 /* CheckpointFileOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CheckpointFileOutput.cpp; path = src/io/CheckpointFileOutput.cpp; sourceTree = "<group>"; };
+		AAAB64B614339127005BBD21 /* CheckpointFileOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CheckpointFileOutput.h; path = src/io/CheckpointFileOutput.h; sourceTree = "<group>"; };
+		AAAB64B714339127005BBD21 /* CheckpointFileParse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CheckpointFileParse.cpp; path = src/io/CheckpointFileParse.cpp; sourceTree = "<group>"; };
+		AAAB64B814339127005BBD21 /* CheckpointFileParse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CheckpointFileParse.h; path = src/io/CheckpointFileParse.h; sourceTree = "<group>"; };
+		AAD187DE11F7721F00ECF135 /* ConfigFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConfigFile.cpp; path = src/misc/ConfigFile.cpp; sourceTree = "<group>"; };
+		AAD187DF11F7721F00ECF135 /* ConfigFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConfigFile.h; path = src/misc/ConfigFile.h; sourceTree = "<group>"; };
+		AAD187E211F7721F00ECF135 /* MPIDebugOutputStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MPIDebugOutputStream.cpp; path = src/misc/MPIDebugOutputStream.cpp; sourceTree = "<group>"; };
+		AAD187E311F7721F00ECF135 /* MPIDebugOutputStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MPIDebugOutputStream.h; path = src/misc/MPIDebugOutputStream.h; sourceTree = "<group>"; };
+		AAD187FB11F772B400ECF135 /* SimFramework.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SimFramework.cpp; path = src/core/SimFramework.cpp; sourceTree = "<group>"; };
+		AAD187FC11F772B400ECF135 /* SimFramework.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimFramework.h; path = src/core/SimFramework.h; sourceTree = "<group>"; };
+		AAD187FD11F772B400ECF135 /* VCBlock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCBlock.cpp; path = src/core/VCBlock.cpp; sourceTree = "<group>"; };
+		AAD187FE11F772B400ECF135 /* VCBlock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCBlock.h; path = src/core/VCBlock.h; sourceTree = "<group>"; };
+		AAD187FF11F772B400ECF135 /* VCEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCEvent.cpp; path = src/core/VCEvent.cpp; sourceTree = "<group>"; };
+		AAD1880011F772B400ECF135 /* VCEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCEvent.h; path = src/core/VCEvent.h; sourceTree = "<group>"; };
+		AAD1880111F772B400ECF135 /* VCInitBlocks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCInitBlocks.cpp; path = src/core/VCInitBlocks.cpp; sourceTree = "<group>"; };
+		AAD1880211F772B400ECF135 /* VCInitBlocks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCInitBlocks.h; path = src/core/VCInitBlocks.h; sourceTree = "<group>"; };
+		AAD1880311F772B400ECF135 /* VCParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCParams.cpp; path = src/core/VCParams.cpp; sourceTree = "<group>"; };
+		AAD1880411F772B400ECF135 /* VCParams.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCParams.h; path = src/core/VCParams.h; sourceTree = "<group>"; };
+		AAD1880711F772B400ECF135 /* VCSimData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCSimData.cpp; path = src/core/VCSimData.cpp; sourceTree = "<group>"; };
+		AAD1880811F772B400ECF135 /* VCSimData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCSimData.h; path = src/core/VCSimData.h; sourceTree = "<group>"; };
+		AAD1880911F772B400ECF135 /* VCSimulation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCSimulation.cpp; path = src/core/VCSimulation.cpp; sourceTree = "<group>"; };
+		AAD1880A11F772B400ECF135 /* VCSimulation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCSimulation.h; path = src/core/VCSimulation.h; sourceTree = "<group>"; };
+		AAD1881611F7817500ECF135 /* EqSimFileOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EqSimFileOutput.cpp; path = src/io/EqSimFileOutput.cpp; sourceTree = "<group>"; };
+		AAD1881711F7817500ECF135 /* EqSimFileOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = EqSimFileOutput.h; path = src/io/EqSimFileOutput.h; sourceTree = "<group>"; };
+		AAD1881811F7817500ECF135 /* EqSimFileParse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EqSimFileParse.cpp; path = src/io/EqSimFileParse.cpp; sourceTree = "<group>"; };
+		AAD1881911F7817500ECF135 /* EqSimFileParse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = EqSimFileParse.h; path = src/io/EqSimFileParse.h; sourceTree = "<group>"; };
+		AAD1881A11F7817500ECF135 /* GreensFileOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GreensFileOutput.cpp; path = src/io/GreensFileOutput.cpp; sourceTree = "<group>"; };
+		AAD1881B11F7817500ECF135 /* GreensFileOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GreensFileOutput.h; path = src/io/GreensFileOutput.h; sourceTree = "<group>"; };
+		AAD1882211F7817500ECF135 /* SystemFileOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SystemFileOutput.cpp; path = src/io/SystemFileOutput.cpp; sourceTree = "<group>"; };
+		AAD1882311F7817500ECF135 /* SystemFileOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SystemFileOutput.h; path = src/io/SystemFileOutput.h; sourceTree = "<group>"; };
+		AAD1882E11F781C100ECF135 /* AddAsperities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AddAsperities.cpp; path = src/simulation/AddAsperities.cpp; sourceTree = "<group>"; };
+		AAD1882F11F781C100ECF135 /* AddAsperities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AddAsperities.h; path = src/simulation/AddAsperities.h; sourceTree = "<group>"; };
+		AAD1883011F781C100ECF135 /* AddNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AddNoise.cpp; path = src/simulation/AddNoise.cpp; sourceTree = "<group>"; };
+		AAD1883111F781C100ECF135 /* AddNoise.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AddNoise.h; path = src/simulation/AddNoise.h; sourceTree = "<group>"; };
+		AAD1883211F781C100ECF135 /* BASSAftershocks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BASSAftershocks.cpp; path = src/simulation/BASSAftershocks.cpp; sourceTree = "<group>"; };
+		AAD1883311F781C100ECF135 /* BASSAftershocks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BASSAftershocks.h; path = src/simulation/BASSAftershocks.h; sourceTree = "<group>"; };
+		AAD1883411F781C100ECF135 /* BlockValCompute.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BlockValCompute.cpp; path = src/simulation/BlockValCompute.cpp; sourceTree = "<group>"; };
+		AAD1883511F781C100ECF135 /* BlockValCompute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BlockValCompute.h; path = src/simulation/BlockValCompute.h; sourceTree = "<group>"; };
+		AAD1883611F781C100ECF135 /* DepthDepVelocity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DepthDepVelocity.cpp; path = src/simulation/DepthDepVelocity.cpp; sourceTree = "<group>"; };
+		AAD1883711F781C100ECF135 /* DepthDepVelocity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DepthDepVelocity.h; path = src/simulation/DepthDepVelocity.h; sourceTree = "<group>"; };
+		AAD1883811F781C100ECF135 /* EventRecorder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = EventRecorder.cpp; path = src/simulation/EventRecorder.cpp; sourceTree = "<group>"; };
+		AAD1883911F781C100ECF135 /* EventRecorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = EventRecorder.h; path = src/simulation/EventRecorder.h; sourceTree = "<group>"; };
+		AAD1883C11F781C100ECF135 /* GreensKillInteraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GreensKillInteraction.cpp; path = src/simulation/GreensKillInteraction.cpp; sourceTree = "<group>"; };
+		AAD1883D11F781C100ECF135 /* GreensKillInteraction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GreensKillInteraction.h; path = src/simulation/GreensKillInteraction.h; sourceTree = "<group>"; };
+		AAD1883E11F781C100ECF135 /* ProgressMonitor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressMonitor.cpp; path = src/simulation/ProgressMonitor.cpp; sourceTree = "<group>"; };
+		AAD1883F11F781C100ECF135 /* ProgressMonitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressMonitor.h; path = src/simulation/ProgressMonitor.h; sourceTree = "<group>"; };
+		AAD1884011F781C100ECF135 /* RunEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RunEvent.cpp; path = src/simulation/RunEvent.cpp; sourceTree = "<group>"; };
+		AAD1884111F781C100ECF135 /* RunEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RunEvent.h; path = src/simulation/RunEvent.h; sourceTree = "<group>"; };
+		AAD1884211F781C100ECF135 /* SanityCheck.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SanityCheck.cpp; path = src/simulation/SanityCheck.cpp; sourceTree = "<group>"; };
+		AAD1884311F781C100ECF135 /* SanityCheck.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SanityCheck.h; path = src/simulation/SanityCheck.h; sourceTree = "<group>"; };
+		AAD1884411F781C100ECF135 /* UpdateBlockStress.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = UpdateBlockStress.cpp; path = src/simulation/UpdateBlockStress.cpp; sourceTree = "<group>"; };
+		AAD1884511F781C100ECF135 /* UpdateBlockStress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdateBlockStress.h; path = src/simulation/UpdateBlockStress.h; sourceTree = "<group>"; };
+		AAD1959E12020BC900ECF135 /* GreensFunctions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GreensFunctions.cpp; path = src/misc/GreensFunctions.cpp; sourceTree = "<group>"; };
+		AAD1959F12020BC900ECF135 /* GreensFunctions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GreensFunctions.h; path = src/misc/GreensFunctions.h; sourceTree = "<group>"; };
+		AAF45DE41318345700C111BF /* BadFaultKill.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BadFaultKill.h; path = src/simulation/BadFaultKill.h; sourceTree = "<group>"; };
+		AAF45DE51318345700C111BF /* BadFaultKill.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BadFaultKill.cpp; path = src/simulation/BadFaultKill.cpp; sourceTree = "<group>"; };
+		AAF45E6F1319096400C111BF /* SimTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimTimer.h; path = src/core/SimTimer.h; sourceTree = "<group>"; };
+		AAF45E701319096400C111BF /* SimTimer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SimTimer.cpp; path = src/core/SimTimer.cpp; sourceTree = "<group>"; };
+		AAF45E8E1319169400C111BF /* SimError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimError.h; path = src/core/SimError.h; sourceTree = "<group>"; };
+		AAF45EB113196A5E00C111BF /* VCComm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCComm.h; path = src/core/VCComm.h; sourceTree = "<group>"; };
+		AAF45EB213196A5E00C111BF /* VCComm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCComm.cpp; path = src/core/VCComm.cpp; sourceTree = "<group>"; };
+		B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = QuakeLibSectionParams.cpp; sourceTree = "<group>"; };
+		B89C51B713E372A900DE7F49 /* new_vcal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = new_vcal; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B89C51AD13E372A900DE7F49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* new_vcal */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = new_vcal;
+			sourceTree = "<group>";
+			usesTabs = 1;
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				AAA0A6AB11C69B8C00DB153A /* QuakeLib */,
+				AA47259C118F3C0B00676D59 /* Misc */,
+				AA471C0211820D7100676D59 /* Simulation */,
+				AA471BEC11820CC000676D59 /* File Input and Output */,
+				AA471BEB11820C9800676D59 /* VCal Core */,
+				AA471F051185FB6800676D59 /* main.cpp */,
+				AA304E5C122D868C0040EA88 /* config.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B89C51B713E372A900DE7F49 /* new_vcal */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA471BEB11820C9800676D59 /* VCal Core */ = {
+			isa = PBXGroup;
+			children = (
+				AAF45E8E1319169400C111BF /* SimError.h */,
+				AAD187FB11F772B400ECF135 /* SimFramework.cpp */,
+				AAD187FC11F772B400ECF135 /* SimFramework.h */,
+				AAF45E701319096400C111BF /* SimTimer.cpp */,
+				AAF45E6F1319096400C111BF /* SimTimer.h */,
+				AAD187FD11F772B400ECF135 /* VCBlock.cpp */,
+				AAD187FE11F772B400ECF135 /* VCBlock.h */,
+				AAF45EB213196A5E00C111BF /* VCComm.cpp */,
+				AAF45EB113196A5E00C111BF /* VCComm.h */,
+				AA9CCCA8130EA2E2005B707D /* VCCommPartition.cpp */,
+				AA9CCCA7130EA2E2005B707D /* VCCommPartition.h */,
+				AA9CCD11130EABC8005B707D /* VCCommSpecExec.cpp */,
+				AA9CCD10130EABC8005B707D /* VCCommSpecExec.h */,
+				AAD187FF11F772B400ECF135 /* VCEvent.cpp */,
+				AAD1880011F772B400ECF135 /* VCEvent.h */,
+				AAD1880111F772B400ECF135 /* VCInitBlocks.cpp */,
+				AAD1880211F772B400ECF135 /* VCInitBlocks.h */,
+				AAD1880311F772B400ECF135 /* VCParams.cpp */,
+				AAD1880411F772B400ECF135 /* VCParams.h */,
+				AAD1880711F772B400ECF135 /* VCSimData.cpp */,
+				AAD1880811F772B400ECF135 /* VCSimData.h */,
+				AAA4E621130E87950004871F /* VCSimDataBlocks.cpp */,
+				AAA4E620130E87950004871F /* VCSimDataBlocks.h */,
+				AA9CCD2E130EB6F2005B707D /* VCSimDataEvents.cpp */,
+				AA9CCD2D130EB6F2005B707D /* VCSimDataEvents.h */,
+				AAD1880911F772B400ECF135 /* VCSimulation.cpp */,
+				AAD1880A11F772B400ECF135 /* VCSimulation.h */,
+			);
+			name = "VCal Core";
+			sourceTree = "<group>";
+		};
+		AA471BEC11820CC000676D59 /* File Input and Output */ = {
+			isa = PBXGroup;
+			children = (
+				AAAB64B514339127005BBD21 /* CheckpointFileOutput.cpp */,
+				AAAB64B614339127005BBD21 /* CheckpointFileOutput.h */,
+				AAAB64B714339127005BBD21 /* CheckpointFileParse.cpp */,
+				AAAB64B814339127005BBD21 /* CheckpointFileParse.h */,
+				AAD1881611F7817500ECF135 /* EqSimFileOutput.cpp */,
+				AAD1881711F7817500ECF135 /* EqSimFileOutput.h */,
+				AAD1881811F7817500ECF135 /* EqSimFileParse.cpp */,
+				AAD1881911F7817500ECF135 /* EqSimFileParse.h */,
+				AAD1881A11F7817500ECF135 /* GreensFileOutput.cpp */,
+				AAD1881B11F7817500ECF135 /* GreensFileOutput.h */,
+				AAAB61221429434B005BBD21 /* HDF5Data.cpp */,
+				AAAB61231429434B005BBD21 /* HDF5Data.h */,
+				AAAB61241429434B005BBD21 /* HDF5DataShare.cpp */,
+				AAAB61251429434B005BBD21 /* HDF5DataShare.h */,
+				AAD1882211F7817500ECF135 /* SystemFileOutput.cpp */,
+				AAD1882311F7817500ECF135 /* SystemFileOutput.h */,
+			);
+			name = "File Input and Output";
+			sourceTree = "<group>";
+		};
+		AA471C0211820D7100676D59 /* Simulation */ = {
+			isa = PBXGroup;
+			children = (
+				AAD1882E11F781C100ECF135 /* AddAsperities.cpp */,
+				AAD1882F11F781C100ECF135 /* AddAsperities.h */,
+				AAD1883011F781C100ECF135 /* AddNoise.cpp */,
+				AAD1883111F781C100ECF135 /* AddNoise.h */,
+				AAF45DE51318345700C111BF /* BadFaultKill.cpp */,
+				AAF45DE41318345700C111BF /* BadFaultKill.h */,
+				AAD1883211F781C100ECF135 /* BASSAftershocks.cpp */,
+				AAD1883311F781C100ECF135 /* BASSAftershocks.h */,
+				AA31E39A120CA6970021016F /* BGPoissonEvents.cpp */,
+				AA31E399120CA6970021016F /* BGPoissonEvents.h */,
+				AAD1883411F781C100ECF135 /* BlockValCompute.cpp */,
+				AAD1883511F781C100ECF135 /* BlockValCompute.h */,
+				AAD1883611F781C100ECF135 /* DepthDepVelocity.cpp */,
+				AAD1883711F781C100ECF135 /* DepthDepVelocity.h */,
+				AAD1883811F781C100ECF135 /* EventRecorder.cpp */,
+				AAD1883911F781C100ECF135 /* EventRecorder.h */,
+				AAAB63D414314A1A005BBD21 /* GracefulQuit.cpp */,
+				AAAB63D314314A1A005BBD21 /* GracefulQuit.h */,
+				AA40C27D12109BA30000F71B /* GreensInit.cpp */,
+				AA40C27E12109BA30000F71B /* GreensInit.h */,
+				AAD1883C11F781C100ECF135 /* GreensKillInteraction.cpp */,
+				AAD1883D11F781C100ECF135 /* GreensKillInteraction.h */,
+				AAD1883E11F781C100ECF135 /* ProgressMonitor.cpp */,
+				AAD1883F11F781C100ECF135 /* ProgressMonitor.h */,
+				AAD1884011F781C100ECF135 /* RunEvent.cpp */,
+				AAD1884111F781C100ECF135 /* RunEvent.h */,
+				AAD1884211F781C100ECF135 /* SanityCheck.cpp */,
+				AAD1884311F781C100ECF135 /* SanityCheck.h */,
+				AAD1884411F781C100ECF135 /* UpdateBlockStress.cpp */,
+				AAD1884511F781C100ECF135 /* UpdateBlockStress.h */,
+			);
+			name = Simulation;
+			sourceTree = "<group>";
+		};
+		AA47259C118F3C0B00676D59 /* Misc */ = {
+			isa = PBXGroup;
+			children = (
+				AAD187DE11F7721F00ECF135 /* ConfigFile.cpp */,
+				AAD187DF11F7721F00ECF135 /* ConfigFile.h */,
+				AAD1959E12020BC900ECF135 /* GreensFunctions.cpp */,
+				AAD1959F12020BC900ECF135 /* GreensFunctions.h */,
+				AAD187E211F7721F00ECF135 /* MPIDebugOutputStream.cpp */,
+				AAD187E311F7721F00ECF135 /* MPIDebugOutputStream.h */,
+			);
+			name = Misc;
+			sourceTree = "<group>";
+		};
+		AAA0A6AB11C69B8C00DB153A /* QuakeLib */ = {
+			isa = PBXGroup;
+			children = (
+				AA902F001603A6400076069E /* QuakeLib.h */,
+				AA902F0A1603A6400076069E /* QuakeLibUtil.h */,
+				AA902F081603A6400076069E /* QuakeLibOkada.h */,
+				AA902F011603A6400076069E /* QuakeLibCondition.cpp */,
+				B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */,
+				AA902F021603A6400076069E /* QuakeLibElement.cpp */,
+				AA902F031603A6400076069E /* QuakeLibEvent.cpp */,
+				AA902F041603A6400076069E /* QuakeLibFriction.cpp */,
+				AA902F051603A6400076069E /* QuakeLibGeometry.cpp */,
+				AA902F061603A6400076069E /* QuakeLibMetadata.cpp */,
+				AA902F071603A6400076069E /* QuakeLibOkada.cpp */,
+				AA902F091603A6400076069E /* QuakeLibUtil.cpp */,
+			);
+			name = QuakeLib;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B89C517613E372A900DE7F49 /* new_vcal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "new_vcal" */;
+			buildPhases = (
+				B89C517713E372A900DE7F49 /* Sources */,
+				B89C51AD13E372A900DE7F49 /* Frameworks */,
+				B89C51B313E372A900DE7F49 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = new_vcal;
+			productInstallPath = "$(HOME)/bin";
+			productName = new_vcal;
+			productReference = B89C51B713E372A900DE7F49 /* new_vcal */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0450;
+			};
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "new_vcal" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07 /* new_vcal */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B89C517613E372A900DE7F49 /* new_vcal */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B89C517713E372A900DE7F49 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B89C517813E372A900DE7F49 /* main.cpp in Sources */,
+				B89C517E13E372A900DE7F49 /* ConfigFile.cpp in Sources */,
+				B89C518013E372A900DE7F49 /* MPIDebugOutputStream.cpp in Sources */,
+				B89C518313E372A900DE7F49 /* SimFramework.cpp in Sources */,
+				B89C518413E372A900DE7F49 /* VCBlock.cpp in Sources */,
+				B89C518513E372A900DE7F49 /* VCEvent.cpp in Sources */,
+				B89C518613E372A900DE7F49 /* VCInitBlocks.cpp in Sources */,
+				B89C518713E372A900DE7F49 /* VCParams.cpp in Sources */,
+				B89C518813E372A900DE7F49 /* VCSimData.cpp in Sources */,
+				B89C518913E372A900DE7F49 /* VCSimulation.cpp in Sources */,
+				B89C518B13E372A900DE7F49 /* EqSimFileOutput.cpp in Sources */,
+				B89C518C13E372A900DE7F49 /* EqSimFileParse.cpp in Sources */,
+				B89C518D13E372A900DE7F49 /* GreensFileOutput.cpp in Sources */,
+				B89C519113E372A900DE7F49 /* SystemFileOutput.cpp in Sources */,
+				B89C519313E372A900DE7F49 /* AddAsperities.cpp in Sources */,
+				B89C519413E372A900DE7F49 /* AddNoise.cpp in Sources */,
+				B89C519513E372A900DE7F49 /* BASSAftershocks.cpp in Sources */,
+				B89C519613E372A900DE7F49 /* BlockValCompute.cpp in Sources */,
+				B89C519713E372A900DE7F49 /* DepthDepVelocity.cpp in Sources */,
+				B89C519813E372A900DE7F49 /* EventRecorder.cpp in Sources */,
+				B89C519913E372A900DE7F49 /* GreensKillInteraction.cpp in Sources */,
+				B89C519A13E372A900DE7F49 /* ProgressMonitor.cpp in Sources */,
+				B89C519B13E372A900DE7F49 /* RunEvent.cpp in Sources */,
+				B89C519C13E372A900DE7F49 /* SanityCheck.cpp in Sources */,
+				B89C519D13E372A900DE7F49 /* UpdateBlockStress.cpp in Sources */,
+				B89C51A013E372A900DE7F49 /* GreensFunctions.cpp in Sources */,
+				B89C51A113E372A900DE7F49 /* BGPoissonEvents.cpp in Sources */,
+				B89C51A213E372A900DE7F49 /* GreensInit.cpp in Sources */,
+				B89C51A513E372A900DE7F49 /* VCSimDataBlocks.cpp in Sources */,
+				B89C51A613E372A900DE7F49 /* VCCommPartition.cpp in Sources */,
+				B89C51A713E372A900DE7F49 /* VCCommSpecExec.cpp in Sources */,
+				B89C51A813E372A900DE7F49 /* VCSimDataEvents.cpp in Sources */,
+				B89C51A913E372A900DE7F49 /* BadFaultKill.cpp in Sources */,
+				B89C51AA13E372A900DE7F49 /* SimTimer.cpp in Sources */,
+				B89C51AB13E372A900DE7F49 /* VCComm.cpp in Sources */,
+				AAAB61261429434B005BBD21 /* HDF5Data.cpp in Sources */,
+				AAAB61271429434B005BBD21 /* HDF5DataShare.cpp in Sources */,
+				AAAB63D514314A1A005BBD21 /* GracefulQuit.cpp in Sources */,
+				AAAB64B914339127005BBD21 /* CheckpointFileOutput.cpp in Sources */,
+				AAAB64BA14339127005BBD21 /* CheckpointFileParse.cpp in Sources */,
+				AA902F0B1603A6400076069E /* QuakeLibCondition.cpp in Sources */,
+				AA902F0C1603A6400076069E /* QuakeLibElement.cpp in Sources */,
+				AA902F0D1603A6400076069E /* QuakeLibEvent.cpp in Sources */,
+				AA902F0E1603A6400076069E /* QuakeLibFriction.cpp in Sources */,
+				AA902F0F1603A6400076069E /* QuakeLibGeometry.cpp in Sources */,
+				AA902F101603A6400076069E /* QuakeLibMetadata.cpp in Sources */,
+				AA902F111603A6400076069E /* QuakeLibOkada.cpp in Sources */,
+				AA902F121603A6400076069E /* QuakeLibUtil.cpp in Sources */,
+				B88F20621795D9BD00FBD672 /* QuakeLibSectionParams.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB923608733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ENABLE_OPENMP_SUPPORT = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_ENABLE_SSE41_EXTENSIONS = YES;
+				GCC_ENABLE_SSE42_EXTENSIONS = YES;
+				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = "";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "/usr/local/include//**";
+				LD_OPENMP_FLAGS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "-DHAVE_SYS_TIME_H";
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_LDFLAGS = "";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
+			};
+			name = Debug;
+		};
+		1DEB923708733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ENABLE_OPENMP_SUPPORT = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_ENABLE_SSE41_EXTENSIONS = YES;
+				GCC_ENABLE_SSE42_EXTENSIONS = YES;
+				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
+				GCC_VERSION = "";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "/usr/local/include//**";
+				LD_OPENMP_FLAGS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				OTHER_CFLAGS = "-DHAVE_SYS_TIME_H";
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_LDFLAGS = "";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
+			};
+			name = Release;
+		};
+		B89C51B513E372A900DE7F49 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_OPENMP_SUPPORT = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = "";
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+				);
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_LDFLAGS = (
+					"-lmpi",
+					"-lhdf5",
+					"-lhdf5_hl",
+				);
+				PRODUCT_NAME = new_vcal;
+				USER_HEADER_SEARCH_PATHS = "/opt/local/include/** /usr/local/include/**";
+			};
+			name = Debug;
+		};
+		B89C51B613E372A900DE7F49 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_OPENMP_SUPPORT = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_VERSION = "";
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_LDFLAGS = (
+					"-lmpi",
+					"-lhdf5",
+					"-lhdf5_hl",
+				);
+				PRODUCT_NAME = new_vcal;
+				USER_HEADER_SEARCH_PATHS = "/opt/local/include/** /usr/local/include/**";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "new_vcal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923608733DC60010E9CD /* Debug */,
+				1DEB923708733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "new_vcal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B89C51B513E372A900DE7F49 /* Debug */,
+				B89C51B613E372A900DE7F49 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
