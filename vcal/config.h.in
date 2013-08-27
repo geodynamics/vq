@@ -1,0 +1,15 @@
+
+#ifndef _CONFIG_H_
+#define _CONFIG_H_
+#cmakedefine VC_HAVE_SYS_TIME_H
+#cmakedefine VC_HAVE_FLOAT_H
+#cmakedefine VC_HAVE_LIMITS_H
+#cmakedefine VC_HAVE_MATH_H
+#cmakedefine VC_HAVE_STDLIB_H
+#cmakedefine VC_HAVE_STRING_H
+#cmakedefine VC_HAVE_UNISTD_H
+#cmakedefine HDF5_FOUND
+#cmakedefine MPI_C_FOUND
+#endif
+
+

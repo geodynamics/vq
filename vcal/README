@@ -1,0 +1,22 @@
+Virtual California 1.0
+
+This version on Virtual California is stable and should build and run under the following conditions:
+
+1. It is built for a single processor. Virtual California includes multiprocessing capabilities but it has not been extensively tested. Build and run in a multiprocessing environment at your own risk.
+
+2. The fault system is defined using the EQSIM format. See example/ALLCAL2_1-7-11 or example/Hayward for examples of working models.
+
+3. The fault system only includes vertical strike-slip faults (dip = 90 degrees, rake = 0 or 180 degrees).
+
+4. sim.greens.method is set to fernandez in the params.d file
+
+Building
+
+From the project directory:
+
+./configure
+make
+
+Running
+
+The model and a file named params.d must be in the same directory as the compiled application. An example params.d file can be found in example/sample_params.d. In order to run, the model files must be named in the QuakeLib file parameters section of the file. Only a friction and geometry file are necessary.

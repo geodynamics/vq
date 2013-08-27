@@ -1,0 +1,7 @@
+QuakeLib Library
+-------------
+
+Provides tools and a Python interface to develop earthquake simulations,
+read/write EqSim format files for geometry, friction, initial conditions and
+events, and calculate Okada's functions for different fault configurations.
+
