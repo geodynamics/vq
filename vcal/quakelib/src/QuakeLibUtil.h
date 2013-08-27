@@ -26,6 +26,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <cassert>
+#include <stdlib.h>
+#include <climits>
 
 //#define HAVE_GEOGRAPHIC_LIB
 
