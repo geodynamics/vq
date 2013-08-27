@@ -20,3 +20,6 @@ make
 Running
 
 The model and a file named params.d must be in the same directory as the compiled application. An example params.d file can be found in example/sample_params.d. In order to run, the model files must be named in the QuakeLib file parameters section of the file. Only a friction and geometry file are necessary.
+
+
+CC=gcc CXX=g++ cmake ../
