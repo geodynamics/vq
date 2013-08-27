@@ -42,7 +42,7 @@
 #include <stdexcept>
 #include <valarray>
 
-#ifdef HAVE_SYS_TIME_H
+#ifdef VC_HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
