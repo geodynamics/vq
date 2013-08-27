@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B89C517613E372A900DE7F49"
                BuildableName = "new_vcal"
-               BlueprintName = "new_vcal"
-               ReferencedContainer = "container:new_vcal.xcodeproj">
+               BlueprintName = "vcal"
+               ReferencedContainer = "container:vcal.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,8 +44,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B89C517613E372A900DE7F49"
             BuildableName = "new_vcal"
-            BlueprintName = "new_vcal"
-            ReferencedContainer = "container:new_vcal.xcodeproj">
+            BlueprintName = "vcal"
+            ReferencedContainer = "container:vcal.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -62,8 +62,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B89C517613E372A900DE7F49"
             BuildableName = "new_vcal"
-            BlueprintName = "new_vcal"
-            ReferencedContainer = "container:new_vcal.xcodeproj">
+            BlueprintName = "vcal"
+            ReferencedContainer = "container:vcal.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

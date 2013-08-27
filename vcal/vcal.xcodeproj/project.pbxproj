@@ -20,7 +20,6 @@
 		AAAB63D514314A1A005BBD21 /* GracefulQuit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB63D414314A1A005BBD21 /* GracefulQuit.cpp */; };
 		AAAB64B914339127005BBD21 /* CheckpointFileOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB64B514339127005BBD21 /* CheckpointFileOutput.cpp */; };
 		AAAB64BA14339127005BBD21 /* CheckpointFileParse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAB64B714339127005BBD21 /* CheckpointFileParse.cpp */; };
-		B88F20621795D9BD00FBD672 /* QuakeLibSectionParams.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */; };
 		B89C517813E372A900DE7F49 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA471F051185FB6800676D59 /* main.cpp */; };
 		B89C517E13E372A900DE7F49 /* ConfigFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187DE11F7721F00ECF135 /* ConfigFile.cpp */; };
 		B89C518013E372A900DE7F49 /* MPIDebugOutputStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAD187E211F7721F00ECF135 /* MPIDebugOutputStream.cpp */; };
@@ -56,6 +55,7 @@
 		B89C51A913E372A900DE7F49 /* BadFaultKill.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45DE51318345700C111BF /* BadFaultKill.cpp */; };
 		B89C51AA13E372A900DE7F49 /* SimTimer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45E701319096400C111BF /* SimTimer.cpp */; };
 		B89C51AB13E372A900DE7F49 /* VCComm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF45EB213196A5E00C111BF /* VCComm.cpp */; };
+		B8C5ED9317CD575B00121907 /* QuakeLibSectionParams.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B8C5ED9217CD575B00121907 /* QuakeLibSectionParams.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -71,7 +71,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AA304E5C122D868C0040EA88 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		AA31E399120CA6970021016F /* BGPoissonEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGPoissonEvents.h; path = src/simulation/BGPoissonEvents.h; sourceTree = "<group>"; };
 		AA31E39A120CA6970021016F /* BGPoissonEvents.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGPoissonEvents.cpp; path = src/simulation/BGPoissonEvents.cpp; sourceTree = "<group>"; };
 		AA40C27D12109BA30000F71B /* GreensInit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GreensInit.cpp; path = src/simulation/GreensInit.cpp; sourceTree = "<group>"; };
@@ -163,8 +162,9 @@
 		AAF45E8E1319169400C111BF /* SimError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimError.h; path = src/core/SimError.h; sourceTree = "<group>"; };
 		AAF45EB113196A5E00C111BF /* VCComm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCComm.h; path = src/core/VCComm.h; sourceTree = "<group>"; };
 		AAF45EB213196A5E00C111BF /* VCComm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCComm.cpp; path = src/core/VCComm.cpp; sourceTree = "<group>"; };
-		B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = QuakeLibSectionParams.cpp; sourceTree = "<group>"; };
-		B89C51B713E372A900DE7F49 /* new_vcal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = new_vcal; sourceTree = BUILT_PRODUCTS_DIR; };
+		B89C51B713E372A900DE7F49 /* vcal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = vcal; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8C5ED9117CD561F00121907 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = build/config.h; sourceTree = "<group>"; };
+		B8C5ED9217CD575B00121907 /* QuakeLibSectionParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibSectionParams.cpp; path = quakelib/src/QuakeLibSectionParams.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -197,7 +197,7 @@
 				AA471BEC11820CC000676D59 /* File Input and Output */,
 				AA471BEB11820C9800676D59 /* VCal Core */,
 				AA471F051185FB6800676D59 /* main.cpp */,
-				AA304E5C122D868C0040EA88 /* config.h */,
+				B8C5ED9117CD561F00121907 /* config.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -205,7 +205,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B89C51B713E372A900DE7F49 /* new_vcal */,
+				B89C51B713E372A900DE7F49 /* vcal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -320,11 +320,11 @@
 		AAA0A6AB11C69B8C00DB153A /* QuakeLib */ = {
 			isa = PBXGroup;
 			children = (
+				B8C5ED9217CD575B00121907 /* QuakeLibSectionParams.cpp */,
 				AA902F001603A6400076069E /* QuakeLib.h */,
 				AA902F0A1603A6400076069E /* QuakeLibUtil.h */,
 				AA902F081603A6400076069E /* QuakeLibOkada.h */,
 				AA902F011603A6400076069E /* QuakeLibCondition.cpp */,
-				B88F20611795D9BD00FBD672 /* QuakeLibSectionParams.cpp */,
 				AA902F021603A6400076069E /* QuakeLibElement.cpp */,
 				AA902F031603A6400076069E /* QuakeLibEvent.cpp */,
 				AA902F041603A6400076069E /* QuakeLibFriction.cpp */,
@@ -339,9 +339,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B89C517613E372A900DE7F49 /* new_vcal */ = {
+		B89C517613E372A900DE7F49 /* vcal */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "new_vcal" */;
+			buildConfigurationList = B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vcal" */;
 			buildPhases = (
 				B89C517713E372A900DE7F49 /* Sources */,
 				B89C51AD13E372A900DE7F49 /* Frameworks */,
@@ -351,10 +351,10 @@
 			);
 			dependencies = (
 			);
-			name = new_vcal;
+			name = vcal;
 			productInstallPath = "$(HOME)/bin";
 			productName = new_vcal;
-			productReference = B89C51B713E372A900DE7F49 /* new_vcal */;
+			productReference = B89C51B713E372A900DE7F49 /* vcal */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -365,7 +365,7 @@
 			attributes = {
 				LastUpgradeCheck = 0450;
 			};
-			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "new_vcal" */;
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vcal" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -379,7 +379,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B89C517613E372A900DE7F49 /* new_vcal */,
+				B89C517613E372A900DE7F49 /* vcal */,
 			);
 		};
 /* End PBXProject section */
@@ -437,7 +437,7 @@
 				AA902F101603A6400076069E /* QuakeLibMetadata.cpp in Sources */,
 				AA902F111603A6400076069E /* QuakeLibOkada.cpp in Sources */,
 				AA902F121603A6400076069E /* QuakeLibUtil.cpp in Sources */,
-				B88F20621795D9BD00FBD672 /* QuakeLibSectionParams.cpp in Sources */,
+				B8C5ED9317CD575B00121907 /* QuakeLibSectionParams.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -455,7 +455,7 @@
 				GCC_ENABLE_SSE42_EXTENSIONS = YES;
 				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = "";
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "/usr/local/include//**";
@@ -480,7 +480,7 @@
 				GCC_ENABLE_SSE41_EXTENSIONS = YES;
 				GCC_ENABLE_SSE42_EXTENSIONS = YES;
 				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
-				GCC_VERSION = "";
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "/usr/local/include//**";
@@ -506,18 +506,15 @@
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = "";
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				OTHER_LDFLAGS = (
 					"-lmpi",
 					"-lhdf5",
 					"-lhdf5_hl",
 				);
-				PRODUCT_NAME = new_vcal;
-				USER_HEADER_SEARCH_PATHS = "/opt/local/include/** /usr/local/include/**";
+				PRODUCT_NAME = vcal;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
 			};
 			name = Debug;
 		};
@@ -531,10 +528,7 @@
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = "";
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				OTHER_LDFLAGS = (
@@ -542,15 +536,15 @@
 					"-lhdf5",
 					"-lhdf5_hl",
 				);
-				PRODUCT_NAME = new_vcal;
-				USER_HEADER_SEARCH_PATHS = "/opt/local/include/** /usr/local/include/**";
+				PRODUCT_NAME = vcal;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "new_vcal" */ = {
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vcal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1DEB923608733DC60010E9CD /* Debug */,
@@ -559,7 +553,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "new_vcal" */ = {
+		B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vcal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B89C51B513E372A900DE7F49 /* Debug */,
