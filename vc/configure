@@ -1,0 +1,15 @@
+#!/bin/sh
+
+#  configure
+#  vc
+#
+#  Created by Michael Sachs on 8/28/13.
+#
+
+if [ ! -d "$build" ]; then
+	mkdir build
+fi
+
+cd build
+CC=gcc CXX=g++ cmake ../
+

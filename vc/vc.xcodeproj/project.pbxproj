@@ -176,6 +176,7 @@
 		B8C2F5A217CE6099002F9A83 /* __init__.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = __init__.py; path = quakelib/python/__init__.py; sourceTree = "<group>"; };
 		B8C2F5A317CE6099002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = quakelib/python/CMakeLists.txt; sourceTree = "<group>"; };
 		B8C2F5A417CE6099002F9A83 /* quakelib.i */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c.preprocessed; name = quakelib.i; path = quakelib/python/quakelib.i; sourceTree = "<group>"; };
+		B8C2F5A517CE6881002F9A83 /* configure */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
 		B8C5ED9117CD561F00121907 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = build/config.h; sourceTree = "<group>"; };
 		B8C5ED9217CD575B00121907 /* QuakeLibSectionParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibSectionParams.cpp; path = quakelib/src/QuakeLibSectionParams.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -360,6 +361,7 @@
 				B8C2F59717CE6044002F9A83 /* config.h.in */,
 				B8C2F59817CE6044002F9A83 /* COPYING */,
 				B8C2F59917CE6044002F9A83 /* README */,
+				B8C2F5A517CE6881002F9A83 /* configure */,
 			);
 			name = Other;
 			sourceTree = "<group>";
