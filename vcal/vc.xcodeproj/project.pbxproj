@@ -162,7 +162,20 @@
 		AAF45E8E1319169400C111BF /* SimError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimError.h; path = src/core/SimError.h; sourceTree = "<group>"; };
 		AAF45EB113196A5E00C111BF /* VCComm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCComm.h; path = src/core/VCComm.h; sourceTree = "<group>"; };
 		AAF45EB213196A5E00C111BF /* VCComm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCComm.cpp; path = src/core/VCComm.cpp; sourceTree = "<group>"; };
-		B89C51B713E372A900DE7F49 /* vcal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = vcal; sourceTree = BUILT_PRODUCTS_DIR; };
+		B89C51B713E372A900DE7F49 /* vc */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = vc; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8C2F59517CE6044002F9A83 /* AUTHORS */ = {isa = PBXFileReference; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
+		B8C2F59617CE6044002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		B8C2F59717CE6044002F9A83 /* config.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = config.h.in; sourceTree = "<group>"; };
+		B8C2F59817CE6044002F9A83 /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
+		B8C2F59917CE6044002F9A83 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		B8C2F59D17CE606E002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = src/CMakeLists.txt; sourceTree = "<group>"; };
+		B8C2F59E17CE607F002F9A83 /* AUTHORS */ = {isa = PBXFileReference; lastKnownFileType = text; name = AUTHORS; path = quakelib/AUTHORS; sourceTree = "<group>"; };
+		B8C2F59F17CE607F002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = quakelib/CMakeLists.txt; sourceTree = "<group>"; };
+		B8C2F5A017CE607F002F9A83 /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; name = COPYING; path = quakelib/COPYING; sourceTree = "<group>"; };
+		B8C2F5A117CE607F002F9A83 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; name = README; path = quakelib/README; sourceTree = "<group>"; };
+		B8C2F5A217CE6099002F9A83 /* __init__.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = __init__.py; path = quakelib/python/__init__.py; sourceTree = "<group>"; };
+		B8C2F5A317CE6099002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = quakelib/python/CMakeLists.txt; sourceTree = "<group>"; };
+		B8C2F5A417CE6099002F9A83 /* quakelib.i */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c.preprocessed; name = quakelib.i; path = quakelib/python/quakelib.i; sourceTree = "<group>"; };
 		B8C5ED9117CD561F00121907 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = build/config.h; sourceTree = "<group>"; };
 		B8C5ED9217CD575B00121907 /* QuakeLibSectionParams.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = QuakeLibSectionParams.cpp; path = quakelib/src/QuakeLibSectionParams.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -181,6 +194,7 @@
 		08FB7794FE84155DC02AAC07 /* new_vcal */ = {
 			isa = PBXGroup;
 			children = (
+				B8C2F59417CE6018002F9A83 /* Other */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
@@ -205,7 +219,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B89C51B713E372A900DE7F49 /* vcal */,
+				B89C51B713E372A900DE7F49 /* vc */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -336,12 +350,56 @@
 			name = QuakeLib;
 			sourceTree = "<group>";
 		};
+		B8C2F59417CE6018002F9A83 /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				B8C2F59B17CE6054002F9A83 /* quakelib */,
+				B8C2F59A17CE604B002F9A83 /* src */,
+				B8C2F59517CE6044002F9A83 /* AUTHORS */,
+				B8C2F59617CE6044002F9A83 /* CMakeLists.txt */,
+				B8C2F59717CE6044002F9A83 /* config.h.in */,
+				B8C2F59817CE6044002F9A83 /* COPYING */,
+				B8C2F59917CE6044002F9A83 /* README */,
+			);
+			name = Other;
+			sourceTree = "<group>";
+		};
+		B8C2F59A17CE604B002F9A83 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				B8C2F59D17CE606E002F9A83 /* CMakeLists.txt */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		B8C2F59B17CE6054002F9A83 /* quakelib */ = {
+			isa = PBXGroup;
+			children = (
+				B8C2F59E17CE607F002F9A83 /* AUTHORS */,
+				B8C2F59F17CE607F002F9A83 /* CMakeLists.txt */,
+				B8C2F5A017CE607F002F9A83 /* COPYING */,
+				B8C2F5A117CE607F002F9A83 /* README */,
+				B8C2F59C17CE605C002F9A83 /* python */,
+			);
+			name = quakelib;
+			sourceTree = "<group>";
+		};
+		B8C2F59C17CE605C002F9A83 /* python */ = {
+			isa = PBXGroup;
+			children = (
+				B8C2F5A217CE6099002F9A83 /* __init__.py */,
+				B8C2F5A317CE6099002F9A83 /* CMakeLists.txt */,
+				B8C2F5A417CE6099002F9A83 /* quakelib.i */,
+			);
+			name = python;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B89C517613E372A900DE7F49 /* vcal */ = {
+		B89C517613E372A900DE7F49 /* vc */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vcal" */;
+			buildConfigurationList = B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vc" */;
 			buildPhases = (
 				B89C517713E372A900DE7F49 /* Sources */,
 				B89C51AD13E372A900DE7F49 /* Frameworks */,
@@ -351,10 +409,10 @@
 			);
 			dependencies = (
 			);
-			name = vcal;
+			name = vc;
 			productInstallPath = "$(HOME)/bin";
 			productName = new_vcal;
-			productReference = B89C51B713E372A900DE7F49 /* vcal */;
+			productReference = B89C51B713E372A900DE7F49 /* vc */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -365,7 +423,7 @@
 			attributes = {
 				LastUpgradeCheck = 0450;
 			};
-			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vcal" */;
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vc" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -379,7 +437,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B89C517613E372A900DE7F49 /* vcal */,
+				B89C517613E372A900DE7F49 /* vc */,
 			);
 		};
 /* End PBXProject section */
@@ -513,7 +571,7 @@
 					"-lhdf5",
 					"-lhdf5_hl",
 				);
-				PRODUCT_NAME = vcal;
+				PRODUCT_NAME = vc;
 				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
 			};
 			name = Debug;
@@ -536,7 +594,7 @@
 					"-lhdf5",
 					"-lhdf5_hl",
 				);
-				PRODUCT_NAME = vcal;
+				PRODUCT_NAME = vc;
 				USER_HEADER_SEARCH_PATHS = "/usr/local/include/**";
 			};
 			name = Release;
@@ -544,7 +602,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vcal" */ = {
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "vc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1DEB923608733DC60010E9CD /* Debug */,
@@ -553,7 +611,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vcal" */ = {
+		B89C51B413E372A900DE7F49 /* Build configuration list for PBXNativeTarget "vc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B89C51B513E372A900DE7F49 /* Debug */,
