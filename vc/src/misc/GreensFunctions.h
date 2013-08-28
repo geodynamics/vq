@@ -39,7 +39,7 @@
 #include <omp.h>
 #endif
 
-#ifdef HAVE_STDLIB_H
+#ifdef VC_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
