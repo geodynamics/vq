@@ -15,12 +15,12 @@ SET(QUAKELIB_SOURCES
 	${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.cpp
 	${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.cpp)
 
+# Build the QuakeLib library
+add_library (quakelib ${QUAKELIB_SOURCES})
+
 IF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
   SET_TARGET_PROPERTIES(quakelib PROPERTIES COMPILE_FLAGS "-fPIC")
 ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
-
-# Build the QuakeLib library
-add_library (quakelib ${QUAKELIB_SOURCES})
 
 # Go into the python subdirectory
 add_subdirectory(python)
