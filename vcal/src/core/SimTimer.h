@@ -42,7 +42,7 @@
 #include "config.h"
 //#endif
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
 

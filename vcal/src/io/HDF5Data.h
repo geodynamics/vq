@@ -37,11 +37,11 @@
 #include "config.h"
 //#endif
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #endif
@@ -194,7 +194,7 @@ typedef struct AftershockBGInfo AftershockBGInfo;
 // Classes representing a file containing checkpoint data
 class HDF5Checkpoint {
 protected:
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	// HDF5 handle to checkpoint data file
 	hid_t				data_file;
 	
@@ -229,7 +229,7 @@ public:
 // Classes representing a file containing Greens function calculation data
 class HDF5GreensData {
 protected:
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	// HDF5 handle to data file
 	hid_t				data_file;
 	
@@ -264,7 +264,7 @@ public:
 
 class HDF5Data {
 protected:
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	// HDF5 handle to data file
 	hid_t				data_file;
 	

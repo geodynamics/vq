@@ -40,7 +40,7 @@
 #include "config.h"
 //#endif
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #include "mpi.h"
 #endif
 
@@ -52,7 +52,7 @@ protected:
 	//! Debugging timers for communication
 	int							reduce_comm_timer, fail_comm_timer, dist_comm_timer, sweep_comm_timer;
 	
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	//! Information regarding the update field used for parallel data synchronization
 	int							*updateFieldCounts, *updateFieldDisps;
 	

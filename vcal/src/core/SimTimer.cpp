@@ -112,7 +112,7 @@ void SimTimer::stopTimer(const int &timer_id) {
  appropriate to the environment.
  */
 double SimTimer::curTime(const bool &use_barrier) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	if (use_barrier) MPI_Barrier(MPI_COMM_WORLD);
 	return MPI_Wtime();
 #else
@@ -166,7 +166,7 @@ void SimTimer::printAllTimers(std::ostream &out_stream, int world_size, int node
 	for (i=0;i<num_timers;++i) {
 		my_time = accumulated_times[i];
 		num_times = num_timings[i];
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 		MPI_Gather(&my_time, 1, MPI_DOUBLE, time_recv_buf, 1, MPI_DOUBLE, root_node_rank, MPI_COMM_WORLD);
 		MPI_Gather(&num_times, 1, MPI_INT, count_recv_buf, 1, MPI_INT, root_node_rank, MPI_COMM_WORLD);
 #else

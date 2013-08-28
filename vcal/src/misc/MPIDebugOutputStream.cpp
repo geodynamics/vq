@@ -37,7 +37,7 @@
 #include <sstream>
 
 MPIDebugOutputStream::MPIDebugOutputStream(const int &output_node) : print_node_rank(true), print_timestamp(false), output_node_rank(output_node) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	comm_world = MPI_COMM_WORLD;
 	MPI_Comm_rank(comm_world, &my_node_rank);
 	MPI_Comm_size(comm_world, &world_size);
@@ -61,7 +61,7 @@ void MPIDebugOutputStream::write(const std::string &out_str) {
 // "Flush" the output stream by collecting all messages on the output node
 // and writing them to the specified output stream
 void MPIDebugOutputStream::flush(void) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int		*msg_lens, *msg_disps, my_msg_len, i, total_len;
 	char	*my_msg_storage, *all_msg_storage;
 	

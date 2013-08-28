@@ -75,7 +75,7 @@ SimFramework::SimFramework(int argc, char **argv) {
 	init_finish_timer = initTimer("Init and Cleanup", false, true);
 	barrier_timer = initTimer("Comm Barrier", false, false);
 	
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &node_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -127,7 +127,7 @@ SimFramework::~SimFramework(void) {
 	PAPI_shutdown();
 #endif
 	
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	MPI_Finalize();
 #endif
 }
@@ -228,7 +228,7 @@ void SimFramework::orderPlugins(void) {
  Used for loop iteration timing.
  */
 int SimFramework::internalBroadcast(const unsigned int &val) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	unsigned int bcast_val = val;
 	MPI_Bcast(&bcast_val, 1, MPI_UNSIGNED, ROOT_NODE_RANK, MPI_COMM_WORLD);
 	return bcast_val;
@@ -313,7 +313,7 @@ void SimFramework::init(void) {
 	
 	// Output multiprocessor information
 	width = 30;
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	console() << std::setw(width) << std::left << "# *** MPI CPU count" << ": " << getWorldSize() << std::endl;
 #endif
 #ifdef _OPENMP

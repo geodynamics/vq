@@ -47,12 +47,12 @@ HDF5CheckpointReader::HDF5CheckpointReader(const std::string &ckpt_file_name,
 										   double &checkpoint_year,
 										   unsigned int &checkpoint_event,
 										   CheckpointSet &checkpoints) : HDF5Checkpoint() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	if (!H5Fis_hdf5(ckpt_file_name.c_str())) exit(-1);
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
 	if (plist_id < 0) exit(-1);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
@@ -71,7 +71,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 										   const double &cur_year,
 										   const unsigned int &cur_event,
 										   const CheckpointSet &checkpoints) : HDF5Checkpoint() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	hsize_t							dims[2] = {nblocks, CHECKPOINT_NUM_ENTRIES_HDF5};
 	hsize_t							single_val[1] = {1};
 	herr_t							status;
@@ -85,7 +85,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 	// Create access properties
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
 	if (plist_id < 0) exit(-1);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
@@ -144,7 +144,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
 	// Write all block state data in parallel
 	xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
 #endif
@@ -173,7 +173,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
  Initialize the HDF5 Greens value reader.
  */
 HDF5GreensDataReader::HDF5GreensDataReader(const std::string &hdf5_file_name) : HDF5GreensData() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	int			ndims;
 	hsize_t		*dims;
 	
@@ -203,7 +203,7 @@ HDF5GreensDataReader::HDF5GreensDataReader(const std::string &hdf5_file_name) : 
 }
 
 HDF5GreensData::~HDF5GreensData(void) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		res;
 	
 	// Close the handles we've used
@@ -224,7 +224,7 @@ HDF5GreensData::~HDF5GreensData(void) {
  Initialize the HDF5 writer using the specified model dimensions.
  */
 HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, const unsigned int &nblocks) : HDF5GreensData() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	hsize_t				dimsf[2];
 	hid_t				plist_id;
 	
@@ -232,7 +232,7 @@ HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, co
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
 	if (plist_id < 0) exit(-1);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
@@ -263,7 +263,7 @@ HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, co
  Set the Greens function normal and shear values for a specified block.
  */
 void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_vals, const double *norm_vals) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	hsize_t		file_start[2], mem_start[2], count[2];
 	hid_t		file_select, mem_select, plist_id;
@@ -283,7 +283,7 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
 	status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 	
 	plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	//H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 #endif
@@ -301,7 +301,7 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
  Set the Greens function normal and shear values for a specified block.
  */
 void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, double *norm_vals) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	hsize_t		file_start[2], mem_start[2], count[2];
 	hid_t		file_select, mem_select, plist_id;
@@ -321,7 +321,7 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
 	status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 	
 	plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	//H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 #endif
@@ -341,7 +341,7 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
  to the correct positions in the file.
  */
 HDF5DataReader::HDF5DataReader(const std::string &hdf5_file_name) : HDF5Data() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	hsize_t		*dims;
 	
 	last_event_read = 0;
@@ -366,7 +366,7 @@ HDF5DataReader::HDF5DataReader(const std::string &hdf5_file_name) : HDF5Data() {
 }
 
 HDF5Data::~HDF5Data(void) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		res;
 	
 	// Close the handles we've used
@@ -390,18 +390,18 @@ HDF5Data::~HDF5Data(void) {
  Initialize the HDF5 writer using the specified model dimensions.
  */
 HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks) : HDF5Data() {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	hsize_t				dimsf[2];
 	herr_t				status;
 	hid_t				plist_id;
 	BlockInfo			empty_binfo;
-	//std::cout << "there " << HAVE_HDF5 << std::endl;
+	//std::cout << "there " << HDF5_FOUND << std::endl;
 	
 	num_blocks = nblocks;
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
 	if (plist_id < 0) exit(-1);
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
 	//H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
@@ -511,7 +511,7 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
 }
 
 void HDF5Data::createH5Handles(void) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	hsize_t		dimsf[2];
 	
 	num_layers = 4;
@@ -845,7 +845,7 @@ void HDF5DataReader::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping
  Given the current fault and layer filters, creates a set of filtered data.
  */
 void HDF5DataReader::filterData(const unsigned int &max_dim_x, const unsigned int &max_dim_y, const bool &green_log) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	/*unsigned int	bid, ibid, i, n;
 	BlockInfo	binfo;
 	herr_t		status;
@@ -945,7 +945,7 @@ bool HDF5DataReader::isBlockInLayerFilter(const BlockID &block_id) const {
  Returns the block information for the specified block ID.
  */
 BlockInfo HDF5DataReader::getBlockInfo(const BlockID &block_id) const {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	BlockInfo	binfo;
 	herr_t		status;
 	
@@ -960,7 +960,7 @@ BlockInfo HDF5DataReader::getBlockInfo(const BlockID &block_id) const {
  Sets the block information for the specified block.
  */
 void HDF5DataWriter::setBlockInfo(const Block &block) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	BlockID			id;
 	BlockInfo		binfo;
 	herr_t			status;
@@ -994,7 +994,7 @@ void HDF5DataReader::getFaultNames(std::set<std::pair<FaultID, std::string> > &f
  Set the start and end years of the simulation.
  */
 void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double &new_end_year) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	double		tmp[2];
 	
@@ -1008,7 +1008,7 @@ void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double
  Write the base latitude and longitude
  */
 void HDF5DataWriter::setLatLon0(const quakelib::LatLonDepth &new_lat_lon) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	double		tmp[2];
 	
@@ -1019,7 +1019,7 @@ void HDF5DataWriter::setLatLon0(const quakelib::LatLonDepth &new_lat_lon) {
 }
 
 void HDF5DataReader::getStartEndYears(double &start_year, double &end_year) const {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	double		tmp[2];
 	
@@ -1030,7 +1030,7 @@ void HDF5DataReader::getStartEndYears(double &start_year, double &end_year) cons
 }
 
 void HDF5DataReader::getLatLon0(double &lat0, double &lon0) const {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	herr_t		status;
 	double		tmp[2];
 	
@@ -1084,7 +1084,7 @@ double HDF5DataReader::getLon0(void) const {
  Reads all events written to the event file so far.
  */
 void HDF5DataReader::readAllAvailableEvents(void) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	VCEvent				*new_event;
 	VCEventSweep		new_sweep;
 	VCEventAftershock	new_aftershock;
@@ -1202,7 +1202,7 @@ void HDF5DataReader::readAllAvailableEvents(void) {
  Write the information for an event to the HDF5 file.
  */
 void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	EventSweeps::iterator		it;
 	VCEventSweep::iterator		eit;
 	AftershockSet::iterator		ait;
@@ -1337,7 +1337,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
 }
 
 void HDF5DataWriter::flush(void) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 	H5Fflush(data_file, H5F_SCOPE_GLOBAL);
 #endif
 }

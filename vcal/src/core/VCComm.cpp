@@ -36,7 +36,7 @@
 #include "VCComm.h"
 #include "SimFramework.h"
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 
 // Note: We assume these operations are only called for the BlockVal MPI datatype
 /*!
@@ -99,7 +99,7 @@ void BlockValSum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) 
  This can be a minimum, maximum or sum over all BlockVals.
  */
 void VCComm::allReduceBlockVal(BlockVal &in_val, BlockVal &out_val, const BlockValOp &op) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef DEBUG
 	startTimer(reduce_comm_timer);
 #endif
@@ -134,7 +134,7 @@ int VCComm::blocksToFail(const bool &local_fail) {
 	int		global_fail, my_fail;
 	
 	my_fail = local_fail;
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef DEBUG
 	startTimer(fail_comm_timer);
 #endif
@@ -153,7 +153,7 @@ int VCComm::blocksToFail(const bool &local_fail) {
  Broadcasts the specified value from the root node to all other nodes.
  */
 int VCComm::broadcastValue(const int &bval) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int bcast_val = bval;
 	MPI_Bcast(&bcast_val, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
 	return bcast_val;
@@ -167,7 +167,7 @@ int VCComm::broadcastValue(const int &bval) {
  This must exactly match the contents of BlockVal and BlockSweepVals.
  */
 VCComm::VCComm(void) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int				block_lengths[2];
 	MPI_Aint		displacements[2];
 	MPI_Datatype	datatypes[2];
@@ -206,7 +206,7 @@ VCComm::VCComm(void) {
 }
 
 VCComm::~VCComm(void) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	if (updateFieldCounts) delete updateFieldCounts;
 	if (updateFieldDisps) delete updateFieldDisps;
 	if (updateFieldSendBuf) delete updateFieldSendBuf;

@@ -176,7 +176,7 @@ void GreensFuncCalc::symmetrizeMatrix(VCSimulation *sim, GreensValsSparseMatrix 
 	
 	// If we're using MPI, exchange Greens values between nodes
 	// in order to symmetrize the shear stress matrix
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int						i, world_size, local_rank, root_node, num_local_blocks, num_global_blocks;
 	int						*local_counts, *local_ids, *global_ids, *displs;
 	GREEN_VAL				*send_buf, *recv_buf;

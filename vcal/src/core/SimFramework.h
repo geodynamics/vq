@@ -39,7 +39,7 @@
 #include "config.h"
 //#endif
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
 
@@ -173,7 +173,7 @@ public:
 	int getNodeRank(void) const { return node_rank; };
 	int getWorldSize(void) const { return world_size; };
 	bool isRootNode(void) const { return (node_rank == ROOT_NODE_RANK); };
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	void barrier(void) { startTimer(barrier_timer); MPI_Barrier(MPI_COMM_WORLD); stopTimer(barrier_timer); };
 #else
 	void barrier(void) {};

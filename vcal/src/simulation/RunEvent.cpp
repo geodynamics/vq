@@ -429,7 +429,7 @@ void RunEvent::recordEventStresses(VCSimulation *sim) {
     sim->getInitialFinalStresses(involved_blocks, shear_init, shear_final, normal_init, normal_final);
     
 	// If we have multiple processors, sum the values and store on the root node
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	MPI_Reduce(&shear_init, &total_shear_init, 1, MPI_DOUBLE, MPI_SUM, ROOT_NODE_RANK, MPI_COMM_WORLD);
 	MPI_Reduce(&shear_final, &total_shear_final, 1, MPI_DOUBLE, MPI_SUM, ROOT_NODE_RANK, MPI_COMM_WORLD);
 	MPI_Reduce(&normal_init, &total_normal_init, 1, MPI_DOUBLE, MPI_SUM, ROOT_NODE_RANK, MPI_COMM_WORLD);

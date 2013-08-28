@@ -39,7 +39,7 @@
 #include "config.h"
 //#endif
 
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
 
@@ -59,7 +59,7 @@
 
 class MPIDebugOutputStream {
 private:
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	MPI_Comm		comm_world;
 #endif
 	bool			print_node_rank, print_timestamp;

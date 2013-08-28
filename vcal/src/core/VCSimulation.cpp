@@ -810,7 +810,7 @@ void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, c
 int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
 	double		num_spec_exec = 0;
 	
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 #ifdef DEBUG
 	startTimer(dist_comm_timer);
 #endif
@@ -851,7 +851,7 @@ int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
  Needed for slip calculation if faults are spread over multiple processors.
  */
 void VCSimulation::distributeFailedBlocks(BlockIDSet &failed_blocks) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int							i;
 	BlockIDSet::iterator		it;
 	
@@ -952,7 +952,7 @@ bool VCSimulation::isLocalizedFailure(const BlockIDSet &fail_set) {
  NOTE: This does not transfer stresses, these will be zeroed in the output file
  */
 void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	int								*block_counts, *block_offsets;
 	int								num_blocks, i, total_block_count;
 	VCEventSweep::const_iterator	it;
@@ -1030,7 +1030,7 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
  */
 void VCSimulation::partitionBlocks(void) {
 	int						i;
-#ifdef HAVE_MPI
+#ifdef MPI_C_FOUND
 	PartitionMethod					part_method = PARTITION_DISTANCE;
 	int								world_size, num_global_blocks, num_local_blocks, local_rank, j, n;
 	std::multimap<int, BlockID>::iterator	it, it_start, it_end;
