@@ -1,6 +1,10 @@
 # Create a library called "quakelib" which includes the appropriate source files.
 # The extension is already found. Any number of sources could be listed here. 
 
+IF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
+  SET_TARGET_PROPERTIES(bar PROPERTIES COMPILE_FLAGS "-fPIC")
+ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
+
 SET(QUAKELIB_SOURCES
     ${QUAKELIB_SOURCE_DIR}/QuakeLib.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.h
