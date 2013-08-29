@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 2.6)
 project (VC) 
 
 # Enable testing
-INCLUDE (CTest)
+#INCLUDE (CTest)
 # Check for common include files
 INCLUDE (CheckIncludeFiles)
 CHECK_INCLUDE_FILES ("sys/time.h" VC_HAVE_SYS_TIME_H)

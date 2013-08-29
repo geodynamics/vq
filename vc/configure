@@ -11,5 +11,7 @@ if [ ! -d "$build" ]; then
 fi
 
 cd build
+#CC=gcc CXX=g++ cmake -D PYTHON_LIBRARIES=/usr/local/Cellar/python/2.7.5/Frameworks/Python.framework/Versions/Current/lib/libpython2.7.dylib -D PYTHON_INCLUDE_DIR=/usr/local/Cellar/python/2.7.5/Frameworks/Python.framework/Versions/Current/include/python2.7/ ../
+
 CC=gcc CXX=g++ cmake ../
 

@@ -1,0 +1,74 @@
+== DEPENDENCIES ==
+
+ MPI
+ HDF5
+ SWIG
+
+== INSTALL ==
+ 1.) Windows
+ 2.) Mac OS X
+ 3.) Linux
+ 
+== Windows ==
+
+ This is untested so use at your own risk!
+
+ If using Cygwin:
+    
+    ./configure
+    make
+    make install
+    
+ If using Visual Studio:
+ 
+    Follow the directions at the link for running CMake on Windows:
+    http://www.opentissue.org/wikitissue/index.php/Using_CMake
+    
+    NOTE: Select the "build" folder as the location to build the binaries.
+    
+== Mac OS X ==
+ 
+ With the OS X default python.
+
+ ./configure
+ cd build
+ make
+ sudo make install
+ 
+ If you have a third party installation of python (ie. from homebrew or macports) Virtual California will build
+ and install, but the python quakelib module may not work. This is because cmake
+ builds against the system python. To fix this do the following:
+ 
+ ./configure
+    cmake will output the following:
+	"-- Found PythonLibs: /usr/lib/libpythonx.x.dylib"
+	where "x.x" is a version number (ie. "2.7"). We need to move this file and 
+	create a link to the correct python.
+ sudo mv /usr/lib/libpythonx.x.dylib /usr/lib/libpythonx.x.sys.dylib
+ which python
+    This will output /the/path/to/python.
+ otool -L /the/path/to/python
+	This will output /the/path/to/python/library.
+ sudo ln -s /the/path/to/python/library /usr/lib/libpythonx.x.dylib
+ rm -r build/
+ ./configure
+ cd build
+ make
+ sudo make install
+
+== Linux ==
+
+ ./configure
+ cd build
+ make
+ sudo make install
+ 
+== INSTALL LOCATIONS ==
+
+ Quakelib libraries will be installed in standandard library directories based on your system configuration.
+ Cmake will generate a file named "install_manifest.txt" in the build directory detailing the locations of installed
+ files. The Virtual California binary is build/src/vc.
+ 
+== CLEAN RE-BUILD ==
+
+ Just delete the build directory and re-install based on the instructions above.
