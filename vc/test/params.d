@@ -1,0 +1,13 @@
+sim.version = 2.0
+sim.start_year = 0.0
+sim.end_year = 1000
+sim.events.start_year = 0
+sim.progress.period = 30
+sim.friction_law = stepped
+sim.greens.method = 2011
+sim.greens.outfile = test_greens.h5
+sim.eqsim.file.friction = test_friction.dat
+sim.eqsim.file.geometry = test_geometry.dat
+sim.dynamic = 0.5
+sim.slip_scaling_threshold = 5
+sim.hdf5.file = test_dyn-0-5_st-5.h5

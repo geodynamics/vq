@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#  run_test
+#  vc
+#
+#  Created by Michael Sachs on 9/3/13.
+#
+
+if [ -f ../build/src/vc ]; then
+	echo "Running test..."
+	cp ../build/src/vc vc
+	./vc
+else
+	cd ../
+	THE_ROOT=$(pwd)
+	echo "Cannot find $THE_ROOT/build/src/vc"
+	echo "Make sure you build and install Virtual California as described in the INSTALL document."
+fi
+

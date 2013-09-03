@@ -4,4 +4,16 @@
  
 == TESTING ==
 
+ After following the instructions in INSTALL, before you move any files around. From
+ within the 'test' directory just run the 'run_test' script:
+ 
+ ./run_test
+ 
+ Virtual California will run a small simulation creating the files:
+ 
+ test_greens.h5 - The interaction matrices.
+ test_dyn-0-5_st-5.h5 - The simulation file.
+ block_info.dat - A element mapping file.
+
+
  

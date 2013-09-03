@@ -162,6 +162,10 @@
 		AAF45E8E1319169400C111BF /* SimError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimError.h; path = src/core/SimError.h; sourceTree = "<group>"; };
 		AAF45EB113196A5E00C111BF /* VCComm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VCComm.h; path = src/core/VCComm.h; sourceTree = "<group>"; };
 		AAF45EB213196A5E00C111BF /* VCComm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VCComm.cpp; path = src/core/VCComm.cpp; sourceTree = "<group>"; };
+		B84B012617D69960004ACD58 /* params.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = params.d; sourceTree = "<group>"; };
+		B84B012717D69960004ACD58 /* run_test */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = run_test; sourceTree = "<group>"; };
+		B84B012817D69960004ACD58 /* test_friction.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_friction.dat; sourceTree = "<group>"; };
+		B84B012917D69960004ACD58 /* test_geometry.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_geometry.dat; sourceTree = "<group>"; };
 		B89C51B713E372A900DE7F49 /* vc */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = vc; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8C2F59517CE6044002F9A83 /* AUTHORS */ = {isa = PBXFileReference; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
 		B8C2F59617CE6044002F9A83 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -353,9 +357,21 @@
 			name = QuakeLib;
 			sourceTree = "<group>";
 		};
+		B84B012517D69960004ACD58 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				B84B012617D69960004ACD58 /* params.d */,
+				B84B012717D69960004ACD58 /* run_test */,
+				B84B012817D69960004ACD58 /* test_friction.dat */,
+				B84B012917D69960004ACD58 /* test_geometry.dat */,
+			);
+			path = test;
+			sourceTree = "<group>";
+		};
 		B8C2F59417CE6018002F9A83 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				B84B012517D69960004ACD58 /* test */,
 				B8C2F59B17CE6054002F9A83 /* quakelib */,
 				B8C2F59A17CE604B002F9A83 /* src */,
 				B8C2F59517CE6044002F9A83 /* AUTHORS */,
