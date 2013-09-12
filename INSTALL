@@ -51,7 +51,10 @@
 
 == Linux ==
 
- ./configure cd build make sudo make install
+ ./configure
+ cd build
+ make
+ sudo make install
 
 == INSTALL LOCATIONS ==
 
