@@ -1,6 +1,6 @@
 == DEPENDENCIES ==
 
- MPI HDF5 SWIG
+ MPI HDF5 SWIG CMAKE
 
 == INSTALL == 1.) Windows 2.) Mac OS X 3.) Linux
 
