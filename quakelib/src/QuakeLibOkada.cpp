@@ -2425,3 +2425,140 @@ double quakelib::Okada::Qp(double _R, double xi, double eta, double _q, double z
     return (3.0 * ctil(_q,eta,z) * ytil(_q,eta))/_R5 + _q * Y32(_R,eta) - (z * Y32(_R,eta) + Z32(_R,_q,eta,z) + Z0(_R,xi,eta,_q,z)) * _cos_o_dip;
 }
 
+//------------------- Below is untested gibberish!!   ---Kasey---
+// gravity change on the free surface (z=0)
+double quakelib::Okada::dg(double x, double y, double c, double L, double W, double US, double UD, double UT) {
+    OP_CMP(3); OP_MULT(3); OP_ADD(3); OP_SUB(1);
+    // Evaluating delta_g at free surface so z=0
+	double _p = p(y,0.0,c);
+	double _q = q(y,0.0,c);
+    double dgS= 0.0; //contribution from Strike
+    double dgD= 0.0; //Dip
+    double dgT= 0.0; //Tensile
+    double dgC= 0.0; //Cavitation, currently set such that no matter fills the cavity.
+                     //If adding this feature, multiply dgC instead by DENSITY_DIFF*BIG_G
+                     //in the return call. DENSITY_DIFF is mean crustal density minus the
+                     //density of the cavity filling material.
+
+    if (US != 0.0) {
+        OP_MULT(1);
+        dgS = US*dSg(x,_p,_q,L,W);
+    }
+    if (UD != 0.0) {
+        OP_MULT(1);
+        dgD = UD*dDg(x,_p,_q,L,W);
+    }
+    if (UT != 0.0) {
+        OP_MULT(2);
+        dgT = UT*dTg(x,_p,_q,L,W);
+        dgC = UT*dCg(x,_p,_q,L,W);
+    }
+
+    //Free-air effect of surface elevation change (not sure what this means, taken from Okubo '92)
+    // here uz used to get the height change on surface of halfspace at (x,y)
+    double dgFree = GRAV_BETA*uz(x,y,0.0,c,L,W,US,UD,UT);
+
+    return EARTH_CRUST_DENSITY*BIG_G*(dgS + dgD + dgT + dgC) - dgFree;
+}
+//
+// double bar evaluation
+//
+double quakelib::Okada::dSg(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Sg(x,_p,_q) - Sg(x,_p-W,_q) - Sg(x-L,_p,_q) + Sg(x-L,_p-W,_q);
+}
+double quakelib::Okada::dDg(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Dg(x,_p,_q) - Dg(x,_p-W,_q) - Dg(x-L,_p,_q) + Dg(x-L,_p-W,_q);
+}
+double quakelib::Okada::dTg(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Tg(x,_p,_q) - Tg(x,_p-W,_q) - Tg(x-L,_p,_q) + Tg(x-L,_p-W,_q);
+}
+double quakelib::Okada::dCg(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Cg(x,_p,_q) - Cg(x,_p-W,_q) - Cg(x-L,_p,_q) + Cg(x-L,_p-W,_q);
+}
+//
+// gravity globals
+//
+double quakelib::Okada::Sg(double xi, double eta, double _q){
+	double _R = R(xi,eta,_q);
+	double _Rpeta = _R+eta;
+    if (!singularity4(_Rpeta)){
+        OP_ADD(1); OP_MULT(4); OP_DIV(2); OP_SUB(1);
+        double _RRpeta = _R*_Rpeta;
+        double _q2 = _q*_q;
+        return _q2*_cos_o_dip/_RRpeta - _q*_sin_o_dip/_R;
+    } else {
+        OP_ADD(1); OP_MULT(2); OP_DIV(1);
+        return -1.0*_q*_sin_o_dip/_R;
+    }
+}
+double quakelib::Okada::Dg(double xi, double eta, double _q){
+	double _R = R(xi,eta,_q);
+	double _Rpxi = _R+xi;
+    if (!singularity3(_Rpxi)) {
+        OP_ADD(1); OP_MULT(4); OP_DIV(1); OP_SUB(1);
+        double _RRpxi = _R*_Rpxi;
+        double _dtil = dtil(_q,eta);
+        return 2.0*I2g(_R,xi,eta,_q)*_sin_o_dip - _q*_dtil/_RRpxi ;
+    } else {
+        OP_ADD(1); OP_MULT(2);
+        return 2.0*I2g(_R,xi,eta,_q)*_sin_o_dip;
+    }
+}
+double quakelib::Okada::Tg(double xi, double eta, double _q){
+    OP_ADD(2); OP_MULT(2);
+	double _R = R(xi,eta,_q);
+    double _ytil = ytil(_q,eta);
+	double _Rpeta = _R+eta;
+	double _Rpxi = _R+xi;
+    double ret_value = 2.0*I2g(_R,xi,eta,_q)*_cos_o_dip;
+    if (!singularity3(_Rpxi)) {
+        OP_MULT(2); OP_DIV(1); OP_ADD(1);
+        double _RRpxi = _R*_Rpxi;
+        ret_value += _q*_ytil/_RRpxi;
+    }
+    if (!singularity4(_Rpeta)) {
+        OP_MULT(3); OP_ADD(1); OP_DIV(1);
+        double _RRpeta = _R*_Rpeta;
+        ret_value += _q*xi*_cos_o_dip/_RRpeta;
+    }
+    return ret_value;
+}
+//Cg is the contribution from matter infall into newly created cavity
+//Currently this is set such that no matter fills the opening
+double quakelib::Okada::Cg(double xi, double eta, double _q){
+    OP_ADD(1); OP_MULT(2);
+	double _R = R(xi,eta,_q);
+    double _Rpxi = _R+xi;
+    double ret_value = 2.0*I2g(_R,xi,eta,_q)*_cos_o_dip;
+    if (!singularity3(_Rpxi)) {
+        OP_MULT(1); OP_SUB(1); OP_LOG(1);
+        ret_value -= _sin_o_dip*log(_Rpxi);
+    } else {
+        OP_ADD(1); OP_MULT(1); OP_LOG(1); OP_SUB(1);
+        ret_value += _sin_o_dip*log(_R-xi);
+    }
+    return ret_value;
+}
+double quakelib::Okada::I2g(double _R, double xi, double eta, double _q){
+    if (!singularity1(_q)) {
+        OP_ADD(2); OP_DIV(1);
+        return atan((_R+xi+eta)/_q);
+    } else {
+        return 0.0;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
