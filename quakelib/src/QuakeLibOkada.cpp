@@ -2551,14 +2551,3 @@ double quakelib::Okada::I2g(double _R, double xi, double eta, double _q){
         return 0.0;
     }
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -122,7 +122,7 @@ namespace quakelib {
 		// [duxdz,duydz,duzdz]
 		Vec<3> calc_dudz(const Vec<3> location, const double c, const double dip, const double L, const double W, const double US, const double UD, const double UT, const double lambda, const double mu) throw(std::invalid_argument);
 		
-	private:
+	public:
 		//
 		// Precalculated values to improve performance
 		double _cos_o_dip, _sin_o_dip;
