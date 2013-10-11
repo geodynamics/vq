@@ -28,11 +28,6 @@
 #define TOLERANCE 0.0001
 #define TRIG_TOLERANCE 0.0001
 
-//KWS added rough constants to be refined later
-#define EARTH_CRUST_DENSITY     2800.0              // in kg/m^3
-#define BIG_G                   0.0000000000667     // in m^3/kg/s^2
-#define GRAV_BETA               0.00000309          // in m/s^2 free air gravity gradient
-
 namespace quakelib {
 	enum MotionType {
 		M_UNDEFINED,
@@ -501,7 +496,7 @@ namespace quakelib {
         //
         // dg
         //
-        double dg(double x, double y, double c, double L, double W, double US, double UD, double UT);
+        double dg(double x, double y, double dip, double c, double L, double W, double US, double UD, double UT, double lambda, double mu);
         //
         // dg components
         //

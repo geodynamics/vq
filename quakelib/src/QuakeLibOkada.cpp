@@ -2427,9 +2427,20 @@ double quakelib::Okada::Qp(double _R, double xi, double eta, double _q, double z
 
 //------------------- Below is untested gibberish!!   ---Kasey---
 // gravity change on the free surface (z=0)
-double quakelib::Okada::dg(double x, double y, double c, double L, double W, double US, double UD, double UT) {
+double quakelib::Okada::dg(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
     OP_CMP(3); OP_MULT(3); OP_ADD(3); OP_SUB(1);
     // Evaluating delta_g at free surface so z=0
+
+    if (mu <= 0) throw std::invalid_argument("Mu must be greater than zero.");
+
+    // I'm not sure if this is required, but I'll put it here to be safe
+	precalc(dip, lambda, mu);
+
+    // Everything is in M-K-S units
+    double G   = 0.00000000006738; //Big G graviation constant
+    double RHO = 2800.0;   //mean crustal density (rough estimate)
+    double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
+
 	double _p = p(y,0.0,c);
 	double _q = q(y,0.0,c);
     double dgS= 0.0; //contribution from Strike
@@ -2456,9 +2467,17 @@ double quakelib::Okada::dg(double x, double y, double c, double L, double W, dou
 
     //Free-air effect of surface elevation change (not sure what this means, taken from Okubo '92)
     // here uz used to get the height change on surface of halfspace at (x,y)
-    double dgFree = GRAV_BETA*uz(x,y,0.0,c,L,W,US,UD,UT);
+    Vec<3> location;
+    Vec<3> displace;
 
-    return EARTH_CRUST_DENSITY*BIG_G*(dgS + dgD + dgT + dgC) - dgFree;
+    location[0] = x;
+    location[1] = y;
+    location[2] = 0.0;
+
+    displace = calc_displacement_vector(location,c,dip,L,W,US,UD,UT,lambda,mu);
+    double dgFree = B*displace[2];
+
+    return RHO*G*(dgS + dgD + dgT + dgC) - dgFree;
 }
 //
 // double bar evaluation
