@@ -117,12 +117,13 @@ namespace quakelib {
 		// [duxdz,duydz,duzdz]
 		Vec<3> calc_dudz(const Vec<3> location, const double c, const double dip, const double L, const double W, const double US, const double UD, const double UT, const double lambda, const double mu) throw(std::invalid_argument);
 		
-	public:
+	private:
 		//
 		// Precalculated values to improve performance
 		double _cos_o_dip, _sin_o_dip;
 		double _cos_o_2_dip, _sin_o_2_dip;
 		double _one_minus_alpha, _one_minus_alpha_div_two, _one_minus_alpha_div_alpha, _alpha_div_two;
+		double _nu,_one_minus_two_nu;
 		
 		void precalc(double dip, double lambda, double mu);
 		
@@ -511,6 +512,22 @@ namespace quakelib {
         double Tg(double xi, double eta, double _q);
         double Cg(double xi, double eta, double _q);
         double I2g(double _R, double xi, double eta, double _q);
+        //
+        // dg test (dg2)
+        //
+        double dg2(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+        double dH(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+        // components
+        double dSh(double x, double _p, double _q, double L, double W);
+        double dDh(double x, double _p, double _q, double L, double W);
+        double dTh(double x, double _p, double _q, double L, double W);
+        // globals
+        double Sh(double xi, double eta, double _q);
+        double Dh(double xi, double eta, double _q);
+        double Th(double xi, double eta, double _q);
+        double I1h(double _R, double xi, double eta, double _q);
+        double I4h(double _R, double xi, double eta, double _q);
+        double I5h(double _R, double xi, double eta, double _q);
 	};
 }
 

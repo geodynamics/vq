@@ -170,6 +170,10 @@ void quakelib::Okada::precalc(double dip, double lambda, double mu) {
 	_one_minus_alpha_div_two = (1.0 - alpha)/2.0;
 	_one_minus_alpha_div_alpha = (1.0 - alpha)/alpha;
 	_alpha_div_two = alpha/2.0;
+
+	_nu = 0.5*lambda/(mu + lambda);
+	_one_minus_two_nu = 1.0 - 2.0*_nu;
+
 }
 
 double quakelib::Okada::cos_o(double dip) {
@@ -2425,7 +2429,7 @@ double quakelib::Okada::Qp(double _R, double xi, double eta, double _q, double z
     return (3.0 * ctil(_q,eta,z) * ytil(_q,eta))/_R5 + _q * Y32(_R,eta) - (z * Y32(_R,eta) + Z32(_R,_q,eta,z) + Z0(_R,xi,eta,_q,z)) * _cos_o_dip;
 }
 
-//------------------- Below is untested gibberish!!   ---Kasey---
+//------------------- Not 100% verified   ---Kasey---
 // gravity change on the free surface (z=0)
 double quakelib::Okada::dg(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
     OP_CMP(3); OP_MULT(3); OP_ADD(3); OP_SUB(1);
@@ -2433,12 +2437,11 @@ double quakelib::Okada::dg(double x, double y, double c, double dip, double L, d
 
     if (mu <= 0) throw std::invalid_argument("Mu must be greater than zero.");
 
-    // I'm not sure if this is required, but I'll put it here to be safe
 	precalc(dip, lambda, mu);
 
     // Everything is in M-K-S units
-    double G   = 0.00000000006738; //Big G graviation constant
-    double RHO = 2800.0;   //mean crustal density (rough estimate)
+    double G   = 0.000000000066738; //Big G gravitation constant
+    double RHO = 2670.0;   //mean crustal density (rough estimate)
     double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
 
 	double _p = p(y,0.0,c);
@@ -2475,12 +2478,13 @@ double quakelib::Okada::dg(double x, double y, double c, double dip, double L, d
     location[2] = 0.0;
 
     displace = calc_displacement_vector(location,c,dip,L,W,US,UD,UT,lambda,mu);
+
     double dgFree = B*displace[2];
 
     return RHO*G*(dgS + dgD + dgT + dgC) - dgFree;
 }
 //
-// double bar evaluation
+// double bar evaluation (chinnery)
 //
 double quakelib::Okada::dSg(double x, double _p, double _q, double L, double W) {
     OP_ADD(1); OP_SUB(6);
@@ -2570,3 +2574,175 @@ double quakelib::Okada::I2g(double _R, double xi, double eta, double _q){
         return 0.0;
     }
 }
+
+//Below is testing if Okubo's implementation of delta_h matches the current Okada displacement z
+double quakelib::Okada::dg2(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu){
+
+	if (mu <= 0) throw std::invalid_argument("Mu must be greater than zero.");
+
+	precalc(dip, lambda, mu);
+
+    // Everything is in M-K-S units
+    double G   = 0.000000000066738; //Big G gravitation constant
+    double RHO = 2670.0;   //mean crustal density (rough estimate)
+    double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
+
+	double _p = p(y,0.0,c);
+	double _q = q(y,0.0,c);
+    double dgS= 0.0; //contribution from Strike
+    double dgD= 0.0; //Dip
+    double dgT= 0.0; //Tensile
+    double dgC= 0.0; //Cavitation, currently set such that no matter fills the cavity.
+                     //If adding this feature, multiply dgC instead by DENSITY_DIFF*BIG_G
+                     //in the return call. DENSITY_DIFF is mean crustal density minus the
+                     //density of the cavity filling material.
+
+    if (US != 0.0) {
+        OP_MULT(1);
+        dgS = US*dSg(x,_p,_q,L,W);
+    }
+    if (UD != 0.0) {
+        OP_MULT(1);
+        dgD = UD*dDg(x,_p,_q,L,W);
+    }
+    if (UT != 0.0) {
+        OP_MULT(2);
+        dgT = UT*dTg(x,_p,_q,L,W);
+        dgC = UT*dCg(x,_p,_q,L,W);
+    }
+
+    //Free-air effect of surface elevation change (not sure what this means, taken from Okubo '92)
+    // here uz used to get the height change on surface of halfspace at (x,y)
+
+    double dgFree = B*dH(x,y,c,dip,L,W,US,UD,UT,lambda,mu);
+
+    return RHO*G*(dgS + dgD + dgT + dgC) - dgFree;
+}
+////-------------------------
+double quakelib::Okada::dH(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
+	double dHs = 0.0;
+	double dHd = 0.0;
+	double dHt = 0.0;
+	double _p  = p(y,0.0,c);
+	double _q  = q(y,0.0,c);
+
+	precalc(dip, lambda, mu);
+
+	if (US != 0.0) {
+		dHs = US*dSh(x,_p,_q,L,W)/(2.0*M_PI);
+	}
+	if (UD != 0.0) {
+		dHd = UD*dDh(x,_p,_q,L,W)/(2.0*M_PI);
+	}
+	if (UT != 0.0) {
+		dHt = UT*dTh(x,_p,_q,L,W)/(2.0*M_PI);
+	}
+
+	return dHs + dHd + dHt;
+}
+////-------------------------chinnery
+double quakelib::Okada::dSh(double x, double _p, double _q, double L, double W){
+    OP_ADD(1); OP_SUB(6);
+    return Sh(x,_p,_q) - Sh(x,_p-W,_q) - Sh(x-L,_p,_q) + Sh(x-L,_p-W,_q);
+}
+double quakelib::Okada::dDh(double x, double _p, double _q, double L, double W){
+    OP_ADD(1); OP_SUB(6);
+    return Dh(x,_p,_q) - Dh(x,_p-W,_q) - Dh(x-L,_p,_q) + Dh(x-L,_p-W,_q);
+}
+double quakelib::Okada::dTh(double x, double _p, double _q, double L, double W){
+    OP_ADD(1); OP_SUB(6);
+    return Th(x,_p,_q) - Th(x,_p-W,_q) - Th(x-L,_p,_q) + Th(x-L,_p-W,_q);
+}
+////-------------------------
+double quakelib::Okada::Sh(double xi, double eta, double _q){
+	double _R 			= R(xi,eta,_q);
+	double _Rpeta 		= _R+eta;
+	double _dtil  		= dtil(_q,eta);
+	double non_singular = -1.0*I4h(_R,xi,eta,_q)*_sin_o_dip;
+	if (!singularity4(_Rpeta)){
+		double _RRpeta  = _R*_Rpeta;
+		return non_singular - _dtil*_q/_RRpeta - _q*_sin_o_dip/_Rpeta;
+	} else {
+		return non_singular;
+	}
+}
+double quakelib::Okada::Dh(double xi, double eta, double _q){
+	double _R 			= R(xi,eta,_q);
+	double _qR			= _q*_R;
+    double _Rpxi 		= _R+xi;
+	double _dtil  		= dtil(_q,eta);
+	double non_singular = I5h(_R,xi,eta,_q)*_sin_o_dip*_cos_o_dip -_sin_o_dip*atan(xi*eta/_qR);
+	if (!singularity3(_Rpxi)){
+		double _RRpxi   = _R*_Rpxi;
+		return non_singular - _dtil*_q/_RRpxi;
+	} else{
+		return non_singular;
+	}
+}
+double quakelib::Okada::Th(double xi, double eta, double _q){
+	double _R 			= R(xi,eta,_q);
+    double _ytil		= ytil(_q,eta);
+    double _Rpxi 		= _R+xi;
+	double _Rpeta 		= _R+eta;
+	double _qR			= _q*_R;
+	double non_singular = -1.0*_sin_o_2_dip*I5h(_R,xi,eta,_q) - _cos_o_dip*atan(xi*eta/_qR);
+	if (!singularity4(_Rpeta)){
+		double _RRpeta  = _R*_Rpeta;
+		non_singular 	+= _cos_o_dip*xi*_q/_RRpeta;
+	}
+	if (!singularity3(_Rpxi)){
+		double _RRpxi   = _R*_Rpxi;
+		non_singular    += _ytil*_q/_RRpxi;
+	}
+	return non_singular;
+}
+double quakelib::Okada::I4h(double _R, double xi, double eta, double _q){
+	double _Rpeta = _R+eta;
+	double _dtil  = dtil(_q,eta);
+	if (!cos_zero()){
+	    if (!singularity4(_Rpeta)){
+	    	return _one_minus_two_nu*(log(_R+_dtil)-_sin_o_dip*log(_Rpeta))/_cos_o_dip;
+	    } else {
+	    	return _one_minus_two_nu*(log(_R+_dtil)+ _sin_o_dip*log(_R-eta))/_cos_o_dip;
+	    }
+	} else {
+		return -1.0*_one_minus_two_nu*_q/(_R+_dtil);
+	}
+}
+double quakelib::Okada::I5h(double _R, double xi, double eta, double _q){
+	double _dtil  = dtil(_q,eta);
+	if (!cos_zero()){
+    	return 2.0*_one_minus_two_nu*I1h(_R,xi,eta,_q)/_cos_o_dip;
+	} else {
+		return -1.0*_one_minus_two_nu*xi*_sin_o_dip/(_R+_dtil);
+	}
+}
+double quakelib::Okada::I1h(double _R, double xi, double eta, double _q){
+	double _Rpeta = _R+eta;
+	double xi_cos = xi*_cos_o_dip;
+	if (!singularity2(xi)){
+		return atan((_Rpeta*(1.0+_sin_o_dip)-_q*_cos_o_dip)/xi_cos);
+	} else {
+		return 0.0;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
