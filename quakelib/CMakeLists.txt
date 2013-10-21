@@ -29,7 +29,10 @@ SET(QUAKELIB_HEADERS
 
 INSTALL(FILES ${QUAKELIB_SOURCES} DESTINATION include/quakelib/)
 
-INSTALL(TARGETS quakelib LIBRARY DESTINATION lib/quakelib/ COMPONENT libraries)
+INSTALL(TARGETS quakelib
+     RUNTIME DESTINATION bin/quakelib/ COMPONENT libraries
+     LIBRARY DESTINATION lib/quakelib/ COMPONENT libraries
+     ARCHIVE DESTINATION lib/static/quakelib/ COMPONENT libraries)
 
 # Go into the python subdirectory
 add_subdirectory(python)

@@ -1104,6 +1104,14 @@ namespace quakelib {
 	typedef Element<3> ElementTri;
 	typedef Element<4> ElementRect;
 	
+	class Event {
+	private:
+		std::vector<ElementRect> involved_elements;
+	public:
+		void add_element(const ElementRect &element);
+		void add_elements(const std::vector<ElementRect> &involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
+	};
+	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.
 	class EQSimGeometrySection {
 	private:
