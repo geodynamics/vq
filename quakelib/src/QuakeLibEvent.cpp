@@ -20,6 +20,17 @@
 
 #include "QuakeLib.h"
 #include <iomanip>
+#include <iostream>
+
+quakelib::VectorField quakelib::Event::event_displacements(const PointList &x, const PointList &y) {
+	quakelib::VectorField displacements;
+	
+	displacements.dx.push_back(10.0);
+	displacements.dy.push_back(10.0);
+	displacements.dz.push_back(10.0);
+	
+	return displacements;
+}
 
 void quakelib::EQSimEventWriter::flush(void) {
 	std::vector<unsigned int>::const_iterator	it;

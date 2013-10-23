@@ -17,6 +17,8 @@ using namespace quakelib;
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
+%template(ElementList) std::vector<quakelib::ElementRect>;
+%template(PointList) std::vector<float>;
 
 %include "QuakeLibUtil.h"
 %include "QuakeLib.h"
@@ -54,8 +56,29 @@ using namespace quakelib;
 %template(Octree2) quakelib::Octree<2>;
 %template(Octree3) quakelib::Octree<3>;
 
+%template(Element4) quakelib::Element<4>;
+
 // TODO: check all these for potential buffer overflows
 // Python __str__ and __repr__ functions for QuakeLib classes
+%extend quakelib::VectorField {
+	char *__str__(void) {
+		static char tmp[1024];
+		std::stringstream	ss;
+		std::string			res;
+		ss << (*$self);
+		res = ss.str();
+		res.resize(1023);
+		sprintf(tmp, "%s", res.c_str());
+		return tmp;
+	}
+	
+	char *__repr__(void) {
+		static char tmp[1024];
+		sprintf(tmp, "quakelib.VectorField(dx len:%g, dy len:%g, dz len:%g)", $self->dx.size(), $self->dy.size(), $self->dz.size());
+		return tmp;
+	}
+};
+
 %extend quakelib::LatLonDepth {
 	char *__str__(void) {
 		static char			tmp[1024];
