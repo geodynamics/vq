@@ -26,8 +26,10 @@
 #include <stdexcept>
 #include <limits.h>
 #include <float.h>
+#include <math.h>
 
 #include "QuakeLibOkada.h"
+
 
 #ifndef _QUAKELIB_H_
 #define _QUAKELIB_H_
@@ -1015,6 +1017,7 @@ namespace quakelib {
 		
 		//! Set the location of a vertex.
 		void set_vert(const unsigned int &vert, const Vec<3> &new_vert) throw(std::out_of_range) { if(vert>=nverts) throw std::out_of_range("quakelib::Element::set_vert"); _vert[vert] = new_vert; };
+		void set_vert(const unsigned int &vert, const float &x, const float &y, const float &z) throw(std::out_of_range) { if(vert>=nverts) throw std::out_of_range("quakelib::Element::set_vert"); _vert[vert] = Vec<3>(x,y,z); };
 		//! Get the location of a vertex.
 		Vec<3> vert(const unsigned int &vert) const throw(std::out_of_range) { if(vert>=nverts) throw std::out_of_range("quakelib::Element::vert"); return _vert[vert]; };
 		
@@ -1048,6 +1051,16 @@ namespace quakelib {
 		
 		//! Returns a unit vector along the direction of fault dip.
 		double dip(void) const { Vec<3> v; v[2] = 1.0; return normal().vector_angle(v); };
+		
+		//! Returns the angle of the element relative to north. Positive rotating west, negitive rotating east.
+		double strike(void) const {
+			Vec<3> v1, v2, norm;
+			norm = normal();
+			v1[0] = norm[0];
+			v1[1] = norm[1];
+			v2[1] = 1.0;
+			return (v1.vector_angle(v2) - M_PI/2.0);
+		};
 		
 		//! Returns unit vector along the direction of fault rake.
 		Vec<3> rake_vector(void) const {
@@ -1104,24 +1117,29 @@ namespace quakelib {
 	typedef Element<3> ElementTri;
 	typedef Element<4> ElementRect;
 	
-	typedef std::vector<ElementRect> ElementList;
-	typedef std::vector<float> PointList;
+	template <unsigned int nverts>
+	class EventElement: public Element<nverts> {
+	protected:
+		double _slip;
+	public:
+		double slip(void) const { return _slip; };
+		void set_slip(const double &new_slip) { _slip = new_slip; };
 	
-	struct VectorField {
-		std::vector<float> dx;
-		std::vector<float> dy;
-		std::vector<float> dz;
 	};
-
-	typedef struct VectorField VectorField;
-
+	
+	typedef EventElement<3> EventElementTri;
+	typedef EventElement<4> EventElementRect;
+	
+	typedef std::vector< EventElementRect > EventElementList;
+	typedef std::vector< Vec<3> > VectorList;
+	
 	class Event {
 	private:
-		std::vector<ElementRect> involved_elements;
+		EventElementList involved_elements;
 	public:
-		void add_element(const ElementRect &element) {involved_elements.push_back(element);};
-		void add_elements(const ElementList &involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
-		VectorField event_displacements(const PointList &x, const PointList &y);
+		void add_element(const EventElementRect &element) {involved_elements.push_back(element);};
+		void add_elements(const EventElementList involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
+		VectorList event_displacements(const VectorList &points, const float lambda[] , const float mu[]);
 	};
 	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.

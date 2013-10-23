@@ -9,20 +9,30 @@
 using namespace quakelib;
 %}
 
+%include "QuakeLibUtil.h"
+%include "QuakeLib.h"
+%include "QuakeLibOkada.h"
+
 // Ignore the reader/writer classes since the user shouldn't be using these anyway
 %ignore quakelib::EQSimFileReader;
 %ignore quakelib::EQSimFileWriter;
+
+
 
 // Create vector templates for iterating through lists
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
-%template(ElementList) std::vector<quakelib::ElementRect>;
-%template(PointList) std::vector<float>;
+%template(EventElementList) std::vector< quakelib::EventElement<4> >;
+%template(VectorList) std::vector< Vec<3> >;
 
-%include "QuakeLibUtil.h"
-%include "QuakeLib.h"
-%include "QuakeLibOkada.h"
+%extend quakelib::EventElementList {
+	void append( quakelib::EventElement<4> item) {(*$self).push_back(item)};
+};
+
+%extend quakelib::PointList {
+	void append( float item ) {(*$self).push_back(item)};
+};
 
 // Create aliases for 2D and 3D vector templates
 %template(Vec2) quakelib::Vec<2>;
@@ -57,24 +67,15 @@ using namespace quakelib;
 %template(Octree3) quakelib::Octree<3>;
 
 %template(Element4) quakelib::Element<4>;
+%template(EventElement4) quakelib::EventElement<4>;
 
 // TODO: check all these for potential buffer overflows
 // Python __str__ and __repr__ functions for QuakeLib classes
 %extend quakelib::VectorField {
-	char *__str__(void) {
-		static char tmp[1024];
-		std::stringstream	ss;
-		std::string			res;
-		ss << (*$self);
-		res = ss.str();
-		res.resize(1023);
-		sprintf(tmp, "%s", res.c_str());
-		return tmp;
-	}
-	
+
 	char *__repr__(void) {
 		static char tmp[1024];
-		sprintf(tmp, "quakelib.VectorField(dx len:%g, dy len:%g, dz len:%g)", $self->dx.size(), $self->dy.size(), $self->dz.size());
+		sprintf(tmp, "quakelib.VectorField(dx len:%zu, dy len:%zu, dz len:%zu)", $self->dx.size(), $self->dy.size(), $self->dz.size());
 		return tmp;
 	}
 };

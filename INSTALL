@@ -38,9 +38,7 @@
  	/usr/lib/libpythonx.x.dylib" where "x.x" is a version number (ie. "2.7"). We
  	need to move this file and create a link to the correct python.
  sudo mv /usr/lib/libpythonx.x.dylib /usr/lib/libpythonx.x.sys.dylib
- which python
- 	This will output /the/path/to/python.
- otool -L /the/path/to/python 
+ which python | xargs otool -L
  	This will output /the/path/to/python/library. 
  sudo ln -s /the/path/to/python/library /usr/lib/libpythonx.x.dylib 
  rm -r build/
