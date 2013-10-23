@@ -1104,12 +1104,24 @@ namespace quakelib {
 	typedef Element<3> ElementTri;
 	typedef Element<4> ElementRect;
 	
+	typedef std::vector<ElementRect> ElementList;
+	typedef std::vector<float> PointList;
+	
+	struct VectorField {
+		std::vector<float> dx;
+		std::vector<float> dy;
+		std::vector<float> dz;
+	};
+
+	typedef struct VectorField VectorField;
+
 	class Event {
 	private:
 		std::vector<ElementRect> involved_elements;
 	public:
-		void add_element(const ElementRect &element);
-		void add_elements(const std::vector<ElementRect> &involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
+		void add_element(const ElementRect &element) {involved_elements.push_back(element);};
+		void add_elements(const ElementList &involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
+		VectorField event_displacements(const PointList &x, const PointList &y);
 	};
 	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.
