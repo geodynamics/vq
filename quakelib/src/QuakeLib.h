@@ -1139,7 +1139,7 @@ namespace quakelib {
 	public:
 		void add_element(const EventElementRect &element) {involved_elements.push_back(element);};
 		void add_elements(const EventElementList involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
-		VectorList event_displacements(const VectorList &points, const float lambda[] , const float mu[]);
+		VectorList event_displacements(const VectorList &points, const double lambda[], const double mu[]);
 	};
 	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.

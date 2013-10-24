@@ -24,14 +24,14 @@ using namespace quakelib;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
 %template(EventElementList) std::vector< quakelib::EventElement<4> >;
-%template(VectorList) std::vector< Vec<3> >;
+%template(VectorList) std::vector< quakelib::Vec<3> >;
 
 %extend quakelib::EventElementList {
 	void append( quakelib::EventElement<4> item) {(*$self).push_back(item)};
 };
 
-%extend quakelib::PointList {
-	void append( float item ) {(*$self).push_back(item)};
+%extend quakelib::VectorList {
+	void append( quakelib::Vec<3> item ) {(*$self).push_back(item)};
 };
 
 // Create aliases for 2D and 3D vector templates
@@ -71,6 +71,7 @@ using namespace quakelib;
 
 // TODO: check all these for potential buffer overflows
 // Python __str__ and __repr__ functions for QuakeLib classes
+/*
 %extend quakelib::VectorField {
 
 	char *__repr__(void) {
@@ -79,7 +80,7 @@ using namespace quakelib;
 		return tmp;
 	}
 };
-
+*/
 %extend quakelib::LatLonDepth {
 	char *__str__(void) {
 		static char			tmp[1024];

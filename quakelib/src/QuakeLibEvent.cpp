@@ -23,7 +23,7 @@
 #include <iostream>
 
 
-quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const float lambda[] , const float mu[])  {
+quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const double lambda[], const double mu[])  {
 	quakelib::VectorList displacements;
 	Okada block_okada;
 	quakelib::Vec<3> displacement;
