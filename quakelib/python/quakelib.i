@@ -25,6 +25,7 @@ using namespace quakelib;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
 %template(EventElementList) std::vector< quakelib::EventElement<4> >;
 %template(VectorList) std::vector< quakelib::Vec<3> >;
+%template(FloatList) std::vector< double >;
 
 %extend quakelib::EventElementList {
 	void append( quakelib::EventElement<4> item) {(*$self).push_back(item)};
@@ -32,6 +33,10 @@ using namespace quakelib;
 
 %extend quakelib::VectorList {
 	void append( quakelib::Vec<3> item ) {(*$self).push_back(item)};
+};
+
+%extend quakelib::FloatList {
+	void append( float item ) {(*$self).push_back(item)};
 };
 
 // Create aliases for 2D and 3D vector templates
