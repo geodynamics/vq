@@ -279,6 +279,8 @@ namespace quakelib {
 		Conversion(void) : _base() {};
 		//! Create a Conversion class with the specified base LatLonDepth point.
 		Conversion(const LatLonDepth &base) : _base(base) {};
+		//! Create a Conversion class with the specified base Lat and Lon point.
+		Conversion(const double &lat, const double &lon) { _base.set_lat(lat); _base.set_lon(lon);};
 		
 		//! Set the base LatLonDepth used to convert to Cartesian coordinates.
 		void set_base_lat_lon_depth(const LatLonDepth &new_base) { _base = new_base; };
