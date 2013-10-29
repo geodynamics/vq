@@ -23,12 +23,16 @@
 #include <iostream>
 
 
-quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const FloatList &lambda, const FloatList &mu)  {
+quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const float &lambda, const float &mu)  {
 	quakelib::VectorList displacements;
 	Okada block_okada;
 	quakelib::Vec<3> displacement;
-    double slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, loc_lambda, loc_mu, x, y, xp, yp, dx, dy, dz;
+    double slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, x, y, xp, yp, dx, dy, dz;
 	
+	if (lambda <= 0 || mu <= 0) {
+		throw std::invalid_argument("Lambda and mu must be greater than zero.");
+	}
+			
 	for(VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
 		displacements.push_back(quakelib::Vec<3>(0.0,0.0,0.0));
 	}
@@ -67,6 +71,7 @@ quakelib::VectorList quakelib::Event::event_displacements(const VectorList &poin
 		xp0 = involved_elements[ele_id].vert(0)[0];
 		yp0 = involved_elements[ele_id].vert(0)[1];
 		
+		/*
 		std::cout << "v1: <" << involved_elements[ele_id].vert(0)[0] << ", " << involved_elements[ele_id].vert(0)[1] << ", " << involved_elements[ele_id].vert(0)[2] << ">" << std::endl;
 		std::cout << "v2: <" << involved_elements[ele_id].vert(1)[0] << ", " << involved_elements[ele_id].vert(1)[1] << ", " << involved_elements[ele_id].vert(1)[2] << ">" << std::endl;
 		std::cout << "v3: <" << involved_elements[ele_id].vert(2)[0] << ", " << involved_elements[ele_id].vert(2)[1] << ", " << involved_elements[ele_id].vert(2)[2] << ">" << std::endl;
@@ -81,21 +86,16 @@ quakelib::VectorList quakelib::Event::event_displacements(const VectorList &poin
 		std::cout << "strike: " << strike << std::endl;
 		std::cout << "xp0: " << xp0 << std::endl;
 		std::cout << "yp0: " << yp0 << std::endl;
-
+		*/
 		
 		for(VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
-			loc_lambda = lambda[point_id];
-			loc_mu = mu[point_id];
-			if (loc_lambda <= 0 || loc_mu <= 0) {
-				throw std::invalid_argument("Lambda and mu must be greater than zero.");
-			}
 			x = points[point_id][0];
 			y = points[point_id][1];
 			
 			xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
 			yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
 			
-			displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, loc_lambda, loc_mu);
+			displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, lambda, mu);
 			
 			dx =  displacement[0] * strike_sin + displacement[1] * strike_cos;
 			dy = -displacement[0] * strike_cos + displacement[1] * strike_sin;

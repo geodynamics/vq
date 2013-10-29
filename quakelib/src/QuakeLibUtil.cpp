@@ -177,6 +177,18 @@ quakelib::Vec<3> quakelib::Conversion::convert2xyz(const LatLonDepth &in_pt) con
 }
 #endif
 
+quakelib::VectorList quakelib::Conversion::convertArray2xyz(const FloatList &lats, const FloatList &lons) const {
+	quakelib::VectorList conversions;
+	
+	for(FloatList::size_type lat_id = 0; lat_id != lats.size(); lat_id++) {
+		for(FloatList::size_type lon_id = 0; lon_id != lons.size(); lon_id++) {
+			conversions.push_back(convert2xyz(LatLonDepth(lats[lat_id],lons[lon_id],0.0)));
+		}
+	}
+	
+	return conversions;
+};
+
 /*!
  Calculates geodetic distance between two points specified by latitude/longitude using 
  Vincenty inverse formula for ellipsoids.

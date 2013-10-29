@@ -86,6 +86,63 @@ using namespace quakelib;
 	}
 };
 */
+
+/*
+%extend quakelib::Event {
+	%insert("python") %{
+		__safe_for_unpickling__ = True
+		def __reduce__(self): return (quakelib::Event, self.Get())
+		def Get(self):
+			print self
+	#def __getstate__(self):
+	#	return {'args': self.args}
+		
+	#def __setstate__(self, dict):
+	#	self.__init__(*state['args'])
+	%}
+
+}*/
+
+%pythoncode %{
+class PickalableSWIG:
+
+    def __setstate__(self, state):
+        self.__init__(*state['args'])
+
+    def __getstate__(self):
+        return {'args': self.args}
+
+class P_Event(Event, PickalableSWIG):
+
+    def __init__(self, *args):
+        self.args = args
+        Event.__init__(self)
+
+class P_VectorList(VectorList, PickalableSWIG):
+
+    def __init__(self, *args):
+        self.args = args
+        VectorList.__init__(self)
+%}
+
+%extend quakelib::Event {
+	%insert("python") %{
+	def P_event_displacements(self, *args):
+		ret = P_VectorList()
+		ret.assign(_quakelib.Event_event_displacements(self, *args))
+		return ret
+	%}
+};
+
+%extend quakelib::Conversion {
+	%insert("python") %{
+	def P_convertArray2xyz(self, *args):
+		ret = P_VectorList()
+		ret.assign(_quakelib.Conversion_convertArray2xyz(self, *args))
+		return ret
+	%}
+};
+
 %extend quakelib::LatLonDepth {
 	char *__str__(void) {
 		static char			tmp[1024];

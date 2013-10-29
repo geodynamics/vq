@@ -1131,8 +1131,8 @@ namespace quakelib {
 	typedef EventElement<4> EventElementRect;
 	
 	typedef std::vector< EventElementRect > EventElementList;
-	typedef std::vector< Vec<3> > VectorList;
-	typedef std::vector< double > FloatList;
+	//typedef std::vector< Vec<3> > VectorList;
+	//typedef std::vector< double > FloatList;
 	
 	class Event {
 	private:
@@ -1140,7 +1140,8 @@ namespace quakelib {
 	public:
 		void add_element(const EventElementRect &element) {involved_elements.push_back(element);};
 		void add_elements(const EventElementList involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
-		VectorList event_displacements(const VectorList &points, const FloatList &lambda, const FloatList &mu);
+		VectorList event_displacements(const VectorList &points, const float &lambda, const float &mu);
+		
 	};
 	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.

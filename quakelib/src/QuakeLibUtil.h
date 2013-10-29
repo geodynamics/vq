@@ -260,6 +260,9 @@ namespace quakelib {
 	
 	std::ostream& operator<<(std::ostream& os, const LatLonDepth& pt);
 	
+	typedef std::vector< Vec<3> > VectorList;
+	typedef std::vector< double > FloatList;
+	
 	/*!
 	 \brief A class to perform conversions between units.
 	 
@@ -331,12 +334,10 @@ namespace quakelib {
 		
 		//! Convert bars to pascals.
 		double bar2pascal(const double &bars) const { return bars*1e5; };
+		
+		VectorList convertArray2xyz(const FloatList &lats, const FloatList &lons) const;
 	};
 
-	
-	
-	
-	
 	/*
 	 Top class representing a dense matrix for computation.
 	 */
