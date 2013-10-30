@@ -4,6 +4,7 @@
 %include "std_map.i"
 %{
 #include "QuakeLib.h"
+#include "QuakeLibUtil.h"
 #include "QuakeLibOkada.h"
 
 using namespace quakelib;
@@ -17,8 +18,6 @@ using namespace quakelib;
 %ignore quakelib::EQSimFileReader;
 %ignore quakelib::EQSimFileWriter;
 
-
-
 // Create vector templates for iterating through lists
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
@@ -27,16 +26,35 @@ using namespace quakelib;
 %template(VectorList) std::vector< quakelib::Vec<3> >;
 %template(FloatList) std::vector< double >;
 
-%extend quakelib::EventElementList {
-	void append( quakelib::EventElement<4> item) {(*$self).push_back(item)};
+// Add an append method and methods to allow these objects to be pickled
+%extend std::vector< quakelib::EventElement<4> > {
+	void append( quakelib::EventElement<4> item) {(*$self).push_back(item);};
+	%insert("python") %{
+	def __setstate__(self, state):
+        self.__init__(*state['args'])%}
+	%insert("python") %{
+    def __getstate__(self):
+        return {'args': self.args}%}
 };
 
-%extend quakelib::VectorList {
-	void append( quakelib::Vec<3> item ) {(*$self).push_back(item)};
+%extend std::vector< quakelib::Vec<3> > {
+	void append( quakelib::Vec<3> item ) {(*$self).push_back(item);};
+	%insert("python") %{
+	def __setstate__(self, state):
+        self.__init__(*state['args'])%}
+	%insert("python") %{
+    def __getstate__(self):
+        return {'args': self.args}%}
 };
 
-%extend quakelib::FloatList {
-	void append( float item ) {(*$self).push_back(item)};
+%extend std::vector< double > {
+	void append( float item ) {(*$self).push_back(item);};
+	%insert("python") %{
+	def __setstate__(self, state):
+        self.__init__(*state['args'])%}
+	%insert("python") %{
+    def __getstate__(self):
+        return {'args': self.args}%}
 };
 
 // Create aliases for 2D and 3D vector templates
@@ -101,7 +119,7 @@ using namespace quakelib;
 	#	self.__init__(*state['args'])
 	%}
 
-}*/
+}
 
 %pythoncode %{
 class PickalableSWIG:
@@ -142,7 +160,7 @@ class P_VectorList(VectorList, PickalableSWIG):
 		return ret
 	%}
 };
-
+*/
 %extend quakelib::LatLonDepth {
 	char *__str__(void) {
 		static char			tmp[1024];

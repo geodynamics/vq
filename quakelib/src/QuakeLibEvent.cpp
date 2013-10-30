@@ -21,9 +21,9 @@
 #include "QuakeLib.h"
 #include <iomanip>
 #include <iostream>
+#include <math.h>
 
-
-quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const float &lambda, const float &mu)  {
+quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff)  {
 	quakelib::VectorList displacements;
 	Okada block_okada;
 	quakelib::Vec<3> displacement;
@@ -92,16 +92,26 @@ quakelib::VectorList quakelib::Event::event_displacements(const VectorList &poin
 			x = points[point_id][0];
 			y = points[point_id][1];
 			
-			xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
-			yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+			if (sqrt(pow((x-xp0),2)+pow((y-yp0),2))/sqrt(L*W) > (cutoff + slip - 1.0) ) {
+				dx = 0.0;
+				dy = 0.0;
+				dz = 0.0;
+			} else {
+				xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
+				yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+				
+				displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, lambda, mu);
+				
+				dx =  displacement[0] * strike_sin + displacement[1] * strike_cos;
+				dy = -displacement[0] * strike_cos + displacement[1] * strike_sin;
+				dz =  displacement[2];
+
+			}
 			
-			displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, lambda, mu);
+			//std::cout << sqrt(pow((x-xp0),2)+pow((y-yp0),2))/sqrt(L*W) << " " << sqrt(pow(dx,2)+pow(dy,2)+pow(dz,2)) << std::endl;
+						
 			
-			dx =  displacement[0] * strike_sin + displacement[1] * strike_cos;
-			dy = -displacement[0] * strike_cos + displacement[1] * strike_sin;
-			dz =  displacement[2];
 			
-			//std::cout << dx << " " << dy << " " << dz << std::endl;
 			
 			displacements[point_id][0] += dx;
 			displacements[point_id][1] += dy;
