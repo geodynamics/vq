@@ -23,6 +23,50 @@
 #include <iostream>
 #include <math.h>
 
+quakelib::Vec<2> quakelib::Event::event_center(void) {
+	if (_event_center[0] == DBL_MAX || _event_center[1] == DBL_MAX) {
+		Vec<2> center(0.0,0.0), pt1, pt2;
+		float num_points = 0;
+		
+		for(EventElementList::size_type ele_id = 0; ele_id != involved_elements.size(); ele_id++) {
+			pt1[0] = involved_elements[ele_id].vert(0)[0];
+			pt1[1] = involved_elements[ele_id].vert(0)[1];
+			
+			pt2[0] = involved_elements[ele_id].vert(3)[0];
+			pt2[1] = involved_elements[ele_id].vert(3)[1];
+			
+			num_points += 2.0;
+			
+			//std::cout << pt1[0] << " " << pt1[1] << std::endl << pt2[0] << " " << pt2[1] << std::endl;
+			
+			center += pt1 + pt2;
+		}
+		
+		_event_center = center * (1.0/num_points);
+		
+		//std::cout << std::endl << _event_center[0] << " " << _event_center[1] << std::endl;
+	}
+	
+	return _event_center;
+};
+
+double quakelib::Event::event_radius(void) {
+	if (_event_radius == DBL_MAX) {
+		float curr_distance;
+		_event_radius = 0.0;
+		for(EventElementList::size_type ele_id = 0; ele_id != involved_elements.size(); ele_id++) {
+			curr_distance =(Vec<2>(involved_elements[ele_id].vert(0)[0], involved_elements[ele_id].vert(0)[1]) - event_center()).mag();
+			if (curr_distance > _event_radius)
+				_event_radius = curr_distance;
+			curr_distance =(Vec<2>(involved_elements[ele_id].vert(3)[0], involved_elements[ele_id].vert(3)[1]) - event_center()).mag();
+			if (curr_distance > _event_radius)
+				_event_radius = curr_distance;
+		}
+	}
+	
+	return _event_radius;
+};
+
 quakelib::VectorList quakelib::Event::event_displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff)  {
 	quakelib::VectorList displacements;
 	Okada block_okada;
@@ -92,6 +136,7 @@ quakelib::VectorList quakelib::Event::event_displacements(const VectorList &poin
 			x = points[point_id][0];
 			y = points[point_id][1];
 			
+			//if (pow(x-event_center()[0], 2) + pow(y-event_center()[1], 2) > pow( event_radius() * cutoff ,2) ) {
 			if (sqrt(pow((x-xp0),2)+pow((y-yp0),2))/sqrt(L*W) > (cutoff + slip - 1.0) ) {
 				dx = 0.0;
 				dy = 0.0;
@@ -108,7 +153,7 @@ quakelib::VectorList quakelib::Event::event_displacements(const VectorList &poin
 
 			}
 			
-			//std::cout << sqrt(pow((x-xp0),2)+pow((y-yp0),2))/sqrt(L*W) << " " << sqrt(pow(dx,2)+pow(dy,2)+pow(dz,2)) << std::endl;
+			//std::cout << pow(x-event_center[0], 2) + pow(y-event_center[1], 2) << " " << pow(event_radius * cutoff,2) << std::endl;
 						
 			
 			

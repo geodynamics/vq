@@ -31,7 +31,7 @@
 #include "QuakeLibOkada.h"
 
 // This will result in a smallest calculated displacement of ~0.0001 m
-#define DIST_SQRT_AREA_RATIO_CUTOFF		46.5
+#define DIST_SQRT_AREA_RATIO_CUTOFF                46.5
 
 #ifndef _QUAKELIB_H_
 #define _QUAKELIB_H_
@@ -1139,11 +1139,20 @@ namespace quakelib {
 	class Event {
 	private:
 		EventElementList involved_elements;
+		Vec<2> _event_center;
+		double _event_radius;
 	public:
+		Event() { _event_center[0] = DBL_MAX; _event_center[0] = DBL_MAX; _event_radius = DBL_MAX; };
 		void add_element(const EventElementRect &element) {involved_elements.push_back(element);};
-		void add_elements(const EventElementList involved_elements) {for (unsigned int i=0; i < involved_elements.size(); i++) add_element(involved_elements[i]); };
+		void add_elements(const EventElementList involved_elements) {
+			for (unsigned int i=0; i < involved_elements.size(); i++)
+				add_element(involved_elements[i]);
+		};
 		VectorList event_displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF);
-		
+		void set_event_center( const Vec<2> &new_center ) throw(std::invalid_argument) {_event_center = new_center;};
+		void set_event_radius( const double &new_radius ) throw(std::invalid_argument) {_event_radius = new_radius;};
+		double event_radius(void);
+		Vec<2> event_center(void);
 	};
 	
 	//! Represents a geometry section (composed of vertices, triangles and rectangles) in the EqSim file.
