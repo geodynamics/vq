@@ -2431,7 +2431,7 @@ double quakelib::Okada::Qp(double _R, double xi, double eta, double _q, double z
 
 //------------------- Not 100% verified   ---Kasey---
 // gravity change on the free surface (z=0)
-double quakelib::Okada::dg(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
+double quakelib::Okada::calc_dg(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
     OP_CMP(3); OP_MULT(3); OP_ADD(3); OP_SUB(1);
     // Evaluating delta_g at free surface so z=0
 
@@ -2444,8 +2444,8 @@ double quakelib::Okada::dg(double x, double y, double c, double dip, double L, d
     double RHO = 2670.0;   //mean crustal density (rough estimate)
     double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
 
-	double _p = p(y,0.0,c);
-	double _q = q(y,0.0,c);
+	double _p = p(location[1],0.0,c);
+	double _q = q(location[1],0.0,c);
     double dgS= 0.0; //contribution from Strike
     double dgD= 0.0; //Dip
     double dgT= 0.0; //Tensile
@@ -2456,28 +2456,24 @@ double quakelib::Okada::dg(double x, double y, double c, double dip, double L, d
 
     if (US != 0.0) {
         OP_MULT(1);
-        dgS = US*dSg(x,_p,_q,L,W);
+        dgS = US*dSg(location[0],_p,_q,L,W);
     }
     if (UD != 0.0) {
         OP_MULT(1);
-        dgD = UD*dDg(x,_p,_q,L,W);
+        dgD = UD*dDg(location[0],_p,_q,L,W);
     }
     if (UT != 0.0) {
         OP_MULT(2);
-        dgT = UT*dTg(x,_p,_q,L,W);
-        dgC = UT*dCg(x,_p,_q,L,W);
+        dgT = UT*dTg(location[0],_p,_q,L,W);
+        dgC = UT*dCg(location[0],_p,_q,L,W);
     }
 
     //Free-air effect of surface elevation change (not sure what this means, taken from Okubo '92)
     // here uz used to get the height change on surface of halfspace at (x,y)
-    Vec<3> location;
+    
     Vec<3> displace;
 
-    location[0] = x;
-    location[1] = y;
-    location[2] = 0.0;
-
-    displace = calc_displacement_vector(location,c,dip,L,W,US,UD,UT,lambda,mu);
+    displace = calc_displacement_vector(Vec<3>(location[0], location[1], 0.0),c,dip,L,W,US,UD,UT,lambda,mu);
 
     double dgFree = B*displace[2];
 
@@ -2576,7 +2572,7 @@ double quakelib::Okada::I2g(double _R, double xi, double eta, double _q){
 }
 
 //Below is testing if Okubo's implementation of delta_h matches the current Okada displacement z
-double quakelib::Okada::dg2(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu){
+double quakelib::Okada::calc_dg2(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu){
 
 	if (mu <= 0) throw std::invalid_argument("Mu must be greater than zero.");
 
@@ -2587,8 +2583,8 @@ double quakelib::Okada::dg2(double x, double y, double c, double dip, double L, 
     double RHO = 2670.0;   //mean crustal density (rough estimate)
     double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
 
-	double _p = p(y,0.0,c);
-	double _q = q(y,0.0,c);
+	double _p = p(location[1],0.0,c);
+	double _q = q(location[1],0.0,c);
     double dgS= 0.0; //contribution from Strike
     double dgD= 0.0; //Dip
     double dgT= 0.0; //Tensile
@@ -2599,43 +2595,43 @@ double quakelib::Okada::dg2(double x, double y, double c, double dip, double L, 
 
     if (US != 0.0) {
         OP_MULT(1);
-        dgS = US*dSg(x,_p,_q,L,W);
+        dgS = US*dSg(location[0],_p,_q,L,W);
     }
     if (UD != 0.0) {
         OP_MULT(1);
-        dgD = UD*dDg(x,_p,_q,L,W);
+        dgD = UD*dDg(location[0],_p,_q,L,W);
     }
     if (UT != 0.0) {
         OP_MULT(2);
-        dgT = UT*dTg(x,_p,_q,L,W);
-        dgC = UT*dCg(x,_p,_q,L,W);
+        dgT = UT*dTg(location[0],_p,_q,L,W);
+        dgC = UT*dCg(location[0],_p,_q,L,W);
     }
 
     //Free-air effect of surface elevation change (not sure what this means, taken from Okubo '92)
     // here uz used to get the height change on surface of halfspace at (x,y)
 
-    double dgFree = B*dH(x,y,c,dip,L,W,US,UD,UT,lambda,mu);
+    double dgFree = B*calc_dH(location,c,dip,L,W,US,UD,UT,lambda,mu);
 
     return RHO*G*(dgS + dgD + dgT + dgC) - dgFree;
 }
 ////-------------------------
-double quakelib::Okada::dH(double x, double y, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
+double quakelib::Okada::calc_dH(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
 	double dHs = 0.0;
 	double dHd = 0.0;
 	double dHt = 0.0;
-	double _p  = p(y,0.0,c);
-	double _q  = q(y,0.0,c);
+	double _p  = p(location[1],0.0,c);
+	double _q  = q(location[1],0.0,c);
 
 	precalc(dip, lambda, mu);
 
 	if (US != 0.0) {
-		dHs = US*dSh(x,_p,_q,L,W)/(2.0*M_PI);
+		dHs = US*dSh(location[0],_p,_q,L,W)/(2.0*M_PI);
 	}
 	if (UD != 0.0) {
-		dHd = UD*dDh(x,_p,_q,L,W)/(2.0*M_PI);
+		dHd = UD*dDh(location[0],_p,_q,L,W)/(2.0*M_PI);
 	}
 	if (UT != 0.0) {
-		dHt = UT*dTh(x,_p,_q,L,W)/(2.0*M_PI);
+		dHt = UT*dTh(location[0],_p,_q,L,W)/(2.0*M_PI);
 	}
 
 	return dHs + dHd + dHt;
