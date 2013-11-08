@@ -31,7 +31,10 @@
 #include "QuakeLibOkada.h"
 
 // This will result in a smallest calculated displacement of ~0.0001 m
-#define DIST_SQRT_AREA_RATIO_CUTOFF                46.5
+#define DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS                46.5
+
+// This will result in a smallest calculated gravity change of ~4e-9 
+#define DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY               8.0
 
 #ifndef _QUAKELIB_H_
 #define _QUAKELIB_H_
@@ -1148,8 +1151,8 @@ namespace quakelib {
 			for (unsigned int i=0; i < involved_elements.size(); i++)
 				add_element(involved_elements[i]);
 		};
-		VectorList event_displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF);
-		FloatList event_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF);
+		VectorList event_displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
+		FloatList event_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
 		void set_event_center( const Vec<2> &new_center ) throw(std::invalid_argument) {_event_center = new_center;};
 		void set_event_radius( const double &new_radius ) throw(std::invalid_argument) {_event_radius = new_radius;};
 		double event_radius(void);
