@@ -120,9 +120,8 @@ namespace quakelib {
 
 		// dg
 		//
-		double calc_dg(Vec<2> location, double dip, double c, double L, double W, double US, double UD, double UT, double lambda, double mu);
-		double calc_dg2(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
-		double calc_dH(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+		double calc_dg(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+		double calc_dV(Vec<3> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
 
 	private:
 		//
@@ -500,7 +499,7 @@ namespace quakelib {
 		double Pp(double _R, double xi, double eta, double _q);
         double Qp(double _R, double xi, double eta, double _q, double z);
         // ===================================================================
-        //Added by KWS (untested), below is for change in gravity functions
+        //Added by KWS, below is for change in gravity functions
         //
         // dg components
         //
@@ -516,18 +515,22 @@ namespace quakelib {
         double Cg(double xi, double eta, double _q);
         double I2g(double _R, double xi, double eta, double _q);
         //
-        // dg test (dg2)
-        // components
-        double dSh(double x, double _p, double _q, double L, double W);
-        double dDh(double x, double _p, double _q, double L, double W);
-        double dTh(double x, double _p, double _q, double L, double W);
-        // globals
-        double Sh(double xi, double eta, double _q);
-        double Dh(double xi, double eta, double _q);
-        double Th(double xi, double eta, double _q);
-        double I1h(double _R, double xi, double eta, double _q);
-        double I4h(double _R, double xi, double eta, double _q);
-        double I5h(double _R, double xi, double eta, double _q);
+        //Added by KWS, below is for change in gravitational potential
+        //
+        // dV components
+        //
+        double dSv(double z, double x, double _p, double _q, double L, double W);
+        double dDv(double z, double x, double _p, double _q, double L, double W);
+        double dTv(double z, double x, double _p, double _q, double L, double W);
+        double dCv(double x, double _p, double _q, double L, double W);
+        //
+        // dV globals
+        double Sv(double z, double xi, double eta, double _q);
+        double Dv(double z, double xi, double eta, double _q);
+        double Tv(double z, double xi, double eta, double _q);
+        double Cv(double xi, double eta, double _q);
+        double I0v(double _R, double eta, double _q);
+        double I1v(double _R, double xi, double eta, double _q);
 	};
 }
 
