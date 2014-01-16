@@ -2731,6 +2731,7 @@ double quakelib::Okada::Cv(double xi, double eta, double _q){
 }
 double quakelib::Okada::I0v(double _R, double eta, double _q){
 	double _dtil = dtil(_q,eta);
+	double _Rpeta 	 = _R+eta;
 	double ret_value = -1.0*_sin_o_dip*log(_R+_dtil);
     if (!singularity4(_Rpeta)) {
     	OP_ADD(1); OP_LOG(1);
