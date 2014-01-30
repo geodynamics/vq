@@ -1,0 +1,106 @@
+digraph G {
+	//rankdir=LR;
+	//ratio=0.2;
+	layout=dot;
+	clusterrank=local;
+	compound=true;
+	
+	node [shape=box,style=filled];
+
+	subgraph cluster_init {
+		node [color=green];
+		partition -> greens;
+		label = "Initialization";
+		color=black
+	}
+	
+	subgraph cluster_misc {
+		node [color=bisque];
+		bass_events -> sanity_check -> output_data;
+		// Add output, progress(?)
+		label = "Miscellaneous Calculations";
+	}
+	
+	subgraph cluster_long_term {
+		node [color=lightblue];
+		sys_stress -> first_local_failure -> first_global_failure -> advance_slips -> recompute_stress;
+		label = "Long Term Phase";
+	}
+
+	subgraph cluster_rupture {
+		node [color=violet];
+		process_local_elements -> global_stress_comm -> recalc_local_stress -> find_local_ruptures -> more_failures;
+		more_failures -> process_local_elements [label="Yes"];
+		label = "Rupture Phase";
+	}
+	
+	subgraph cluster_system_stress {
+		node [color=orange];
+		init_vec -> stress_calc_loop -> test_sparse;
+		//stress_calc -> init_vec [label="Unfinished"];
+		test_sparse -> stress_calc_loop [label="Yes"];
+		test_sparse -> test_bh [label="No"];
+		test_bh -> row_multiply [label="No"];
+		test_bh -> expand_barnes_hut [label="Yes"];
+		expand_barnes_hut -> row_multiply;
+		row_multiply -> finished_mult;
+		finished_mult -> stress_calc_loop [label="No"];
+		finished_mult -> accum_values [label="Yes"];
+		label = "Stress Internal Calculation\nVCSimulation::matrixVectorMultiplyAccum";
+	}
+	
+	start [label="Start"];
+	end [label="End"];
+	
+	// Init calculations
+	partition [shape=box,label="Partition Fault Elements\nVCSimulation::partitionBlocks"];
+	greens [shape=box,label="Calculate Stress Interactions (G)\nGreensFuncCalc2011::CalculateGreens"];
+	
+	// Misc calculations
+	sim_end [shape=box,label="Simulation Reached End?\nSimFramework::run"];
+	bass_events [shape=box,label="BASS Model Aftershock Calculation\nBASSAftershocks::run"];
+	sanity_check [shape=box,label="Element Stress Sanity Check\nSanityCheck::run"];
+	output_data [shape=box,label="Output Data\nHDF5DataShare::run"];
+	
+	// Long term calculations
+	sys_stress [shape=box,label="Calculate System Stressing Rate\nUpdateBlockStress::nextTimeStep"];
+	first_local_failure [shape=box,label="Find First Local Element Failure\nUpdateBlockStress::nextTimeStep"];
+	advance_slips [shape=box,label="Advance Fault Slips\nUpdateBlockStress::run"];
+	recompute_stress [shape=box,label="Recalculate System Stress\nUpdateBlockStress::stressRecompute"];
+	
+	// Rupture calculations
+	process_local_elements [shape=box,label="Process Local Ruptured Elements\nRunEvent::processBlocksNewFrictionLaw"];
+	recalc_local_stress [shape=box,label="Recalculate Local Stress\nRunEvent::run"];
+	find_local_ruptures [shape=box,label="Find Local Ruptured Elements\nRunEvent::markBlocks2Fail"];
+	
+	// Internal stress calculation
+	init_vec [shape=box,label="Input: a[i][j] = stress influence on i from j\nInput: b[i] = movement of element i\nOutput: c[i] = stress change on element i\ntemp[i] = 0"];
+	stress_calc_loop [shape=box,label="for m over all elements"];
+	test_sparse [shape=diamond,label="b[m] = 0?"];
+	test_bh [shape=diamond,label="Using\nBarnes\nHut?"];
+	expand_barnes_hut [shape=box,label="Decompress a[*][m]"];
+	row_multiply [shape=box,label="for all local n:\ntemp[n] += b[m]*a[n][m]"];
+	accum_values [shape=box,label="for all local n:\nc[n] += temp[n]"];
+	finished_mult [shape=diamond,label="finished all m?"];
+	sys_stress -> init_vec [lhead=cluster_system_stress];
+	recompute_stress -> init_vec [lhead=cluster_system_stress];
+	recalc_local_stress -> init_vec [lhead=cluster_system_stress];
+	
+	// Long term communications
+	first_global_failure [shape=oval,label="Find First Global Failure\nVCComm::allReduceBlockVal"];
+	
+	// Rupture communications
+	global_stress_comm [shape=oval,label="Global Stress Communication\nVCSimulation::distributeUpdateField"];
+	more_failures [shape=oval,label="More Failures?\nVCComm::blocksToFail"];
+	
+	start -> partition;
+	sim_end -> sys_stress [label="No"];
+	greens -> sim_end;
+	recompute_stress -> process_local_elements;
+	more_failures -> bass_events [label="No"];
+	output_data -> sim_end;
+	sim_end -> end [label="Yes"];
+
+	start [shape=Mdiamond];
+	end [shape=Msquare];
+}
