@@ -142,6 +142,8 @@ namespace quakelib {
             double _cos_o_dip, _sin_o_dip;
             double _cos_o_2_dip, _sin_o_2_dip;
             double _one_minus_alpha, _one_minus_alpha_div_two, _one_minus_alpha_div_alpha, _alpha_div_two;
+            double _nu,_one_minus_two_nu;
+
 
             void precalc(double dip, double lambda, double mu);
 
@@ -514,6 +516,40 @@ namespace quakelib {
             double Hp(double _R, double xi, double eta, double _q);
             double Pp(double _R, double xi, double eta, double _q);
             double Qp(double _R, double xi, double eta, double _q, double z);
+
+            // ===================================================================
+            //Added by KWS, below is for change in gravity functions
+            //
+            // dg components
+            //
+            double dSg(double x, double _p, double _q, double L, double W);
+            double dDg(double x, double _p, double _q, double L, double W);
+            double dTg(double x, double _p, double _q, double L, double W);
+            double dCg(double x, double _p, double _q, double L, double W);
+            //
+            // dg globals
+            double Sg(double xi, double eta, double _q);
+            double Dg(double xi, double eta, double _q);
+            double Tg(double xi, double eta, double _q);
+            double Cg(double xi, double eta, double _q);
+            double I2g(double _R, double xi, double eta, double _q);
+            //
+            //Added by KWS, below is for change in gravitational potential
+            //
+            // dV components
+            //
+            double dSv(double z, double x, double _p, double _q, double L, double W);
+            double dDv(double z, double x, double _p, double _q, double L, double W);
+            double dTv(double z, double x, double _p, double _q, double L, double W);
+            double dCv(double x, double _p, double _q, double L, double W);
+            //
+            // dV globals
+            double Sv(double z, double xi, double eta, double _q);
+            double Dv(double z, double xi, double eta, double _q);
+            double Tv(double z, double xi, double eta, double _q);
+            double Cv(double xi, double eta, double _q);
+            double I0v(double _R, double eta, double _q);
+            double I1v(double _R, double xi, double eta, double _q);
     };
 }
 
