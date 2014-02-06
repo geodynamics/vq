@@ -4,15 +4,17 @@
 %include "std_map.i"
 %{
 #include "QuakeLib.h"
+#include "QuakeLibEQSim.h"
 #include "QuakeLibUtil.h"
 #include "QuakeLibOkada.h"
 
 using namespace quakelib;
 %}
 
-%include "QuakeLibUtil.h"
 %include "QuakeLib.h"
+%include "QuakeLibEQSim.h"
 %include "QuakeLibOkada.h"
+%include "QuakeLibUtil.h"
 
 // Ignore the reader/writer classes since the user shouldn't be using these anyway
 %ignore quakelib::EQSimFileReader;
@@ -22,7 +24,7 @@ using namespace quakelib;
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
-%template(EventElementList) std::vector< quakelib::EventElement<4> >;
+// %template(EventElementList) std::vector< quakelib::EventElement<4> >;
 %template(VectorList) std::vector< quakelib::Vec<3> >;
 %template(FloatList) std::vector< double >;
 
@@ -89,8 +91,8 @@ using namespace quakelib;
 %template(Octree2) quakelib::Octree<2>;
 %template(Octree3) quakelib::Octree<3>;
 
-%template(Element4) quakelib::Element<4>;
-%template(EventElement4) quakelib::EventElement<4>;
+// %template(SimElement4) quakelib::SimElement<4>;
+// %template(EventElement4) quakelib::EventElement<4>;
 
 // TODO: check all these for potential buffer overflows
 // Python __str__ and __repr__ functions for QuakeLib classes
