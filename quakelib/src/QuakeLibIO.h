@@ -21,7 +21,7 @@
 #include "QuakeLibUtil.h"
 #include "QuakeLib.h"
 
-#ifdef VC_HAVE_STRING_H
+#ifdef QUAKELIB_HAVE_STRING_H
 #include <string.h>
 #endif
 

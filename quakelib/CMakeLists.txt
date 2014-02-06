@@ -1,16 +1,46 @@
 # Create a library called "quakelib" which includes the appropriate source files.
-# The extension is already found. Any number of sources could be listed here. 
+
+PROJECT (QuakeLib)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+
+# Check for common include files
+INCLUDE (CheckIncludeFiles)
+CHECK_INCLUDE_FILES ("float.h" QUAKELIB_HAVE_FLOAT_H)
+CHECK_INCLUDE_FILES ("limits.h" QUAKELIB_HAVE_LIMITS_H)
+CHECK_INCLUDE_FILES ("math.h" QUAKELIB_HAVE_MATH_H)
+CHECK_INCLUDE_FILES ("stdlib.h" QUAKELIB_HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES ("string.h" QUAKELIB_HAVE_STRING_H)
+
+# Check if Doxygen is installed
+FIND_PACKAGE(Doxygen)
+
+# Check for SWIG and Python installation
+# TODO: add IF statements for INCLUDE paths
+FIND_PACKAGE(SWIG)
+IF(SWIG_FOUND)
+    INCLUDE(${SWIG_USE_FILE})
+ENDIF(SWIG_FOUND)
+
+FIND_PACKAGE(PythonLibs)
+IF(DEFINED PYTHONLIBS_FOUND)
+    INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+ENDIF(DEFINED PYTHONLIBS_FOUND)
+
+# Set up directory definitions
+SET(QUAKELIB_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/)
+SET(QUAKELIB_PYTHON_DIR ${CMAKE_SOURCE_DIR}/python/)
+SET(QUAKELIB_TEST_DIR ${CMAKE_SOURCE_DIR}/test/)
+INCLUDE_DIRECTORIES(${QUAKELIB_SOURCE_DIR})
+
+# Generate the config.h file and add the include path for it
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/quakelib_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/quakelib_config.h)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(QUAKELIB_SOURCES
-    ${QUAKELIB_SOURCE_DIR}/QuakeLib.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibElement.cpp
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibEQSim.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibEQSim.cpp
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.cpp
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.h
 	${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.cpp
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.h
 	${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.cpp
     )
 
@@ -23,8 +53,11 @@ ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
 
 SET(QUAKELIB_HEADERS
     ${QUAKELIB_SOURCE_DIR}/QuakeLib.h
+    ${QUAKELIB_SOURCE_DIR}/QuakeLibEQSim.h
+    ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.h
+    ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.h
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.h)
+    )
 
 INSTALL(FILES ${QUAKELIB_SOURCES} DESTINATION include/quakelib/)
 

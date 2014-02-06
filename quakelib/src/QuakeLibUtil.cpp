@@ -20,10 +20,6 @@
 
 #include "QuakeLibUtil.h"
 
-#ifdef VC_HAVE_FLOAT_H
-#include <float.h>
-#endif
-
 std::string quakelib::SetupInfo(void) {
     std::stringstream       ss;
 

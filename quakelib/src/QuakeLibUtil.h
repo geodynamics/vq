@@ -18,17 +18,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "config.h"
+#include "quakelib_config.h"
 
-#ifdef VC_HAVE_MATH_H
+#ifdef QUAKELIB_HAVE_MATH_H
 #include <math.h>
 #endif
 
-#ifdef VC_HAVE_LIMITS_H
+#ifdef QUAKELIB_HAVE_FLOAT_H
+#include <float.h>
+#endif
+
+#ifdef QUAKELIB_HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
-#ifdef VC_HAVE_STDLIB_H
+#ifdef QUAKELIB_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 

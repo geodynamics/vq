@@ -21,7 +21,7 @@
 #include "QuakeLibOkada.h"
 
 #define _USE_MATH_DEFINES
-#ifdef VC_HAVE_MATH_H
+#ifdef QUAKELIB_HAVE_MATH_H
 #include <math.h>
 #endif
 
