@@ -53,9 +53,6 @@ void HDF5DataShare::init(SimFramework *_sim) {
         // Set the start and end years of the simulation
         h5_data->setStartEndYears(sim->getYear(), sim->getSimDuration());
 
-        // Set the base latitude/longitude of the simulation
-        h5_data->setLatLon0(sim->getBaseLatLon());
-
         // Record block information
         for (it=sim->begin(); it!=sim->end(); ++it) h5_data->setBlockInfo(*it);
     }

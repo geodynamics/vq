@@ -314,7 +314,6 @@ class HDF5DataReader : public HDF5Data {
         BGEventMap                  bg_events;
 
         void getStartEndYears(double &start_year, double &end_year) const;
-        void getLatLon0(double &lat0, double &lon0) const;
 
     public:
         typedef EventYearMap::iterator          iterator;
@@ -342,21 +341,12 @@ class HDF5DataReader : public HDF5Data {
 
         BlockInfo getBlockInfo(const BlockID &block_id) const;
 
-        void getFaultNames(std::set<std::pair<FaultID, std::string> > &fault_name_map) const;
-        void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
         unsigned int getNumLayers(void) const {
             return num_layers;
         };
         unsigned int getNumEvents(void) const {
             return event_set.size();
         };
-        double getSimStart(void) const;
-        double getSimLength(void) const;
-        double getSimEnd(void) const;
-        double getLat0(void) const;
-        double getLon0(void) const;
-
-        void readAllAvailableEvents(void);
 };
 
 class HDF5DataWriter : public HDF5Data {
@@ -364,7 +354,6 @@ class HDF5DataWriter : public HDF5Data {
         HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks);
         void setBlockInfo(const Block &block);
         void setStartEndYears(const double &new_start_year, const double &new_end_year);
-        void setLatLon0(const quakelib::LatLonDepth &new_lat_lon);
         void flush(void);
 
         void writeEvent(VCEvent &event, VCGeneralEventSet &bg_events);

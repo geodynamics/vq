@@ -28,6 +28,8 @@
 #include <string.h>
 #include <sstream>
 
+#ifdef HDF5_FOUND
+
 HDF5CheckpointReader::HDF5CheckpointReader(const std::string &ckpt_file_name,
                                            double &checkpoint_year,
                                            unsigned int &checkpoint_event,
@@ -419,7 +421,6 @@ HDF5Data::~HDF5Data(void) {
  Initialize the HDF5 writer using the specified model dimensions.
  */
 HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks) : HDF5Data() {
-#ifdef HDF5_FOUND
     hsize_t             dimsf[2];
     herr_t              status;
     hid_t               plist_id;
@@ -548,11 +549,9 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
     if (status < 0) exit(-1);
 
     H5Pclose(plist_id);
-#endif
 }
 
 void HDF5Data::createH5Handles(void) {
-#ifdef HDF5_FOUND
     hsize_t     dimsf[2];
 
     num_layers = 4;
@@ -564,138 +563,6 @@ void HDF5Data::createH5Handles(void) {
     // Create the datatype for the fault name strings
     fault_name_datatype = H5Tcopy(H5T_C_S1);
     H5Tset_size(fault_name_datatype, (size_t)FAULT_NAME_MAX_LEN);
-
-    binfo_field_names[0] = B_INFO_BLOCK_ID_HDF5;
-    binfo_field_names[1] = B_INFO_FAULT_ID_HDF5;
-    binfo_field_names[2] = B_INFO_SECTION_ID_HDF5;
-    binfo_field_names[3] = B_INFO_M_X_PT1_HDF5;
-    binfo_field_names[4] = B_INFO_M_Y_PT1_HDF5;
-    binfo_field_names[5] = B_INFO_M_Z_PT1_HDF5;
-    binfo_field_names[6] = B_INFO_M_DAS_PT1_HDF5;
-    binfo_field_names[7] = B_INFO_M_TRACE_FLAG_PT1_HDF5;
-    binfo_field_names[8] = B_INFO_M_X_PT2_HDF5;
-    binfo_field_names[9] = B_INFO_M_Y_PT2_HDF5;
-    binfo_field_names[10] = B_INFO_M_Z_PT2_HDF5;
-    binfo_field_names[11] = B_INFO_M_DAS_PT2_HDF5;
-    binfo_field_names[12] = B_INFO_M_TRACE_FLAG_PT2_HDF5;
-    binfo_field_names[13] = B_INFO_M_X_PT3_HDF5;
-    binfo_field_names[14] = B_INFO_M_Y_PT3_HDF5;
-    binfo_field_names[15] = B_INFO_M_Z_PT3_HDF5;
-    binfo_field_names[16] = B_INFO_M_DAS_PT3_HDF5;
-    binfo_field_names[17] = B_INFO_M_TRACE_FLAG_PT3_HDF5;
-    binfo_field_names[18] = B_INFO_M_X_PT4_HDF5;
-    binfo_field_names[19] = B_INFO_M_Y_PT4_HDF5;
-    binfo_field_names[20] = B_INFO_M_Z_PT4_HDF5;
-    binfo_field_names[21] = B_INFO_M_DAS_PT4_HDF5;
-    binfo_field_names[22] = B_INFO_M_TRACE_FLAG_PT4_HDF5;
-    binfo_field_names[23] = B_INFO_SLIP_VELOCITY_HDF5;
-    binfo_field_names[24] = B_INFO_ASEISMICITY_HDF5;
-    binfo_field_names[25] = B_INFO_RAKE_HDF5;
-    binfo_field_names[26] = B_INFO_DIP_HDF5;
-    binfo_field_names[27] = B_INFO_DYNAMIC_STRENGTH_HDF5;
-    binfo_field_names[28] = B_INFO_STATIC_STRENGTH_HDF5;
-    binfo_field_names[29] = B_INFO_LAME_MU_HDF5;
-    binfo_field_names[30] = B_INFO_LAME_LAMBDA_HDF5;
-    binfo_field_names[31] = B_INFO_FAULT_NAME_HDF5;
-
-    binfo_field_offsets[0] = HOFFSET(BlockInfo, bid);
-    binfo_field_offsets[1] = HOFFSET(BlockInfo, fid);
-    binfo_field_offsets[2] = HOFFSET(BlockInfo, sid);
-    binfo_field_offsets[3] = HOFFSET(BlockInfo, x_pt[0]);
-    binfo_field_offsets[4] = HOFFSET(BlockInfo, y_pt[0]);
-    binfo_field_offsets[5] = HOFFSET(BlockInfo, z_pt[0]);
-    binfo_field_offsets[6] = HOFFSET(BlockInfo, das_pt[0]);
-    binfo_field_offsets[7] = HOFFSET(BlockInfo, trace_flag_pt[0]);
-    binfo_field_offsets[8] = HOFFSET(BlockInfo, x_pt[1]);
-    binfo_field_offsets[9] = HOFFSET(BlockInfo, y_pt[1]);
-    binfo_field_offsets[10] = HOFFSET(BlockInfo, z_pt[1]);
-    binfo_field_offsets[11] = HOFFSET(BlockInfo, das_pt[1]);
-    binfo_field_offsets[12] = HOFFSET(BlockInfo, trace_flag_pt[1]);
-    binfo_field_offsets[13] = HOFFSET(BlockInfo, x_pt[2]);
-    binfo_field_offsets[14] = HOFFSET(BlockInfo, y_pt[2]);
-    binfo_field_offsets[15] = HOFFSET(BlockInfo, z_pt[2]);
-    binfo_field_offsets[16] = HOFFSET(BlockInfo, das_pt[2]);
-    binfo_field_offsets[17] = HOFFSET(BlockInfo, trace_flag_pt[2]);
-    binfo_field_offsets[18] = HOFFSET(BlockInfo, x_pt[3]);
-    binfo_field_offsets[19] = HOFFSET(BlockInfo, y_pt[3]);
-    binfo_field_offsets[20] = HOFFSET(BlockInfo, z_pt[3]);
-    binfo_field_offsets[21] = HOFFSET(BlockInfo, das_pt[3]);
-    binfo_field_offsets[22] = HOFFSET(BlockInfo, trace_flag_pt[3]);
-    binfo_field_offsets[23] = HOFFSET(BlockInfo, slip_velocity);
-    binfo_field_offsets[24] = HOFFSET(BlockInfo, aseismicity);
-    binfo_field_offsets[25] = HOFFSET(BlockInfo, rake);
-    binfo_field_offsets[26] = HOFFSET(BlockInfo, dip);
-    binfo_field_offsets[27] = HOFFSET(BlockInfo, dynamic_strength);
-    binfo_field_offsets[28] = HOFFSET(BlockInfo, static_strength);
-    binfo_field_offsets[29] = HOFFSET(BlockInfo, lame_mu);
-    binfo_field_offsets[30] = HOFFSET(BlockInfo, lame_lambda);
-    binfo_field_offsets[31] = HOFFSET(BlockInfo, fault_name);
-
-    binfo_field_types[0] = H5T_NATIVE_UINT;
-    binfo_field_types[1] = H5T_NATIVE_UINT;
-    binfo_field_types[2] = H5T_NATIVE_UINT;
-    binfo_field_types[3] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[4] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[5] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[6] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[7] = H5T_NATIVE_UINT;
-    binfo_field_types[8] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[9] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[10] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[11] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[12] = H5T_NATIVE_UINT;
-    binfo_field_types[13] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[14] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[15] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[16] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[17] = H5T_NATIVE_UINT;
-    binfo_field_types[18] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[19] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[20] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[21] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[22] = H5T_NATIVE_UINT;
-    binfo_field_types[23] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[24] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[25] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[26] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[27] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[28] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[29] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[30] = H5T_NATIVE_DOUBLE;
-    binfo_field_types[31] = fault_name_datatype;
-
-    binfo_field_sizes[0] = sizeof(BlockID);
-    binfo_field_sizes[1] = sizeof(FaultID);
-    binfo_field_sizes[2] = sizeof(SectionID);
-    binfo_field_sizes[3] = sizeof(double);
-    binfo_field_sizes[4] = sizeof(double);
-    binfo_field_sizes[5] = sizeof(double);
-    binfo_field_sizes[6] = sizeof(double);
-    binfo_field_sizes[7] = sizeof(quakelib::TraceFlag);
-    binfo_field_sizes[8] = sizeof(double);
-    binfo_field_sizes[9] = sizeof(double);
-    binfo_field_sizes[10] = sizeof(double);
-    binfo_field_sizes[11] = sizeof(double);
-    binfo_field_sizes[12] = sizeof(quakelib::TraceFlag);
-    binfo_field_sizes[13] = sizeof(double);
-    binfo_field_sizes[14] = sizeof(double);
-    binfo_field_sizes[15] = sizeof(double);
-    binfo_field_sizes[16] = sizeof(double);
-    binfo_field_sizes[17] = sizeof(quakelib::TraceFlag);
-    binfo_field_sizes[18] = sizeof(double);
-    binfo_field_sizes[19] = sizeof(double);
-    binfo_field_sizes[20] = sizeof(double);
-    binfo_field_sizes[21] = sizeof(double);
-    binfo_field_sizes[22] = sizeof(quakelib::TraceFlag);
-    binfo_field_sizes[23] = sizeof(double);
-    binfo_field_sizes[24] = sizeof(double);
-    binfo_field_sizes[25] = sizeof(double);
-    binfo_field_sizes[26] = sizeof(double);
-    binfo_field_sizes[27] = sizeof(double);
-    binfo_field_sizes[28] = sizeof(double);
-    binfo_field_sizes[29] = sizeof(double);
-    binfo_field_sizes[30] = sizeof(double);
-    binfo_field_sizes[31] = sizeof(char)*FAULT_NAME_MAX_LEN;
 
     event_field_names[0] = EVENT_NUM_HDF5;
     event_field_names[1] = EVENT_YEAR_HDF5;
@@ -818,297 +685,33 @@ void HDF5Data::createH5Handles(void) {
     // Create dataspace for pairs of values
     dimsf[0] = 2;
     pair_val_dataspace = H5Screate_simple(1, dimsf, NULL);
-#endif
-}
-
-/*!
- For a set of blocks, returns a mapping of which fault each block is associated with.
- */
-void HDF5DataReader::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const {
-    /*BlockIDSet::const_iterator        it;
-    FaultID                         fault_id;
-
-    for (it=event_blocks.begin();it!=event_blocks.end();++it) {
-        fault_id = block_info[*it].fid;
-        fault_block_mapping[fault_id].insert(*it);
-    }*/
-}
-
-/*!
- Returns the block information for the specified block ID.
- */
-BlockInfo HDF5DataReader::getBlockInfo(const BlockID &block_id) const {
-#ifdef HDF5_FOUND
-    BlockInfo   binfo;
-    herr_t      status;
-
-    status = H5TBread_records(data_file, B_INFO_TABLE_HDF5, block_id, 1, sizeof(BlockInfo), binfo_field_offsets, binfo_field_sizes, &binfo);
-
-    if (status < 0) exit(-1);
-
-    return binfo;
-#endif
-}
-
-/*!
- Sets the block information for the specified block.
- */
-void HDF5DataWriter::setBlockInfo(const Block &block) {
-#ifdef HDF5_FOUND
-    BlockID         id;
-    BlockInfo       binfo;
-    herr_t          status;
-
-    id = block.getBlockID();
-    binfo = block.getBlockInfo();
-
-    status = H5TBwrite_records(data_file, B_INFO_TABLE_HDF5, id, 1, sizeof(BlockInfo), binfo_field_offsets, binfo_field_sizes, &binfo);
-
-    if (status < 0) exit(-1);
-
-#endif
-}
-
-/*!
- Reads from shared memory a map of fault IDs with their associated name.
- */
-void HDF5DataReader::getFaultNames(std::set<std::pair<FaultID, std::string> > &fault_name_map) const {
-    unsigned int    i;
-    std::string     fault_name;
-    FaultID         fid;
-    BlockInfo       binfo;
-
-    for (i=0; i<num_blocks; ++i) {
-        binfo = getBlockInfo(i);
-        fid = binfo.fid;
-        fault_name = std::string(binfo.fault_name, FAULT_NAME_MAX_LEN);
-        fault_name_map.insert(std::make_pair(fid, fault_name));
-    }
 }
 
 /*!
  Set the start and end years of the simulation.
  */
 void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double &new_end_year) {
-#ifdef HDF5_FOUND
     herr_t      status;
     double      tmp[2];
 
     tmp[0] = new_start_year;
     tmp[1] = new_end_year;
     status = H5Dwrite(sim_years_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
-#endif
-}
-
-/*!
- Write the base latitude and longitude
- */
-void HDF5DataWriter::setLatLon0(const quakelib::LatLonDepth &new_lat_lon) {
-#ifdef HDF5_FOUND
-    herr_t      status;
-    double      tmp[2];
-
-    tmp[0] = new_lat_lon.lat();
-    tmp[1] = new_lat_lon.lon();
-    status = H5Dwrite(base_lat_lon_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
-#endif
 }
 
 void HDF5DataReader::getStartEndYears(double &start_year, double &end_year) const {
-#ifdef HDF5_FOUND
     herr_t      status;
     double      tmp[2];
 
     status = H5Dread(sim_years_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
     start_year = tmp[0];
     end_year = tmp[1];
-#endif
-}
-
-void HDF5DataReader::getLatLon0(double &lat0, double &lon0) const {
-#ifdef HDF5_FOUND
-    herr_t      status;
-    double      tmp[2];
-
-    status = H5Dread(base_lat_lon_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
-    lat0 = tmp[0];
-    lon0 = tmp[1];
-#endif
-}
-
-double HDF5DataReader::getSimStart(void) const {
-    double      start_year, end_year;
-
-    getStartEndYears(start_year, end_year);
-
-    return start_year;
-}
-
-double HDF5DataReader::getSimLength(void) const {
-    double      start_year, end_year;
-
-    getStartEndYears(start_year, end_year);
-
-    return end_year-start_year;
-}
-
-double HDF5DataReader::getSimEnd(void) const {
-    double      start_year, end_year;
-
-    getStartEndYears(start_year, end_year);
-
-    return end_year;
-}
-
-double HDF5DataReader::getLat0(void) const {
-    double      lat0, lon0;
-
-    getLatLon0(lat0, lon0);
-
-    return lat0;
-}
-
-double HDF5DataReader::getLon0(void) const {
-    double      lat0, lon0;
-
-    getLatLon0(lat0, lon0);
-
-    return lon0;
-}
-
-/*!
- Reads all events written to the event file so far.
- */
-void HDF5DataReader::readAllAvailableEvents(void) {
-#ifdef HDF5_FOUND
-    VCEvent             *new_event;
-    VCEventSweep        new_sweep;
-    VCEventAftershock   new_aftershock;
-    VCGeneralEvent      new_bg_event;
-    EventSweeps         sweep_list;
-    EventInfo           *einfo_array;
-    EventSweepInfo      *swinfo_array;
-    AftershockBGInfo    *asinfo_array;
-    hsize_t             total_fields, total_recs;
-    herr_t              status;
-    unsigned int        i, n, events_to_read;
-    unsigned int        sweep_num, start_sweep_rec, end_sweep_rec, num_sweeps_to_read;
-    unsigned int        start_as_rec, end_as_rec, num_as_to_read;
-
-    // Get the total length of the event table
-    status = H5TBget_table_info(data_file, EVENT_TABLE_HDF5, &total_fields, &total_recs);
-
-    if (status < 0) exit(-1);
-
-    // Figure out how many records remain unread
-    events_to_read = total_recs - last_event_read;
-
-    // Read the remaining event records
-    einfo_array = new EventInfo[events_to_read];
-    status = H5TBread_records(data_file,
-                              EVENT_TABLE_HDF5,
-                              last_event_read,
-                              events_to_read,
-                              sizeof(EventInfo),
-                              event_field_offsets,
-                              event_field_sizes,
-                              einfo_array);
-
-    if (status < 0) exit(-1);
-
-    // Determine which sweep records to import and read them
-    start_sweep_rec = einfo_array[0].start_sweep_rec;
-    end_sweep_rec = einfo_array[events_to_read-1].end_sweep_rec;
-    num_sweeps_to_read = end_sweep_rec - start_sweep_rec;
-    swinfo_array = new EventSweepInfo[num_sweeps_to_read];
-    status = H5TBread_records(data_file,
-                              SWEEP_TABLE_HDF5,
-                              start_sweep_rec,
-                              num_sweeps_to_read,
-                              sizeof(EventSweepInfo),
-                              sweep_field_offsets,
-                              sweep_field_sizes,
-                              swinfo_array);
-
-    if (status < 0) exit(-1);
-
-    // Determine which aftershock records to import and read them
-    start_as_rec = einfo_array[0].start_aftershock_rec;
-    end_as_rec = einfo_array[events_to_read-1].end_aftershock_rec;
-    num_as_to_read = end_as_rec - start_as_rec;
-
-    if (num_as_to_read > 0) {
-        asinfo_array = new AftershockBGInfo[num_as_to_read];
-        status = H5TBread_records(data_file,
-                                  AFTERSHOCK_TABLE_HDF5,
-                                  start_as_rec,
-                                  num_as_to_read,
-                                  sizeof(AftershockBGInfo),
-                                  aftershock_field_offsets,
-                                  aftershock_field_sizes,
-                                  asinfo_array);
-
-        if (status < 0) exit(-1);
-    }
-
-    for (i=0; i<events_to_read; ++i) {
-        new_event = new VCEvent;
-        new_event->setEventNumber(einfo_array[i].event_number);
-        new_event->setEventYear(einfo_array[i].event_year);
-        new_event->setEventTrigger(einfo_array[i].event_trigger);
-
-        // Read sweeps and associate them with the event
-        sweep_list.clear();
-
-        for (n=einfo_array[i].start_sweep_rec,sweep_num=0; n<einfo_array[i].end_sweep_rec; ++n) {
-            new_sweep.clear();
-            EventSweepInfo &cur_sweep = swinfo_array[n-start_sweep_rec];
-
-            if (sweep_num != cur_sweep.sweep_num) sweep_num++;
-
-            new_sweep.setSlipAndArea(cur_sweep.block_id, cur_sweep.block_slip, cur_sweep.block_area, cur_sweep.block_mu);
-            new_sweep.setInitStresses(cur_sweep.block_id, cur_sweep.shear_init, cur_sweep.normal_init);
-            new_sweep.setFinalStresses(cur_sweep.block_id, cur_sweep.shear_final, cur_sweep.normal_final);
-            sweep_list.push_back(new_sweep);
-        }
-
-        new_event->addSweeps(sweep_list);
-
-        // Read aftershocks and associate them with the event
-        for (n=einfo_array[i].start_aftershock_rec; n<einfo_array[i].end_aftershock_rec; ++n) {
-            AftershockBGInfo &cur_as = asinfo_array[n-start_as_rec];
-            VCEventAftershock new_as(cur_as.mag, cur_as.time, cur_as.x, cur_as.y, cur_as.gen);
-            new_event->addAftershock(new_as);
-        }
-
-        event_set.insert(std::make_pair(einfo_array[i].event_year, new_event));
-    }
-
-    delete swinfo_array;
-    delete einfo_array;
-
-    /*
-
-    // Read the background events (one per line)
-    for (i=0;i<num_bg_events;++i) {
-        new_bg_event.clear();
-        event_file.read(reinterpret_cast<char *>(&as_mag),sizeof(float));
-        event_file.read(reinterpret_cast<char *>(&as_time),sizeof(float));
-        event_file.read(reinterpret_cast<char *>(&as_x),sizeof(float));
-        event_file.read(reinterpret_cast<char *>(&as_y),sizeof(float));
-
-        new_bg_event = VCGeneralEvent(as_mag, as_time, as_x, as_y);
-        bg_events.insert(std::make_pair(as_time, new_bg_event));
-    }
-    */
-#endif
 }
 
 /*!
  Write the information for an event to the HDF5 file.
  */
 void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
-#ifdef HDF5_FOUND
     EventSweeps::iterator       it;
     VCEventSweep::iterator      eit;
     AftershockSet::iterator     ait;
@@ -1252,11 +855,10 @@ void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
     e_info.final_normal = event.getNormalStressFinal();
 
     H5TBappend_records(data_file, EVENT_TABLE_HDF5, 1, sizeof(EventInfo), event_field_offsets, event_field_sizes, &e_info);
-#endif
 }
 
 void HDF5DataWriter::flush(void) {
-#ifdef HDF5_FOUND
     H5Fflush(data_file, H5F_SCOPE_GLOBAL);
-#endif
 }
+
+#endif
