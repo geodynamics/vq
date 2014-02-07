@@ -31,11 +31,13 @@
  Greens function.
  */
 class BlockValCompute : public SimPlugin {
-public:
-    virtual std::string name() const { return "Initialize block internal values"; };
-	virtual void initDesc(const SimFramework *_sim) const {};
-	
-    virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name() const {
+            return "Initialize block internal values";
+        };
+        virtual void initDesc(const SimFramework *_sim) const {};
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

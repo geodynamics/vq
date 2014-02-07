@@ -23,72 +23,78 @@
 
 MPIDebugOutputStream::MPIDebugOutputStream(const int &output_node) : print_node_rank(true), print_timestamp(false), output_node_rank(output_node) {
 #ifdef MPI_C_FOUND
-	comm_world = MPI_COMM_WORLD;
-	MPI_Comm_rank(comm_world, &my_node_rank);
-	MPI_Comm_size(comm_world, &world_size);
+    comm_world = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm_world, &my_node_rank);
+    MPI_Comm_size(comm_world, &world_size);
 #endif
 }
 
 void MPIDebugOutputStream::setOutputFormat(const bool &print_rank, const bool &print_time) {
-	print_node_rank = print_rank;
-	print_timestamp = print_time;
+    print_node_rank = print_rank;
+    print_timestamp = print_time;
 }
 
 void MPIDebugOutputStream::write(const std::string &out_str) {
-	std::stringstream		ss;
-	
-	if (print_node_rank) ss << "[N" << my_node_rank << "] ";
-	if (print_timestamp) ss << "(" << "time" << ") ";
-	ss << out_str << "\n";
-	output_buf += ss.str();
+    std::stringstream       ss;
+
+    if (print_node_rank) ss << "[N" << my_node_rank << "] ";
+
+    if (print_timestamp) ss << "(" << "time" << ") ";
+
+    ss << out_str << "\n";
+    output_buf += ss.str();
 }
 
 // "Flush" the output stream by collecting all messages on the output node
 // and writing them to the specified output stream
 void MPIDebugOutputStream::flush(void) {
 #ifdef MPI_C_FOUND
-	int		*msg_lens, *msg_disps, my_msg_len, i, total_len;
-	char	*my_msg_storage, *all_msg_storage;
-	
-	my_msg_len = output_buf.size();
-	if (my_node_rank == output_node_rank) {
-		msg_lens = new int[world_size];
-		msg_disps = new int[world_size];
-	}
-	
-	// Get the message sizes on the output node
-	MPI_Gather(&my_msg_len, 1, MPI_INT,
-			   msg_lens, 1, MPI_INT,
-			   output_node_rank, comm_world);
-	
-	if (my_node_rank == output_node_rank) {
-		for (i=0;i<world_size;++i) {
-			msg_disps[i] = total_len;
-			total_len += msg_lens[i];
-		}
-		all_msg_storage = new char[total_len];
-	}
-	
-	// Gather the actual messages on the output node
-	MPI_Gatherv(my_msg_storage, my_msg_len, MPI_CHAR,
-				all_msg_storage, msg_lens, msg_disps, MPI_CHAR,
-				output_node_rank, comm_world);
-	
-	// Write the messages to the output stream
-	for (i=0;i<world_size;++i) {
-		std::cerr << std::string(&all_msg_storage[msg_disps[i]], msg_lens[i]);
-	}
-	// Flush everything before continuing
-	std::cerr << std::flush;
-	
-	// Cleanup the arrays
-	delete my_msg_storage;
-	if (my_node_rank == output_node_rank) {
-		delete msg_lens;
-		delete msg_disps;
-		delete all_msg_storage;
-	}
-	
-	MPI_Barrier(MPI_COMM_WORLD);
+    int     *msg_lens, *msg_disps, my_msg_len, i, total_len;
+    char    *my_msg_storage, *all_msg_storage;
+
+    my_msg_len = output_buf.size();
+
+    if (my_node_rank == output_node_rank) {
+        msg_lens = new int[world_size];
+        msg_disps = new int[world_size];
+    }
+
+    // Get the message sizes on the output node
+    MPI_Gather(&my_msg_len, 1, MPI_INT,
+               msg_lens, 1, MPI_INT,
+               output_node_rank, comm_world);
+
+    if (my_node_rank == output_node_rank) {
+        for (i=0; i<world_size; ++i) {
+            msg_disps[i] = total_len;
+            total_len += msg_lens[i];
+        }
+
+        all_msg_storage = new char[total_len];
+    }
+
+    // Gather the actual messages on the output node
+    MPI_Gatherv(my_msg_storage, my_msg_len, MPI_CHAR,
+                all_msg_storage, msg_lens, msg_disps, MPI_CHAR,
+                output_node_rank, comm_world);
+
+    // Write the messages to the output stream
+    for (i=0; i<world_size; ++i) {
+        std::cerr << std::string(&all_msg_storage[msg_disps[i]], msg_lens[i]);
+    }
+
+    // Flush everything before continuing
+    std::cerr << std::flush;
+
+    // Cleanup the arrays
+    delete my_msg_storage;
+
+    if (my_node_rank == output_node_rank) {
+        delete msg_lens;
+        delete msg_disps;
+        delete all_msg_storage;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }

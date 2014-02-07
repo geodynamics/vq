@@ -31,11 +31,13 @@
  blocks by the user specified magnitude.
  */
 class AddAsperities : public SimPlugin {
-public:
-    virtual std::string name(void) const { return "Add asperities to faults"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-    virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name(void) const {
+            return "Add asperities to faults";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

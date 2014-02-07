@@ -29,11 +29,13 @@
  rate is defined as v' = v * (1-(d/y)^2).
  */
 class DepthDepVelocity : public SimPlugin {
-public:
-    virtual std::string name(void) const { return "Depth dependent block slip rate"; }
-	virtual void initDesc(const SimFramework *_sim) const;
+    public:
+        virtual std::string name(void) const {
+            return "Depth dependent block slip rate";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
 
-    virtual void init(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

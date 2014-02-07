@@ -30,18 +30,20 @@
  greater than 1e10 is unreasonable.
  */
 class SanityCheck : public SimPlugin {
-public:
-    virtual std::string name() const { return "Simulation value sanity check"; };
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-    virtual SimRequest run(SimFramework *_sim);
-    virtual void finish(SimFramework *_sim);
+    public:
+        virtual std::string name() const {
+            return "Simulation value sanity check";
+        };
+        virtual void initDesc(const SimFramework *_sim) const;
 
-private:
-	std::vector<std::pair<BlockID, double> >	failed_cffs, failed_update_fields;
-	
-	bool assertCFFValueCorrectness(VCSimulation *sim);
-	bool assertUpdateFieldCorrectness(VCSimulation *sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
+
+    private:
+        std::vector<std::pair<BlockID, double> >    failed_cffs, failed_update_fields;
+
+        bool assertCFFValueCorrectness(VCSimulation *sim);
+        bool assertUpdateFieldCorrectness(VCSimulation *sim);
 };
 
 #endif

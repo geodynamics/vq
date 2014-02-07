@@ -28,24 +28,28 @@
  uses this to determine which block will be the next to fail.
  */
 class UpdateBlockStress : public SimPlugin {
-public:
-    virtual std::string name() const { return "Block stress calculation"; };
-	virtual void initDesc(const SimFramework *_sim) const {};
-	virtual bool needsTimer(void) const { return true; }
-	
-    virtual void init(SimFramework *_sim);
-    virtual SimRequest run(SimFramework *_sim);
-    virtual void finish(SimFramework *_sim);
-	
-private:
-	void nextTimeStep(BlockVal &fail_time);
-    void stressRecompute(void);
-	//void stressRecompute(double backslip);
-    //void stressRecomputeB(void);
-	//void stressRecompute(BlockVal &fail_time);
-	
-    double			*tmpBuffer;
-	VCSimulation	*sim;
+    public:
+        virtual std::string name() const {
+            return "Block stress calculation";
+        };
+        virtual void initDesc(const SimFramework *_sim) const {};
+        virtual bool needsTimer(void) const {
+            return true;
+        }
+
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
+
+    private:
+        void nextTimeStep(BlockVal &fail_time);
+        void stressRecompute(void);
+        //void stressRecompute(double backslip);
+        //void stressRecomputeB(void);
+        //void stressRecompute(BlockVal &fail_time);
+
+        double          *tmpBuffer;
+        VCSimulation    *sim;
 };
 
 #endif

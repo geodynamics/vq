@@ -30,17 +30,21 @@
  each slipped, and a graphical representation of the ruptured faults.
  */
 class EventRecorder : public SimPlugin {
-public:
-    virtual std::string name(void) const { return "Event recorder"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	virtual bool needsTimer(void) const { return true; };
-	
-    virtual void init(SimFramework *_sim);
-    virtual SimRequest run(SimFramework *_sim);
-    virtual void finish(SimFramework *_sim);
-private:
-    std::ofstream eFile;
-    std::vector<std::pair<BlockID, BlockID> > faultBlockIDs;
+    public:
+        virtual std::string name(void) const {
+            return "Event recorder";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
+    private:
+        std::ofstream eFile;
+        std::vector<std::pair<BlockID, BlockID> > faultBlockIDs;
 };
 
 #endif

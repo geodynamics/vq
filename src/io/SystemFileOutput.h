@@ -27,11 +27,13 @@
  Writes the simulation model information to a file.
  */
 class SystemFileOutput : public SimPlugin {
-public:
-    virtual std::string name() const { return "System file output"; };
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name() const {
+            return "System file output";
+        };
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

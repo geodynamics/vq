@@ -25,16 +25,17 @@
  the calculated Greens function, slip rate and recurrence interval.
  */
 void BlockValCompute::init(SimFramework *_sim) {
-	VCSimulation		*sim = static_cast<VCSimulation*>(_sim);
-	BlockList::iterator	it;
-	double				new_stress_drop, dynamic_val;
-	
-	dynamic_val = sim->getDynamic();
-	
-	for (it=sim->begin();it!=sim->end();++it) {
-		new_stress_drop = it->getSelfStresses()*it->slip_rate()*sim->getRecurrence(it->getBlockID());
-		it->setStressDrop(new_stress_drop);
-		if (dynamic_val >= 0 && dynamic_val <= 1) it->setDynamicVal(dynamic_val);
-	}
-	
+    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+    BlockList::iterator it;
+    double              new_stress_drop, dynamic_val;
+
+    dynamic_val = sim->getDynamic();
+
+    for (it=sim->begin(); it!=sim->end(); ++it) {
+        new_stress_drop = it->getSelfStresses()*it->slip_rate()*sim->getRecurrence(it->getBlockID());
+        it->setStressDrop(new_stress_drop);
+
+        if (dynamic_val >= 0 && dynamic_val <= 1) it->setDynamicVal(dynamic_val);
+    }
+
 }

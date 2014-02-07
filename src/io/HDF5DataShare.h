@@ -26,26 +26,30 @@
 #ifndef _HDF5_DATA_SHARE_H_
 #define _HDF5_DATA_SHARE_H_
 
-#define HDF5_PAUSE_FILE_NAME		"pause_vc"
+#define HDF5_PAUSE_FILE_NAME        "pause_vc"
 
 /*!
  Manages the HDF5 format data output for VC program.
  */
 class HDF5DataShare : public SimPlugin {
-private:
-	HDF5DataWriter		*h5_data;
-	unsigned int		next_pause_check;
-	
-	bool pauseFileExists(void);
-	
-public:
-    virtual std::string name(void) const { return "HDF5 Data Writer"; }
-	void initDesc(const SimFramework *_sim) const;
-	
-	virtual bool needsTimer(void) const { return true; };
-	virtual void init(SimFramework *_sim);
-    virtual SimRequest run(SimFramework *_sim);
-    virtual void finish(SimFramework *_sim);
+    private:
+        HDF5DataWriter      *h5_data;
+        unsigned int        next_pause_check;
+
+        bool pauseFileExists(void);
+
+    public:
+        virtual std::string name(void) const {
+            return "HDF5 Data Writer";
+        }
+        void initDesc(const SimFramework *_sim) const;
+
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
 };
 
 #endif

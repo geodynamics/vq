@@ -1,0 +1,25 @@
+# astyle 2.02 indentation style
+# Run astyle in a command like
+#    astyle --options=astyle.rc --recursive "*.cpp" --recursive "*.h"
+
+--style=java
+
+--indent=spaces=4
+--indent-classes
+--indent-switches
+--indent-cases
+--indent-namespaces
+--indent-labels
+--indent-preprocessor
+--indent-col1-comments
+--min-conditional-indent=0
+--max-instatement-indent=80
+--break-blocks
+--pad-header
+--convert-tabs
+--align-pointer=name
+--align-reference=name
+
+--suffix=none
+--quiet
+#--verbose

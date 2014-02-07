@@ -27,23 +27,27 @@
  Creates background events with the given parameters at a Poisson rate during the simulation.
  */
 class BGPoissonEvents : public SimPlugin {
-private:
-	//! Background event parameters
-	float _l;		//! Mean interevent time
-	float _mag_min;	//! Minimum event magnitude
-	float _mag_max;	//! Maximum event magnitude
-	float _d;		//! Distance of events from main fault (meters)
-	float _q;		//! Decay rate of events (distance)
-	
-	double last_year;	//! Last year of simulation when background events were generated
-	
-public:
-    virtual std::string name(void) const { return "Poisson background events"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	virtual bool needsTimer(void) const { return true; };
-	
-	virtual void init(SimFramework *_sim);
-	virtual SimRequest run(SimFramework *_sim);
+    private:
+        //! Background event parameters
+        float _l;       //! Mean interevent time
+        float _mag_min; //! Minimum event magnitude
+        float _mag_max; //! Maximum event magnitude
+        float _d;       //! Distance of events from main fault (meters)
+        float _q;       //! Decay rate of events (distance)
+
+        double last_year;   //! Last year of simulation when background events were generated
+
+    public:
+        virtual std::string name(void) const {
+            return "Poisson background events";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
 };
 
 #endif

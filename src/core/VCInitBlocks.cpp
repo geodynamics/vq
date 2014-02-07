@@ -22,9 +22,9 @@
 #include "SimError.h"
 
 void VCInitBlocks::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Initializing blocks." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Initializing blocks." << std::endl;
 }
 
 /*!
@@ -32,8 +32,8 @@ void VCInitBlocks::initDesc(const SimFramework *_sim) const {
  the blocks and creating MPI related data types.
  */
 void VCInitBlocks::dryRun(SimFramework *_sim) {
-	VCSimulation			*sim = static_cast<VCSimulation*>(_sim);
-	sim->partitionBlocks();
+    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    sim->partitionBlocks();
 }
 
 /*!
@@ -41,33 +41,33 @@ void VCInitBlocks::dryRun(SimFramework *_sim) {
  setting value pointers and creating the needed MPI data types.
  */
 void VCInitBlocks::init(SimFramework *_sim) {
-	VCSimulation			*sim = static_cast<VCSimulation*>(_sim);
-	int						i;
-	BlockList::iterator		bit;
-	
-	assertThrow(sim->numGlobalBlocks() > 0, "Simulation must include at least 1 block.");
-	
-	sim->partitionBlocks();
-	
-	// Initialize simulation arrays and classes
-	sim->setupArrays(sim->numGlobalBlocks(),
-							  sim->numLocalBlocks(),
-							  // use compressed array for Barnes Hut style Greens function calculations
-							  sim->getGreensCalcMethod()==GREENS_CALC_BARNES_HUT,
-							  // transposed array for faster sweep calculations
-							  sim->useTransposedMatrix());
-	
-	// Set the block pointers to the storage arrays
-	for (i=0,bit=sim->begin();bit!=sim->end();++bit,++i)
-		bit->setStatePtrs(sim->getShearStressPtr(i),
-						  sim->getNormalStressPtr(i),
-                          sim->getFShearStressPtr(i),
-						  sim->getFNormalStressPtr(i),
-						  sim->getUpdateFieldPtr(i));
-	
-	// Set the starting year of the simulation
-	sim->setYear(sim->getSimStart());
+    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    int                     i;
+    BlockList::iterator     bit;
 
-	// Determine neighbors of blocks
+    assertThrow(sim->numGlobalBlocks() > 0, "Simulation must include at least 1 block.");
+
+    sim->partitionBlocks();
+
+    // Initialize simulation arrays and classes
+    sim->setupArrays(sim->numGlobalBlocks(),
+                     sim->numLocalBlocks(),
+                     // use compressed array for Barnes Hut style Greens function calculations
+                     sim->getGreensCalcMethod()==GREENS_CALC_BARNES_HUT,
+                     // transposed array for faster sweep calculations
+                     sim->useTransposedMatrix());
+
+    // Set the block pointers to the storage arrays
+    for (i=0,bit=sim->begin(); bit!=sim->end(); ++bit,++i)
+        bit->setStatePtrs(sim->getShearStressPtr(i),
+                          sim->getNormalStressPtr(i),
+                          sim->getFShearStressPtr(i),
+                          sim->getFNormalStressPtr(i),
+                          sim->getUpdateFieldPtr(i));
+
+    // Set the starting year of the simulation
+    sim->setYear(sim->getSimStart());
+
+    // Determine neighbors of blocks
     sim->determineBlockNeighbors();
 }

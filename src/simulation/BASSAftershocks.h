@@ -31,30 +31,34 @@
  generation locations.
  */
 class BASSAftershocks : public SimPlugin {
-private:
-	// BASS parameters
-	float _Mm;		//! Minimum magnitude
-	float _dM;		//! Strength of aftershock sequence (intensity of aftershocks)
-	float _b;		//! Scaling of frequency magnitude
-	float _c;		//! Start of aftershocks (days)
-	float _p;		//! Decay rate of aftershocks (time)
-	float _d;		//! Distance of aftershocks (meters)
-	float _q;		//! Decay rate of aftershocks (distance)
-	
-	// Member data
-	AftershockSet	*events_to_process;
-	BlockIDSet		event_blocks;
-	bool			first;
-	
-	// Work horse function
-	unsigned int generateAftershocks(VCSimulation *sim, VCEventAftershock seed);
-	
-public:
-    virtual std::string name(void) const { return "BASS model aftershocks"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	virtual bool needsTimer(void) const { return true; };
-	
-	virtual SimRequest run(SimFramework *_sim);
+    private:
+        // BASS parameters
+        float _Mm;      //! Minimum magnitude
+        float _dM;      //! Strength of aftershock sequence (intensity of aftershocks)
+        float _b;       //! Scaling of frequency magnitude
+        float _c;       //! Start of aftershocks (days)
+        float _p;       //! Decay rate of aftershocks (time)
+        float _d;       //! Distance of aftershocks (meters)
+        float _q;       //! Decay rate of aftershocks (distance)
+
+        // Member data
+        AftershockSet   *events_to_process;
+        BlockIDSet      event_blocks;
+        bool            first;
+
+        // Work horse function
+        unsigned int generateAftershocks(VCSimulation *sim, VCEventAftershock seed);
+
+    public:
+        virtual std::string name(void) const {
+            return "BASS model aftershocks";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+
+        virtual SimRequest run(SimFramework *_sim);
 };
 
 #endif

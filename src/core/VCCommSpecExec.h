@@ -26,27 +26,29 @@
 #define _VC_COMM_SPEC_EXEC_H_
 
 class VCCommSpecExec {
-protected:
-	SpecExecMethod		spec_exec_method;
-	
-	//! Map of blocks to boundary of node (for speculative execution)
-	std::map<BlockID, double>	boundary_dist_map;
-	
-	bool						last_prediction_failed;
-	
-	//! Statistics for speculative execution
-	int							num_predictions;
-	int							num_predicted_local;
-	int							num_predictions_failed;
-	int							num_predictions_success;
-	
-public:
-	VCCommSpecExec(void) : spec_exec_method(SPEC_EXEC_UNDEFINED), num_predictions(0), num_predicted_local(0), num_predictions_failed(0), num_predictions_success(0) {};
-	void setSpecExecMethod(const SpecExecMethod &new_method) { spec_exec_method = new_method; };
-	
-	void startEvent(void);
-	void speculationFailed(VCEventSweep &fail_sweep);
-	void speculationSuccess(VCEventSweep &success_sweep);
+    protected:
+        SpecExecMethod      spec_exec_method;
+
+        //! Map of blocks to boundary of node (for speculative execution)
+        std::map<BlockID, double>   boundary_dist_map;
+
+        bool                        last_prediction_failed;
+
+        //! Statistics for speculative execution
+        int                         num_predictions;
+        int                         num_predicted_local;
+        int                         num_predictions_failed;
+        int                         num_predictions_success;
+
+    public:
+        VCCommSpecExec(void) : spec_exec_method(SPEC_EXEC_UNDEFINED), num_predictions(0), num_predicted_local(0), num_predictions_failed(0), num_predictions_success(0) {};
+        void setSpecExecMethod(const SpecExecMethod &new_method) {
+            spec_exec_method = new_method;
+        };
+
+        void startEvent(void);
+        void speculationFailed(VCEventSweep &fail_sweep);
+        void speculationSuccess(VCEventSweep &success_sweep);
 };
 
 #endif
