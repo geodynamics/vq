@@ -1,13 +1,11 @@
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
-#cmakedefine QUAKELIB_HAVE_SYS_TIME_H
+#ifndef _QUAKELIB_CONFIG_H_
+#define _QUAKELIB_CONFIG_H_
 #cmakedefine QUAKELIB_HAVE_FLOAT_H
 #cmakedefine QUAKELIB_HAVE_LIMITS_H
 #cmakedefine QUAKELIB_HAVE_MATH_H
 #cmakedefine QUAKELIB_HAVE_STDLIB_H
 #cmakedefine QUAKELIB_HAVE_STRING_H
-#cmakedefine QUAKELIB_HAVE_UNISTD_H
 #cmakedefine HDF5_FOUND
 #cmakedefine MPI_C_FOUND
 #endif

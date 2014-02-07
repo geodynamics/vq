@@ -39,6 +39,7 @@ CONFIGURE_FILE(${VC_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h
 
 # Add common directories to the include search path
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/quakelib/)
 
 # Recurse into the "quakelib" and "src" subdirectories.
 ADD_SUBDIRECTORY(quakelib) 
