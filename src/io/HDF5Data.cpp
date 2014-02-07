@@ -689,7 +689,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event) {
     if (status < 0) exit(-1);
 
     if (rec_num > 0) {
-        a_info_array = new AftershockBGInfo[rec_num];
+        a_info_array = new AftershockInfo[rec_num];
 
         for (ait=event.aftershockBegin(),i=0; ait!=event.aftershockEnd(); ++ait,++i) {
             a_info_array[i].event_number = event_num;

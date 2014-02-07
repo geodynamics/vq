@@ -98,12 +98,6 @@ class VCParams {
         double              bass_distance_d;
         double              bass_distance_decay_q;
 
-        double              bg_event_mean_interevent;
-        double              bg_event_min_mag;
-        double              bg_event_max_mag;
-        double              bg_event_distance;
-        double              bg_event_distance_decay;
-
         bool                depth_dependent_velocity;
         bool                sanity_check;
         bool                do_normal_stress;
@@ -234,22 +228,6 @@ class VCParams {
         };
         double getBASSDistanceDecay(void) const {
             return bass_distance_decay_q;
-        };
-
-        double getBGEventMeanInterevent(void) const {
-            return bg_event_mean_interevent;
-        };
-        double getBGEventMinMagnitude(void) const {
-            return bg_event_min_mag;
-        };
-        double getBGEventMaxMagnitude(void) const {
-            return bg_event_max_mag;
-        };
-        double getBGEventDistance(void) const {
-            return bg_event_distance;
-        };
-        double getBGEventDistanceDecay(void) const {
-            return bg_event_distance_decay;
         };
 
         bool doDepthDependentVelocity(void) const {

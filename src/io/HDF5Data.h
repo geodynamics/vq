@@ -97,8 +97,6 @@
 #define CHECKPOINT_STRESS_N_HDF5    "stressN"
 #define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
 
-#define BG_EVENT_TABLE_HDF5         "background_event_table"
-
 struct EventInfo {
     unsigned int    event_number;
     double          event_year;
@@ -248,7 +246,6 @@ class HDF5Data {
 
 typedef std::pair<const double, VCEvent *> EventYear;
 typedef std::multimap<double, VCEvent *> EventYearMap;
-typedef std::map<double, VCGeneralEvent *> BGEventMap;
 
 class HDF5DataReader : public HDF5Data {
     private:
@@ -257,9 +254,6 @@ class HDF5DataReader : public HDF5Data {
 
         //! Set of events indexed by year
         EventYearMap                event_set;
-
-        //! Set of background events indexed by year
-        BGEventMap                  bg_events;
 
         void getStartEndYears(double &start_year, double &end_year) const;
 
@@ -274,15 +268,6 @@ class HDF5DataReader : public HDF5Data {
         iterator end(const double &upper_bound=-1) {
             if (upper_bound >= 0) return event_set.upper_bound(upper_bound);
             else return event_set.upper_bound(filter.year_range.second);
-        };
-
-        BGEventMap::iterator bgbegin(const double &lower_bound=-1) {
-            if (lower_bound >= 0) return bg_events.lower_bound(lower_bound);
-            else return bg_events.lower_bound(filter.year_range.first);
-        };
-        BGEventMap::iterator bgend(const double &upper_bound=-1) {
-            if (upper_bound >= 0) return bg_events.upper_bound(upper_bound);
-            else return bg_events.upper_bound(filter.year_range.second);
         };*/
 
         HDF5DataReader(const std::string &hdf5_file_name);
@@ -295,7 +280,7 @@ class HDF5DataWriter : public HDF5Data {
         void setStartEndYears(const double &new_start_year, const double &new_end_year);
         void flush(void);
 
-        void writeEvent(VCEvent &event, VCGeneralEventSet &bg_events);
+        void writeEvent(VCEvent &event);
 };
 
 #endif
