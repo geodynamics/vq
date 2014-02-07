@@ -1,4 +1,7 @@
 # Make sure the compiler can find include files from the quakelib library. 
+INCLUDE_DIRECTORIES(${VC_SOURCE_DIR}/quakelib/src)
+
+# and include files from VC itself
 INCLUDE_DIRECTORIES (${VC_SOURCE_DIR}/src/core)
 INCLUDE_DIRECTORIES (${VC_SOURCE_DIR}/src/io)
 INCLUDE_DIRECTORIES (${VC_SOURCE_DIR}/src/misc)

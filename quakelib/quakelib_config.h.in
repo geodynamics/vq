@@ -1,6 +1,6 @@
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _QUAKELIB_CONFIG_H_
+#define _QUAKELIB_CONFIG_H_
 #cmakedefine QUAKELIB_HAVE_FLOAT_H
 #cmakedefine QUAKELIB_HAVE_LIMITS_H
 #cmakedefine QUAKELIB_HAVE_MATH_H
