@@ -302,19 +302,6 @@ typedef std::pair<const double, VCEvent *> EventYear;
 typedef std::multimap<double, VCEvent *> EventYearMap;
 typedef std::map<double, VCGeneralEvent *> BGEventMap;
 
-/*!
- Represents a filter for GUI information based on faults, layers and time.
- */
-class GUIFilter {
-    public:
-        // Sets of which fault IDs and layers to filter out of the Greens functions and events
-        FaultIDSet                  fault_filter;
-        std::set<int>               layer_filter;
-
-        // Range of years to return events for
-        std::pair<double,double>    year_range;
-};
-
 class HDF5DataReader : public HDF5Data {
     private:
         //! Current offset into the events file, so new events can immediately be read when they are appended
@@ -326,9 +313,6 @@ class HDF5DataReader : public HDF5Data {
         //! Set of background events indexed by year
         BGEventMap                  bg_events;
 
-        //! Filter for events/Greens function
-        GUIFilter                   filter;
-
         void getStartEndYears(double &start_year, double &end_year) const;
         void getLatLon0(double &lat0, double &lon0) const;
 
@@ -336,7 +320,7 @@ class HDF5DataReader : public HDF5Data {
         typedef EventYearMap::iterator          iterator;
         typedef EventYearMap::const_iterator    const_iterator;
 
-        iterator begin(const double &lower_bound=-1) {
+        /*iterator begin(const double &lower_bound=-1) {
             if (lower_bound >= 0) return event_set.lower_bound(lower_bound);
             else return event_set.lower_bound(filter.year_range.first);
         };
@@ -352,22 +336,10 @@ class HDF5DataReader : public HDF5Data {
         BGEventMap::iterator bgend(const double &upper_bound=-1) {
             if (upper_bound >= 0) return bg_events.upper_bound(upper_bound);
             else return bg_events.upper_bound(filter.year_range.second);
-        };
+        };*/
 
         HDF5DataReader(const std::string &hdf5_file_name);
 
-        void getFilterDims(int &dim_x, int &dim_y) const;
-
-        void filterData(const unsigned int &max_dim_x, const unsigned int &max_dim_y, const bool &green_log);
-        //void addLayerFilter(const int &add_layer);
-        //void removeLayerFilter(const int &remove_layer);
-        void addFaultFilter(const FaultID &add_fault);
-        void removeFaultFilter(const FaultID &remove_fault);
-        void setYearFilterRange(const double &min_year, const double &max_year);
-        void getYearFilterRange(double &min_year, double &max_year) const;
-
-        bool isBlockInFaultFilter(const BlockID &block_id) const;
-        bool isBlockInLayerFilter(const BlockID &block_id) const;
         BlockInfo getBlockInfo(const BlockID &block_id) const;
 
         void getFaultNames(std::set<std::pair<FaultID, std::string> > &fault_name_map) const;

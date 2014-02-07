@@ -187,92 +187,8 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv) {
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Block &b) {
-    quakelib::Conversion        convert;
-    quakelib::Vec<3>        center = b.center();
-
-    os  << std::setw(7) << b.getBlockID()
-        << std::setw(5) << b.getFaultID()
-        << std::setw(8) << std::setprecision(4) << center[0]
-        << std::setw(8) << std::setprecision(4) << center[1]
-        << std::setw(8) << std::setprecision(4) << center[2]
-        << std::setw(12) << std::setprecision(8) << b.getRecurrence()
-        << std::setw(11) << std::setprecision(6) << b.slip_rate()
-        << std::setw(13) << std::setprecision(9) << b.getStressDrop()
-        << std::setw(9) << std::setprecision(5) << b.friction()
-        << std::setw(12) << std::setprecision(5) << b.getSelfStresses()
-        << std::setw(9) << std::setprecision(5) << b.getDynamicVal()
-        << std::setw(7) << std::setprecision(4) << b.aseismic()
-        << std::setw(8) << std::setprecision(4) << convert.rad2deg(b.rake())
-        << std::setw(8) << std::setprecision(4) << convert.rad2deg(b.dip())
-        << std::setw(8) << std::setprecision(4) << b.getLambda()
-        << std::setw(8) << std::setprecision(4) << b.getMu()
-        //<< std::setw(9) << std::setprecision(4) << convert.rad2deg(b.getDipDir())
-        //<< std::setw(8) << std::setprecision(4) << b.getMaxDepth()
-        //<< std::setw(8) << std::setprecision(4) << b.getMinDepth()
-        //<< std::setw(11) << std::setprecision(7) << b.getWestVector().X()
-        //<< std::setw(11) << std::setprecision(7) << b.getWestVector().Y()
-        //<< std::setw(11) << std::setprecision(7) << b.getEastVector().X()
-        //<< std::setw(11) << std::setprecision(7) << b.getEastVector().Y()
-        << " " << b.getFaultName();
-    return os;
-}
-
-std::string Block::header(void) const {
-    std::stringstream       ss;
-    ss  << std::setw(6) << "id"
-        << std::setw(5) << "fid"
-        << std::setw(5) << "center x"
-        << std::setw(5) << "center y"
-        << std::setw(5) << "center z"
-        << std::setw(12) << "recurrence"
-        << std::setw(11) << "slip_rate"
-        << std::setw(13) << "stress_drop"
-        << std::setw(9) << "friction"
-        << std::setw(12) << "self_stress"
-        << std::setw(9) << "dynamic"
-        << std::setw(7) << "aseis"
-        << std::setw(8) << "rake"
-        << std::setw(8) << "dip"
-        //<< std::setw(9) << "dip_dir"
-        //<< std::setw(8) << "bottom"
-        //<< std::setw(8) << "top"
-        //<< std::setw(11) << "west_x"
-        //<< std::setw(11) << "west_y"
-        //<< std::setw(11) << "east_x"
-        //<< std::setw(11) << "east_y"
-        << " name";
-    return ss.str();
-}
-
-std::string Block::headerUnits(void) const {
-    std::stringstream       ss;
-    ss  << std::setw(6) << ""
-        << std::setw(5) << ""
-        << std::setw(5) << "(meters)"
-        << std::setw(5) << "(meters)"
-        << std::setw(5) << "(meters)"
-        << std::setw(12) << "(seconds)"
-        << std::setw(11) << "(meters/second)"
-        << std::setw(13) << "(Pascals)"
-        << std::setw(9) << ""
-        << std::setw(12) << "(Pascals)"
-        << std::setw(9) << ""
-        << std::setw(7) << ""
-        << std::setw(8) << "(deg)"
-        << std::setw(8) << "(deg)";
-    //<< std::setw(9) << "(deg)"
-    //<< std::setw(8) << "(km)"
-    //<< std::setw(8) << "(km)"
-    //<< std::setw(11) << "(km)"
-    //<< std::setw(11) << "(km)"
-    //<< std::setw(11) << "(km)"
-    //<< std::setw(11) << "(km)";
-    return ss.str();
-}
-
 void Block::clear(void) {
-    quakelib::Element<4>::clear();
+    quakelib::SimElement::clear();
     is_valid = false;
     id = UNDEFINED_BLOCK_ID;
     fid = UNDEFINED_FAULT_ID;
@@ -360,44 +276,10 @@ void Block::setStatePtrs(double *stressS, double *stressN, double *FstressS, dou
     state.updateField = update_field;
 }
 
-/*!
- Returns a BlockInfo structure for the info of this block.
- */
-BlockInfo Block::getBlockInfo(void) const {
-    BlockInfo       block_info;
-    unsigned int    i;
-
-    block_info.bid = getBlockID();
-    block_info.fid = getFaultID();
-    block_info.sid = getSectionID();
-
-    for (i=0; i<4; ++i) {
-        block_info.x_pt[i] = _vert[i][0];
-        block_info.y_pt[i] = _vert[i][1];
-        block_info.z_pt[i] = _vert[i][2];
-        block_info.das_pt[i] = _das[i];
-        block_info.trace_flag_pt[i] = _trace_flag[i];
-    }
-
-    block_info.slip_velocity = _slip_rate;
-    block_info.aseismicity = _aseis_factor;
-    block_info.rake = _rake;
-    block_info.dip = dip();
-    block_info.dynamic_strength = dynamic_strength;
-    block_info.static_strength = static_strength;
-    block_info.lame_mu = mu;
-    block_info.lame_lambda = lambda;
-
-    strncpy(block_info.fault_name, getFaultName().c_str(), FAULT_NAME_MAX_LEN);
-
-    return block_info;
-}
-
 StateCheckpointData State::readCheckpointData(void) const {
     StateCheckpointData     ckpt_data;
 
     ckpt_data.slipDeficit = slipDeficit;
-    ckpt_data.slipCumulative = slipCumulative;
     ckpt_data.cff = cff;
     ckpt_data.stressS = *stressS;
     ckpt_data.stressN = *stressN;
@@ -408,7 +290,6 @@ StateCheckpointData State::readCheckpointData(void) const {
 
 void State::storeCheckpointData(const StateCheckpointData &ckpt_data) {
     slipDeficit = ckpt_data.slipDeficit;
-    slipCumulative = ckpt_data.slipCumulative;
     cff = ckpt_data.cff;
     *stressS = ckpt_data.stressS;
     *stressN = ckpt_data.stressN;
