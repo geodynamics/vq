@@ -34,7 +34,6 @@ HDF5CheckpointReader::HDF5CheckpointReader(const std::string &ckpt_file_name,
                                            double &checkpoint_year,
                                            unsigned int &checkpoint_event,
                                            CheckpointSet &checkpoints) : HDF5Checkpoint() {
-#ifdef HDF5_FOUND
 
     if (!H5Fis_hdf5(ckpt_file_name.c_str())) exit(-1);
 
@@ -51,9 +50,6 @@ HDF5CheckpointReader::HDF5CheckpointReader(const std::string &ckpt_file_name,
     data_file = H5Fopen(ckpt_file_name.c_str(), H5F_ACC_RDONLY, plist_id);
 
     if (data_file < 0) exit(-1);
-
-
-#endif
 }
 
 // TODO: check status in this function
@@ -62,7 +58,6 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
                                            const double &cur_year,
                                            const unsigned int &cur_event,
                                            const CheckpointSet &checkpoints) : HDF5Checkpoint() {
-#ifdef HDF5_FOUND
     hsize_t                         dims[2] = {nblocks, CHECKPOINT_NUM_ENTRIES_HDF5};
     hsize_t                         single_val[1] = {1};
     herr_t                          status;
@@ -164,14 +159,12 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
     res = H5Fclose(data_file);
 
     delete mem_state;
-#endif
 }
 
 /*!
  Initialize the HDF5 Greens value reader.
  */
 HDF5GreensDataReader::HDF5GreensDataReader(const std::string &hdf5_file_name) : HDF5GreensData() {
-#ifdef HDF5_FOUND
     int         ndims;
     hsize_t     *dims;
 
@@ -206,11 +199,9 @@ HDF5GreensDataReader::HDF5GreensDataReader(const std::string &hdf5_file_name) : 
 
     greens_dim = dims[0];
     delete dims;
-#endif
 }
 
 HDF5GreensData::~HDF5GreensData(void) {
-#ifdef HDF5_FOUND
     herr_t      res;
 
     // Close the handles we've used
@@ -229,15 +220,12 @@ HDF5GreensData::~HDF5GreensData(void) {
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
-
-#endif
 }
 
 /*!
  Initialize the HDF5 writer using the specified model dimensions.
  */
 HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, const unsigned int &nblocks) : HDF5GreensData() {
-#ifdef HDF5_FOUND
     hsize_t             dimsf[2];
     hid_t               plist_id;
 
@@ -276,14 +264,12 @@ HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, co
     if (green_norm_set < 0) exit(-1);
 
     H5Pclose(plist_id);
-#endif
 }
 
 /*!
  Set the Greens function normal and shear values for a specified block.
  */
 void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_vals, const double *norm_vals) {
-#ifdef HDF5_FOUND
     herr_t      status;
     hsize_t     file_start[2], mem_start[2], count[2];
     hid_t       file_select, mem_select, plist_id;
@@ -314,14 +300,12 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
     H5Pclose(plist_id);
     H5Sclose(file_select);
     H5Sclose(mem_select);
-#endif
 }
 
 /*!
  Set the Greens function normal and shear values for a specified block.
  */
 void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, double *norm_vals) {
-#ifdef HDF5_FOUND
     herr_t      status;
     hsize_t     file_start[2], mem_start[2], count[2];
     hid_t       file_select, mem_select, plist_id;
@@ -352,7 +336,6 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
     H5Pclose(plist_id);
     H5Sclose(file_select);
     H5Sclose(mem_select);
-#endif
 }
 
 /*!
@@ -361,7 +344,6 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
  to the correct positions in the file.
  */
 HDF5DataReader::HDF5DataReader(const std::string &hdf5_file_name) : HDF5Data() {
-#ifdef HDF5_FOUND
     hsize_t     *dims;
 
     last_event_read = 0;
@@ -379,18 +361,12 @@ HDF5DataReader::HDF5DataReader(const std::string &hdf5_file_name) : HDF5Data() {
 
     if (sim_years_set < 0) exit(-1);
 
-    base_lat_lon_set = H5Dopen2(data_file, BASE_LAT_LON_HDF5, H5P_DEFAULT);
-
-    if (base_lat_lon_set < 0) exit(-1);
-
     // Open the data sets
     num_blocks = dims[0];
     delete dims;
-#endif
 }
 
 HDF5Data::~HDF5Data(void) {
-#ifdef HDF5_FOUND
     herr_t      res;
 
     // Close the handles we've used
@@ -398,23 +374,9 @@ HDF5Data::~HDF5Data(void) {
 
     if (res < 0) exit(-1);
 
-    res = H5Dclose(base_lat_lon_set);
-
-    if (res < 0) exit(-1);
-
-    res = H5Sclose(block_info_dataspace);
-
-    if (res < 0) exit(-1);
-
-    res = H5Tclose(fault_name_datatype);
-
-    if (res < 0) exit(-1);
-
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
-
-#endif
 }
 
 /*!
@@ -424,8 +386,6 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
     hsize_t             dimsf[2];
     herr_t              status;
     hid_t               plist_id;
-    BlockInfo           empty_binfo;
-    //std::cout << "there " << HDF5_FOUND << std::endl;
 
     num_blocks = nblocks;
 
@@ -445,40 +405,10 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
 
     createH5Handles();
 
-    // Specify the dimensions of the Green's matrix
-    dimsf[0] = num_blocks;
-    dimsf[1] = num_blocks;
-
-    // Create the block info dataspace
-    block_info_dataspace = H5Screate_simple(1, dimsf, NULL);
-
-    if (block_info_dataspace < 0) exit(-1);
-
     // Create entries for the simulation start/stop years and base longitude/latitude
     sim_years_set = H5Dcreate2(data_file, SIM_YEARS_HDF5, H5T_NATIVE_DOUBLE, pair_val_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     if (sim_years_set < 0) exit(-1);
-
-    base_lat_lon_set = H5Dcreate2(data_file, BASE_LAT_LON_HDF5, H5T_NATIVE_DOUBLE, pair_val_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    if (base_lat_lon_set < 0) exit(-1);
-
-    // Create the block info table
-    status = H5TBmake_table("Block Info Table",
-                            data_file,
-                            B_INFO_TABLE_HDF5,
-                            B_INFO_NUM_ENTRIES_HDF5,
-                            num_blocks,
-                            sizeof(BlockInfo),
-                            binfo_field_names,
-                            binfo_field_offsets,
-                            binfo_field_types,
-                            num_blocks,
-                            &empty_binfo,
-                            0,
-                            NULL);
-
-    if (status < 0) exit(-1);
 
     // Create the event table
     status = H5TBmake_table("Event Table",
@@ -520,24 +450,7 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
                             AFTERSHOCK_TABLE_HDF5,
                             AFTERSHOCK_NUM_ENTRIES_HDF5,
                             0,
-                            sizeof(AftershockBGInfo),
-                            aftershock_field_names,
-                            aftershock_field_offsets,
-                            aftershock_field_types,
-                            1000,
-                            NULL,
-                            0,
-                            NULL);
-
-    if (status < 0) exit(-1);
-
-    // Create the background event table (incomplete)
-    status = H5TBmake_table("Background Event Table",
-                            data_file,
-                            BG_EVENT_TABLE_HDF5,
-                            AFTERSHOCK_NUM_ENTRIES_HDF5,
-                            0,
-                            sizeof(AftershockBGInfo),
+                            sizeof(AftershockInfo),
                             aftershock_field_names,
                             aftershock_field_offsets,
                             aftershock_field_types,
@@ -553,16 +466,6 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nbl
 
 void HDF5Data::createH5Handles(void) {
     hsize_t     dimsf[2];
-
-    num_layers = 4;
-
-    // Create dataspace for fault name strings
-    dimsf[0] = FAULT_NAME_MAX_LEN;
-    fault_name_dataspace = H5Screate_simple(1, dimsf, NULL);
-
-    // Create the datatype for the fault name strings
-    fault_name_datatype = H5Tcopy(H5T_C_S1);
-    H5Tset_size(fault_name_datatype, (size_t)FAULT_NAME_MAX_LEN);
 
     event_field_names[0] = EVENT_NUM_HDF5;
     event_field_names[1] = EVENT_YEAR_HDF5;
@@ -663,12 +566,12 @@ void HDF5Data::createH5Handles(void) {
     aftershock_field_names[3] = AFTERSHOCK_TIME_HDF5;
     aftershock_field_names[4] = AFTERSHOCK_X_HDF5;
     aftershock_field_names[5] = AFTERSHOCK_Y_HDF5;
-    aftershock_field_offsets[0] = HOFFSET(AftershockBGInfo, event_number);
-    aftershock_field_offsets[1] = HOFFSET(AftershockBGInfo, gen);
-    aftershock_field_offsets[2] = HOFFSET(AftershockBGInfo, mag);
-    aftershock_field_offsets[3] = HOFFSET(AftershockBGInfo, time);
-    aftershock_field_offsets[4] = HOFFSET(AftershockBGInfo, x);
-    aftershock_field_offsets[5] = HOFFSET(AftershockBGInfo, y);
+    aftershock_field_offsets[0] = HOFFSET(AftershockInfo, event_number);
+    aftershock_field_offsets[1] = HOFFSET(AftershockInfo, gen);
+    aftershock_field_offsets[2] = HOFFSET(AftershockInfo, mag);
+    aftershock_field_offsets[3] = HOFFSET(AftershockInfo, time);
+    aftershock_field_offsets[4] = HOFFSET(AftershockInfo, x);
+    aftershock_field_offsets[5] = HOFFSET(AftershockInfo, y);
     aftershock_field_types[0] = H5T_NATIVE_UINT;
     aftershock_field_types[1] = H5T_NATIVE_UINT;
     aftershock_field_types[2] = H5T_NATIVE_FLOAT;
@@ -711,7 +614,7 @@ void HDF5DataReader::getStartEndYears(double &start_year, double &end_year) cons
 /*!
  Write the information for an event to the HDF5 file.
  */
-void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
+void HDF5DataWriter::writeEvent(VCEvent &event) {
     EventSweeps::iterator       it;
     VCEventSweep::iterator      eit;
     AftershockSet::iterator     ait;
@@ -719,7 +622,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
     BlockIDSet                  involved_blocks;
     EventInfo                   e_info;
     EventSweepInfo              *s_info_array;
-    AftershockBGInfo            *a_info_array;
+    AftershockInfo            *a_info_array;
     herr_t                      status;
     unsigned int                i, sweep_num, rec_num, event_num;
     hsize_t                     start_fields, end_fields, start_recs, end_recs;
@@ -800,7 +703,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
         H5TBappend_records(data_file,
                            AFTERSHOCK_TABLE_HDF5,
                            rec_num,
-                           sizeof(AftershockBGInfo),
+                           sizeof(AftershockInfo),
                            aftershock_field_offsets,
                            aftershock_field_sizes,
                            a_info_array);
@@ -814,33 +717,6 @@ void HDF5DataWriter::writeEvent(VCEvent &event, VCGeneralEventSet &bg_events) {
 
     e_info.start_aftershock_rec = start_recs;
     e_info.end_aftershock_rec = end_recs;
-
-    // Write background events
-    for (git=bg_events.begin(),rec_num=0; git!=bg_events.end(); ++git) {
-        rec_num++;
-    }
-
-    if (rec_num > 0) {
-        a_info_array = new AftershockBGInfo[rec_num];
-
-        for (git=bg_events.begin(),i=0; git!=bg_events.end(); ++git,++i) {
-            a_info_array[i].event_number = 0;
-            a_info_array[i].gen = 0;
-            a_info_array[i].mag = git->mag;
-            a_info_array[i].time = git->t;
-            a_info_array[i].x = git->x;
-            a_info_array[i].y = git->y;
-        }
-
-        H5TBappend_records(data_file,
-                           BG_EVENT_TABLE_HDF5,
-                           rec_num,
-                           sizeof(AftershockBGInfo),
-                           aftershock_field_offsets,
-                           aftershock_field_sizes,
-                           a_info_array);
-        delete a_info_array;
-    }
 
     event.getInvolvedBlocks(involved_blocks);
 

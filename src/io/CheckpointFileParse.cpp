@@ -21,8 +21,8 @@
 #include "CheckpointFileParse.h"
 
 void CheckpointFileParse::initDesc(const SimFramework *_sim) const {
-    const VCSimulation      *sim = static_cast<const VCSimulation *>(_sim);
-    sim->console() << "# Reading checkpoint file: " << sim->getEqSimOutputFile() << std::endl;
+    //const VCSimulation      *sim = static_cast<const VCSimulation *>(_sim);
+    //sim->console() << "# Reading checkpoint file: " << sim->getEqSimOutputFile() << std::endl;
 }
 
 void CheckpointFileParse::init(SimFramework *_sim) {

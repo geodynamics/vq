@@ -46,42 +46,6 @@
 #define SIM_YEARS_HDF5              "sim_years"
 #define BASE_LAT_LON_HDF5           "base_lat_lon"
 
-// Block info related definitions
-#define B_INFO_TABLE_HDF5               "block_info_table"
-#define B_INFO_NUM_ENTRIES_HDF5         32
-#define B_INFO_BLOCK_ID_HDF5            "block_id"
-#define B_INFO_FAULT_ID_HDF5            "fault_id"
-#define B_INFO_SECTION_ID_HDF5          "section_id"
-#define B_INFO_M_X_PT1_HDF5             "m_x_pt1"
-#define B_INFO_M_Y_PT1_HDF5             "m_y_pt1"
-#define B_INFO_M_Z_PT1_HDF5             "m_z_pt1"
-#define B_INFO_M_DAS_PT1_HDF5           "m_das_pt1"
-#define B_INFO_M_TRACE_FLAG_PT1_HDF5    "m_trace_flag_pt1"
-#define B_INFO_M_X_PT2_HDF5             "m_x_pt2"
-#define B_INFO_M_Y_PT2_HDF5             "m_y_pt2"
-#define B_INFO_M_Z_PT2_HDF5             "m_z_pt2"
-#define B_INFO_M_DAS_PT2_HDF5           "m_das_pt2"
-#define B_INFO_M_TRACE_FLAG_PT2_HDF5    "m_trace_flag_pt2"
-#define B_INFO_M_X_PT3_HDF5             "m_x_pt3"
-#define B_INFO_M_Y_PT3_HDF5             "m_y_pt3"
-#define B_INFO_M_Z_PT3_HDF5             "m_z_pt3"
-#define B_INFO_M_DAS_PT3_HDF5           "m_das_pt3"
-#define B_INFO_M_TRACE_FLAG_PT3_HDF5    "m_trace_flag_pt3"
-#define B_INFO_M_X_PT4_HDF5             "m_x_pt4"
-#define B_INFO_M_Y_PT4_HDF5             "m_y_pt4"
-#define B_INFO_M_Z_PT4_HDF5             "m_z_pt4"
-#define B_INFO_M_DAS_PT4_HDF5           "m_das_pt4"
-#define B_INFO_M_TRACE_FLAG_PT4_HDF5    "m_trace_flag_pt4"
-#define B_INFO_SLIP_VELOCITY_HDF5       "slip_velocity"
-#define B_INFO_ASEISMICITY_HDF5         "aseismicity"
-#define B_INFO_RAKE_HDF5                "rake_rad"
-#define B_INFO_DIP_HDF5                 "dip_rad"
-#define B_INFO_DYNAMIC_STRENGTH_HDF5    "dynamic_strength"
-#define B_INFO_STATIC_STRENGTH_HDF5     "static_strength"
-#define B_INFO_LAME_MU_HDF5             "lame_mu"
-#define B_INFO_LAME_LAMBDA_HDF5         "lame_lambda"
-#define B_INFO_FAULT_NAME_HDF5          "fault_name"
-
 // Event info related definitions
 #define EVENT_TABLE_HDF5            "event_table"
 #define EVENT_NUM_ENTRIES_HDF5      12
@@ -128,15 +92,12 @@
 #define CHECKPOINT_EVENT_HDF5       "checkpoint_event"
 #define CHECKPOINT_NUM_ENTRIES_HDF5 6
 #define CHECKPOINT_SLIP_DFCT_HDF5   "slipDeficit"
-#define CHECKPOINT_SLIP_CUM_HDF5    "slipCumulative"
 #define CHECKPOINT_CFF_HDF5         "cff"
 #define CHECKPOINT_STRESS_S_HDF5    "stressS"
 #define CHECKPOINT_STRESS_N_HDF5    "stressN"
 #define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
 
 #define BG_EVENT_TABLE_HDF5         "background_event_table"
-
-#define FILE_NAME_MAX_LEN           256
 
 struct EventInfo {
     unsigned int    event_number;
@@ -163,7 +124,7 @@ struct EventSweepInfo {
 
 typedef struct EventSweepInfo EventSweepInfo;
 
-struct AftershockBGInfo {
+struct AftershockInfo {
     unsigned int    event_number;
     unsigned int    gen;
     float           mag;
@@ -172,12 +133,13 @@ struct AftershockBGInfo {
     float           y;
 };
 
-typedef struct AftershockBGInfo AftershockBGInfo;
+typedef struct AftershockInfo AftershockInfo;
+
+#ifdef HDF5_FOUND
 
 // Classes representing a file containing checkpoint data
 class HDF5Checkpoint {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to checkpoint data file
         hid_t               data_file;
 
@@ -189,7 +151,6 @@ class HDF5Checkpoint {
 
         // Access control handle
         hid_t               plist_id;
-#endif
 };
 
 class HDF5CheckpointReader : public HDF5Checkpoint {
@@ -212,7 +173,6 @@ class HDF5CheckpointWriter : public HDF5Checkpoint {
 // Classes representing a file containing Greens function calculation data
 class HDF5GreensData {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to data file
         hid_t               data_file;
 
@@ -224,7 +184,6 @@ class HDF5GreensData {
 
         // Dimension of Greens matrix
         unsigned int        greens_dim;
-#endif
 
     public:
         HDF5GreensData(void) {};
@@ -247,24 +206,14 @@ class HDF5GreensDataWriter : public HDF5GreensData {
 
 class HDF5Data {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to data file
         hid_t               data_file;
 
         // Handles to data in the file
-        hid_t               sim_years_set, base_lat_lon_set;
-
-        // Handles to data types
-        hid_t               fault_name_datatype;
+        hid_t               sim_years_set;
 
         // Handles to data space specifications
-        hid_t               block_info_dataspace, pair_val_dataspace, fault_name_dataspace;
-
-        // Names, types, offsets and sizes for block info table
-        const char *binfo_field_names[B_INFO_NUM_ENTRIES_HDF5];
-        size_t binfo_field_offsets[B_INFO_NUM_ENTRIES_HDF5];
-        hid_t binfo_field_types[B_INFO_NUM_ENTRIES_HDF5];
-        size_t binfo_field_sizes[B_INFO_NUM_ENTRIES_HDF5];
+        hid_t               pair_val_dataspace;
 
         // Names, types, offsets and sizes for event table
         const char *event_field_names[EVENT_NUM_ENTRIES_HDF5];
@@ -283,10 +232,9 @@ class HDF5Data {
         size_t aftershock_field_offsets[AFTERSHOCK_NUM_ENTRIES_HDF5];
         hid_t aftershock_field_types[AFTERSHOCK_NUM_ENTRIES_HDF5];
         size_t aftershock_field_sizes[AFTERSHOCK_NUM_ENTRIES_HDF5];
-#endif
 
         // Values read from shared memory (pointers are set to within shared memory segment)
-        unsigned int    num_blocks, num_layers;
+        unsigned int    num_blocks;
 
         void createH5Handles(void);
 
@@ -338,15 +286,6 @@ class HDF5DataReader : public HDF5Data {
         };*/
 
         HDF5DataReader(const std::string &hdf5_file_name);
-
-        BlockInfo getBlockInfo(const BlockID &block_id) const;
-
-        unsigned int getNumLayers(void) const {
-            return num_layers;
-        };
-        unsigned int getNumEvents(void) const {
-            return event_set.size();
-        };
 };
 
 class HDF5DataWriter : public HDF5Data {
@@ -358,5 +297,7 @@ class HDF5DataWriter : public HDF5Data {
 
         void writeEvent(VCEvent &event, VCGeneralEventSet &bg_events);
 };
+
+#endif
 
 #endif
