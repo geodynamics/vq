@@ -58,8 +58,6 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "sim.noise.stress: Stress drop noise value must be between 0 and 1.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
                 "Greens calculation method must be either 2011, Barnes Hut or file based.");
-    assertThrow(getSpecExecMethod() != SPEC_EXEC_UNDEFINED,
-                "Speculative execution method must be either none, fixed or adaptive.");
 }
 
 /*!
@@ -69,13 +67,6 @@ VCSimulation::~VCSimulation(void) {
 #ifdef DEBUG
     console() << "Number matrix multiplies: " << num_mults << std::endl;
 #endif
-
-    if (getSpecExecMethod() != SPEC_EXEC_NONE) {
-        console() << "Number of predictions: " << num_predictions << std::endl;
-        console() << "Number predicted local: " << num_predicted_local << std::endl;
-        console() << "Number predictions failed: " << num_predictions_failed << std::endl;
-        console() << "Number predictions succeed: " << num_predictions_success << std::endl;
-    }
 
     if (mult_buffer) delete mult_buffer;
 
@@ -798,9 +789,7 @@ void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, c
  Distributes the local part of the update field to other nodes and
  receives their local update fields.
  */
-int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
-    double      num_spec_exec = 0;
-
+void VCSimulation::distributeUpdateField(void) {
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
     startTimer(dist_comm_timer);
@@ -814,9 +803,8 @@ int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];
     }
 
-    updateFieldSendBuf[i] = (did_spec_exec ? 1.0 : 0.0);
     MPI_Allgatherv(updateFieldSendBuf,
-                   numLocalBlocks()+1,
+                   numLocalBlocks(),
                    MPI_DOUBLE,
                    updateFieldRecvBuf,
                    updateFieldCounts,
@@ -827,19 +815,12 @@ int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
     // Copy the received values from the buffer to the update field
     for (i=0; i<numGlobalBlocks()+getWorldSize(); ++i) {
         bid = updateFieldRecvIDs[i];
-
-        if (bid != UINT_MAX) {
-            getUpdateFieldPtr()[bid] = updateFieldRecvBuf[i];
-        } else {
-            num_spec_exec += updateFieldRecvBuf[i];
-        }
     }
 
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
 #endif
-    return num_spec_exec;
 }
 
 /*!
@@ -883,73 +864,6 @@ void VCSimulation::distributeFailedBlocks(BlockIDSet &failed_blocks) {
     }
 
 #endif
-}
-
-/*!
- Try to predict whether a rupture on the given faults will propagate
- to another node during this sweep.
- */
-bool VCSimulation::isLocalizedFailure(const BlockIDSet &fail_set) {
-    BlockIDSet::const_iterator      it;
-    BlockList::iterator             bit;
-    double                          min_dist, fixed_dist;
-    int                             i;
-    bool                            predict_local;
-
-    // If we're using the fixed distance method, calculate the boundary distances
-    if ((getSpecExecMethod() == SPEC_EXEC_FIXED_DIST || getSpecExecMethod() == SPEC_EXEC_ADAPTIVE) && boundary_dist_map.empty()) {
-        // For each local block
-        for (i=0; i<numLocalBlocks(); ++i) {
-            Block       &local_block = getBlock(getGlobalBID(i));
-            min_dist = DBL_MAX;
-
-            // Compute the distance to the boundary over all global blocks
-            for (bit=begin(); bit!=end(); ++bit) {
-                // For non-local blocks, compute the minimum distance
-                if (!isLocalBlockID(bit->getBlockID())) {
-                    min_dist = fmin(min_dist, bit->center().dist(local_block.center()));
-                }
-            }
-
-            boundary_dist_map.insert(std::make_pair(getGlobalBID(i), min_dist));
-        }
-    }
-
-    // If our last prediction failed, just do the normal
-    // execution method for the rest of the event
-    if (last_prediction_failed) return false;
-
-    if (fail_set.empty()) return false;
-
-    num_predictions++;
-
-    switch (getSpecExecMethod()) {
-        case SPEC_EXEC_NONE:
-            predict_local = false;
-            break;
-
-        case SPEC_EXEC_FIXED_DIST:
-        case SPEC_EXEC_ADAPTIVE:
-            fixed_dist = getSpecExecDistance();
-            predict_local = true;
-
-            for (it=fail_set.begin(); it!=fail_set.end(); ++it) {
-                if (boundary_dist_map.at(*it) < fixed_dist) {
-                    predict_local = false;
-                    break;
-                }
-            }
-
-            break;
-
-        default:
-            predict_local = false;
-            break;
-    }
-
-    if (predict_local) num_predicted_local++;
-
-    return predict_local;
 }
 
 /*!
@@ -1157,11 +1071,11 @@ void VCSimulation::partitionBlocks(void) {
     if (isRootNode()) assertThrow(avail_ids.size()==0, "Did not assign all blocks in partitioning.");
 
     // One extra field for speculative execution information
-    updateFieldRecvIDs = new BlockID[num_global_blocks+world_size];
-    updateFieldRecvBuf = new GREEN_VAL[num_global_blocks+world_size];
+    updateFieldRecvIDs = new BlockID[num_global_blocks];
+    updateFieldRecvBuf = new GREEN_VAL[num_global_blocks];
 
-    updateFieldSendIDs = new BlockID[numLocalBlocks()+1];
-    updateFieldSendBuf = new GREEN_VAL[numLocalBlocks()+1];
+    updateFieldSendIDs = new BlockID[numLocalBlocks()];
+    updateFieldSendBuf = new GREEN_VAL[numLocalBlocks()];
 
     updateFieldCounts = new int[world_size];
     updateFieldDisps = new int[world_size];

@@ -34,13 +34,6 @@ enum GreensCalcMethod {
     GREENS_CALC_2011            // use the new Okada class to calculate Greens functions
 };
 
-enum SpecExecMethod {
-    SPEC_EXEC_UNDEFINED,        // undefined behavior
-    SPEC_EXEC_NONE,             // do not use speculative execution
-    SPEC_EXEC_FIXED_DIST,       // use speculative execution with fixed boundary distance
-    SPEC_EXEC_ADAPTIVE          // use speculative execution with adaptive prediction
-};
-
 enum FrictionLawMethod {
     FRIC_LAW_UNDEFINED,         // undefined behavior
     FRIC_LAW_ORIG,              // Original friction law where blocks slip full amount each time
@@ -56,9 +49,6 @@ class VCParams {
         bool                valid;
 
         std::string         version;
-
-        SpecExecMethod      spec_exec_method;
-        double              spec_exec_dist;
 
         double              year;
         double              sim_end_year;
@@ -125,13 +115,6 @@ class VCParams {
 
         std::string getVersion(void) const {
             return version;
-        };
-
-        SpecExecMethod getSpecExecMethod(void) const {
-            return spec_exec_method;
-        };
-        double getSpecExecDistance(void) const {
-            return spec_exec_dist;
         };
 
         double getSimStart(void) const {
