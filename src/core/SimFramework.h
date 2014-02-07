@@ -26,11 +26,6 @@
 #include <mpi.h>
 #endif
 
-#ifdef HAVE_PAPI_H
-#include "papi.h"
-#include "papiStdEventDefs.h"
-#endif
-
 #include "SimTimer.h"
 
 #ifndef _SIM_FRAMEWORK_H_

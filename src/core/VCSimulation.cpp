@@ -28,8 +28,6 @@
 #include <list>
 #include <vector>
 
-#undef HAVE_PAPI_H
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -62,15 +60,6 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "Greens calculation method must be either 2011, Barnes Hut or file based.");
     assertThrow(getSpecExecMethod() != SPEC_EXEC_UNDEFINED,
                 "Speculative execution method must be either none, fixed or adaptive.");
-
-#ifdef HAVE_PAPI_H
-    int     retval;
-
-    assertThrow(PAPI_query_event (PAPI_TOT_INS) == PAPI_OK, "No instruction counter");
-    multiply_event_set = PAPI_NULL;
-    assertThrow(PAPI_create_eventset(&multiply_event_set) == PAPI_OK, PAPI_strerror(retval));
-    assertThrow(PAPI_add_event(multiply_event_set, PAPI_TOT_INS) == PAPI_OK, PAPI_strerror(retval));
-#endif
 }
 
 /*!
@@ -87,13 +76,6 @@ VCSimulation::~VCSimulation(void) {
         console() << "Number predictions failed: " << num_predictions_failed << std::endl;
         console() << "Number predictions succeed: " << num_predictions_success << std::endl;
     }
-
-    // Deallocate PAPI event set
-#ifdef HAVE_PAPI_H
-    console() << "Number instructions: " << total_inst << std::endl;
-    PAPI_cleanup_eventset(multiply_event_set);
-    PAPI_destroy_eventset(&multiply_event_set);
-#endif
 
     if (mult_buffer) delete mult_buffer;
 
@@ -531,11 +513,6 @@ void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMat
     }
 
 #endif
-#ifdef HAVE_PAPI_H
-    int     retval;
-    retval = PAPI_start(multiply_event_set);
-    assertThrow(retval == PAPI_OK, PAPI_strerror(retval));
-#endif
 
     height = numLocalBlocks();
     width = numGlobalBlocks();
@@ -596,13 +573,6 @@ void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMat
             c[x] += val;
         }
     }
-
-#ifdef HAVE_PAPI_H
-    long_long   num_inst;
-    retval = PAPI_stop(multiply_event_set, &num_inst);
-    //assertMsg(retval == PAPI_OK, PAPI_strerror(retval));
-    total_inst += num_inst;
-#endif
 
 #ifdef DEBUG
 
