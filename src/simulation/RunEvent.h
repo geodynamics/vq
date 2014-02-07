@@ -23,14 +23,6 @@
 #ifndef _RUN_EVENT_H_
 #define _RUN_EVENT_H_
 
-enum SpecExecStage {
-    NORMAL_OPERATION,
-    LOCALIZED_FAILURE,
-    CHECK_IF_SELF_FAILED,
-    CHECK_SELF_IGNORE,
-    REWIND_ALL
-};
-
 typedef std::map<BlockID, unsigned int> FailureCount;
 
 /*!
@@ -40,7 +32,6 @@ typedef std::map<BlockID, unsigned int> FailureCount;
 class RunEvent : public SimPlugin {
     private:
         BlockIDSet          blocks2fail;
-        std::vector<int>    succ_sweep_sizes, fail_sweep_sizes;
         FailureCount        num_failures;
 
         void processBlocksOrigFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
@@ -53,7 +44,6 @@ class RunEvent : public SimPlugin {
             return "Propagate event ruptures";
         };
         virtual void initDesc(const SimFramework *_sim) const {};
-        virtual void finish(SimFramework *_sim);
         virtual bool needsTimer(void) const {
             return true;
         };

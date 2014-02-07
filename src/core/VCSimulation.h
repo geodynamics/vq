@@ -25,7 +25,6 @@
 #include "VCSimData.h"
 #include "VCComm.h"
 #include "VCCommPartition.h"
-#include "VCCommSpecExec.h"
 #include "HDF5Data.h"
 
 #ifndef _VCSIMULATION_H_
@@ -50,7 +49,7 @@ enum PartitionMethod {
  It contains functions related to the simulation, parameter retrieval functions and basic
  functions for earthquake analysis.
  */
-class VCSimulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCCommSpecExec, public VCComm {
+class VCSimulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCComm {
     public:
         VCSimulation(int argc, char **argv);
         ~VCSimulation(void);
@@ -135,15 +134,13 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatrix<GREEN_VAL> *a, const double *b, const bool dense);
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
-        int distributeUpdateField(const bool &did_spec_exec);
+        void distributeUpdateField(void);
         void distributeFailedBlocks(BlockIDSet &failed_blocks);
         void collectEventSweep(VCEventSweep &cur_sweep);
 
         void addNeighbor(const BlockID &b1, const BlockID &b2);
         std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
         void printTimers(void);
-
-        bool isLocalizedFailure(const BlockIDSet &fail_set);
 
         bool isLocalBlockID(const BlockID &block_id) const {
             return (block_node_map.at(block_id) == node_rank);

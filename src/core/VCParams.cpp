@@ -26,15 +26,12 @@
  for parameters that are not explicitly specified.
  */
 void VCParams::read_params(const std::string &param_file_name) {
-    std::string     greens_method, spec_exec_str, friction_law_str;
+    std::string     greens_method, friction_law_str;
     ConfigFile param_file(param_file_name);
 
     valid = true;
 
     version = param_file.read<string>("sim.version", "");
-
-    spec_exec_str = param_file.read<string>("sim.spec_exec", "none");
-    spec_exec_dist = param_file.read<double>("sim.spec_exec_distance", 0.0);
 
     year = param_file.read<double>("sim.start_year", 0.0);
     sim_end_year = param_file.read<double>("sim.end_year", 1000.0);
@@ -108,17 +105,6 @@ void VCParams::read_params(const std::string &param_file_name) {
         greens_calc_method = GREENS_CALC_UNDEFINED;
     }
 
-    // Parse the speculative execution method string
-    if (!spec_exec_str.compare("none")) {
-        spec_exec_method = SPEC_EXEC_NONE;
-    } else if (!spec_exec_str.compare("fixed")) {
-        spec_exec_method = SPEC_EXEC_FIXED_DIST;
-    } else if (!spec_exec_str.compare("adaptive")) {
-        spec_exec_method = SPEC_EXEC_ADAPTIVE;
-    } else {
-        spec_exec_method = SPEC_EXEC_UNDEFINED;
-    }
-
     // Parse the friction law method string
     if (!friction_law_str.compare("original")) {
         friction_law_method = FRIC_LAW_ORIG;
@@ -153,28 +139,6 @@ std::ostream &operator<<(std::ostream &os, const GreensCalcMethod &calc_method) 
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const SpecExecMethod &calc_method) {
-    switch (calc_method) {
-        case SPEC_EXEC_NONE:
-            os << "none";
-            break;
-
-        case SPEC_EXEC_FIXED_DIST:
-            os << "fixed";
-            break;
-
-        case SPEC_EXEC_ADAPTIVE:
-            os << "adaptive";
-            break;
-
-        default:
-            os << "undefined";
-            break;
-    }
-
-    return os;
-}
-
 std::ostream &operator<<(std::ostream &os, const FrictionLawMethod &calc_method) {
     switch (calc_method) {
         case FRIC_LAW_ORIG:
@@ -195,9 +159,6 @@ std::ostream &operator<<(std::ostream &os, const FrictionLawMethod &calc_method)
 
 std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.version\t\t\t\t\t\t\t= " << params.version << "\n";
-
-    os << "sim.spec_exec\t\t\t\t\t\t= " << params.spec_exec_method << "\n";
-    os << "sim.spec_exec_distance\t\t\t\t= " << params.spec_exec_dist << "\n";
 
     os << "sim.start_year\t\t\t\t\t\t= " << params.year << "\n";
     os << "sim.end_year\t\t\t\t\t\t\t= " << params.sim_end_year << "\n";
