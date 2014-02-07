@@ -41,7 +41,6 @@ class SimTimer {
         std::vector<bool>           can_preempt;
         std::stack<int>             paused_timers;
         std::vector<int>            num_timings;
-        int                         cur_timer;
 
     public:
         double curTime(const bool &use_barrier=false);
