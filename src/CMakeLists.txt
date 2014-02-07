@@ -15,11 +15,11 @@ SET(VC_CORE core/SimError.h core/SimFramework.cpp core/SimFramework.h core/SimTi
 
 # Add executable called "vc" that is built from the source files
 ADD_EXECUTABLE (vc main.cpp ${VC_MISC} ${VC_SIMULATION} ${VC_IO} ${VC_CORE})
-#ADD_EXECUTABLE (mesher mesher.cpp)
+ADD_EXECUTABLE (mesher mesher.cpp)
 
 # Link the executables to the quakelib library.
 TARGET_LINK_LIBRARIES (vc quakelib)
-#TARGET_LINK_LIBRARIES (mesher quakelib)
+TARGET_LINK_LIBRARIES (mesher quakelib)
 
 # Link the VC simulator to the MPI library if found
 IF(DEFINED MPI_C_FOUND)
