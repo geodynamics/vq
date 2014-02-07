@@ -176,11 +176,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
 
         //! Map of which blocks have which neighbors
         std::map<BlockID, BlockIDSet>   neighbor_map;
-
-#ifdef HAVE_PAPI_H
-        int                         multiply_event_set;
-        long_long                   total_inst;
-#endif
 };
 
 #endif

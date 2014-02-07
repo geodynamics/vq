@@ -85,21 +85,6 @@ SimFramework::SimFramework(int argc, char **argv) {
     world_size = 1;
 #endif
 
-    // Initialize the PAPI library
-#ifdef HAVE_PAPI_H
-    int     retval;
-    retval = PAPI_library_init(PAPI_VER_CURRENT);
-
-    if (retval != PAPI_VER_CURRENT && retval > 0) {
-        std::cerr << "PAPI library version mismatch" << std::endl;
-        exit(1);
-    } else if (retval < 0) {
-        std::cerr << "PAPI error: " << PAPI_strerror(retval) << std::endl;
-        exit(1);
-    }
-
-#endif
-
     dry_run = false;
 
     for (i=0; i<argc; ++i) {
@@ -113,11 +98,6 @@ SimFramework::SimFramework(int argc, char **argv) {
  Cleanup the SimFramework by releasing MPI.
  */
 SimFramework::~SimFramework(void) {
-    // Finish using the PAPI library and free associated resources
-#ifdef HAVE_PAPI_H
-    PAPI_shutdown();
-#endif
-
 #ifdef MPI_C_FOUND
     MPI_Finalize();
 #endif
