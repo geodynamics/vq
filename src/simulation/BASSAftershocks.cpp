@@ -60,11 +60,6 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
                                       0);
     events_to_process->push_back(initial_shock);
 
-    // Also create aftershocks for Poisson generated events
-    for (it=sim->getBGEvents().begin(); it!=sim->getBGEvents().end(); ++it) {
-        events_to_process->push_back(VCEventAftershock(it->mag, it->t, it->x, it->y, 0));
-    }
-
     start = 0;
     stop  = events_to_process->size();
 
@@ -79,8 +74,8 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
         stop  = events_to_process->size();
     } while ( (++genNum < sim->getBASSMaxGenerations()) && (count > 0) );
 
-    // Remove the initial seed event (main shock) and Poisson background initial events
-    events_to_process->erase(events_to_process->begin(), events_to_process->begin()+sim->getBGEvents().size()+1);
+    // Remove the initial seed event (main shock)
+    events_to_process->erase(events_to_process->begin(), events_to_process->begin()+1);
 
     // Finally we sort the events into time order since the aftershocks in the
     // BASS model are usually not generated in ordered time sequence.

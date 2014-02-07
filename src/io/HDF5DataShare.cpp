@@ -64,7 +64,7 @@ void HDF5DataShare::init(SimFramework *_sim) {
 SimRequest HDF5DataShare::run(SimFramework *_sim) {
     VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
 
-    if (h5_data) h5_data->writeEvent(sim->getCurrentEvent(), sim->getBGEvents());
+    if (h5_data) h5_data->writeEvent(sim->getCurrentEvent());
 
     // Check if the pause file exists each second
     if (sim->getEventCount() >= next_pause_check) {

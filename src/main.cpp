@@ -36,7 +36,6 @@
 #include "AddNoise.h"
 #include "BadFaultKill.h"
 #include "BASSAftershocks.h"
-#include "BGPoissonEvents.h"
 #include "BlockValCompute.h"
 #include "DepthDepVelocity.h"
 #include "EventRecorder.h"
@@ -53,7 +52,7 @@ int main (int argc, char **argv) {
     PluginID        read_eqsim_file, init_blocks, block_val_compute;
     PluginID        greens_init, greens_outfile, system_output_file, add_noise, add_asperities, bad_fault_kill;
     PluginID        depth_dependent_velocity, greens_kill, update_block_stress, run_event;
-    PluginID        sanity_checking, bass_model_aftershocks, bg_poisson_events, display_progress, state_output_file;
+    PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        eqsim_output_file, h5_data_share, vc_events_output_file, graceful_quit;
     VCSimulation    *vc_sim;
 
@@ -97,9 +96,6 @@ int main (int argc, char **argv) {
 
     // Implement BASS aftershocks if the number of BASS generations is more than 0
     bass_model_aftershocks = vc_sim->registerPlugin(new BASSAftershocks, vc_sim->getBASSMaxGenerations() != 0);
-
-    // Implement background Poisson process events if the interevent time is more than 0
-    bg_poisson_events = vc_sim->registerPlugin(new BGPoissonEvents, vc_sim->getBGEventMeanInterevent() > 0);
 
     // Display progress if the progress display period is more than 0
     display_progress = vc_sim->registerPlugin(new ProgressMonitor, vc_sim->getProgressPeriod() > 0);
@@ -155,11 +151,7 @@ int main (int argc, char **argv) {
     vc_sim->registerDependence(run_event, update_block_stress, DEP_REQUIRE);
 
     // Background events and BASS aftershocks are added after the initial event is processed
-    vc_sim->registerDependence(bg_poisson_events, run_event, DEP_REQUIRE);
     vc_sim->registerDependence(bass_model_aftershocks, run_event, DEP_REQUIRE);
-
-    // BASS aftershocks after background events
-    vc_sim->registerDependence(bass_model_aftershocks, bg_poisson_events, DEP_OPTIONAL);
 
     // Sanity checking occurs after the events are run
     vc_sim->registerDependence(sanity_checking, run_event, DEP_OPTIONAL);
@@ -168,9 +160,9 @@ int main (int argc, char **argv) {
     // Output occurs after events (including background) are finished
     vc_sim->registerDependence(display_progress, run_event, DEP_OPTIONAL);
     vc_sim->registerDependence(state_output_file, run_event, DEP_OPTIONAL);
-    vc_sim->registerDependence(eqsim_output_file, bg_poisson_events, DEP_OPTIONAL);
-    vc_sim->registerDependence(h5_data_share, bg_poisson_events, DEP_OPTIONAL);
-    vc_sim->registerDependence(vc_events_output_file, bg_poisson_events, DEP_OPTIONAL);
+    vc_sim->registerDependence(eqsim_output_file, bass_model_aftershocks, DEP_OPTIONAL);
+    vc_sim->registerDependence(h5_data_share, bass_model_aftershocks, DEP_OPTIONAL);
+    vc_sim->registerDependence(vc_events_output_file, bass_model_aftershocks, DEP_OPTIONAL);
 
     //vc_sim->writeDOT(vc_sim->errConsole());
 

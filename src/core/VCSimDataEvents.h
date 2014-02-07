@@ -29,9 +29,6 @@ class VCSimDataEvents {
         //! Current event in the simulation (older events are discarded)
         VCEvent                     cur_event;
 
-        //! Set of background events that occurred between current event and previous event
-        VCGeneralEventSet           bg_events;
-
         //! Current count of events
         unsigned int                event_cnt;
 
@@ -47,16 +44,6 @@ class VCSimDataEvents {
         void addEvent(const VCEvent &new_event) {
             cur_event = new_event;
             event_cnt++;
-        };
-
-        void clearBackgroundEvents(void) {
-            bg_events.clear();
-        };
-        void addBackgroundEvent(const VCGeneralEvent &new_bg_event) {
-            bg_events.push_back(new_bg_event);
-        };
-        VCGeneralEventSet &getBGEvents(void) {
-            return bg_events;
         };
 };
 

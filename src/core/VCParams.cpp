@@ -74,12 +74,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     bass_distance_d = param_file.read<double>("sim.bass.distance_d", 300);
     bass_distance_decay_q = param_file.read<double>("sim.bass.distance_decay_q", 1.35);
 
-    bg_event_mean_interevent = param_file.read<double>("sim.bg_event.mean_intervent", -1);
-    bg_event_min_mag = param_file.read<double>("sim.bg_event.min_magnitude", 4.0);
-    bg_event_max_mag = param_file.read<double>("sim.bg_event.max_magnitude", 7.0);
-    bg_event_distance = param_file.read<double>("sim.bg_event.distance", 300);
-    bg_event_distance_decay = param_file.read<double>("sim.bg_event.distance_decay", 1.35);
-
     depth_dependent_velocity = param_file.read<bool>("sim.depth_dependent_velocity", false);
     sanity_check = param_file.read<bool>("sim.sanity_check", false);
     do_normal_stress = param_file.read<bool>("sim.do_normal_stress", true);
@@ -241,12 +235,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.bass.time_decay_p\t\t\t\t= " << params.bass_time_decay_p << "\n";
     os << "sim.bass.distance_d\t\t\t\t\t= " << params.bass_distance_d << "\n";
     os << "sim.bass.distance_decay_q\t\t\t= " << params.bass_distance_decay_q << "\n";
-
-    os << "sim.bg_event.mean_intervent\t\t\t= " << params.bg_event_mean_interevent << "\n";
-    os << "sim.bg_event.min_magnitude\t\t\t= " << params.bg_event_min_mag << "\n";
-    os << "sim.bg_event.max_magnitude\t\t\t= " << params.bg_event_max_mag << "\n";
-    os << "sim.bg_event.distance\t\t\t\t= " << params.bg_event_distance << "\n";
-    os << "sim.bg_event.distance_decay\t\t\t= " << params.bg_event_distance_decay << "\n";
 
     os << "sim.depth_dependent_velocity\t\t= " << params.depth_dependent_velocity << "\n";
     os << "sim.sanity_check\t\t\t\t\t\t= " << params.sanity_check << "\n";
