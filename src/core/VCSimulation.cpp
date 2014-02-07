@@ -257,7 +257,7 @@ void VCSimulation::getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_fai
  */
 void VCSimulation::getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const {
     BlockIDSet::const_iterator      it;
-    quakelib::SectionID                     section_id;
+    SectionID                     section_id;
 
     for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
         section_id = getBlock(*it).getSectionID();

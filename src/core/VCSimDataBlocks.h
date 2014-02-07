@@ -52,7 +52,6 @@ class VCSimDataBlocks {
         const Block &getBlock(const BlockID &block_num) const {
             return blocks[block_num];
         };
-        BlockInfo getBlockInfo(const Block &block);
 
         void setRecurrence(const BlockID &bid, const double &rec) {
             recurrences[bid] = rec;

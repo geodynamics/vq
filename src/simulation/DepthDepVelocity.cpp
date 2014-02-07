@@ -29,8 +29,8 @@ void DepthDepVelocity::initDesc(const SimFramework *_sim) const {
 void DepthDepVelocity::init(SimFramework *_sim) {
     VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
     BlockList::iterator         it;
-    std::map<quakelib::SectionID, double>   section_max_depth;
-    quakelib::SectionID                 sid;
+    std::map<SectionID, double>   section_max_depth;
+    SectionID                 sid;
     double                      old_slip_rate, new_slip_rate;
     quakelib::Vec<3>            center_point;
 

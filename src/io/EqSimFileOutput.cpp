@@ -50,7 +50,7 @@ SimRequest EqSimFileOutput::run(SimFramework *_sim) {
     double                      shear_stress, shear_stress0, normal_stress, normal_stress0;
     SectionIDList               section_ordering;
     SectionIDList::iterator     it;
-    quakelib::SectionID                 sid;
+    SectionID                 sid;
     BlockID                     hypocenter_bid;
     quakelib::Conversion        convert;
 

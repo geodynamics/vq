@@ -666,7 +666,7 @@ void HDF5Data::createH5Handles(void) {
 
     binfo_field_sizes[0] = sizeof(BlockID);
     binfo_field_sizes[1] = sizeof(FaultID);
-    binfo_field_sizes[2] = sizeof(quakelib::SectionID);
+    binfo_field_sizes[2] = sizeof(SectionID);
     binfo_field_sizes[3] = sizeof(double);
     binfo_field_sizes[4] = sizeof(double);
     binfo_field_sizes[5] = sizeof(double);
