@@ -18,9 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-//#ifdef HAVE_CONFIG_H
 #include "config.h"
-//#endif
 
 #include "SystemFileOutput.h"
 #include "SimError.h"
@@ -62,11 +60,7 @@ void SystemFileOutput::init(SimFramework *_sim) {
 	// Write the system file header information
 	// TODO: Add SVN revision number
 	out_file << "#####################################################\n";
-#ifdef HAVE_CONFIG_H
 	out_file << "# Virtual California " << VERSION << "\n";
-#else
-	out_file << "# Virtual California\n";
-#endif
 	out_file << "# Simulation start: " << time_buf << "\n";
 	out_file << "#####################################################\n";
 	out_file << "#" << tmp_block.header() << "\n";
