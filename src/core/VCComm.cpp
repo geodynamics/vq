@@ -28,54 +28,56 @@
  Calculates the minimum value and its associated block among the specified input array.
  */
 void BlockValMinimum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-	BlockVal		*in, *out;
-	int				i;
-	
-	in = (BlockVal*)invec;
-	out = (BlockVal*)inoutvec;
-	
-	for (i=0;i<*len;++i) {
-		if (in[i].val < out[i].val) {
-			out[i].val = in[i].val;
-			out[i].block_id = in[i].block_id;
-		}
-		// else leave the out array as it is
-	}
+    BlockVal        *in, *out;
+    int             i;
+
+    in = (BlockVal *)invec;
+    out = (BlockVal *)inoutvec;
+
+    for (i=0; i<*len; ++i) {
+        if (in[i].val < out[i].val) {
+            out[i].val = in[i].val;
+            out[i].block_id = in[i].block_id;
+        }
+
+        // else leave the out array as it is
+    }
 }
 
 /*!
  Calculates the maximum value and its associated block among the specified input array.
  */
 void BlockValMaximum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-	BlockVal		*in, *out;
-	int				i;
-	
-	in = (BlockVal*)invec;
-	out = (BlockVal*)inoutvec;
-	
-	for (i=0;i<*len;++i) {
-		if (in[i].val > out[i].val) {
-			out[i].val = in[i].val;
-			out[i].block_id = in[i].block_id;
-		}
-		// else leave the out array as it is
-	}
+    BlockVal        *in, *out;
+    int             i;
+
+    in = (BlockVal *)invec;
+    out = (BlockVal *)inoutvec;
+
+    for (i=0; i<*len; ++i) {
+        if (in[i].val > out[i].val) {
+            out[i].val = in[i].val;
+            out[i].block_id = in[i].block_id;
+        }
+
+        // else leave the out array as it is
+    }
 }
 
 /*!
  Calculates the sum of all block values and the number of blocks among the specified input array.
  */
 void BlockValSum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-	BlockVal		*in, *out;
-	int				i;
-	
-	in = (BlockVal*)invec;
-	out = (BlockVal*)inoutvec;
-	
-	for (i=0;i<*len;++i) {
-		out[i].val += in[i].val;
-		out[i].block_id = *len;
-	}
+    BlockVal        *in, *out;
+    int             i;
+
+    in = (BlockVal *)invec;
+    out = (BlockVal *)inoutvec;
+
+    for (i=0; i<*len; ++i) {
+        out[i].val += in[i].val;
+        out[i].block_id = *len;
+    }
 }
 #endif
 
@@ -86,28 +88,33 @@ void BlockValSum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) 
 void VCComm::allReduceBlockVal(BlockVal &in_val, BlockVal &out_val, const BlockValOp &op) {
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
-	startTimer(reduce_comm_timer);
+    startTimer(reduce_comm_timer);
 #endif
-	switch (op) {
-		case BLOCK_VAL_MIN:
-			MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_min_op, MPI_COMM_WORLD);
-			break;
-		case BLOCK_VAL_MAX:
-			MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_max_op, MPI_COMM_WORLD);
-			break;
-		case BLOCK_VAL_SUM:
-			MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_sum_op, MPI_COMM_WORLD);
-			break;
-		default:
-			std::cerr << "Unknown reduce operation. Quitting." << std::endl;
-			break;
-	}
+
+    switch (op) {
+        case BLOCK_VAL_MIN:
+            MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_min_op, MPI_COMM_WORLD);
+            break;
+
+        case BLOCK_VAL_MAX:
+            MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_max_op, MPI_COMM_WORLD);
+            break;
+
+        case BLOCK_VAL_SUM:
+            MPI_Allreduce(&in_val, &out_val, 1, block_val_type, bv_sum_op, MPI_COMM_WORLD);
+            break;
+
+        default:
+            std::cerr << "Unknown reduce operation. Quitting." << std::endl;
+            break;
+    }
+
 #ifdef DEBUG
-	stopTimer(reduce_comm_timer);
+    stopTimer(reduce_comm_timer);
 #endif
 #else
-	out_val.block_id = in_val.block_id;
-	out_val.val = in_val.val;
+    out_val.block_id = in_val.block_id;
+    out_val.val = in_val.val;
 #endif
 }
 
@@ -116,22 +123,22 @@ void VCComm::allReduceBlockVal(BlockVal &in_val, BlockVal &out_val, const BlockV
  Returns the number of nodes with blocks to fail.
  */
 int VCComm::blocksToFail(const bool &local_fail) {
-	int		global_fail, my_fail;
-	
-	my_fail = local_fail;
+    int     global_fail, my_fail;
+
+    my_fail = local_fail;
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
-	startTimer(fail_comm_timer);
+    startTimer(fail_comm_timer);
 #endif
-	MPI_Allreduce(&my_fail, &global_fail, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&my_fail, &global_fail, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #ifdef DEBUG
-	stopTimer(fail_comm_timer);
+    stopTimer(fail_comm_timer);
 #endif
 #else
-	global_fail = my_fail;
+    global_fail = my_fail;
 #endif
-	
-	return global_fail;
+
+    return global_fail;
 }
 
 /*!
@@ -139,11 +146,11 @@ int VCComm::blocksToFail(const bool &local_fail) {
  */
 int VCComm::broadcastValue(const int &bval) {
 #ifdef MPI_C_FOUND
-	int bcast_val = bval;
-	MPI_Bcast(&bcast_val, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
-	return bcast_val;
+    int bcast_val = bval;
+    MPI_Bcast(&bcast_val, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
+    return bcast_val;
 #else
-	return bval;
+    return bval;
 #endif
 }
 
@@ -153,60 +160,70 @@ int VCComm::broadcastValue(const int &bval) {
  */
 VCComm::VCComm(void) {
 #ifdef MPI_C_FOUND
-	int				block_lengths[2];
-	MPI_Aint		displacements[2];
-	MPI_Datatype	datatypes[2];
-	
-	updateFieldCounts = updateFieldDisps = NULL;
-	updateFieldSendBuf = updateFieldRecvBuf = NULL;
-	updateFieldSendIDs = updateFieldRecvIDs = NULL;
-	failBlockSendBuf = failBlockRecvBuf = NULL;
-	
-	// Register BlockVal datatype
-	block_lengths[0] = block_lengths[1] = 1;	// 1 member for each block
-	displacements[0] = 0;
-	displacements[1] = sizeof(double);
-	datatypes[0] = MPI_DOUBLE;
-	datatypes[1] = MPI_INT;
-	
-	MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_val_type);
-	MPI_Type_commit(&block_val_type);
-	
-	// Register BlockVal related operations 
-	MPI_Op_create(BlockValMinimum, true, &bv_min_op);
-	MPI_Op_create(BlockValMaximum, true, &bv_max_op);
-	MPI_Op_create(BlockValSum, true, &bv_sum_op);
-	
-	// Register BlockSweepVals datatype
-	block_lengths[0] = 5;
-	block_lengths[1] = 1;
-	displacements[0] = 0;
-	displacements[1] = 5*sizeof(double);
-	datatypes[0] = MPI_DOUBLE;
-	datatypes[1] = MPI_INT;
-	
-	MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_sweep_type);
-	MPI_Type_commit(&block_sweep_type);
+    int             block_lengths[2];
+    MPI_Aint        displacements[2];
+    MPI_Datatype    datatypes[2];
+
+    updateFieldCounts = updateFieldDisps = NULL;
+    updateFieldSendBuf = updateFieldRecvBuf = NULL;
+    updateFieldSendIDs = updateFieldRecvIDs = NULL;
+    failBlockSendBuf = failBlockRecvBuf = NULL;
+
+    // Register BlockVal datatype
+    block_lengths[0] = block_lengths[1] = 1;    // 1 member for each block
+    displacements[0] = 0;
+    displacements[1] = sizeof(double);
+    datatypes[0] = MPI_DOUBLE;
+    datatypes[1] = MPI_INT;
+
+    MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_val_type);
+    MPI_Type_commit(&block_val_type);
+
+    // Register BlockVal related operations
+    MPI_Op_create(BlockValMinimum, true, &bv_min_op);
+    MPI_Op_create(BlockValMaximum, true, &bv_max_op);
+    MPI_Op_create(BlockValSum, true, &bv_sum_op);
+
+    // Register BlockSweepVals datatype
+    block_lengths[0] = 5;
+    block_lengths[1] = 1;
+    displacements[0] = 0;
+    displacements[1] = 5*sizeof(double);
+    datatypes[0] = MPI_DOUBLE;
+    datatypes[1] = MPI_INT;
+
+    MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_sweep_type);
+    MPI_Type_commit(&block_sweep_type);
 #endif
 }
 
 VCComm::~VCComm(void) {
 #ifdef MPI_C_FOUND
-	if (updateFieldCounts) delete updateFieldCounts;
-	if (updateFieldDisps) delete updateFieldDisps;
-	if (updateFieldSendBuf) delete updateFieldSendBuf;
-	if (updateFieldRecvBuf) delete updateFieldRecvBuf;
-	if (updateFieldSendIDs) delete updateFieldSendIDs;
-	if (updateFieldRecvIDs) delete updateFieldRecvIDs;
-	if (failBlockSendBuf) delete failBlockSendBuf;
-	if (failBlockRecvBuf) delete failBlockRecvBuf;
-	if (failBlockCounts) delete failBlockCounts;
-	if (failBlockDisps) delete failBlockDisps;
-	
-	MPI_Type_free(&block_val_type);
-	MPI_Op_free(&bv_min_op);
-	MPI_Op_free(&bv_max_op);
-	MPI_Op_free(&bv_sum_op);
-	MPI_Type_free(&block_sweep_type);
+
+    if (updateFieldCounts) delete updateFieldCounts;
+
+    if (updateFieldDisps) delete updateFieldDisps;
+
+    if (updateFieldSendBuf) delete updateFieldSendBuf;
+
+    if (updateFieldRecvBuf) delete updateFieldRecvBuf;
+
+    if (updateFieldSendIDs) delete updateFieldSendIDs;
+
+    if (updateFieldRecvIDs) delete updateFieldRecvIDs;
+
+    if (failBlockSendBuf) delete failBlockSendBuf;
+
+    if (failBlockRecvBuf) delete failBlockRecvBuf;
+
+    if (failBlockCounts) delete failBlockCounts;
+
+    if (failBlockDisps) delete failBlockDisps;
+
+    MPI_Type_free(&block_val_type);
+    MPI_Op_free(&bv_min_op);
+    MPI_Op_free(&bv_max_op);
+    MPI_Op_free(&bv_sum_op);
+    MPI_Type_free(&block_sweep_type);
 #endif
 }

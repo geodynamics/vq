@@ -28,19 +28,25 @@
  Dump the current simulation state to a file.
  */
 class CheckpointFileOutput : public SimPlugin {
-private:
-	unsigned int		checkpoint_num;
-	
-	void writeCheckpoint(const std::string &ckpt_file_name, const VCSimulation *sim);
-	
-public:
-    virtual std::string name(void) const { return "Checkpointing"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void init(SimFramework *_sim) { checkpoint_num = 0; };
-	virtual bool needsTimer(void) const { return true; };
-    virtual SimRequest run(SimFramework *_sim);
-	virtual void finish(SimFramework *_sim);
+    private:
+        unsigned int        checkpoint_num;
+
+        void writeCheckpoint(const std::string &ckpt_file_name, const VCSimulation *sim);
+
+    public:
+        virtual std::string name(void) const {
+            return "Checkpointing";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim) {
+            checkpoint_num = 0;
+        };
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
 };
 
 #endif

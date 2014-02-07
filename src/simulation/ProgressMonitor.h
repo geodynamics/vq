@@ -28,18 +28,20 @@
  These include the minimum, maximum and average stresses on all blocks in the system.
  */
 class ProgressMonitor : public SimPlugin {
-public:
-	ProgressMonitor(void) : first(true) {};
-    virtual std::string name(void) const { return "Progress Monitor"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-    virtual void init(SimFramework *_sim);
-    virtual SimRequest run(SimFramework *_sim);
-	
-private:
-	int				next_event_count;
-	bool			first;
-	
-	void getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max);
+    public:
+        ProgressMonitor(void) : first(true) {};
+        virtual std::string name(void) const {
+            return "Progress Monitor";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+
+    private:
+        int             next_event_count;
+        bool            first;
+
+        void getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max);
 };
 
 #endif

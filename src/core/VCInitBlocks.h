@@ -27,12 +27,14 @@
  Allocates and initializes block related simulation data structures.
  */
 class VCInitBlocks : public SimPlugin {
-public:
-    virtual std::string name() const { return "Initialize block related data"; };
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void dryRun(SimFramework *_sim);
-    virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name() const {
+            return "Initialize block related data";
+        };
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void dryRun(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

@@ -24,36 +24,36 @@
  Notify the simulation that an event is starting (for use in speculative execution).
  */
 void VCCommSpecExec::startEvent(void) {
-	last_prediction_failed = false;
+    last_prediction_failed = false;
 }
 
 /*!
  Notify the simulation that the speculation failed and the event is being rewound.
  */
 void VCCommSpecExec::speculationFailed(VCEventSweep &fail_sweep) {
-	EventBlockMap::const_iterator		it;
-	
-	last_prediction_failed = true;
-	num_predictions_failed++;
-	
-	if (spec_exec_method == SPEC_EXEC_ADAPTIVE) {
-		for (it=fail_sweep.begin();it!=fail_sweep.end();++it) {
-			boundary_dist_map[it->first] *= 0.5;
-		}
-	}
+    EventBlockMap::const_iterator       it;
+
+    last_prediction_failed = true;
+    num_predictions_failed++;
+
+    if (spec_exec_method == SPEC_EXEC_ADAPTIVE) {
+        for (it=fail_sweep.begin(); it!=fail_sweep.end(); ++it) {
+            boundary_dist_map[it->first] *= 0.5;
+        }
+    }
 }
 
 /*!
  Notify the simulation that the speculation failed and the event is being rewound.
  */
 void VCCommSpecExec::speculationSuccess(VCEventSweep &success_sweep) {
-	EventBlockMap::const_iterator		it;
-	
-	num_predictions_success++;
-	
-	if (spec_exec_method == SPEC_EXEC_ADAPTIVE) {
-		for (it=success_sweep.begin();it!=success_sweep.end();++it) {
-			boundary_dist_map[it->first] *= 1.05;
-		}
-	}
+    EventBlockMap::const_iterator       it;
+
+    num_predictions_success++;
+
+    if (spec_exec_method == SPEC_EXEC_ADAPTIVE) {
+        for (it=success_sweep.begin(); it!=success_sweep.end(); ++it) {
+            boundary_dist_map[it->first] *= 1.05;
+        }
+    }
 }

@@ -27,12 +27,14 @@
  Initializes the simulation greens values using the user specified Greens function and parameters.
  */
 class GreensInit : public SimPlugin {
-public:
-    virtual std::string name(void) const { return "Greens function calculation"; }
-	virtual void initDesc(const SimFramework *_sim) const {};
+    public:
+        virtual std::string name(void) const {
+            return "Greens function calculation";
+        }
+        virtual void initDesc(const SimFramework *_sim) const {};
 
-	virtual void dryRun(SimFramework *_sim);
-    virtual void init(SimFramework *_sim);
+        virtual void dryRun(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

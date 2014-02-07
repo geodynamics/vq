@@ -24,26 +24,36 @@
 #define _VC_COMM_PARTITION_H_
 
 class VCCommPartition {
-protected:
-	//! Map of local array indices to global block IDs for blocks assigned to this node
-	BlockIDList					local_block_ids;
-	
-	//! Map of global block IDs to array indices for blocks assigned to this node
-	BlockIDMap					global_block_ids;
-	
-	//! Map of which blocks belong to which nodes
-	std::map<BlockID, int>		block_node_map;
-	
-	//! Map of which nodes manage which blocks (reverse of block_node_map)
-	std::multimap<int, BlockID>	node_block_map;
-	
-public:
-	unsigned int numLocalBlocks(void) const { return local_block_ids.size(); };
-	
-	BlockID getGlobalBID(const int &local_id) const { return local_block_ids.at(local_id); };
-	int getLocalInd(const BlockID &global_id) const { return global_block_ids.at(global_id); };
-	int getBlockNode(const BlockID &global_id) const { return block_node_map.at(global_id); };
-	bool isLocalToNode(const BlockID &global_id) const { return (global_block_ids.count(global_id) > 0); };
+    protected:
+        //! Map of local array indices to global block IDs for blocks assigned to this node
+        BlockIDList                 local_block_ids;
+
+        //! Map of global block IDs to array indices for blocks assigned to this node
+        BlockIDMap                  global_block_ids;
+
+        //! Map of which blocks belong to which nodes
+        std::map<BlockID, int>      block_node_map;
+
+        //! Map of which nodes manage which blocks (reverse of block_node_map)
+        std::multimap<int, BlockID> node_block_map;
+
+    public:
+        unsigned int numLocalBlocks(void) const {
+            return local_block_ids.size();
+        };
+
+        BlockID getGlobalBID(const int &local_id) const {
+            return local_block_ids.at(local_id);
+        };
+        int getLocalInd(const BlockID &global_id) const {
+            return global_block_ids.at(global_id);
+        };
+        int getBlockNode(const BlockID &global_id) const {
+            return block_node_map.at(global_id);
+        };
+        bool isLocalToNode(const BlockID &global_id) const {
+            return (global_block_ids.count(global_id) > 0);
+        };
 };
 
 #endif

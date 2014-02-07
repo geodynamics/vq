@@ -21,19 +21,19 @@
 #include "GreensKillInteraction.h"
 
 void GreensKillInteraction::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Greens kill distance: " << sim->getGreensKillDistance() << " km." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Greens kill distance: " << sim->getGreensKillDistance() << " km." << std::endl;
 }
 
 /*!
  Test how many Greens values will be killed for the dry run.
  */
 void GreensKillInteraction::dryRun(SimFramework *_sim) {
-	VCSimulation				*sim = static_cast<VCSimulation*>(_sim);
-	
-	sim->console() << "# Total number of Greens values: " << sim->numLocalBlocks()*double(sim->numGlobalBlocks()) << std::endl;
-	sim->console() << "# Number of Greens values killed: " << killInteraction(_sim, true) << std::endl;
+    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+
+    sim->console() << "# Total number of Greens values: " << sim->numLocalBlocks()*double(sim->numGlobalBlocks()) << std::endl;
+    sim->console() << "# Number of Greens values killed: " << killInteraction(_sim, true) << std::endl;
 }
 
 /*!
@@ -41,7 +41,7 @@ void GreensKillInteraction::dryRun(SimFramework *_sim) {
  In future simulations, we might reallocate the sparse matrix to improve memory usage.
  */
 void GreensKillInteraction::init(SimFramework *_sim) {
-	killInteraction(_sim, false);
+    killInteraction(_sim, false);
 }
 
 /*!
@@ -49,27 +49,29 @@ void GreensKillInteraction::init(SimFramework *_sim) {
  over a specified distance from each other.
  */
 double GreensKillInteraction::killInteraction(SimFramework *_sim, const bool &dry_run) {
-	VCSimulation				*sim = static_cast<VCSimulation*>(_sim);
-	double						num_kill;
-	BlockList::const_iterator	it, jit;
-	int							lid;
-	
-	num_kill = 0;
-	
-	//! For each combination of fault segments, check if the 3D midpoint
-	//! distances are over the kill distance.
-	//! If so, set the Greens function value to 0.
-	for(lid=0;lid<sim->numLocalBlocks();++lid) {
-		Block &local_block = sim->getBlock(sim->getGlobalBID(lid));
-		for (jit=sim->begin();jit!=sim->end();++jit) {
-			if (local_block.center_distance(*jit) > sim->getGreensKillDistance()) {
-				num_kill++;
-				if (!dry_run) {
-					sim->setGreens(local_block.getBlockID(), jit->getBlockID(), 0.0, 0.0);
-				}
-			}
-		}
-	}
-	
-	return num_kill;
+    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    double                      num_kill;
+    BlockList::const_iterator   it, jit;
+    int                         lid;
+
+    num_kill = 0;
+
+    //! For each combination of fault segments, check if the 3D midpoint
+    //! distances are over the kill distance.
+    //! If so, set the Greens function value to 0.
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        Block &local_block = sim->getBlock(sim->getGlobalBID(lid));
+
+        for (jit=sim->begin(); jit!=sim->end(); ++jit) {
+            if (local_block.center_distance(*jit) > sim->getGreensKillDistance()) {
+                num_kill++;
+
+                if (!dry_run) {
+                    sim->setGreens(local_block.getBlockID(), jit->getBlockID(), 0.0, 0.0);
+                }
+            }
+        }
+    }
+
+    return num_kill;
 }

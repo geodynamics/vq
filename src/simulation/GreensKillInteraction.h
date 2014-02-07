@@ -30,15 +30,17 @@
  potential cost of accuracy.
  */
 class GreensKillInteraction : public SimPlugin {
-private:
-	double killInteraction(SimFramework *_sim, const bool &dry_run);
-	
-public:
-    virtual std::string name(void) const { return "Greens function interaction kill"; }
-	virtual void initDesc(const SimFramework *_sim) const;
+    private:
+        double killInteraction(SimFramework *_sim, const bool &dry_run);
 
-	virtual void dryRun(SimFramework *_sim);
-    virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name(void) const {
+            return "Greens function interaction kill";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void dryRun(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

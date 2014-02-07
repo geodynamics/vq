@@ -22,46 +22,47 @@
 #include <sstream>
 
 void CheckpointFileOutput::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Saving checkpoint every " << sim->getCheckpointPeriod() << " events." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Saving checkpoint every " << sim->getCheckpointPeriod() << " events." << std::endl;
 }
 
 void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, const VCSimulation *sim) {
-	CheckpointSet			checkpoint_set;
-	int						i;
-	BlockID					bid;
-	
-	// Get current state for local blocks
-	for (i=0;i<sim->numLocalBlocks();++i) {
-		bid = sim->getGlobalBID(i);
-		checkpoint_set[bid] = sim->getBlock(bid).state.readCheckpointData();
-	}
-	HDF5CheckpointWriter checkpoint_file(ckpt_file_name,
-										 sim->numGlobalBlocks(),
-										 sim->getYear(),
-										 sim->getEventCount(),
-										 checkpoint_set);
+    CheckpointSet           checkpoint_set;
+    int                     i;
+    BlockID                 bid;
+
+    // Get current state for local blocks
+    for (i=0; i<sim->numLocalBlocks(); ++i) {
+        bid = sim->getGlobalBID(i);
+        checkpoint_set[bid] = sim->getBlock(bid).state.readCheckpointData();
+    }
+
+    HDF5CheckpointWriter checkpoint_file(ckpt_file_name,
+                                         sim->numGlobalBlocks(),
+                                         sim->getYear(),
+                                         sim->getEventCount(),
+                                         checkpoint_set);
 }
 
 SimRequest CheckpointFileOutput::run(SimFramework *_sim) {
-	VCSimulation			*sim = static_cast<VCSimulation*>(_sim);
-	std::stringstream		ss;
-	
-	// Periodically checkpoint simulation state to a file
-	if (sim->getCheckpointPeriod() > 0 && sim->getEventCount() % sim->getCheckpointPeriod() == 0) {
-		ss << sim->getCheckpointPrefix() << checkpoint_num << ".h5";
-		writeCheckpoint(ss.str(), sim);
-		checkpoint_num++;
-	}
-	
-	return SIM_STOP_OK;
+    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    std::stringstream       ss;
+
+    // Periodically checkpoint simulation state to a file
+    if (sim->getCheckpointPeriod() > 0 && sim->getEventCount() % sim->getCheckpointPeriod() == 0) {
+        ss << sim->getCheckpointPrefix() << checkpoint_num << ".h5";
+        writeCheckpoint(ss.str(), sim);
+        checkpoint_num++;
+    }
+
+    return SIM_STOP_OK;
 }
 
 void CheckpointFileOutput::finish(SimFramework *_sim) {
-	VCSimulation			*sim = static_cast<VCSimulation*>(_sim);
-	std::stringstream		ss;
-	
-	ss << sim->getCheckpointPrefix() << "final" << ".h5";
-	writeCheckpoint(ss.str(), sim);
+    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    std::stringstream       ss;
+
+    ss << sim->getCheckpointPrefix() << "final" << ".h5";
+    writeCheckpoint(ss.str(), sim);
 }

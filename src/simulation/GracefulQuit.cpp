@@ -22,32 +22,34 @@
 #include <stdlib.h>
 
 bool GracefulQuit::quitFileExists(void) {
-	FILE			*fp;
-	if ((fp = fopen(GRACEFUL_QUIT_FILE_NAME, "r"))) {
-		fclose(fp);
-		return true;
-	}
-	return false;
+    FILE            *fp;
+
+    if ((fp = fopen(GRACEFUL_QUIT_FILE_NAME, "r"))) {
+        fclose(fp);
+        return true;
+    }
+
+    return false;
 }
 
 void GracefulQuit::initDesc(const SimFramework *_sim) const {
-	const VCSimulation	*sim = static_cast<const VCSimulation*>(_sim);
-	sim->console() << "# To gracefully quit, create the file "
-	<< GRACEFUL_QUIT_FILE_NAME << " in the run directory." << std::endl;
+    const VCSimulation  *sim = static_cast<const VCSimulation *>(_sim);
+    sim->console() << "# To gracefully quit, create the file "
+                   << GRACEFUL_QUIT_FILE_NAME << " in the run directory." << std::endl;
 }
 
 void GracefulQuit::init(SimFramework *_sim) {
-	VCSimulation	*sim = static_cast<VCSimulation*>(_sim);
-	
-	next_check_event = sim->itersPerSecond();
-	
-	if (sim->isRootNode()) {
-		if (quitFileExists()) {
-			sim->errConsole() << "ERROR: File " << GRACEFUL_QUIT_FILE_NAME <<
-			" already exists. Delete this file and run again." << std::endl;
-			exit(-1);
-		}
-	}
+    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+
+    next_check_event = sim->itersPerSecond();
+
+    if (sim->isRootNode()) {
+        if (quitFileExists()) {
+            sim->errConsole() << "ERROR: File " << GRACEFUL_QUIT_FILE_NAME <<
+                              " already exists. Delete this file and run again." << std::endl;
+            exit(-1);
+        }
+    }
 }
 
 /*
@@ -57,21 +59,23 @@ void GracefulQuit::init(SimFramework *_sim) {
  not seeing it.
  */
 SimRequest GracefulQuit::run(SimFramework *_sim) {
-	VCSimulation	*sim = static_cast<VCSimulation*>(_sim);
-	int				quit_sim = 0, all_quit;
-	unsigned int	cur_event;
-	
-	cur_event = sim->getEventCount();
-	if (cur_event >= next_check_event) {
-		next_check_event = cur_event + sim->itersPerSecond();
-		
-		if (sim->isRootNode()) {
-			quit_sim = (quitFileExists() ? 1 : 0);
-		}
-		
-		all_quit = sim->broadcastValue(quit_sim);
-		if (all_quit) return SIM_STOP_REQUIRED;
-	}
-	
-	return SIM_STOP_OK;
+    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+    int             quit_sim = 0, all_quit;
+    unsigned int    cur_event;
+
+    cur_event = sim->getEventCount();
+
+    if (cur_event >= next_check_event) {
+        next_check_event = cur_event + sim->itersPerSecond();
+
+        if (sim->isRootNode()) {
+            quit_sim = (quitFileExists() ? 1 : 0);
+        }
+
+        all_quit = sim->broadcastValue(quit_sim);
+
+        if (all_quit) return SIM_STOP_REQUIRED;
+    }
+
+    return SIM_STOP_OK;
 }

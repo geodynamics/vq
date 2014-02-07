@@ -29,18 +29,20 @@
  At the least there must be a geometry file, with an optional condition and/or friction file.
  */
 class EqSimFileParse : public SimPlugin {
-private:
-	quakelib::EQSimConditionReader	condition_data;
-	quakelib::EQSimFrictionReader	friction_data;
-	quakelib::EQSimGeometryReader	geometry_data;
-	quakelib::SectionParamsReader	section_params_data;
-	
-public:
-    virtual std::string name(void) const { return "EqSim file parsing"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void dryRun(SimFramework *_sim);
-    virtual void init(SimFramework *_sim);
+    private:
+        quakelib::EQSimConditionReader  condition_data;
+        quakelib::EQSimFrictionReader   friction_data;
+        quakelib::EQSimGeometryReader   geometry_data;
+        quakelib::SectionParamsReader   section_params_data;
+
+    public:
+        virtual std::string name(void) const {
+            return "EqSim file parsing";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void dryRun(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

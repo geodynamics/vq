@@ -24,28 +24,46 @@
 #define _VCSIM_DATA_BLOCKS_H_
 
 class VCSimDataBlocks {
-private:
-	//! Set of simulation model blocks
-	BlockList					blocks;
+    private:
+        //! Set of simulation model blocks
+        BlockList                   blocks;
 
-	//! Temporarily store recurrence intervals during Greens function calculation
-	std::map<BlockID, double>	recurrences;
-	
-public:
-	BlockList::iterator begin(void) { return blocks.begin(); };
-	BlockList::iterator end(void) { return blocks.end(); };
-	BlockList::const_iterator begin(void) const { return blocks.begin(); };
-	BlockList::const_iterator end(void) const { return blocks.end(); };
-	
-	BlockID addBlock(const Block &new_block);
-	Block &getBlock(const BlockID &block_num) { return blocks[block_num]; };
-	const Block &getBlock(const BlockID &block_num) const { return blocks[block_num]; };
-	BlockInfo getBlockInfo(const Block &block);
-	
-	void setRecurrence(const BlockID &bid, const double &rec) { recurrences[bid] = rec; };
-	double getRecurrence(const BlockID &bid) { return recurrences[bid]; };
-	
-	unsigned int numGlobalBlocks(void) const { return blocks.size(); };
+        //! Temporarily store recurrence intervals during Greens function calculation
+        std::map<BlockID, double>   recurrences;
+
+    public:
+        BlockList::iterator begin(void) {
+            return blocks.begin();
+        };
+        BlockList::iterator end(void) {
+            return blocks.end();
+        };
+        BlockList::const_iterator begin(void) const {
+            return blocks.begin();
+        };
+        BlockList::const_iterator end(void) const {
+            return blocks.end();
+        };
+
+        BlockID addBlock(const Block &new_block);
+        Block &getBlock(const BlockID &block_num) {
+            return blocks[block_num];
+        };
+        const Block &getBlock(const BlockID &block_num) const {
+            return blocks[block_num];
+        };
+        BlockInfo getBlockInfo(const Block &block);
+
+        void setRecurrence(const BlockID &bid, const double &rec) {
+            recurrences[bid] = rec;
+        };
+        double getRecurrence(const BlockID &bid) {
+            return recurrences[bid];
+        };
+
+        unsigned int numGlobalBlocks(void) const {
+            return blocks.size();
+        };
 };
 
 #endif

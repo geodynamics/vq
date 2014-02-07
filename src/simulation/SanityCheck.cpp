@@ -23,41 +23,45 @@
 #include <iomanip>
 
 void SanityCheck::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Performing sanity checks." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Performing sanity checks." << std::endl;
 }
 
 bool SanityCheck::assertCFFValueCorrectness(VCSimulation *sim) {
-	BlockID		gid;
-	int			lid;
-	bool		failed = false;
-	
-	for (lid=0;lid<sim->numLocalBlocks();++lid) {
-		gid = sim->getGlobalBID(lid);
+    BlockID     gid;
+    int         lid;
+    bool        failed = false;
+
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
         double val = sim->getBlock(gid).getCFF();
-        if(std::isnan(val) || fabs(val) > 1e20) {
-			failed_cffs.push_back(std::make_pair(gid, val));
-			failed = true;
+
+        if (std::isnan(val) || fabs(val) > 1e20) {
+            failed_cffs.push_back(std::make_pair(gid, val));
+            failed = true;
         }
     }
-	return failed;
+
+    return failed;
 }
 
 bool SanityCheck::assertUpdateFieldCorrectness(VCSimulation *sim) {
-	BlockID		gid;
-	int			lid;
-	bool		failed = false;
-	
-	for (lid=0;lid<sim->numLocalBlocks();++lid) {
-		gid = sim->getGlobalBID(lid);
-		double val = sim->getUpdateField(gid);
-		if(std::isnan(val) || fabs(val) > 1e20) {
-			failed_update_fields.push_back(std::make_pair(gid, val));
-			failed = true;
-		}
+    BlockID     gid;
+    int         lid;
+    bool        failed = false;
+
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
+        double val = sim->getUpdateField(gid);
+
+        if (std::isnan(val) || fabs(val) > 1e20) {
+            failed_update_fields.push_back(std::make_pair(gid, val));
+            failed = true;
+        }
     }
-	return failed;
+
+    return failed;
 }
 
 /*!
@@ -65,9 +69,10 @@ bool SanityCheck::assertUpdateFieldCorrectness(VCSimulation *sim) {
  If any values are unusual they are recorded and the simulation is halted.
  */
 SimRequest SanityCheck::run(SimFramework *_sim) {
-	VCSimulation		*sim = static_cast<VCSimulation*>(_sim);
-	if (assertCFFValueCorrectness(sim) || assertUpdateFieldCorrectness(sim)) return SIM_STOP_REQUIRED;
-	else return SIM_STOP_OK;
+    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+
+    if (assertCFFValueCorrectness(sim) || assertUpdateFieldCorrectness(sim)) return SIM_STOP_REQUIRED;
+    else return SIM_STOP_OK;
 }
 
 /*!
@@ -75,20 +80,23 @@ SimRequest SanityCheck::run(SimFramework *_sim) {
  at the end of the simulation.
  */
 void SanityCheck::finish(SimFramework *_sim) {
-	std::vector<std::pair<BlockID, double> >::const_iterator	it;
-	if (!failed_cffs.empty()) {
-		_sim->console() << "CFFs with unreasonable values" << std::endl;
-		_sim->console() << "Block ID\tValue" << std::endl;
-		for (it=failed_cffs.begin();it!=failed_cffs.end();++it) {
-			_sim->console() << it->first << "\t\t\t" << std::scientific << std::setw(6) << it->second << std::endl;
-		}
-	}
-	
-	if (!failed_update_fields.empty()) {
-		_sim->console() << "Update fields with unreasonable values" << std::endl;
-		_sim->console() << "Block ID\tValue" << std::endl;
-		for (it=failed_update_fields.begin();it!=failed_update_fields.end();++it) {
-			_sim->console() << it->first << "\t\t\t" << std::scientific << std::setw(6) << it->second << std::endl;
-		}
-	}
+    std::vector<std::pair<BlockID, double> >::const_iterator    it;
+
+    if (!failed_cffs.empty()) {
+        _sim->console() << "CFFs with unreasonable values" << std::endl;
+        _sim->console() << "Block ID\tValue" << std::endl;
+
+        for (it=failed_cffs.begin(); it!=failed_cffs.end(); ++it) {
+            _sim->console() << it->first << "\t\t\t" << std::scientific << std::setw(6) << it->second << std::endl;
+        }
+    }
+
+    if (!failed_update_fields.empty()) {
+        _sim->console() << "Update fields with unreasonable values" << std::endl;
+        _sim->console() << "Block ID\tValue" << std::endl;
+
+        for (it=failed_update_fields.begin(); it!=failed_update_fields.end(); ++it) {
+            _sim->console() << it->first << "\t\t\t" << std::scientific << std::setw(6) << it->second << std::endl;
+        }
+    }
 }

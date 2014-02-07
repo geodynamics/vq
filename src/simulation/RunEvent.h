@@ -24,11 +24,11 @@
 #define _RUN_EVENT_H_
 
 enum SpecExecStage {
-	NORMAL_OPERATION,
-	LOCALIZED_FAILURE,
-	CHECK_IF_SELF_FAILED,
-	CHECK_SELF_IGNORE,
-	REWIND_ALL
+    NORMAL_OPERATION,
+    LOCALIZED_FAILURE,
+    CHECK_IF_SELF_FAILED,
+    CHECK_SELF_IGNORE,
+    REWIND_ALL
 };
 
 typedef std::map<BlockID, unsigned int> FailureCount;
@@ -38,22 +38,26 @@ typedef std::map<BlockID, unsigned int> FailureCount;
  throughout the system using static and dynamic failure functions.
  */
 class RunEvent : public SimPlugin {
-private:
-	BlockIDSet			blocks2fail;
-	std::vector<int>	succ_sweep_sizes, fail_sweep_sizes;
-	FailureCount		num_failures;
-	
-	void processBlocksOrigFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
-	void processBlocksNewFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
-    virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep);
-    void recordEventStresses(VCSimulation *sim);
-	
-public:
-    virtual std::string name() const { return "Propagate event ruptures"; };
-	virtual void initDesc(const SimFramework *_sim) const {};
-    virtual void finish(SimFramework *_sim);
-	virtual bool needsTimer(void) const { return true; };
-	virtual SimRequest run(SimFramework *_sim);
+    private:
+        BlockIDSet          blocks2fail;
+        std::vector<int>    succ_sweep_sizes, fail_sweep_sizes;
+        FailureCount        num_failures;
+
+        void processBlocksOrigFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
+        void processBlocksNewFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
+        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep);
+        void recordEventStresses(VCSimulation *sim);
+
+    public:
+        virtual std::string name() const {
+            return "Propagate event ruptures";
+        };
+        virtual void initDesc(const SimFramework *_sim) const {};
+        virtual void finish(SimFramework *_sim);
+        virtual bool needsTimer(void) const {
+            return true;
+        };
+        virtual SimRequest run(SimFramework *_sim);
 };
 
 #endif

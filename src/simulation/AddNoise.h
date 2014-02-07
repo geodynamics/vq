@@ -30,11 +30,13 @@
  user specified radius.
  */
 class AddNoise : public SimPlugin {
-public:
-    std::string name(void) const { return "Add noise to blocks"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-    virtual void init(SimFramework *_sim);
+    public:
+        std::string name(void) const {
+            return "Add noise to blocks";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

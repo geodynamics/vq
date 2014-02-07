@@ -37,20 +37,21 @@
  Class to encapsulate strain values used in Greens function calculation.
  */
 class GreensValsSparseRow {
-private:
-	std::vector<GREEN_VAL> row_data;
-public:
-	GreensValsSparseRow(void) {};
-	
-	GreensValsSparseRow(const unsigned int &width) {
-		row_data.resize(width);
-	};
-	
-	GREEN_VAL &operator[](const unsigned int &col) throw(std::out_of_range) {
-		if(col >= row_data.size()) throw std::out_of_range("GreensValsSparseRow[]");
-		return row_data.at(col);
-	};
-	//friend std::ostream& operator<<(std::ostream& os, const GreensValsSparseRow& m);
+    private:
+        std::vector<GREEN_VAL> row_data;
+    public:
+        GreensValsSparseRow(void) {};
+
+        GreensValsSparseRow(const unsigned int &width) {
+            row_data.resize(width);
+        };
+
+        GREEN_VAL &operator[](const unsigned int &col) throw(std::out_of_range) {
+            if (col >= row_data.size()) throw std::out_of_range("GreensValsSparseRow[]");
+
+            return row_data.at(col);
+        };
+        //friend std::ostream& operator<<(std::ostream& os, const GreensValsSparseRow& m);
 };
 
 // As used in the Green's function calculations, each sparse matrix will take:
@@ -67,30 +68,32 @@ public:
 // |-|-|-|-|
 
 class GreensValsSparseMatrix {
-private:
-	std::vector<GreensValsSparseRow>	matrix;
-public:
-	//GreensValsSparseMatrix(const GreensValsSparseMatrix &x) { assert(false); };
-	
-	GreensValsSparseMatrix(const std::vector<int> &row_widths) {
-		std::vector<int>::const_iterator		it;
-		
-		// Allocate matrix rows with specified sizes
-		matrix.clear();
-		for (it=row_widths.begin();it!=row_widths.end();++it) {
-			matrix.push_back(GreensValsSparseRow(*it));
-		}
-	};
-	
-	~GreensValsSparseMatrix(void) {
-		matrix.clear();
-	};
-	
-	GreensValsSparseRow &operator[](const unsigned int &row) throw(std::out_of_range) {
-		if(row >= matrix.size()) throw std::out_of_range("GreensValsSparseMatrix[]");
-		return matrix.at(row);
-	};
-	friend std::ostream& operator<<(std::ostream& os, const GreensValsSparseMatrix& m);
+    private:
+        std::vector<GreensValsSparseRow>    matrix;
+    public:
+        //GreensValsSparseMatrix(const GreensValsSparseMatrix &x) { assert(false); };
+
+        GreensValsSparseMatrix(const std::vector<int> &row_widths) {
+            std::vector<int>::const_iterator        it;
+
+            // Allocate matrix rows with specified sizes
+            matrix.clear();
+
+            for (it=row_widths.begin(); it!=row_widths.end(); ++it) {
+                matrix.push_back(GreensValsSparseRow(*it));
+            }
+        };
+
+        ~GreensValsSparseMatrix(void) {
+            matrix.clear();
+        };
+
+        GreensValsSparseRow &operator[](const unsigned int &row) throw(std::out_of_range) {
+            if (row >= matrix.size()) throw std::out_of_range("GreensValsSparseMatrix[]");
+
+            return matrix.at(row);
+        };
+        friend std::ostream &operator<<(std::ostream &os, const GreensValsSparseMatrix &m);
 };
 
 /*!
@@ -98,39 +101,39 @@ public:
  Particular methods are instantiated as descendent classes.
  */
 class GreensFuncCalc {
-private:
-    double			last_update;
-	int				outcnt;
-	
-public:
-	GreensFuncCalc(void) : last_update(0.0), outcnt(0) {};
-	
-	void progressBar(VCSimulation *sim, const int &thread_num, const int &num_done_blocks);
-	
-	virtual void CalculateGreens(VCSimulation *sim) = 0;
-	
-	void symmetrizeMatrix(VCSimulation *sim,
-						  GreensValsSparseMatrix &ssh);
+    private:
+        double          last_update;
+        int             outcnt;
+
+    public:
+        GreensFuncCalc(void) : last_update(0.0), outcnt(0) {};
+
+        void progressBar(VCSimulation *sim, const int &thread_num, const int &num_done_blocks);
+
+        virtual void CalculateGreens(VCSimulation *sim) = 0;
+
+        void symmetrizeMatrix(VCSimulation *sim,
+                              GreensValsSparseMatrix &ssh);
 };
 
 class GreensFuncFileParse : public GreensFuncCalc {
-public:
-	void CalculateGreens(VCSimulation *sim);
+    public:
+        void CalculateGreens(VCSimulation *sim);
 };
 
 class GreensFuncCalcBarnesHut : public GreensFuncCalc {
-public:
-	void CalculateGreens(VCSimulation *sim);
-	void bhInnerCalc(VCSimulation *sim, quakelib::Octree<3> *tree, const BlockID &bid);
+    public:
+        void CalculateGreens(VCSimulation *sim);
+        void bhInnerCalc(VCSimulation *sim, quakelib::Octree<3> *tree, const BlockID &bid);
 };
 
 class GreensFuncCalc2011 : public GreensFuncCalc {
-public:
-    void CalculateGreens(VCSimulation *sim);
-    void InnerCalc2011(VCSimulation *sim,
-                       const BlockID &bnum,
-                       GreensValsSparseMatrix &ssh,
-                       GreensValsSparseMatrix &snorm);
+    public:
+        void CalculateGreens(VCSimulation *sim);
+        void InnerCalc2011(VCSimulation *sim,
+                           const BlockID &bnum,
+                           GreensValsSparseMatrix &ssh,
+                           GreensValsSparseMatrix &snorm);
 };
 
 #endif

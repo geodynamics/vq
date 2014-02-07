@@ -27,11 +27,13 @@
  Writes Greens function values to a specified file.
  */
 class GreensFileOutput : public SimPlugin {
-public:
-    virtual std::string name(void) const { return "Greens file output"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name(void) const {
+            return "Greens file output";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

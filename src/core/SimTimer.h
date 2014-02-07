@@ -33,22 +33,22 @@
 #define _SIM_TIMER_H_
 
 class SimTimer {
-private:
-	std::vector<std::string>	timer_names;
-	std::vector<double>			accumulated_times;
-	std::vector<double>			start_times;
-	std::vector<bool>			use_barrier;
-	std::vector<bool>			can_preempt;
-	std::stack<int>				paused_timers;
-	std::vector<int>			num_timings;
-	int							cur_timer;
-	
-public:
-	double curTime(const bool &use_barrier=false);
-	int initTimer(const std::string &timer_name, const bool &barrier, const bool &preemptable);
-	void startTimer(const int &timer_id);
-	void stopTimer(const int &timer_id);
-	void printAllTimers(std::ostream &out_stream, int world_size, int node_rank, int root_node_rank);
+    private:
+        std::vector<std::string>    timer_names;
+        std::vector<double>         accumulated_times;
+        std::vector<double>         start_times;
+        std::vector<bool>           use_barrier;
+        std::vector<bool>           can_preempt;
+        std::stack<int>             paused_timers;
+        std::vector<int>            num_timings;
+        int                         cur_timer;
+
+    public:
+        double curTime(const bool &use_barrier=false);
+        int initTimer(const std::string &timer_name, const bool &barrier, const bool &preemptable);
+        void startTimer(const int &timer_id);
+        void stopTimer(const int &timer_id);
+        void printAllTimers(std::ostream &out_stream, int world_size, int node_rank, int root_node_rank);
 };
 
 #endif

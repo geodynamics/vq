@@ -29,16 +29,18 @@
  A plugin to write VC events in the EqSim event format.
  */
 class EqSimFileOutput : public SimPlugin {
-private:
-	quakelib::EQSimEventWriter	eqsim_event_file;
-	
-public:
-    virtual std::string name(void) const { return "EQSim file output"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void init(SimFramework *_sim);
-    virtual SimRequest run(SimFramework *_sim);
-	virtual void finish(SimFramework *_sim);
+    private:
+        quakelib::EQSimEventWriter  eqsim_event_file;
+
+    public:
+        virtual std::string name(void) const {
+            return "EQSim file output";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
 };
 
 #endif

@@ -30,11 +30,13 @@
  In other words, its as if the segment became earthquake-proof but still moves and causes stress elsewhere.
  */
 class BadFaultKill : public SimPlugin {
-public:
-    std::string name(void) const { return "Kill badly behaving fault segments"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual SimRequest run(SimFramework *_sim);
+    public:
+        std::string name(void) const {
+            return "Kill badly behaving fault segments";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual SimRequest run(SimFramework *_sim);
 };
 
 #endif

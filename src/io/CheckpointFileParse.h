@@ -28,11 +28,13 @@
  Load the checkpointed simulation state into internal structures.
  */
 class CheckpointFileParse : public SimPlugin {
-public:
-    virtual std::string name() const { return "Checkpoint file parsing"; };
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-    virtual void init(SimFramework *_sim);
+    public:
+        virtual std::string name() const {
+            return "Checkpoint file parsing";
+        };
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

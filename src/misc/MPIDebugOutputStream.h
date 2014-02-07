@@ -41,19 +41,19 @@
 */
 
 class MPIDebugOutputStream {
-private:
+    private:
 #ifdef MPI_C_FOUND
-	MPI_Comm		comm_world;
+        MPI_Comm        comm_world;
 #endif
-	bool			print_node_rank, print_timestamp;
-	std::string		output_buf;
-	int				output_node_rank, my_node_rank, world_size;
-	
-public:
-	MPIDebugOutputStream(const int &output_node);
-	void setOutputFormat(const bool &print_rank, const bool &print_time);
-	void write(const std::string &out_str);
-	void flush(void);
+        bool            print_node_rank, print_timestamp;
+        std::string     output_buf;
+        int             output_node_rank, my_node_rank, world_size;
+
+    public:
+        MPIDebugOutputStream(const int &output_node);
+        void setOutputFormat(const bool &print_rank, const bool &print_time);
+        void write(const std::string &out_str);
+        void flush(void);
 };
 
 #endif

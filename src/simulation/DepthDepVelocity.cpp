@@ -21,31 +21,31 @@
 #include "DepthDepVelocity.h"
 
 void DepthDepVelocity::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Altering block velocity based on depth." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Altering block velocity based on depth." << std::endl;
 }
 
 void DepthDepVelocity::init(SimFramework *_sim) {
-	VCSimulation				*sim = static_cast<VCSimulation*>(_sim);
-	BlockList::iterator			it;
-	std::map<quakelib::SectionID, double>	section_max_depth;
-	quakelib::SectionID					sid;
-	double						old_slip_rate, new_slip_rate;
-	quakelib::Vec<3>			center_point;
-	
-	//! Go through all blocks and find the maximum depth of each fault.
-	for(it=sim->begin();it!=sim->end();++it) {
-		sid = it->getSectionID();
-		section_max_depth[sid] = fmax(it->max_depth(), section_max_depth[sid]);
-	}
-	
-	//! Adjust the slip rate of each block based on the fault depth and block center point.
-	for(it=sim->begin();it!=sim->end();++it) {
+    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    BlockList::iterator         it;
+    std::map<quakelib::SectionID, double>   section_max_depth;
+    quakelib::SectionID                 sid;
+    double                      old_slip_rate, new_slip_rate;
+    quakelib::Vec<3>            center_point;
+
+    //! Go through all blocks and find the maximum depth of each fault.
+    for (it=sim->begin(); it!=sim->end(); ++it) {
+        sid = it->getSectionID();
+        section_max_depth[sid] = fmax(it->max_depth(), section_max_depth[sid]);
+    }
+
+    //! Adjust the slip rate of each block based on the fault depth and block center point.
+    for (it=sim->begin(); it!=sim->end(); ++it) {
         center_point = it->center();
-		old_slip_rate = it->slip_rate();
-		sid = it->getSectionID();
-		new_slip_rate = old_slip_rate * (1.0-pow(center_point[2]/section_max_depth[sid], 2));
-		it->set_slip_rate(new_slip_rate);
-	}
+        old_slip_rate = it->slip_rate();
+        sid = it->getSectionID();
+        new_slip_rate = old_slip_rate * (1.0-pow(center_point[2]/section_max_depth[sid], 2));
+        it->set_slip_rate(new_slip_rate);
+    }
 }

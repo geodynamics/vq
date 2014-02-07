@@ -21,29 +21,31 @@
 #include "BadFaultKill.h"
 
 void BadFaultKill::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Will kill faults if CFF drops below " << sim->getFaultKillCFF() << "." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Will kill faults if CFF drops below " << sim->getFaultKillCFF() << "." << std::endl;
 }
 
 SimRequest BadFaultKill::run(SimFramework *_sim) {
-	VCSimulation	*sim = static_cast<VCSimulation*>(_sim);
-	BlockID			gid;
-	int				lid, i;
-	double			cff, min_cff;
-	
-	min_cff = sim->getFaultKillCFF();
-	
-	for (lid=0;lid<sim->numLocalBlocks();++lid) {
-		gid = sim->getGlobalBID(lid);
-		cff = sim->getBlock(gid).getCFF();
-		if (cff < min_cff) {
-			for (i=0;i<sim->numGlobalBlocks();++i) {
-				sim->setGreens(gid, i, 0, 0);
-			}
-			sim->console() << "# WARNING: Killed segment " << gid << " (" << sim->getBlock(gid).getFaultName() << ") due to low CFF (" << cff << ")" << std::endl;
-		}
+    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+    BlockID         gid;
+    int             lid, i;
+    double          cff, min_cff;
+
+    min_cff = sim->getFaultKillCFF();
+
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
+        cff = sim->getBlock(gid).getCFF();
+
+        if (cff < min_cff) {
+            for (i=0; i<sim->numGlobalBlocks(); ++i) {
+                sim->setGreens(gid, i, 0, 0);
+            }
+
+            sim->console() << "# WARNING: Killed segment " << gid << " (" << sim->getBlock(gid).getFaultName() << ") due to low CFF (" << cff << ")" << std::endl;
+        }
     }
-	
-	return SIM_STOP_OK;
+
+    return SIM_STOP_OK;
 }

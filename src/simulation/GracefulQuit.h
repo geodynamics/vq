@@ -23,24 +23,26 @@
 #ifndef _GRACEFUL_QUIT_H_
 #define _GRACEFUL_QUIT_H_
 
-#define GRACEFUL_QUIT_FILE_NAME		"quit_vc"
+#define GRACEFUL_QUIT_FILE_NAME     "quit_vc"
 
 /*!
  Allows user to gracefully quit the simulation and ensure
  output files are closed properly.
  */
 class GracefulQuit : public SimPlugin {
-private:
-	unsigned int	next_check_event;
-	
-	bool quitFileExists(void);
-	
-public:
-    std::string name(void) const { return "Graceful simulation exit"; }
-	virtual void initDesc(const SimFramework *_sim) const;
-	
-	virtual void init(SimFramework *_sim);
-	virtual SimRequest run(SimFramework *_sim);
+    private:
+        unsigned int    next_check_event;
+
+        bool quitFileExists(void);
+
+    public:
+        std::string name(void) const {
+            return "Graceful simulation exit";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
+
+        virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
 };
 
 #endif

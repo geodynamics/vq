@@ -21,40 +21,43 @@
 #include "AddNoise.h"
 
 void AddNoise::initDesc(const SimFramework *_sim) const {
-	const VCSimulation			*sim = static_cast<const VCSimulation*>(_sim);
-	
-	sim->console() << "# Adding noise (" << sim->getStressNoiseResolution()
-		<< "km resolution) to blocks." << std::endl;
+    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+
+    sim->console() << "# Adding noise (" << sim->getStressNoiseResolution()
+                   << "km resolution) to blocks." << std::endl;
 }
 
 void AddNoise::init(SimFramework *_sim) {
-	VCSimulation						*sim = static_cast<VCSimulation*>(_sim);
-	double								stress_noise, stress_res_dist, cur_noise, old_stress_drop;
-	std::map<quakelib::Vec<3>, double>	centers_noise;
-	quakelib::Vec<3>					mid_pt;
-	std::map<quakelib::Vec<3>, double>::iterator	cit;
-	BlockList::iterator					it;
-	
-	stress_noise = sim->getStressNoise();
-	stress_res_dist = sim->getStressNoiseResolution();
-	
-	//! For each block in the simulation, get the midpoint and record the noise added to the block.
-	//! Each block within a specified radius of the selected block will have the same level of noise added.
-	//! The noise is defined as a modification of the stress drop from x to x +/- stress_noise.
-	for (it=sim->begin();it!=sim->end();++it) {
-		cur_noise = 1.0e10;
-		mid_pt = it->center();
-		for (cit=centers_noise.begin();cit!=centers_noise.end();++cit) {
-			if (mid_pt.dist(cit->first) <= stress_res_dist) {
-				cur_noise = cit->second;
-				break;
-			}
-		}
-		if (cur_noise > 1.0e9) {
-			cur_noise = (1.0-stress_noise) + 2*stress_noise*sim->randDouble();
-			centers_noise.insert(std::make_pair(mid_pt, cur_noise));
-		}
-		old_stress_drop = it->getStressDrop();
-		it->setStressDrop(old_stress_drop*cur_noise);
-	}
+    VCSimulation                        *sim = static_cast<VCSimulation *>(_sim);
+    double                              stress_noise, stress_res_dist, cur_noise, old_stress_drop;
+    std::map<quakelib::Vec<3>, double>  centers_noise;
+    quakelib::Vec<3>                    mid_pt;
+    std::map<quakelib::Vec<3>, double>::iterator    cit;
+    BlockList::iterator                 it;
+
+    stress_noise = sim->getStressNoise();
+    stress_res_dist = sim->getStressNoiseResolution();
+
+    //! For each block in the simulation, get the midpoint and record the noise added to the block.
+    //! Each block within a specified radius of the selected block will have the same level of noise added.
+    //! The noise is defined as a modification of the stress drop from x to x +/- stress_noise.
+    for (it=sim->begin(); it!=sim->end(); ++it) {
+        cur_noise = 1.0e10;
+        mid_pt = it->center();
+
+        for (cit=centers_noise.begin(); cit!=centers_noise.end(); ++cit) {
+            if (mid_pt.dist(cit->first) <= stress_res_dist) {
+                cur_noise = cit->second;
+                break;
+            }
+        }
+
+        if (cur_noise > 1.0e9) {
+            cur_noise = (1.0-stress_noise) + 2*stress_noise*sim->randDouble();
+            centers_noise.insert(std::make_pair(mid_pt, cur_noise));
+        }
+
+        old_stress_drop = it->getStressDrop();
+        it->setStressDrop(old_stress_drop*cur_noise);
+    }
 }
