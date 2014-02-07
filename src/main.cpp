@@ -29,11 +29,8 @@
 #include "GreensFileOutput.h"
 #include "CheckpointFileOutput.h"
 #include "CheckpointFileParse.h"
-#include "SystemFileOutput.h"
 
 // Simulation related
-#include "AddAsperities.h"
-#include "AddNoise.h"
 #include "BadFaultKill.h"
 #include "BASSAftershocks.h"
 #include "BlockValCompute.h"
@@ -50,7 +47,7 @@
 
 int main (int argc, char **argv) {
     PluginID        read_eqsim_file, init_blocks, block_val_compute;
-    PluginID        greens_init, greens_outfile, system_output_file, add_noise, add_asperities, bad_fault_kill;
+    PluginID        greens_init, greens_outfile, bad_fault_kill;
     PluginID        depth_dependent_velocity, greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        eqsim_output_file, h5_data_share, vc_events_output_file, graceful_quit;
@@ -72,15 +69,6 @@ int main (int argc, char **argv) {
 
     // Write the Greens values to a file if a file name is specified
     greens_outfile = vc_sim->registerPlugin(new GreensFileOutput, !vc_sim->getGreensOutfile().empty());
-
-    // Write the system information to a file if a file name is specified
-    system_output_file = vc_sim->registerPlugin(new SystemFileOutput, !vc_sim->getSystemOutfile().empty());
-
-    // Add stress noise if the stress noise level is above 0
-    add_noise = vc_sim->registerPlugin(new AddNoise, vc_sim->getStressNoise() > 0);
-
-    // Add asperities if there are more than 0 asperities requested
-    add_asperities = vc_sim->registerPlugin(new AddAsperities, vc_sim->getNumAsperities() > 0);
 
     // Kill faults that drop below a certain CFF value
     bad_fault_kill = vc_sim->registerPlugin(new BadFaultKill, vc_sim->getFaultKillCFF() < 0);
@@ -128,24 +116,14 @@ int main (int argc, char **argv) {
     // Greens calculation occurs first, then initial Greens/system value output
     vc_sim->registerDependence(greens_init, graceful_quit, DEP_OPTIONAL);
 
-    // Noise/asperities/other block modifications occur after block initialization
+    // Block modifications occur after block initialization
     vc_sim->registerDependence(block_val_compute, greens_init, DEP_OPTIONAL);
     vc_sim->registerDependence(greens_outfile, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_kill, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_outfile, greens_kill, DEP_OPTIONAL);
     vc_sim->registerDependence(depth_dependent_velocity, block_val_compute, DEP_OPTIONAL);
-    vc_sim->registerDependence(add_noise, depth_dependent_velocity, DEP_OPTIONAL);
-    vc_sim->registerDependence(add_asperities, depth_dependent_velocity, DEP_OPTIONAL);
 
-    // Output the system file after we have applied noise/asperities
-    vc_sim->registerDependence(system_output_file, add_asperities, DEP_OPTIONAL);
-    vc_sim->registerDependence(system_output_file, add_noise, DEP_OPTIONAL);
-
-    // Just to be safe we allow either noise or asperities but not both
-    vc_sim->registerDependence(add_asperities, add_noise, DEP_EXCLUSIVE);
-
-    // The core of the simulation, which must occur after Greens function is calculated and after asperities/noise
-    vc_sim->registerDependence(update_block_stress, system_output_file, DEP_OPTIONAL);
+    // The core of the simulation, which must occur after Greens function is calculated
     vc_sim->registerDependence(update_block_stress, block_val_compute, DEP_OPTIONAL);
     vc_sim->registerDependence(update_block_stress, greens_kill, DEP_OPTIONAL);
     vc_sim->registerDependence(run_event, update_block_stress, DEP_REQUIRE);

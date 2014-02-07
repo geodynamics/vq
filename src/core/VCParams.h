@@ -56,8 +56,6 @@ class VCParams {
 
         double              noise_event;
         double              noise_slip_deficit;
-        double              noise_stress;
-        double              noise_stress_resolution;
 
         double              fault_kill_cff;
 
@@ -74,10 +72,6 @@ class VCParams {
         GreensCalcMethod    greens_calc_method;
         double              barnes_hut_theta;       // controls how much smoothing occurs in Barnes-Hutt approximation
         std::string         greens_infile;
-
-        int                 asperity_num;
-        int                 asperity_width;
-        double              asperity_mag;
 
         unsigned int        bass_max_generations;
         double              bass_min_magnitude_mm;
@@ -97,7 +91,6 @@ class VCParams {
         double              model_lon0;
 
         std::string         state_begin_file;
-        std::string         system_outfile;
         std::string         greens_outfile;
         std::string         events_file;
         std::string         hdf5_file;
@@ -132,12 +125,6 @@ class VCParams {
         };
         double getSlipDeficitNoise(void) const {
             return noise_slip_deficit;
-        };
-        double getStressNoise(void) const {
-            return noise_stress;
-        };
-        double getStressNoiseResolution(void) const {
-            return noise_stress_resolution;
         };
 
         double getFaultKillCFF(void) const {
@@ -176,16 +163,6 @@ class VCParams {
         };
         std::string getGreensInputfile(void) const {
             return greens_infile;
-        };
-
-        int getNumAsperities(void) const {
-            return asperity_num;
-        };
-        int getAsperityWidth(void) const {
-            return asperity_width;
-        };
-        double getAsperityMagnitude(void) const {
-            return asperity_mag;
         };
 
         unsigned int getBASSMaxGenerations(void) const {
@@ -232,9 +209,6 @@ class VCParams {
 
         std::string getStateBeginFile(void) const {
             return state_begin_file;
-        };
-        std::string getSystemOutfile(void) const {
-            return system_outfile;
         };
         std::string getGreensOutfile(void) const {
             return greens_outfile;

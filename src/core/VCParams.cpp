@@ -39,8 +39,6 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     noise_event = param_file.read<double>("sim.noise.event", 0.0);
     noise_slip_deficit = param_file.read<double>("sim.noise.slip_deficit", 0.0);
-    noise_stress = param_file.read<double>("sim.noise.stress", 0.0);
-    noise_stress_resolution = param_file.read<double>("sim.noise.stress.resolution", 10.0);
 
     fault_kill_cff = param_file.read<double>("sim.fault.kill_cff", 0.0);
 
@@ -57,10 +55,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     greens_method = param_file.read<string>("sim.greens.method", "original");
     barnes_hut_theta = param_file.read<double>("sim.greens.bh_theta", 0.0);
     greens_infile = param_file.read<string>("sim.greens.infile", "");
-
-    asperity_num = param_file.read<int>("sim.asperity.num", 0);
-    asperity_width = param_file.read<int>("sim.asperity.width", 1);
-    asperity_mag = param_file.read<double>("sim.asperity.mag", 2.0);
 
     bass_max_generations = param_file.read<unsigned int>("sim.bass.max_generations", 0);
     bass_min_magnitude_mm = param_file.read<double>("sim.bass.min_magnitude_mm", 4.0);
@@ -80,7 +74,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     model_lon0 = param_file.read<double>("sim.system.rawfile.lon0", -126.0);
 
     state_begin_file = param_file.read<string>("sim.state.file.begin", "");
-    system_outfile = param_file.read<string>("sim.system.outfile", "");
     greens_outfile = param_file.read<string>("sim.greens.outfile", "");
     events_file = param_file.read<string>("sim.events.file", "");
 
@@ -166,8 +159,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
 
     os << "sim.noise.event\t\t\t\t\t\t= " << params.noise_event << "\n";
     os << "sim.noise.slip_deficit\t\t\t\t= " << params.noise_slip_deficit << "\n";
-    os << "sim.noise.stress\t\t\t\t\t\t= " << params.noise_stress << "\n";
-    os << "sim.noise.stress.resolution\t\t\t= " << params.noise_stress_resolution << "\n";
 
     os << "sim.fault.kill_cff\t\t\t\t\t= " << params.fault_kill_cff << "\n";
 
@@ -183,10 +174,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.greens.method\t\t\t\t\t\t= " << params.greens_calc_method << "\n";
     os << "sim.greens.bh_theta\t\t\t\t= " << params.barnes_hut_theta << "\n";
     os << "sim.greens.infile\t\t\t\t\t= " << params.greens_infile << "\n";
-
-    os << "sim.asperity.num\t\t\t\t\t\t= " << params.asperity_num << "\n";
-    os << "sim.asperity.width\t\t\t\t\t= " << params.asperity_width << "\n";
-    os << "sim.asperity.mag\t\t\t\t\t\t= " << params.asperity_mag << "\n";
 
     os << "sim.bass.max_generations\t\t\t= " << params.bass_max_generations << "\n";
     os << "sim.bass.min_magnitude_mm\t\t\t= " << params.bass_min_magnitude_mm << "\n";
@@ -206,7 +193,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.system.rawfile.lon0\t\t\t\t= " << params.model_lon0 << "\n";
 
     os << "sim.state.file.begin\t\t\t\t\t= " << params.state_begin_file << "\n";
-    os << "sim.system.outfile\t\t\t\t\t= " << params.system_outfile << "\n";
     os << "sim.greens.outfile\t\t\t\t\t= " << params.greens_outfile << "\n";
     os << "sim.events.file\t\t\t\t\t\t= " << params.events_file << "\n";
 
