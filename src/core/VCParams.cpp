@@ -56,6 +56,10 @@ void VCParams::read_params(const std::string &param_file_name) {
     barnes_hut_theta = param_file.read<double>("sim.greens.bh_theta", 0.0);
     greens_infile = param_file.read<string>("sim.greens.infile", "");
 
+    event_outfile = param_file.read<string>("sim.file.output_event", "");
+    sweep_outfile = param_file.read<string>("sim.file.output_sweep", "");
+    event_outfile_type = param_file.read<string>("sim.file.output_event_type", "");
+
     bass_max_generations = param_file.read<unsigned int>("sim.bass.max_generations", 0);
     bass_min_magnitude_mm = param_file.read<double>("sim.bass.min_magnitude_mm", 4.0);
     bass_aftershock_strength_dm = param_file.read<double>("sim.bass.aftershock_strength_dm", 1.25);
@@ -172,6 +176,10 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.greens.method\t\t\t\t\t\t= " << params.greens_calc_method << "\n";
     os << "sim.greens.bh_theta\t\t\t\t= " << params.barnes_hut_theta << "\n";
     os << "sim.greens.infile\t\t\t\t\t= " << params.greens_infile << "\n";
+
+    os << "sim.file.output_event\t\t\t= " << params.event_outfile << "\n";
+    os << "sim.file.output_sweep\t\t\t= " << params.sweep_outfile << "\n";
+    os << "sim.file.output_event_type\t\t= " << params.event_outfile_type << "\n";
 
     os << "sim.bass.max_generations\t\t\t= " << params.bass_max_generations << "\n";
     os << "sim.bass.min_magnitude_mm\t\t\t= " << params.bass_min_magnitude_mm << "\n";

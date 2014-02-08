@@ -100,6 +100,9 @@ class VCParams {
         std::string         eqsim_output_file;
         double              eqsim_slipmap_mag;
 
+        std::string         event_outfile, sweep_outfile;
+        std::string         event_outfile_type;
+
     public:
         VCParams(void) : valid(false) {};
         void read_params(const std::string &param_file_name);
@@ -228,6 +231,16 @@ class VCParams {
         };
         double getEqSimOutputSlipMapMag(void) const {
             return eqsim_slipmap_mag;
+        };
+
+        std::string getEventOutfile(void) const {
+            return event_outfile;
+        };
+        std::string getSweepOutfile(void) const {
+            return sweep_outfile;
+        };
+        std::string getEventOutfileType(void) const {
+            return event_outfile_type;
         };
 
         friend std::ostream &operator<<(std::ostream &os, const VCParams &params);
