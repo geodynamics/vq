@@ -181,23 +181,6 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
 }
 
 /*!
- Blocks must have trace flags defined for this to work
-*/
-int VCSimulation::numSurfaceBlocks(void) const {
-    //return numGlobalBlocks()/numLayers();
-    BlockList::const_iterator   it;
-    BlockIDSet                  block_set;
-
-    for (it=begin(); it!=end(); ++it) {
-        if (it->on_trace()) {
-            block_set.insert(it->getFaultID());
-        }
-    }
-
-    return block_set.size();
-}
-
-/*!
  Get the set of FaultIDs associated with the given set of blocks.
  */
 void VCSimulation::getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const {
@@ -254,23 +237,6 @@ void VCSimulation::getSectionBlockMapping(SectionBlockMapping &section_block_map
     }
 }
 
-/*!
- Determines the boundaries of depth and DAS in the specified set of blocks.
- Since depth is negative below ground, the lowest depth is the lowest (most negative) value.
- */
-void VCSimulation::depthDASBounds(const BlockIDSet &block_set, double &low_depth, double &high_depth, double &low_das, double &high_das) const {
-    BlockIDSet::const_iterator      it;
-    high_das = high_depth = -DBL_MAX;
-    low_das = low_depth = DBL_MAX;
-
-    for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        low_depth = fmin(low_depth, getBlock(*it).max_depth());
-        high_depth = fmax(high_depth, getBlock(*it).min_depth());
-        low_das = fmin(low_das, getBlock(*it).min_das());
-        high_das = fmax(high_das, getBlock(*it).max_das());
-    }
-}
-
 void VCSimulation::sumStresses(const BlockIDSet &block_set,
                                double &shear_stress,
                                double &shear_stress0,
@@ -285,38 +251,6 @@ void VCSimulation::sumStresses(const BlockIDSet &block_set,
         shear_stress0 += getBlock(*it).getStressS0();
         normal_stress += getNormalStress(*it);
         normal_stress0 += getBlock(*it).getStressN0();
-    }
-}
-
-/*!
- Determines whether a specified block is on top of all blocks it overlaps.
- Used for writing slip maps in EqSim output files.
- */
-bool VCSimulation::isTopOfSlipRectangle(const BlockID &bid, const BlockIDSet &block_set) {
-    BlockIDSet::const_iterator      it;
-    Block &main_block = getBlock(bid);
-
-    for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        Block &target_block = getBlock(*it);
-
-        if (!main_block.is_above(target_block) && main_block.overlaps(target_block)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void VCSimulation::getSlipRectangleBlocks(BlockIDSet &slip_rect_blocks, const BlockID &bid, const BlockIDSet &event_blocks) {
-    BlockIDSet::const_iterator      it;
-    Block &main_block = getBlock(bid);
-
-    slip_rect_blocks.insert(bid);
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        Block &target_block = getBlock(*it);
-
-        if (main_block.overlaps(target_block)) slip_rect_blocks.insert(*it);
     }
 }
 

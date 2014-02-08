@@ -72,17 +72,13 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         double normalStress(void);
         void getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
         //int numLayers(void) const;
-        int numSurfaceBlocks(void) const;
         void getFaultNames(std::map<FaultID, std::string> &fault_names) const;
         void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
         void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
         void getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const;
         void getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const;
 
-        void depthDASBounds(const BlockIDSet &block_set, double &low_depth, double &high_depth, double &low_das, double &high_das) const;
         void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
-        bool isTopOfSlipRectangle(const BlockID &bid, const BlockIDSet &block_set);
-        void getSlipRectangleBlocks(BlockIDSet &slip_rect_blocks, const BlockID &bid, const BlockIDSet &event_blocks);
 
         double sumGreenShear(const BlockID &r) const {
             double sum = 0;
