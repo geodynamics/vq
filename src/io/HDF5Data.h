@@ -261,15 +261,6 @@ class HDF5DataReader : public HDF5Data {
         typedef EventYearMap::iterator          iterator;
         typedef EventYearMap::const_iterator    const_iterator;
 
-        /*iterator begin(const double &lower_bound=-1) {
-            if (lower_bound >= 0) return event_set.lower_bound(lower_bound);
-            else return event_set.lower_bound(filter.year_range.first);
-        };
-        iterator end(const double &upper_bound=-1) {
-            if (upper_bound >= 0) return event_set.upper_bound(upper_bound);
-            else return event_set.upper_bound(filter.year_range.second);
-        };*/
-
         HDF5DataReader(const std::string &hdf5_file_name);
 };
 
