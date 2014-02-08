@@ -89,7 +89,6 @@ class VCParams {
         double              model_lat0;
         double              model_lon0;
 
-        std::string         state_begin_file;
         std::string         greens_outfile;
         std::string         events_file;
         std::string         hdf5_file;
@@ -201,10 +200,6 @@ class VCParams {
 
         quakelib::LatLonDepth getBaseLatLon(void) const {
             return quakelib::LatLonDepth(model_lat0, model_lon0, 0);
-        };
-
-        std::string getStateBeginFile(void) const {
-            return state_begin_file;
         };
         std::string getGreensOutfile(void) const {
             return greens_outfile;

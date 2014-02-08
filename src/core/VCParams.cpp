@@ -72,7 +72,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     model_lat0 = param_file.read<double>("sim.system.rawfile.lat0", 31.5);
     model_lon0 = param_file.read<double>("sim.system.rawfile.lon0", -126.0);
 
-    state_begin_file = param_file.read<string>("sim.state.file.begin", "");
     greens_outfile = param_file.read<string>("sim.greens.outfile", "");
     events_file = param_file.read<string>("sim.events.file", "");
 
@@ -190,7 +189,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.system.rawfile.lat0\t\t\t\t= " << params.model_lat0 << "\n";
     os << "sim.system.rawfile.lon0\t\t\t\t= " << params.model_lon0 << "\n";
 
-    os << "sim.state.file.begin\t\t\t\t\t= " << params.state_begin_file << "\n";
     os << "sim.greens.outfile\t\t\t\t\t= " << params.greens_outfile << "\n";
     os << "sim.events.file\t\t\t\t\t\t= " << params.events_file << "\n";
 

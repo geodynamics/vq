@@ -227,7 +227,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
-        
+
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             if (sim->getUpdateField(gid) > 0) {
