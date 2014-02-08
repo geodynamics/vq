@@ -65,7 +65,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     bass_distance_d = param_file.read<double>("sim.bass.distance_d", 300);
     bass_distance_decay_q = param_file.read<double>("sim.bass.distance_decay_q", 1.35);
 
-    depth_dependent_velocity = param_file.read<bool>("sim.depth_dependent_velocity", false);
     sanity_check = param_file.read<bool>("sim.sanity_check", false);
     do_normal_stress = param_file.read<bool>("sim.do_normal_stress", true);
     use_transpose_matrix = param_file.read<bool>("sim.use_transpose_matrix", true);
@@ -184,7 +183,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.bass.distance_d\t\t\t\t\t= " << params.bass_distance_d << "\n";
     os << "sim.bass.distance_decay_q\t\t\t= " << params.bass_distance_decay_q << "\n";
 
-    os << "sim.depth_dependent_velocity\t\t= " << params.depth_dependent_velocity << "\n";
     os << "sim.sanity_check\t\t\t\t\t\t= " << params.sanity_check << "\n";
     os << "sim.do_normal_stress\t\t\t\t\t= " << params.do_normal_stress << "\n";
     os << "sim.use_transpose_matrix\t\t\t\t= " << params.use_transpose_matrix << "\n";

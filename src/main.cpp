@@ -34,7 +34,6 @@
 #include "BadFaultKill.h"
 #include "BASSAftershocks.h"
 #include "BlockValCompute.h"
-#include "DepthDepVelocity.h"
 #include "EventRecorder.h"
 #include "GracefulQuit.h"
 #include "GreensInit.h"
@@ -48,7 +47,7 @@
 int main (int argc, char **argv) {
     PluginID        read_eqsim_file, init_blocks, block_val_compute;
     PluginID        greens_init, greens_outfile, bad_fault_kill;
-    PluginID        depth_dependent_velocity, greens_kill, update_block_stress, run_event;
+    PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        eqsim_output_file, h5_data_share, vc_events_output_file, graceful_quit;
     VCSimulation    *vc_sim;
@@ -72,9 +71,6 @@ int main (int argc, char **argv) {
 
     // Kill faults that drop below a certain CFF value
     bad_fault_kill = vc_sim->registerPlugin(new BadFaultKill, vc_sim->getFaultKillCFF() < 0);
-
-    // Use depth dependent velocity if requested
-    depth_dependent_velocity = vc_sim->registerPlugin(new DepthDepVelocity, vc_sim->doDepthDependentVelocity());
 
     // Implement Greens matrix killing if the kill distance is greater than 0
     greens_kill = vc_sim->registerPlugin(new GreensKillInteraction, vc_sim->getGreensKillDistance() > 0);
@@ -121,21 +117,20 @@ int main (int argc, char **argv) {
     vc_sim->registerDependence(greens_outfile, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_kill, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_outfile, greens_kill, DEP_OPTIONAL);
-    vc_sim->registerDependence(depth_dependent_velocity, block_val_compute, DEP_OPTIONAL);
 
     // The core of the simulation, which must occur after Greens function is calculated
     vc_sim->registerDependence(update_block_stress, block_val_compute, DEP_OPTIONAL);
     vc_sim->registerDependence(update_block_stress, greens_kill, DEP_OPTIONAL);
     vc_sim->registerDependence(run_event, update_block_stress, DEP_REQUIRE);
 
-    // Background events and BASS aftershocks are added after the initial event is processed
+    // BASS aftershocks are added after the initial event is processed
     vc_sim->registerDependence(bass_model_aftershocks, run_event, DEP_REQUIRE);
 
     // Sanity checking occurs after the events are run
     vc_sim->registerDependence(sanity_checking, run_event, DEP_OPTIONAL);
     vc_sim->registerDependence(bad_fault_kill, run_event, DEP_OPTIONAL);
 
-    // Output occurs after events (including background) are finished
+    // Output occurs after events (including aftershocks) are finished
     vc_sim->registerDependence(display_progress, run_event, DEP_OPTIONAL);
     vc_sim->registerDependence(state_output_file, run_event, DEP_OPTIONAL);
     vc_sim->registerDependence(eqsim_output_file, bass_model_aftershocks, DEP_OPTIONAL);

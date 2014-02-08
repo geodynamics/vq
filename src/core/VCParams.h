@@ -82,7 +82,6 @@ class VCParams {
         double              bass_distance_d;
         double              bass_distance_decay_q;
 
-        bool                depth_dependent_velocity;
         bool                sanity_check;
         bool                do_normal_stress;
         bool                use_transpose_matrix;
@@ -190,9 +189,6 @@ class VCParams {
             return bass_distance_decay_q;
         };
 
-        bool doDepthDependentVelocity(void) const {
-            return depth_dependent_velocity;
-        };
         bool doSanityCheck(void) const {
             return sanity_check;
         };
