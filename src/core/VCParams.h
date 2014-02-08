@@ -85,8 +85,6 @@ class VCParams {
         bool                do_normal_stress;
         bool                use_transpose_matrix;
 
-        double              model_lat0;
-        double              model_lon0;
 
         std::string         greens_outfile;
         std::string         events_file;
@@ -197,9 +195,6 @@ class VCParams {
             return use_transpose_matrix;
         };
 
-        quakelib::LatLonDepth getBaseLatLon(void) const {
-            return quakelib::LatLonDepth(model_lat0, model_lon0, 0);
-        };
         std::string getGreensOutfile(void) const {
             return greens_outfile;
         };

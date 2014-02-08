@@ -72,9 +72,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     do_normal_stress = param_file.read<bool>("sim.do_normal_stress", true);
     use_transpose_matrix = param_file.read<bool>("sim.use_transpose_matrix", true);
 
-    model_lat0 = param_file.read<double>("sim.system.rawfile.lat0", 31.5);
-    model_lon0 = param_file.read<double>("sim.system.rawfile.lon0", -126.0);
-
     greens_outfile = param_file.read<string>("sim.greens.outfile", "");
     events_file = param_file.read<string>("sim.events.file", "");
 
@@ -191,9 +188,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.sanity_check\t\t\t\t\t\t= " << params.sanity_check << "\n";
     os << "sim.do_normal_stress\t\t\t\t\t= " << params.do_normal_stress << "\n";
     os << "sim.use_transpose_matrix\t\t\t\t= " << params.use_transpose_matrix << "\n";
-
-    os << "sim.system.rawfile.lat0\t\t\t\t= " << params.model_lat0 << "\n";
-    os << "sim.system.rawfile.lon0\t\t\t\t= " << params.model_lon0 << "\n";
 
     os << "sim.greens.outfile\t\t\t\t\t= " << params.greens_outfile << "\n";
     os << "sim.events.file\t\t\t\t\t\t= " << params.events_file << "\n";
