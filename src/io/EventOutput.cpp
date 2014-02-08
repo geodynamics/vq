@@ -125,7 +125,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 
         if (sim->isRootNode() && pauseFileExists()) {
             // Flush out the HDF5 data
-#ifdef FOUND_HDF5
+#ifdef HDF5_FOUND
             h5_data->flush();
 #endif
             sim->console() << "# Pausing simulation due to presence of file " << PAUSE_FILE_NAME << std::endl;
@@ -146,7 +146,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 void EventOutput::finish(SimFramework *_sim) {
     VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
 
-#ifdef FOUND_HDF5
+#ifdef HDF5_FOUND
 
     if (h5_data) delete h5_data;
 

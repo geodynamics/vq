@@ -276,7 +276,6 @@ class HDF5DataReader : public HDF5Data {
 class HDF5DataWriter : public HDF5Data {
     public:
         HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks);
-        void setBlockInfo(const Block &block);
         void setStartEndYears(const double &new_start_year, const double &new_end_year);
         void flush(void);
 

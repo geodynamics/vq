@@ -131,6 +131,7 @@ std::ostream &operator<<(std::ostream &os, const GreensValsSparseMatrix &m) {
 
 // Read the Greens function values in from a specified file
 void GreensFuncFileParse::CalculateGreens(VCSimulation *sim) {
+#ifdef HDF5_FOUND
     HDF5GreensDataReader    *greens_file_reader;
     BlockID                 gid;
     int                     i, j, num_global_blocks;
@@ -162,6 +163,7 @@ void GreensFuncFileParse::CalculateGreens(VCSimulation *sim) {
     delete greens_file_reader;
     delete in_shear_green;
     delete in_normal_green;
+#endif
 }
 
 void GreensFuncCalc::symmetrizeMatrix(VCSimulation *sim, GreensValsSparseMatrix &ssh) {
