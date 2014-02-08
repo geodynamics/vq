@@ -41,9 +41,9 @@ void GreensFuncCalc::progressBar(VCSimulation *sim, const int &thread_num, const
 }
 
 // **************************************************************************
-// *** 2011 Okada code
+// *** Standard Okada code
 // **************************************************************************
-void GreensFuncCalc2011::CalculateGreens(VCSimulation *sim) {
+void GreensFuncCalcStandard::CalculateGreens(VCSimulation *sim) {
     std::vector<int>        row_sizes;
     int                     num_blocks, t_num, n;
 
@@ -75,7 +75,7 @@ void GreensFuncCalc2011::CalculateGreens(VCSimulation *sim) {
     for (n=0; n<sim->numLocalBlocks(); ++n) {
         progressBar(sim, t_num, n);
 
-        InnerCalc2011(sim, sim->getGlobalBID(n), ssh, snorm);
+        InnerCalcStandard(sim, sim->getGlobalBID(n), ssh, snorm);
     }
 
     // Symmetrize the shear stress matrix
@@ -90,10 +90,10 @@ void GreensFuncCalc2011::CalculateGreens(VCSimulation *sim) {
     }
 }
 
-void GreensFuncCalc2011::InnerCalc2011(VCSimulation *sim,
-                                       const BlockID &bnum,
-                                       GreensValsSparseMatrix &ssh,
-                                       GreensValsSparseMatrix &snorm) {
+void GreensFuncCalcStandard::InnerCalcStandard(VCSimulation *sim,
+                                               const BlockID &bnum,
+                                               GreensValsSparseMatrix &ssh,
+                                               GreensValsSparseMatrix &snorm) {
     Block source_block = sim->getBlock(bnum);
     BlockIDList                         target_blocks;
     BlockIDList::const_iterator         bit;

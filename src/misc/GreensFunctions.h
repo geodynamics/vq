@@ -127,13 +127,13 @@ class GreensFuncCalcBarnesHut : public GreensFuncCalc {
         void bhInnerCalc(VCSimulation *sim, quakelib::Octree<3> *tree, const BlockID &bid);
 };
 
-class GreensFuncCalc2011 : public GreensFuncCalc {
+class GreensFuncCalcStandard : public GreensFuncCalc {
     public:
         void CalculateGreens(VCSimulation *sim);
-        void InnerCalc2011(VCSimulation *sim,
-                           const BlockID &bnum,
-                           GreensValsSparseMatrix &ssh,
-                           GreensValsSparseMatrix &snorm);
+        void InnerCalcStandard(VCSimulation *sim,
+                               const BlockID &bnum,
+                               GreensValsSparseMatrix &ssh,
+                               GreensValsSparseMatrix &snorm);
 };
 
 #endif

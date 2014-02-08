@@ -94,8 +94,8 @@ void VCParams::read_params(const std::string &param_file_name) {
         greens_calc_method = GREENS_FILE_PARSE;
     } else if (!greens_method.compare("bh")) {
         greens_calc_method = GREENS_CALC_BARNES_HUT;
-    } else if (!greens_method.compare("2011")) {
-        greens_calc_method = GREENS_CALC_2011;
+    } else if (!greens_method.compare("standard")) {
+        greens_calc_method = GREENS_CALC_STANDARD;
     } else {
         greens_calc_method = GREENS_CALC_UNDEFINED;
     }

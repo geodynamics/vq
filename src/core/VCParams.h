@@ -31,7 +31,7 @@ enum GreensCalcMethod {
     GREENS_CALC_NONE,           // do not calculate Greens function
     GREENS_FILE_PARSE,          // use file parsing method
     GREENS_CALC_BARNES_HUT,     // use Barnes Hut method to calculate Greens function
-    GREENS_CALC_2011            // use the new Okada class to calculate Greens functions
+    GREENS_CALC_STANDARD        // use the new Okada class to calculate Greens functions
 };
 
 enum FrictionLawMethod {

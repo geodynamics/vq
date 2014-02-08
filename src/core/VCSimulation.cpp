@@ -55,7 +55,7 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
     assertThrow(getSlipDeficitNoise()>=0 && getSlipDeficitNoise()<=1,
                 "sim.noise.slip_deficit: Initial slip deficit noise value must be between 0 and 1.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
-                "Greens calculation method must be either 2011, Barnes Hut or file based.");
+                "Greens calculation method must be either standard, Barnes Hut or file based.");
 }
 
 /*!
