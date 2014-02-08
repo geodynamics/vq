@@ -745,8 +745,9 @@ void VCSimulation::distributeUpdateField(void) {
                    MPI_COMM_WORLD);
 
     // Copy the received values from the buffer to the update field
-    for (i=0; i<numGlobalBlocks()+getWorldSize(); ++i) {
+    for (i=0; i<numGlobalBlocks(); ++i) {
         bid = updateFieldRecvIDs[i];
+        getUpdateFieldPtr()[bid] = updateFieldRecvBuf[i];
     }
 
 #ifdef DEBUG
@@ -1002,7 +1003,6 @@ void VCSimulation::partitionBlocks(void) {
 
     if (isRootNode()) assertThrow(avail_ids.size()==0, "Did not assign all blocks in partitioning.");
 
-    // One extra field for speculative execution information
     updateFieldRecvIDs = new BlockID[num_global_blocks];
     updateFieldRecvBuf = new GREEN_VAL[num_global_blocks];
 
@@ -1028,13 +1028,9 @@ void VCSimulation::partitionBlocks(void) {
         // Figure out what IDs we will get in the receive buffer
         for (it=it_start; it!=it_end; ++it,++j) updateFieldRecvIDs[j] = it->second;
 
-        updateFieldRecvIDs[j++] = UINT_MAX;
-
         // If we're on the local node, also record the order of IDs for the send buffer
         if (i == local_rank) {
             for (n=0,it=it_start; it!=it_end; ++it,++n) updateFieldSendIDs[n] = it->second;
-
-            updateFieldSendIDs[n] = UINT_MAX;
         }
     }
 
