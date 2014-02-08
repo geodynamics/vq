@@ -19,22 +19,15 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "VCSimulation.h"
-#include "QuakeLib.h"
+#include "QuakeLibIO.h"
 
-#ifndef _EQSIM_FILE_PARSE_H_
-#define _EQSIM_FILE_PARSE_H_
+#ifndef _READ_MODEL_FILE_H_
+#define _READ_MODEL_FILE_H_
 
 /*!
- Parses EqSim input files and creates structures with their corresponding model.
- At the least there must be a geometry file, with an optional condition and/or friction file.
+ Parses input model file and creates corresponding simulation structures.
  */
-class EqSimFileParse : public SimPlugin {
-    private:
-        quakelib::EQSimConditionReader  condition_data;
-        quakelib::EQSimFrictionReader   friction_data;
-        quakelib::EQSimGeometryReader   geometry_data;
-        quakelib::SectionParamsReader   section_params_data;
-
+class ReadModelFile : public SimPlugin {
     public:
         virtual std::string name(void) const {
             return "EqSim file parsing";

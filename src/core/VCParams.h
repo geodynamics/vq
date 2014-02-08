@@ -85,17 +85,10 @@ class VCParams {
         bool                do_normal_stress;
         bool                use_transpose_matrix;
 
+        std::string         input_model_file;
+        std::string         input_model_file_type;
 
         std::string         greens_outfile;
-        std::string         events_file;
-        std::string         hdf5_file;
-        std::string         section_params_file;
-
-        std::string         eqsim_condition_file;
-        std::string         eqsim_friction_file;
-        std::string         eqsim_geometry_file;
-        std::string         eqsim_output_file;
-        double              eqsim_slipmap_mag;
 
         std::string         event_outfile, sweep_outfile;
         std::string         event_outfile_type;
@@ -195,33 +188,15 @@ class VCParams {
             return use_transpose_matrix;
         };
 
-        std::string getGreensOutfile(void) const {
-            return greens_outfile;
+        std::string getModelFile(void) const {
+            return input_model_file;
         };
-        std::string getEventsFile(void) const {
-            return events_file;
-        };
-        std::string getHDF5File(void) const {
-            return hdf5_file;
-        };
-        std::string getSectionParamsFile(void) const {
-            return section_params_file;
+        std::string getModelFileType(void) const {
+            return input_model_file_type;
         };
 
-        std::string getEqSimConditionFile(void) const {
-            return eqsim_condition_file;
-        };
-        std::string getEqSimFrictionFile(void) const {
-            return eqsim_friction_file;
-        };
-        std::string getEqSimGeometryFile(void) const {
-            return eqsim_geometry_file;
-        };
-        std::string getEqSimOutputFile(void) const {
-            return eqsim_output_file;
-        };
-        double getEqSimOutputSlipMapMag(void) const {
-            return eqsim_slipmap_mag;
+        std::string getGreensOutfile(void) const {
+            return greens_outfile;
         };
 
         std::string getEventOutfile(void) const {

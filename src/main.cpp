@@ -24,7 +24,7 @@
 #include "EventOutput.h"
 
 // File parsing and output related
-#include "EqSimFileParse.h"
+#include "ReadModelFile.h"
 #include "GreensFileOutput.h"
 #include "CheckpointFileOutput.h"
 #include "CheckpointFileParse.h"
@@ -43,7 +43,7 @@
 #include "VCInitBlocks.h"
 
 int main (int argc, char **argv) {
-    PluginID        read_eqsim_file, init_blocks, block_val_compute;
+    PluginID        read_model_file, init_blocks, block_val_compute;
     PluginID        greens_init, greens_outfile, bad_fault_kill;
     PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
@@ -56,7 +56,7 @@ int main (int argc, char **argv) {
     // ** Define plugins and whether they are active
     // ************************************************************
     // EqSim files are parsed if a geometry file name is specified
-    read_eqsim_file = vc_sim->registerPlugin(new EqSimFileParse, !vc_sim->getEqSimGeometryFile().empty());
+    read_model_file = vc_sim->registerPlugin(new ReadModelFile, !vc_sim->getModelFile().empty());
 
     // Calculate block values if we aren't using EqSim files
     block_val_compute = vc_sim->registerPlugin(new BlockValCompute, vc_sim->getEqSimGeometryFile().empty());
@@ -89,13 +89,14 @@ int main (int argc, char **argv) {
     init_blocks = vc_sim->registerPlugin(new VCInitBlocks, true);
     update_block_stress = vc_sim->registerPlugin(new UpdateBlockStress, true);
     run_event = vc_sim->registerPlugin(new RunEvent, true);
+    event_output = vc_sim->registerPlugin(new EventOutput, !vc_sim->getEventOutfile().empty());
     graceful_quit = vc_sim->registerPlugin(new GracefulQuit, true);
 
     // ************************************************************
     // ** Specify plugin dependencies
     // ************************************************************
     // Block initialization must occur after the blocks are read in
-    vc_sim->registerDependence(init_blocks, read_eqsim_file, DEP_OPTIONAL);
+    vc_sim->registerDependence(init_blocks, read_model_file, DEP_OPTIONAL);
 
     // Check for quit file before doing any intensive calculation
     vc_sim->registerDependence(graceful_quit, init_blocks, DEP_OPTIONAL);

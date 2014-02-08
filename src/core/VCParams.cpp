@@ -55,6 +55,8 @@ void VCParams::read_params(const std::string &param_file_name) {
     barnes_hut_theta = param_file.read<double>("sim.greens.bh_theta", 0.0);
     greens_infile = param_file.read<string>("sim.greens.infile", "");
 
+    input_model_file = param_file.read<string>("sim.file.input", "");
+    input_model_file_type = param_file.read<string>("sim.file.input_type", "");
     event_outfile = param_file.read<string>("sim.file.output_event", "");
     sweep_outfile = param_file.read<string>("sim.file.output_sweep", "");
     event_outfile_type = param_file.read<string>("sim.file.output_event_type", "");
@@ -73,17 +75,6 @@ void VCParams::read_params(const std::string &param_file_name) {
     use_transpose_matrix = param_file.read<bool>("sim.use_transpose_matrix", true);
 
     greens_outfile = param_file.read<string>("sim.greens.outfile", "");
-    events_file = param_file.read<string>("sim.events.file", "");
-
-    section_params_file = param_file.read<string>("sim.section_params.file", "");
-
-    hdf5_file = param_file.read<string>("sim.hdf5.file", "vc_result.h5");
-
-    eqsim_condition_file = param_file.read<string>("sim.eqsim.file.condition", "");
-    eqsim_friction_file = param_file.read<string>("sim.eqsim.file.friction", "");
-    eqsim_geometry_file = param_file.read<string>("sim.eqsim.file.geometry", "");
-    eqsim_output_file = param_file.read<string>("sim.eqsim.file.output", "");
-    eqsim_slipmap_mag = param_file.read<double>("sim.eqsim.file.slipmap_mag", 7.5);
 
     // Parse the Greens calculation method string
     if (!greens_method.compare("file")) {
@@ -172,6 +163,8 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.greens.bh_theta\t\t\t\t= " << params.barnes_hut_theta << "\n";
     os << "sim.greens.infile\t\t\t\t\t= " << params.greens_infile << "\n";
 
+    os << "sim.file.input\t\t\t\t=" << params.input_model_file << "\n";
+    os << "sim.file.input_type\t\t\t=" << params.input_model_file_type << "\n";
     os << "sim.file.output_event\t\t\t= " << params.event_outfile << "\n";
     os << "sim.file.output_sweep\t\t\t= " << params.sweep_outfile << "\n";
     os << "sim.file.output_event_type\t\t= " << params.event_outfile_type << "\n";
@@ -190,17 +183,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.use_transpose_matrix\t\t\t\t= " << params.use_transpose_matrix << "\n";
 
     os << "sim.greens.outfile\t\t\t\t\t= " << params.greens_outfile << "\n";
-    os << "sim.events.file\t\t\t\t\t\t= " << params.events_file << "\n";
-
-    os << "sim.section_params.file\t\t\t\t\t\t= " << params.section_params_file << "\n";
-
-    os << "sim.hdf5.file\t\t\t\t\t= " << params.hdf5_file << "\n";
-
-    os << "sim.eqsim.file.condition\t\t\t= " << params.eqsim_condition_file << "\n";
-    os << "sim.eqsim.file.friction\t\t\t\t= " << params.eqsim_friction_file << "\n";
-    os << "sim.eqsim.file.geometry\t\t\t\t= " << params.eqsim_geometry_file << "\n";
-    os << "sim.eqsim.file.output\t\t\t\t= " << params.eqsim_output_file << "\n";
-    os << "sim.eqsim.file.output.slipmap_mag\t= " << params.eqsim_slipmap_mag << "\n";
 
     return os;
 }
