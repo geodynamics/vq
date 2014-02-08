@@ -181,17 +181,6 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
 }
 
 /*!
- Get the set of FaultIDs associated with the given set of blocks.
- */
-void VCSimulation::getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const {
-    BlockIDSet::const_iterator      it;
-
-    for (it=block_ids.begin(); it!=block_ids.end(); ++it) {
-        fault_ids.insert(getBlock(*it).getFaultID());
-    }
-}
-
-/*!
  Get a mapping of exactly which faults are associated with a specified set of blocks.
  */
 void VCSimulation::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const {
@@ -221,19 +210,6 @@ void VCSimulation::getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_fai
         } else {
             fault_failure_area_mapping[fault_id] += block_area;
         }
-    }
-}
-
-/*!
- Get a mapping of exactly which sections are associated with a specified set of blocks.
- */
-void VCSimulation::getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    SectionID                     section_id;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        section_id = getBlock(*it).getSectionID();
-        section_block_mapping[section_id].insert(*it);
     }
 }
 

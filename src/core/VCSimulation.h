@@ -76,7 +76,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
         void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
         void getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const;
-        void getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const;
 
         void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
 
