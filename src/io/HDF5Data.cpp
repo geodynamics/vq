@@ -382,12 +382,9 @@ HDF5Data::~HDF5Data(void) {
 /*!
  Initialize the HDF5 writer using the specified model dimensions.
  */
-HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks) : HDF5Data() {
-    hsize_t             dimsf[2];
+HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name) : HDF5Data() {
     herr_t              status;
     hid_t               plist_id;
-
-    num_blocks = nblocks;
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
 

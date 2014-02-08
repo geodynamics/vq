@@ -21,6 +21,8 @@
 #include "EventOutput.h"
 #include "HDF5Data.h"
 
+#include <unistd.h>
+
 bool EventOutput::pauseFileExists(void) {
     FILE            *fp;
 
