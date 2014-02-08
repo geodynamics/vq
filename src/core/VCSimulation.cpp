@@ -90,11 +90,11 @@ void VCSimulation::init(void) {
     SimFramework::init();
 
     //CFF output hack.
-    std::string file_prepend;
-    size_t pos;
+    //std::string file_prepend;
+    //size_t pos;
 
-    pos = getHDF5File().find(".");
-    file_prepend = getHDF5File().substr(0,pos);
+    //pos = getHDF5File().find(".");
+    //file_prepend = getHDF5File().substr(0,pos);
     //sprintf(CFF_out_filename, "%s_CFF.dat", file_prepend.c_str());
     //CFF_out_filename_str = CFF_out_filename;
     //CFF_out_file.open(CFF_out_filename_str.c_str());
