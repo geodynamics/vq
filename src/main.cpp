@@ -21,10 +21,9 @@
 #include "VCSimulation.h"
 
 // Plugin #includes
-#include "HDF5DataShare.h"
+#include "EventOutput.h"
 
 // File parsing and output related
-#include "EqSimFileOutput.h"
 #include "EqSimFileParse.h"
 #include "GreensFileOutput.h"
 #include "CheckpointFileOutput.h"
@@ -34,7 +33,6 @@
 #include "BadFaultKill.h"
 #include "BASSAftershocks.h"
 #include "BlockValCompute.h"
-#include "EventRecorder.h"
 #include "GracefulQuit.h"
 #include "GreensInit.h"
 #include "GreensKillInteraction.h"
@@ -49,7 +47,7 @@ int main (int argc, char **argv) {
     PluginID        greens_init, greens_outfile, bad_fault_kill;
     PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
-    PluginID        eqsim_output_file, h5_data_share, vc_events_output_file, graceful_quit;
+    PluginID        event_output, graceful_quit;
     VCSimulation    *vc_sim;
 
     vc_sim = new VCSimulation(argc, argv);
@@ -87,17 +85,10 @@ int main (int argc, char **argv) {
     // Write the simulation state if the period is more than zero
     state_output_file = vc_sim->registerPlugin(new CheckpointFileOutput, vc_sim->getCheckpointPeriod() > 0);
 
-    // Write an EqSim event file if the output file is specified
-    eqsim_output_file = vc_sim->registerPlugin(new EqSimFileOutput, !vc_sim->getEqSimOutputFile().empty());
-
-    // Write events in the old output format if the file name is specified
-    vc_events_output_file = vc_sim->registerPlugin(new EventRecorder, !vc_sim->getEventsFile().empty());
-
     // These plugins are always active in a simulation
     init_blocks = vc_sim->registerPlugin(new VCInitBlocks, true);
     update_block_stress = vc_sim->registerPlugin(new UpdateBlockStress, true);
     run_event = vc_sim->registerPlugin(new RunEvent, true);
-    h5_data_share = vc_sim->registerPlugin(new HDF5DataShare, true);
     graceful_quit = vc_sim->registerPlugin(new GracefulQuit, true);
 
     // ************************************************************
@@ -133,9 +124,7 @@ int main (int argc, char **argv) {
     // Output occurs after events (including aftershocks) are finished
     vc_sim->registerDependence(display_progress, run_event, DEP_OPTIONAL);
     vc_sim->registerDependence(state_output_file, run_event, DEP_OPTIONAL);
-    vc_sim->registerDependence(eqsim_output_file, bass_model_aftershocks, DEP_OPTIONAL);
-    vc_sim->registerDependence(h5_data_share, bass_model_aftershocks, DEP_OPTIONAL);
-    vc_sim->registerDependence(vc_events_output_file, bass_model_aftershocks, DEP_OPTIONAL);
+    vc_sim->registerDependence(event_output, bass_model_aftershocks, DEP_OPTIONAL);
 
     //vc_sim->writeDOT(vc_sim->errConsole());
 

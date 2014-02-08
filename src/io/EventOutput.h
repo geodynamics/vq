@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2014 Eric M. Heien, Michael K. Sachs, John B. Rundle
+// Copyright (c) 2012-2013 Eric M. Heien, Michael K. Sachs, John B. Rundle
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -18,29 +18,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include <unistd.h>
-
 #include "VCSimulation.h"
 #include "HDF5Data.h"
+
+#ifdef VC_HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifndef _HDF5_DATA_SHARE_H_
 #define _HDF5_DATA_SHARE_H_
 
-#define HDF5_PAUSE_FILE_NAME        "pause_vc"
+#define PAUSE_FILE_NAME     "pause_vc"
 
 /*!
  Manages the HDF5 format data output for VC program.
  */
-class HDF5DataShare : public SimPlugin {
+class EventOutput : public SimPlugin {
     private:
+#ifdef HDF5_FOUND
         HDF5DataWriter      *h5_data;
+#else
+        void                *h5_data;
+#endif
         unsigned int        next_pause_check;
+        std::ofstream       event_outfile, sweep_outfile;
 
         bool pauseFileExists(void);
 
     public:
         virtual std::string name(void) const {
-            return "HDF5 Data Writer";
+            return "Data Writer";
         }
         void initDesc(const SimFramework *_sim) const;
 
