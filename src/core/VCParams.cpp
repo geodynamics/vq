@@ -35,7 +35,6 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     year = param_file.read<double>("sim.start_year", 0.0);
     sim_end_year = param_file.read<double>("sim.end_year", 1000.0);
-    event_start_year = param_file.read<double>("sim.events.start_year", 0);
 
     noise_event = param_file.read<double>("sim.noise.event", 0.0);
     noise_slip_deficit = param_file.read<double>("sim.noise.slip_deficit", 0.0);
@@ -157,7 +156,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
 
     os << "sim.start_year\t\t\t\t\t\t= " << params.year << "\n";
     os << "sim.end_year\t\t\t\t\t\t\t= " << params.sim_end_year << "\n";
-    os << "sim.events.start_year\t\t\t\t= " << params.event_start_year << "\n";
 
     os << "sim.noise.event\t\t\t\t\t\t= " << params.noise_event << "\n";
     os << "sim.noise.slip_deficit\t\t\t\t= " << params.noise_slip_deficit << "\n";

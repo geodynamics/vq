@@ -52,7 +52,6 @@ class VCParams {
 
         double              year;
         double              sim_end_year;
-        double              event_start_year;
 
         double              noise_event;
         double              noise_slip_deficit;
@@ -116,9 +115,6 @@ class VCParams {
         };
         double getSimDuration(void) const {
             return sim_end_year;
-        };
-        double getRecordingStart(void) const {
-            return event_start_year;
         };
 
         double getEventNoise(void) const {
