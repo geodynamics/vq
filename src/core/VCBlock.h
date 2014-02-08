@@ -113,12 +113,10 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv);
  */
 class State {
     public:
-        State(void) : slipDeficit(0), slipCumulative(0), cff(0), Fcff(0), Fcff0(0),
+        State(void) : slipDeficit(0), cff(0), Fcff(0), Fcff0(0),
             cff0(0), stressS0(0), stressN0(0), FstressS0(0), FstressN0(0), stressS(NULL), stressN(NULL), FstressS(NULL), FstressN(NULL), updateField(NULL) {};
         //! slip - Vt
         double slipDeficit;
-        //! cumulative slip over all times.
-        double slipCumulative;
         //! coulomb failure function for failed block
         double Fcff;
         //! coulomb failure function for failed block after a failure
@@ -300,10 +298,6 @@ class Block : public quakelib::SimElement {
         //! Returns the slip deficit of this block.
         double getSlipDeficit(void) const {
             return state.slipDeficit;
-        };
-        //! Returns the cumulative slip of this block.
-        double getSlipCumulative(void) const {
-            return state.slipCumulative;
         };
         //! Returns the slip deficit of this block.
         double getShearStress(void) const {

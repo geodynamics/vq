@@ -286,7 +286,6 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Update the cumulative slip for this fault and turn off dynamic triggering
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        sim->getBlock(gid).state.slipCumulative += sim->getCurrentEvent().getEventSlip(gid);
         sim->getBlock(gid).setFailed(false);
         sim->getBlock(gid).setFailedThisSweep(false);
         sim->getBlock(gid).dynamicOff();

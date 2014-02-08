@@ -376,15 +376,6 @@ void VCSimulation::printSlipDeficits(void) {
     console() << std::endl;
 }
 
-void VCSimulation::printSlipCumulative(void) {
-    BlockList::iterator it;
-    console() << getYear() << " ";
-
-    for (it=begin(); it!=end(); ++it) console() << it->getSlipCumulative() << " ";
-
-    console() << std::endl;
-}
-
 
 void VCSimulation::printCFFs(void) {
     BlockList::iterator it;
