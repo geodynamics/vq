@@ -59,7 +59,8 @@ int main (int argc, char **argv) {
     read_model_file = vc_sim->registerPlugin(new ReadModelFile, !vc_sim->getModelFile().empty());
 
     // Calculate block values if we aren't using EqSim files
-    block_val_compute = vc_sim->registerPlugin(new BlockValCompute, vc_sim->getEqSimGeometryFile().empty());
+    // TODO: put this back in
+    //block_val_compute = vc_sim->registerPlugin(new BlockValCompute, vc_sim->getEqSimGeometryFile().empty());
 
     // Calculate Greens function if a calculation method is specified
     greens_init = vc_sim->registerPlugin(new GreensInit, vc_sim->getGreensCalcMethod() != GREENS_CALC_NONE);
