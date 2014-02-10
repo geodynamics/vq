@@ -178,6 +178,7 @@ class Block : public quakelib::SimElement {
 
         double          rhogd;              // normal stress
 
+        double          max_slip;           // Maximum slip of this block based on whatever scaling relationship we're using
         double          friction_val;       // friction value for this block
 
         double          section_layers;
@@ -383,6 +384,12 @@ class Block : public quakelib::SimElement {
             return sid;
         };
 
+        double getMaxSlip(void) const {
+            return max_slip;
+        };
+        void setMaxSlip(const double &new_max_slip) {
+            max_slip = new_max_slip;
+        };
         //! Calculate the expected recurrence of this block in years.
         double getRecurrence(void) const {
             return stress_drop/(_slip_rate*(self_shear-self_normal*friction_val));
