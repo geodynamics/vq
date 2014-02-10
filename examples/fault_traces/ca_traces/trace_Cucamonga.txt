@@ -1,0 +1,24 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+22 10 Cucamonga
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.1805 -117.45 0 12000 0.159 0 90 44.9898 3e+10 3.2e+10
+34.175 -117.482 0 12000 0.634 0 90 44.9049 3e+10 3.2e+10
+34.1736 -117.515 0 12000 0.634 0 90 44.9612 3e+10 3.2e+10
+34.1752 -117.547 0 12000 0.634 0 90 44.9611 3e+10 3.2e+10
+34.1702 -117.579 0 12000 0.634 0 90 44.9633 3e+10 3.2e+10
+34.1664 -117.612 0 12000 0.634 0 90 44.9978 3e+10 3.2e+10
+34.1624 -117.644 0 12000 0.634 0 90 44.8619 3e+10 3.2e+10
+34.1535 -117.675 0 12000 0.634 0 90 44.9899 3e+10 3.2e+10
+34.1406 -117.704 0 12000 0.159 0 90 44.9865 3e+10 3.2e+10
+34.1248 -117.73 0 12000 0.159 0 90 44.9865 3e+10 3.2e+10

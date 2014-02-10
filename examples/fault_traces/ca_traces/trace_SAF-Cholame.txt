@@ -1,0 +1,36 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+1 22 SAF-Cholame
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+35.7557 -120.299 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.7348 -120.278 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.7138 -120.257 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.6929 -120.236 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.6717 -120.215 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.6505 -120.195 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.6294 -120.174 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.6081 -120.154 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.5868 -120.134 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.5655 -120.113 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.5442 -120.093 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.5229 -120.073 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.5015 -120.052 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.4803 -120.032 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.4591 -120.011 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.438 -119.991 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.4168 -119.97 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.3959 -119.95 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.3749 -119.929 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.3541 -119.908 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.3334 -119.887 0 12000 4.295 0 180 90 3e+10 3.2e+10
+35.3124 -119.866 0 12000 4.295 0 180 90 3e+10 3.2e+10

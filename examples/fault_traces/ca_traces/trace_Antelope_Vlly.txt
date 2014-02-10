@@ -1,0 +1,25 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+106 11 Antelope_Vlly
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+38.7612 -119.575 0 12000 0.025 0 -90 119.983 3e+10 3.2e+10
+38.7376 -119.558 0 12000 0.101 0 -90 120.008 3e+10 3.2e+10
+38.7117 -119.55 0 12000 0.101 0 -90 120.097 3e+10 3.2e+10
+38.6854 -119.543 0 12000 0.101 0 -90 120.054 3e+10 3.2e+10
+38.6619 -119.523 0 12000 0.101 0 -90 120.097 3e+10 3.2e+10
+38.635 -119.521 0 12000 0.101 0 -90 120.177 3e+10 3.2e+10
+38.6079 -119.521 0 12000 0.101 0 -90 120.038 3e+10 3.2e+10
+38.5815 -119.515 0 12000 0.101 0 -90 120.185 3e+10 3.2e+10
+38.5554 -119.506 0 12000 0.101 0 -90 120.096 3e+10 3.2e+10
+38.5299 -119.494 0 12000 0.025 0 -90 120.123 3e+10 3.2e+10
+38.5051 -119.481 0 12000 0.025 0 -90 120.123 3e+10 3.2e+10

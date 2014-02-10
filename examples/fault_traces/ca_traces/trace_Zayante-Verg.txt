@@ -1,0 +1,34 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+144 20 Zayante-Verg
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+37.0819 -121.959 0 12000 0 0 150 90 3e+10 3.2e+10
+37.0671 -121.93 0 12000 0.007 0 150 90 3e+10 3.2e+10
+37.0521 -121.902 0 12000 0.009 0 150 90 3e+10 3.2e+10
+37.0367 -121.875 0 12000 0.01 0 150 90 3e+10 3.2e+10
+37.0206 -121.847 0 12000 0.012 0 150 90 3e+10 3.2e+10
+37.0038 -121.821 0 12000 0.012 0 150 90 3e+10 3.2e+10
+36.9858 -121.796 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.9668 -121.772 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.9465 -121.749 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.9249 -121.729 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.9027 -121.71 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.8803 -121.691 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.8585 -121.671 0 12000 0.013 0 150 90 3e+10 3.2e+10
+36.838 -121.649 0 12000 0.012 0 150 90 3e+10 3.2e+10
+36.8202 -121.624 0 12000 0.012 0 150 90 3e+10 3.2e+10
+36.8069 -121.595 0 12000 0.01 0 150 90 3e+10 3.2e+10
+36.7985 -121.563 0 12000 0.009 0 150 90 3e+10 3.2e+10
+36.7939 -121.53 0 12000 0.007 0 150 90 3e+10 3.2e+10
+36.7922 -121.496 0 12000 0 0 150 90 3e+10 3.2e+10
+36.792 -121.462 0 12000 0 0 150 90 3e+10 3.2e+10

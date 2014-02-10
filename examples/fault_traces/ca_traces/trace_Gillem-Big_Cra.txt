@@ -1,0 +1,26 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+117 12 Gillem-Big_Cra
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+41.9557 -121.575 0 12000 0.032 0 -90 120.171 3e+10 3.2e+10
+41.9295 -121.584 0 12000 0.126 0 -90 120.29 3e+10 3.2e+10
+41.903 -121.59 0 12000 0.126 0 -90 120.235 3e+10 3.2e+10
+41.8762 -121.593 0 12000 0.126 0 -90 120.268 3e+10 3.2e+10
+41.8493 -121.594 0 12000 0.126 0 -90 120.141 3e+10 3.2e+10
+41.8225 -121.59 0 12000 0.126 0 -90 120.136 3e+10 3.2e+10
+41.7962 -121.582 0 12000 0.126 0 -90 120.11 3e+10 3.2e+10
+41.7714 -121.568 0 12000 0.126 0 -90 120.164 3e+10 3.2e+10
+41.7456 -121.552 0 12000 0.126 0 -90 120.173 3e+10 3.2e+10
+41.7183 -121.557 0 12000 0.126 0 -90 120.155 3e+10 3.2e+10
+41.6942 -121.574 0 12000 0.032 0 -90 120.105 3e+10 3.2e+10
+41.6752 -121.6 0 12000 0.032 0 -90 120.105 3e+10 3.2e+10

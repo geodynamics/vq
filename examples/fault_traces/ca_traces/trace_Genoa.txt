@@ -1,0 +1,31 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+107 17 Genoa
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+39.0891 -119.84 0 12000 0 0 -90 120.124 3e+10 3.2e+10
+39.0624 -119.83 0 12000 0.146 0 -90 120.228 3e+10 3.2e+10
+39.036 -119.838 0 12000 0.186 0 -90 120.152 3e+10 3.2e+10
+39.0092 -119.84 0 12000 0.205 0 -90 120.048 3e+10 3.2e+10
+38.9821 -119.839 0 12000 0.241 0 -90 120.225 3e+10 3.2e+10
+38.9555 -119.844 0 12000 0.247 0 -90 120.054 3e+10 3.2e+10
+38.9286 -119.849 0 12000 0.251 0 -90 120.101 3e+10 3.2e+10
+38.9011 -119.847 0 12000 0.253 0 -90 120.073 3e+10 3.2e+10
+38.8786 -119.828 0 12000 0.253 0 -90 120.164 3e+10 3.2e+10
+38.8604 -119.799 0 12000 0.251 0 -90 120.057 3e+10 3.2e+10
+38.8333 -119.791 0 12000 0.247 0 -90 120.117 3e+10 3.2e+10
+38.8075 -119.801 0 12000 0.241 0 -90 120.058 3e+10 3.2e+10
+38.7839 -119.819 0 12000 0.205 0 -90 120.13 3e+10 3.2e+10
+38.7578 -119.827 0 12000 0.186 0 -90 120.146 3e+10 3.2e+10
+38.7308 -119.828 0 12000 0.146 0 -90 120.063 3e+10 3.2e+10
+38.7041 -119.822 0 12000 0 0 -90 120.148 3e+10 3.2e+10
+38.6781 -119.813 0 12000 0 0 -90 120.148 3e+10 3.2e+10

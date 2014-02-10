@@ -1,0 +1,36 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+69 22 Harper_Lk
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+35.2475 -117.441 0 12000 0 0 180 90 3e+10 3.2e+10
+35.2297 -117.417 0 12000 0.051 0 180 90 3e+10 3.2e+10
+35.2119 -117.392 0 12000 0.065 0 180 90 3e+10 3.2e+10
+35.1943 -117.367 0 12000 0.072 0 180 90 3e+10 3.2e+10
+35.1772 -117.341 0 12000 0.084 0 180 90 3e+10 3.2e+10
+35.1606 -117.315 0 12000 0.086 0 180 90 3e+10 3.2e+10
+35.1445 -117.289 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.1288 -117.262 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.1134 -117.235 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.0978 -117.208 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.082 -117.181 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.0658 -117.155 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.0489 -117.129 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.0313 -117.104 0 12000 0.088 0 180 90 3e+10 3.2e+10
+35.0127 -117.08 0 12000 0.088 0 180 90 3e+10 3.2e+10
+34.9931 -117.058 0 12000 0.086 0 180 90 3e+10 3.2e+10
+34.9723 -117.037 0 12000 0.084 0 180 90 3e+10 3.2e+10
+34.9501 -117.018 0 12000 0.072 0 180 90 3e+10 3.2e+10
+34.927 -117.001 0 12000 0.065 0 180 90 3e+10 3.2e+10
+34.9044 -116.983 0 12000 0.051 0 180 90 3e+10 3.2e+10
+34.8857 -116.958 0 12000 0 0 180 90 3e+10 3.2e+10
+34.8743 -116.928 0 12000 0 0 180 90 3e+10 3.2e+10

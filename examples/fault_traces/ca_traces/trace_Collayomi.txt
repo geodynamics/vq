@@ -1,0 +1,24 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+102 10 Collayomi
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+38.9822 -122.852 0 12000 0.019 0 180 90 3e+10 3.2e+10
+38.9597 -122.833 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.9371 -122.814 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.9146 -122.795 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.8921 -122.776 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.8695 -122.757 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.847 -122.738 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.8245 -122.719 0 12000 0.075 0 180 90 3e+10 3.2e+10
+38.8019 -122.7 0 12000 0.019 0 180 90 3e+10 3.2e+10
+38.7785 -122.683 0 12000 0.019 0 180 90 3e+10 3.2e+10

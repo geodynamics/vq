@@ -1,0 +1,31 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+77 17 N_Frontal-W
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.3706 -116.864 0 12000 0 0 90 135.022 3e+10 3.2e+10
+34.3665 -116.896 0 12000 0.073 0 90 135.009 3e+10 3.2e+10
+34.3639 -116.929 0 12000 0.093 0 90 134.983 3e+10 3.2e+10
+34.3674 -116.962 0 12000 0.103 0 90 134.943 3e+10 3.2e+10
+34.3823 -116.989 0 12000 0.121 0 90 134.959 3e+10 3.2e+10
+34.4034 -117.011 0 12000 0.124 0 90 135.101 3e+10 3.2e+10
+34.4146 -117.04 0 12000 0.126 0 90 134.948 3e+10 3.2e+10
+34.4264 -117.07 0 12000 0.127 0 90 135.077 3e+10 3.2e+10
+34.4401 -117.099 0 12000 0.127 0 90 134.978 3e+10 3.2e+10
+34.4464 -117.131 0 12000 0.126 0 90 134.942 3e+10 3.2e+10
+34.4411 -117.164 0 12000 0.124 0 90 135.023 3e+10 3.2e+10
+34.4267 -117.194 0 12000 0.121 0 90 135.037 3e+10 3.2e+10
+34.3738 -117.195 0 12000 0.103 0 90 44.9412 3e+10 3.2e+10
+34.377 -117.21 0 12000 0.093 0 90 135.004 3e+10 3.2e+10
+34.357 -117.224 0 12000 0.073 0 90 135.071 3e+10 3.2e+10
+34.3296 -117.234 0 12000 0 0 90 135.122 3e+10 3.2e+10
+34.3174 -117.263 0 12000 0 0 90 135.122 3e+10 3.2e+10

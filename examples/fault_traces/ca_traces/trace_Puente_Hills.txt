@@ -1,0 +1,29 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+111 15 Puente_Hills
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.0478 -118.288 -5000 12000 0 0 90 154.992 3e+10 3.2e+10
+34.0274 -118.267 -5000 12000 0.051 0 90 155.02 3e+10 3.2e+10
+34.0084 -118.243 -5000 12000 0.065 0 90 155.024 3e+10 3.2e+10
+33.9909 -118.219 -5000 12000 0.072 0 90 154.971 3e+10 3.2e+10
+33.9753 -118.192 -5000 12000 0.085 0 90 155.043 3e+10 3.2e+10
+33.9617 -118.164 -5000 12000 0.087 0 90 155.032 3e+10 3.2e+10
+33.9507 -118.134 -5000 12000 0.088 0 90 154.985 3e+10 3.2e+10
+33.9422 -118.103 -5000 12000 0.088 0 90 154.99 3e+10 3.2e+10
+33.9358 -118.072 -5000 12000 0.087 0 90 154.952 3e+10 3.2e+10
+33.931 -118.04 -5000 12000 0.085 0 90 154.963 3e+10 3.2e+10
+33.9274 -118.007 -5000 12000 0.072 0 90 154.932 3e+10 3.2e+10
+33.925 -117.975 -5000 12000 0.065 0 90 154.941 3e+10 3.2e+10
+33.9239 -117.943 -5000 12000 0.051 0 90 155.009 3e+10 3.2e+10
+33.9242 -117.91 -5000 12000 0 0 90 154.967 3e+10 3.2e+10
+33.9258 -117.878 -5000 12000 0 0 90 154.967 3e+10 3.2e+10

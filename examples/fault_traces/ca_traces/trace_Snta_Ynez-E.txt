@@ -1,0 +1,38 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+25 24 Snta_Ynez-E
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.4941 -119.632 0 12000 0.253 0 0 100.134 3e+10 3.2e+10
+34.4879 -119.6 0 12000 0.253 0 0 99.9066 3e+10 3.2e+10
+34.4851 -119.567 0 12000 0.253 0 0 100.039 3e+10 3.2e+10
+34.4851 -119.534 0 12000 0.253 0 0 100.056 3e+10 3.2e+10
+34.4871 -119.502 0 12000 0.253 0 0 99.8933 3e+10 3.2e+10
+34.4905 -119.469 0 12000 0.253 0 0 99.9451 3e+10 3.2e+10
+34.4952 -119.437 0 12000 0.253 0 0 99.873 3e+10 3.2e+10
+34.501 -119.405 0 12000 0.253 0 0 99.9179 3e+10 3.2e+10
+34.5078 -119.373 0 12000 0.253 0 0 99.9886 3e+10 3.2e+10
+34.5153 -119.342 0 12000 0.253 0 0 99.9856 3e+10 3.2e+10
+34.5226 -119.31 0 12000 0.253 0 0 100.102 3e+10 3.2e+10
+34.5293 -119.279 0 12000 0.253 0 0 100.005 3e+10 3.2e+10
+34.5344 -119.246 0 12000 0.253 0 0 99.8724 3e+10 3.2e+10
+34.5372 -119.214 0 12000 0.253 0 0 100.041 3e+10 3.2e+10
+34.5365 -119.181 0 12000 0.253 0 0 99.9087 3e+10 3.2e+10
+34.5336 -119.148 0 12000 0.253 0 0 100.067 3e+10 3.2e+10
+34.5315 -119.116 0 12000 0.25 0 0 100.031 3e+10 3.2e+10
+34.5326 -119.083 0 12000 0.246 0 0 99.9531 3e+10 3.2e+10
+34.5367 -119.051 0 12000 0.24 0 0 99.9485 3e+10 3.2e+10
+34.5434 -119.019 0 12000 0.204 0 0 99.9929 3e+10 3.2e+10
+34.5523 -118.988 0 12000 0.185 0 0 100.047 3e+10 3.2e+10
+34.563 -118.958 0 12000 0.146 0 0 100.139 3e+10 3.2e+10
+34.5755 -118.929 0 12000 0 0 0 100.023 3e+10 3.2e+10
+34.5891 -118.901 0 12000 0 0 0 100.023 3e+10 3.2e+10

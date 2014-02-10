@@ -1,0 +1,44 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+1 30 SAF-Creeping
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+36.5943 -121.192 0 12000 0 0 180 90 3e+10 3.2e+10
+36.575 -121.169 0 12000 0 0 180 90 3e+10 3.2e+10
+36.5555 -121.145 0 12000 0 0 180 90 3e+10 3.2e+10
+36.5359 -121.122 0 12000 0 0 180 90 3e+10 3.2e+10
+36.5162 -121.099 0 12000 0 0 180 90 3e+10 3.2e+10
+36.4962 -121.077 0 12000 0 0 180 90 3e+10 3.2e+10
+36.4762 -121.054 0 12000 0 0 180 90 3e+10 3.2e+10
+36.4561 -121.032 0 12000 0 0 180 90 3e+10 3.2e+10
+36.4359 -121.01 0 12000 0 0 180 90 3e+10 3.2e+10
+36.4155 -120.988 0 12000 0 0 180 90 3e+10 3.2e+10
+36.3952 -120.966 0 12000 0 0 180 90 3e+10 3.2e+10
+36.3747 -120.944 0 12000 0 0 180 90 3e+10 3.2e+10
+36.3541 -120.922 0 12000 0 0 180 90 3e+10 3.2e+10
+36.3334 -120.901 0 12000 0 0 180 90 3e+10 3.2e+10
+36.3128 -120.879 0 12000 0 0 180 90 3e+10 3.2e+10
+36.2921 -120.858 0 12000 0 0 180 90 3e+10 3.2e+10
+36.2713 -120.836 0 12000 0 0 180 90 3e+10 3.2e+10
+36.2505 -120.815 0 12000 0 0 180 90 3e+10 3.2e+10
+36.2296 -120.794 0 12000 0 0 180 90 3e+10 3.2e+10
+36.2088 -120.772 0 12000 0 0 180 90 3e+10 3.2e+10
+36.188 -120.751 0 12000 0 0 180 90 3e+10 3.2e+10
+36.1671 -120.73 0 12000 0 0 180 90 3e+10 3.2e+10
+36.1463 -120.709 0 12000 0 0 180 90 3e+10 3.2e+10
+36.1255 -120.688 0 12000 0.088 0 180 90 3e+10 3.2e+10
+36.1047 -120.666 0 12000 0.263 0 180 90 3e+10 3.2e+10
+36.0838 -120.645 0 12000 0.526 0 180 90 3e+10 3.2e+10
+36.0632 -120.624 0 12000 0.877 0 180 90 3e+10 3.2e+10
+36.0425 -120.602 0 12000 1.315 0 180 90 3e+10 3.2e+10
+36.0219 -120.581 0 12000 1.841 0 180 90 3e+10 3.2e+10
+36.0007 -120.56 0 12000 1.841 0 180 90 3e+10 3.2e+10

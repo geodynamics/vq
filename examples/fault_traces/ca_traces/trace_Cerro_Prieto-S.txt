@@ -1,0 +1,38 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+87 24 Cerro_Prieto-S
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+32.2198 -115.09 0 12000 2.166 0 180 90 3e+10 3.2e+10
+32.2007 -115.067 0 12000 2.088 0 180 90 3e+10 3.2e+10
+32.1817 -115.045 0 12000 2.024 0 180 90 3e+10 3.2e+10
+32.1626 -115.022 0 12000 1.972 0 180 90 3e+10 3.2e+10
+32.1434 -115 0 12000 1.934 0 180 90 3e+10 3.2e+10
+32.1243 -114.978 0 12000 1.908 0 180 90 3e+10 3.2e+10
+32.1051 -114.955 0 12000 1.895 0 180 90 3e+10 3.2e+10
+32.0861 -114.933 0 12000 1.895 0 180 90 3e+10 3.2e+10
+32.0669 -114.91 0 12000 1.895 0 180 90 3e+10 3.2e+10
+32.0476 -114.888 0 12000 1.895 0 180 90 3e+10 3.2e+10
+32.0284 -114.866 0 12000 1.895 0 180 90 3e+10 3.2e+10
+32.0092 -114.843 0 12000 1.895 0 180 90 3e+10 3.2e+10
+31.9899 -114.821 0 12000 1.895 0 180 90 3e+10 3.2e+10
+31.9706 -114.799 0 12000 1.895 0 180 90 3e+10 3.2e+10
+31.9513 -114.776 0 12000 1.895 0 180 90 3e+10 3.2e+10
+31.932 -114.754 0 12000 1.895 0 180 90 3e+10 3.2e+10
+31.9126 -114.732 0 12000 1.876 0 180 90 3e+10 3.2e+10
+31.8933 -114.71 0 12000 1.848 0 180 90 3e+10 3.2e+10
+31.8739 -114.688 0 12000 1.803 0 180 90 3e+10 3.2e+10
+31.8545 -114.666 0 12000 1.533 0 180 90 3e+10 3.2e+10
+31.8351 -114.644 0 12000 1.388 0 180 90 3e+10 3.2e+10
+31.8158 -114.622 0 12000 1.095 0 180 90 3e+10 3.2e+10
+31.7963 -114.6 0 12000 0 0 180 90 3e+10 3.2e+10
+31.7773 -114.577 0 12000 0 0 180 90 3e+10 3.2e+10

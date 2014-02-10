@@ -1,0 +1,29 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+7 15 Temecula
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+33.6456 -117.351 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.6266 -117.328 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.6076 -117.305 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.5886 -117.282 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.5697 -117.259 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.5508 -117.236 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.532 -117.213 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.5133 -117.189 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.4947 -117.166 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.476 -117.143 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.4575 -117.119 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.4392 -117.096 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.4209 -117.072 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.4029 -117.048 0 12000 0.633 0 180 90 3e+10 3.2e+10
+33.385 -117.024 0 12000 0.633 0 180 90 3e+10 3.2e+10

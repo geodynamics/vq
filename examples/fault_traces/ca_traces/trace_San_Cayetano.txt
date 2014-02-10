@@ -1,0 +1,29 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+27 15 San_Cayetano
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.4545 -119.158 0 12000 0 0 90 119.996 3e+10 3.2e+10
+34.4424 -119.128 0 12000 0.439 0 90 120.04 3e+10 3.2e+10
+34.4378 -119.096 0 12000 0.557 0 90 119.867 3e+10 3.2e+10
+34.4359 -119.063 0 12000 0.615 0 90 119.887 3e+10 3.2e+10
+34.4304 -119.031 0 12000 0.723 0 90 120.013 3e+10 3.2e+10
+34.4282 -118.997 0 12000 0.741 0 90 119.975 3e+10 3.2e+10
+34.4451 -118.971 0 12000 0.752 0 90 120.166 3e+10 3.2e+10
+34.4295 -118.929 0 12000 0.752 0 90 60.0246 3e+10 3.2e+10
+34.4275 -118.927 0 12000 0.742 0 90 119.953 3e+10 3.2e+10
+34.4098 -118.902 0 12000 0.723 0 90 120.037 3e+10 3.2e+10
+34.4016 -118.87 0 12000 0.615 0 90 120.006 3e+10 3.2e+10
+34.403 -118.838 0 12000 0.557 0 90 119.958 3e+10 3.2e+10
+34.4112 -118.806 0 12000 0.439 0 90 119.994 3e+10 3.2e+10
+34.4246 -118.778 0 12000 0 0 90 120.124 3e+10 3.2e+10
+34.4424 -118.753 0 12000 0 0 90 120.124 3e+10 3.2e+10

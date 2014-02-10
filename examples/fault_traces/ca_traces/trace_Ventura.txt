@@ -1,0 +1,28 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+60 14 Ventura
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.3357 -119.153 0 12000 0 0 45 74.9282 3e+10 3.2e+10
+34.3186 -119.178 0 12000 0.073 0 45 75.0116 3e+10 3.2e+10
+34.3017 -119.204 0 12000 0.093 0 45 74.9632 3e+10 3.2e+10
+34.2887 -119.233 0 12000 0.102 0 45 75.0142 3e+10 3.2e+10
+34.2849 -119.266 0 12000 0.12 0 45 75.0563 3e+10 3.2e+10
+34.2875 -119.298 0 12000 0.123 0 45 75.1108 3e+10 3.2e+10
+34.2949 -119.329 0 12000 0.124 0 45 74.8876 3e+10 3.2e+10
+34.3046 -119.36 0 12000 0.123 0 45 74.9953 3e+10 3.2e+10
+34.3139 -119.391 0 12000 0.12 0 45 74.9521 3e+10 3.2e+10
+34.3197 -119.423 0 12000 0.102 0 45 75.0933 3e+10 3.2e+10
+34.3213 -119.455 0 12000 0.093 0 45 74.9461 3e+10 3.2e+10
+34.3197 -119.488 0 12000 0.073 0 45 75.0086 3e+10 3.2e+10
+34.3156 -119.52 0 12000 0 0 45 75.0127 3e+10 3.2e+10
+34.31 -119.552 0 12000 0 0 45 75.0127 3e+10 3.2e+10

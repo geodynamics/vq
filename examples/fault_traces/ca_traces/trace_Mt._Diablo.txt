@@ -1,0 +1,23 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+101 9 Mt._Diablo
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+37.8717 -122.026 0 12000 0.063 0 90 142.013 3e+10 3.2e+10
+37.8541 -122.001 0 12000 0.253 0 90 142.022 3e+10 3.2e+10
+37.8365 -121.975 0 12000 0.253 0 90 142.025 3e+10 3.2e+10
+37.8189 -121.949 0 12000 0.253 0 90 142.022 3e+10 3.2e+10
+37.8012 -121.923 0 12000 0.253 0 90 142.03 3e+10 3.2e+10
+37.7836 -121.897 0 12000 0.253 0 90 142.033 3e+10 3.2e+10
+37.766 -121.871 0 12000 0.253 0 90 142.03 3e+10 3.2e+10
+37.7483 -121.846 0 12000 0.063 0 90 142.033 3e+10 3.2e+10
+37.7297 -121.821 0 12000 0.063 0 90 142.033 3e+10 3.2e+10

@@ -1,0 +1,35 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+59 21 Arroyo-MRidge
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.4611 -119.178 0 12000 0 0 90 59.9488 3e+10 3.2e+10
+34.4473 -119.206 0 12000 0.029 0 90 60.017 3e+10 3.2e+10
+34.4378 -119.237 0 12000 0.037 0 90 60.0114 3e+10 3.2e+10
+34.4318 -119.269 0 12000 0.041 0 90 60.1901 3e+10 3.2e+10
+34.4282 -119.302 0 12000 0.048 0 90 60.0544 3e+10 3.2e+10
+34.4251 -119.334 0 12000 0.049 0 90 60.0021 3e+10 3.2e+10
+34.4196 -119.366 0 12000 0.05 0 90 60.0616 3e+10 3.2e+10
+34.4142 -119.398 0 12000 0.051 0 90 60.1497 3e+10 3.2e+10
+34.4161 -119.431 0 12000 0.051 0 90 59.9881 3e+10 3.2e+10
+34.4258 -119.462 0 12000 0.051 0 90 59.8816 3e+10 3.2e+10
+34.43 -119.494 0 12000 0.051 0 90 60.1057 3e+10 3.2e+10
+34.4317 -119.527 0 12000 0.051 0 90 60.0374 3e+10 3.2e+10
+34.4343 -119.56 0 12000 0.051 0 90 60.0884 3e+10 3.2e+10
+34.4379 -119.592 0 12000 0.05 0 90 60.0279 3e+10 3.2e+10
+34.4431 -119.624 0 12000 0.049 0 90 60.0283 3e+10 3.2e+10
+34.4484 -119.656 0 12000 0.048 0 90 59.914 3e+10 3.2e+10
+34.4504 -119.689 0 12000 0.041 0 90 60.0133 3e+10 3.2e+10
+34.4459 -119.721 0 12000 0.037 0 90 59.9245 3e+10 3.2e+10
+34.4403 -119.753 0 12000 0.029 0 90 60.0459 3e+10 3.2e+10
+34.4323 -119.785 0 12000 0 0 90 60.1211 3e+10 3.2e+10
+34.4343 -119.818 0 12000 0 0 90 60.1211 3e+10 3.2e+10

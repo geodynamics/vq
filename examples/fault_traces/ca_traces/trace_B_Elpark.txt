@@ -1,0 +1,21 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+24 7 B_Elpark
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.1015 -118.287 -10000 12000 0.041 0 90 130.113 3e+10 3.2e+10
+34.0822 -118.264 -10000 12000 0.165 0 90 129.995 3e+10 3.2e+10
+34.0674 -118.237 -10000 12000 0.165 0 90 130.038 3e+10 3.2e+10
+34.0593 -118.206 -10000 12000 0.165 0 90 129.875 3e+10 3.2e+10
+34.057 -118.173 -10000 12000 0.165 0 90 129.845 3e+10 3.2e+10
+34.0593 -118.141 -10000 12000 0.041 0 90 129.961 3e+10 3.2e+10
+34.0651 -118.109 -10000 12000 0.041 0 90 129.961 3e+10 3.2e+10

@@ -1,0 +1,33 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+35 19 Rose_Cny-off
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+33.1204 -117.413 0 12000 0 0 180 90 3e+10 3.2e+10
+33.1003 -117.392 0 12000 0.109 0 180 90 3e+10 3.2e+10
+33.0797 -117.371 0 12000 0.139 0 180 90 3e+10 3.2e+10
+33.0587 -117.351 0 12000 0.153 0 180 90 3e+10 3.2e+10
+33.0363 -117.333 0 12000 0.18 0 180 90 3e+10 3.2e+10
+33.0119 -117.318 0 12000 0.185 0 180 90 3e+10 3.2e+10
+32.9856 -117.311 0 12000 0.188 0 180 90 3e+10 3.2e+10
+32.9589 -117.307 0 12000 0.189 0 180 90 3e+10 3.2e+10
+32.9322 -117.302 0 12000 0.189 0 180 90 3e+10 3.2e+10
+32.906 -117.294 0 12000 0.189 0 180 90 3e+10 3.2e+10
+32.8807 -117.282 0 12000 0.189 0 180 90 3e+10 3.2e+10
+32.8587 -117.263 0 12000 0.188 0 180 90 3e+10 3.2e+10
+32.8417 -117.238 0 12000 0.185 0 180 90 3e+10 3.2e+10
+32.8216 -117.216 0 12000 0.18 0 180 90 3e+10 3.2e+10
+32.7969 -117.203 0 12000 0.153 0 180 90 3e+10 3.2e+10
+32.7714 -117.193 0 12000 0.139 0 180 90 3e+10 3.2e+10
+32.7478 -117.177 0 12000 0.109 0 180 90 3e+10 3.2e+10
+32.727 -117.156 0 12000 0 0 180 90 3e+10 3.2e+10
+32.708 -117.133 0 12000 0 0 180 90 3e+10 3.2e+10

@@ -1,0 +1,35 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+30 21 White_Wolf
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+35.3808 -118.49 0 12000 0 0 90 119.925 3e+10 3.2e+10
+35.359 -118.51 0 12000 0.147 0 90 120.007 3e+10 3.2e+10
+35.338 -118.531 0 12000 0.186 0 90 120.079 3e+10 3.2e+10
+35.3182 -118.553 0 12000 0.205 0 90 119.984 3e+10 3.2e+10
+35.2995 -118.577 0 12000 0.242 0 90 119.933 3e+10 3.2e+10
+35.2819 -118.602 0 12000 0.248 0 90 120.016 3e+10 3.2e+10
+35.2648 -118.628 0 12000 0.251 0 90 120.039 3e+10 3.2e+10
+35.2484 -118.654 0 12000 0.254 0 90 120.102 3e+10 3.2e+10
+35.2322 -118.68 0 12000 0.254 0 90 120.096 3e+10 3.2e+10
+35.2161 -118.707 0 12000 0.254 0 90 119.952 3e+10 3.2e+10
+35.1998 -118.733 0 12000 0.254 0 90 120.044 3e+10 3.2e+10
+35.1833 -118.759 0 12000 0.254 0 90 119.899 3e+10 3.2e+10
+35.1668 -118.785 0 12000 0.254 0 90 120.142 3e+10 3.2e+10
+35.1501 -118.811 0 12000 0.251 0 90 119.993 3e+10 3.2e+10
+35.1335 -118.837 0 12000 0.248 0 90 119.995 3e+10 3.2e+10
+35.1168 -118.863 0 12000 0.242 0 90 120.134 3e+10 3.2e+10
+35.1002 -118.889 0 12000 0.205 0 90 120.045 3e+10 3.2e+10
+35.0836 -118.915 0 12000 0.186 0 90 120.045 3e+10 3.2e+10
+35.0673 -118.941 0 12000 0.147 0 90 120.016 3e+10 3.2e+10
+35.051 -118.968 0 12000 0 0 90 120.077 3e+10 3.2e+10
+35.0352 -118.994 0 12000 0 0 90 120.077 3e+10 3.2e+10

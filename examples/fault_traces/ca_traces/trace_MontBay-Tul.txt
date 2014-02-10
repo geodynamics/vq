@@ -1,0 +1,42 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+98 28 MontBay-Tul
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+36.9077 -122.113 0 12000 0 0 180 90 3e+10 3.2e+10
+36.8828 -122.1 0 12000 0.037 0 180 90 3e+10 3.2e+10
+36.8582 -122.087 0 12000 0.046 0 180 90 3e+10 3.2e+10
+36.8337 -122.072 0 12000 0.051 0 180 90 3e+10 3.2e+10
+36.8097 -122.057 0 12000 0.06 0 180 90 3e+10 3.2e+10
+36.7859 -122.041 0 12000 0.062 0 180 90 3e+10 3.2e+10
+36.7623 -122.025 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.7392 -122.008 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.7164 -121.99 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.6939 -121.971 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.6718 -121.952 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.6501 -121.932 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.6289 -121.911 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.6081 -121.89 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.5877 -121.868 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.5679 -121.845 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.5485 -121.822 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.5297 -121.798 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.5114 -121.773 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.4936 -121.748 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.4763 -121.722 0 12000 0.063 0 180 90 3e+10 3.2e+10
+36.4596 -121.696 0 12000 0.062 0 180 90 3e+10 3.2e+10
+36.4433 -121.669 0 12000 0.06 0 180 90 3e+10 3.2e+10
+36.4276 -121.642 0 12000 0.051 0 180 90 3e+10 3.2e+10
+36.4124 -121.614 0 12000 0.046 0 180 90 3e+10 3.2e+10
+36.3978 -121.586 0 12000 0.037 0 180 90 3e+10 3.2e+10
+36.3836 -121.558 0 12000 0 0 180 90 3e+10 3.2e+10
+36.369 -121.53 0 12000 0 0 180 90 3e+10 3.2e+10

@@ -1,0 +1,28 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+7 14 Coyote_Mt.
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+32.9617 -116.356 0 12000 0.561 0 180 90 3e+10 3.2e+10
+32.9468 -116.329 0 12000 0.546 0 180 90 3e+10 3.2e+10
+32.9321 -116.303 0 12000 0.533 0 180 90 3e+10 3.2e+10
+32.9174 -116.275 0 12000 0.522 0 180 90 3e+10 3.2e+10
+32.9029 -116.248 0 12000 0.514 0 180 90 3e+10 3.2e+10
+32.8884 -116.221 0 12000 0.509 0 180 90 3e+10 3.2e+10
+32.8741 -116.194 0 12000 0.502 0 180 90 3e+10 3.2e+10
+32.8599 -116.167 0 12000 0.494 0 180 90 3e+10 3.2e+10
+32.8458 -116.14 0 12000 0.482 0 180 90 3e+10 3.2e+10
+32.8317 -116.112 0 12000 0.41 0 180 90 3e+10 3.2e+10
+32.8177 -116.085 0 12000 0.371 0 180 90 3e+10 3.2e+10
+32.804 -116.057 0 12000 0.293 0 180 90 3e+10 3.2e+10
+32.7903 -116.03 0 12000 0 0 180 90 3e+10 3.2e+10
+32.7771 -116.002 0 12000 0 0 180 90 3e+10 3.2e+10
