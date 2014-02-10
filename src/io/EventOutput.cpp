@@ -21,8 +21,6 @@
 #include "EventOutput.h"
 #include "HDF5Data.h"
 
-#include <unistd.h>
-
 bool EventOutput::pauseFileExists(void) {
     FILE            *fp;
 
@@ -132,7 +130,13 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 #endif
             sim->console() << "# Pausing simulation due to presence of file " << PAUSE_FILE_NAME << std::endl;
 
-            while (pauseFileExists()) sleep(1);
+            while (pauseFileExists()) {
+#ifdef VC_HAVE_USLEEP_FUNC
+                usleep(1000000);
+#elif VC_HAVE_SLEEP_FUNC
+                sleep(1);
+#endif
+            }
         }
 
         // Other processes wait until the pause file is gone
