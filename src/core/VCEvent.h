@@ -39,12 +39,12 @@ class EventBlockData {
 typedef std::map<BlockID, EventBlockData> EventBlockMap;
 typedef std::set<BlockID> BlockIDSet;
 typedef std::set<FaultID> FaultIDSet;
-typedef std::set<quakelib::SectionID> SectionIDSet;
+typedef std::set<SectionID> SectionIDSet;
 typedef std::map<FaultID, BlockIDSet> FaultBlockMapping;
 typedef std::map<FaultID, double> FaultFailureAreaMapping;
-typedef std::map<quakelib::SectionID, BlockIDSet> SectionBlockMapping;
+typedef std::map<SectionID, BlockIDSet> SectionBlockMapping;
 typedef std::vector<FaultID> FaultIDList;
-typedef std::vector<quakelib::SectionID> SectionIDList;
+typedef std::vector<SectionID> SectionIDList;
 
 /*!
  An event consists of one or more sweeps. Each sweep is a list of failed blocks and

@@ -25,7 +25,6 @@
 #include "VCSimData.h"
 #include "VCComm.h"
 #include "VCCommPartition.h"
-#include "VCCommSpecExec.h"
 #include "HDF5Data.h"
 
 #ifndef _VCSIMULATION_H_
@@ -50,7 +49,7 @@ enum PartitionMethod {
  It contains functions related to the simulation, parameter retrieval functions and basic
  functions for earthquake analysis.
  */
-class VCSimulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCCommSpecExec, public VCComm {
+class VCSimulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCComm {
     public:
         VCSimulation(int argc, char **argv);
         ~VCSimulation(void);
@@ -73,17 +72,12 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         double normalStress(void);
         void getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
         //int numLayers(void) const;
-        int numSurfaceBlocks(void) const;
         void getFaultNames(std::map<FaultID, std::string> &fault_names) const;
         void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
         void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
         void getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const;
-        void getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const;
 
-        void depthDASBounds(const BlockIDSet &block_set, double &low_depth, double &high_depth, double &low_das, double &high_das) const;
         void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
-        bool isTopOfSlipRectangle(const BlockID &bid, const BlockIDSet &block_set);
-        void getSlipRectangleBlocks(BlockIDSet &slip_rect_blocks, const BlockID &bid, const BlockIDSet &event_blocks);
 
         double sumGreenShear(const BlockID &r) const {
             double sum = 0;
@@ -131,19 +125,16 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void printSlipDeficits(void);
         void printShearStress(void);
         void printNormalStress(void);
-        void printSlipCumulative(void);
         void matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatrix<GREEN_VAL> *a, const double *b, const bool dense);
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
-        int distributeUpdateField(const bool &did_spec_exec);
+        void distributeUpdateField(void);
         void distributeFailedBlocks(BlockIDSet &failed_blocks);
         void collectEventSweep(VCEventSweep &cur_sweep);
 
         void addNeighbor(const BlockID &b1, const BlockID &b2);
         std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
         void printTimers(void);
-
-        bool isLocalizedFailure(const BlockIDSet &fail_set);
 
         bool isLocalBlockID(const BlockID &block_id) const {
             return (block_node_map.at(block_id) == node_rank);
@@ -176,11 +167,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
 
         //! Map of which blocks have which neighbors
         std::map<BlockID, BlockIDSet>   neighbor_map;
-
-#ifdef HAVE_PAPI_H
-        int                         multiply_event_set;
-        long_long                   total_inst;
-#endif
 };
 
 #endif

@@ -79,7 +79,7 @@ void GreensInit::dryRun(SimFramework *_sim) {
 void GreensInit::init(SimFramework *_sim) {
     VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
     GreensFuncCalcBarnesHut bh_calc;
-    GreensFuncCalc2011      g2011_calc;
+    GreensFuncCalcStandard  gstandard_calc;
     GreensFuncFileParse     file_parse;
     double                  start_time;
     double                  shear_bytes, normal_bytes;
@@ -99,9 +99,9 @@ void GreensInit::init(SimFramework *_sim) {
             bh_calc.CalculateGreens(sim);
             break;
 
-        case GREENS_CALC_2011:
-            sim->console() << "# Calculating Greens function with the 2011 Okada class" << std::flush;
-            g2011_calc.CalculateGreens(sim);
+        case GREENS_CALC_STANDARD:
+            sim->console() << "# Calculating Greens function with the standard Okada class" << std::flush;
+            gstandard_calc.CalculateGreens(sim);
             break;
 
         default:

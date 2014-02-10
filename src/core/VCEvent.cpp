@@ -96,12 +96,12 @@ void VCEvent::orderSectionsByRupture(SectionIDList &section_ordering, const Sect
     BlockIDSet::const_iterator                      sit;
     EventSweeps::const_iterator                     eit;
     VCEventSweep::const_iterator                    slit;
-    std::map<BlockID, quakelib::SectionID>                    reverse_map;
+    std::map<BlockID, SectionID>                    reverse_map;
     SectionIDSet                                    found_sections;
-    std::multimap<int, quakelib::SectionID>                   sweep_sections;
-    std::multimap<int, quakelib::SectionID>::const_iterator sw_it;
+    std::multimap<int, SectionID>                   sweep_sections;
+    std::multimap<int, SectionID>::const_iterator sw_it;
     int                                             sweep_num;
-    quakelib::SectionID                                       sid;
+    SectionID                                       sid;
 
     // Build a reverse map from block IDs to fault IDs
     for (it=event_sections.begin(); it!=event_sections.end(); ++it) {

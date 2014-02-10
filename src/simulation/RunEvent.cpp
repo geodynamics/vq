@@ -160,11 +160,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     VCEventSweep            current_sweep;
     BlockID                 triggerID, gid;
     FaultID                 trigger_fault;
-    unsigned int            i;
-    int                     lid, more_blocks_to_fail, num_spec_exec, start_sweep_size;
-    SpecExecStage           stage;
-    bool                    local_blocks_failed;
-    BlockVal                num_local_sweeps, max_sweeps;
+    int                     lid, more_blocks_to_fail;
     EventSweeps             sweep_list;
     std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> nbr_start_end;
     BlockIDSet::const_iterator  nit;
@@ -188,48 +184,10 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // This is used to determine dynamic block failure
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).saveStresses();
 
-    // Initially we assume the failure can affect all nodes
-    stage = NORMAL_OPERATION;
-    sim->startEvent();
-
     more_blocks_to_fail = sim->blocksToFail(!blocks2fail.empty());
 
     // While there are still failed blocks to handle or we're in localized failure mode
-    while (stage == LOCALIZED_FAILURE || more_blocks_to_fail) {
-        // Given the blocks that we need to process, predict whether this will be a localized failure
-        switch (stage) {
-            case NORMAL_OPERATION:
-
-                // If this is the only node with failing blocks and we predict the rupture
-                // will remain local, change to LOCALIZED_FAILURE mode
-                if (more_blocks_to_fail == 1 && sim->isLocalizedFailure(blocks2fail)) {
-                    stage = LOCALIZED_FAILURE;
-                    start_sweep_size = sweep_list.size();
-                }
-
-                break;
-
-            case LOCALIZED_FAILURE:
-
-                // If we are in LOCALIZED_FAILURE mode and we continue to predict it will remain that way, do nothing
-                // Otherwise, we move back to NORMAL_OPERATION by checking the results
-                if (!sim->isLocalizedFailure(blocks2fail)) {
-                    stage = CHECK_SELF_IGNORE;
-                }
-
-                // If we are in LOCALIZED_FAILURE mode and we have lots of localized sweeps, recalculate stress to avoid
-                // stress buildups which cause rewinding
-                if (sweep_list.size() - start_sweep_size > 50) {
-                    stage = CHECK_SELF_IGNORE;
-                }
-
-                break;
-
-            default:
-                assertThrow(false, "Error occurred in speculative execution.");
-                break;
-        }
-
+    while (more_blocks_to_fail) {
         // Clear the current sweep event
         current_sweep.clear();
 
@@ -253,7 +211,6 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
         // Set the update field for stress recalculation with
         // the total amount each block has slipped in this sweep
-        // Original method
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             sim->setUpdateField(gid, current_sweep.getBlockSlip(gid));
         }
@@ -268,38 +225,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         //  sim->setUpdateField(gid, sim->getBlock(gid).state.slipDeficit);
         //}
 
-
-        // Share the update field with all other nodes (needed for stress recalculations)
-        if (stage != LOCALIZED_FAILURE) {
-            // If we were previously in localized mode, sum the slips that occurred in this mode
-            // and add them to the update field for transmission to other nodes
-            if (stage == CHECK_SELF_IGNORE) {
-                for (i=start_sweep_size; i<sweep_list.size(); ++i) {
-                    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-                        gid = sim->getGlobalBID(lid);
-                        sim->setUpdateField(gid, sim->getUpdateField(gid)+sweep_list[i].getBlockSlip(gid));
-                    }
-                }
-            }
-
-            // Distribute the update field values to other processors
-            num_spec_exec = sim->distributeUpdateField(stage == CHECK_SELF_IGNORE);
-
-            // If more than one node did speculative execution, treat it as a failure (though this should never happen)
-            assertThrow(num_spec_exec <= 1, "Only one node should go into localized mode at a time.");
-
-            // If only one node did speculative execution and we're not that node, go into check mode
-            if (num_spec_exec == 1 && stage == NORMAL_OPERATION) {
-                stage = CHECK_IF_SELF_FAILED;
-            }
-
-            // After transmission, restore the previous values of the update field for the node that ran localized
-            if (stage == CHECK_SELF_IGNORE) {
-                for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-                    sim->setUpdateField(gid, current_sweep.getBlockSlip(gid));
-                }
-            }
-        }
+        // Distribute the update field values to other processors
+        sim->distributeUpdateField();
 
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
@@ -342,67 +269,12 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         // Find any blocks that fail because of the new stresses
         markBlocks2Fail(sim, trigger_fault, current_sweep);
 
-        // If we were doing localized failure before, make sure that no block elsewhere failed
-        max_sweeps.val = 0;
-
-        if (stage == CHECK_SELF_IGNORE) {
-            if (sim->blocksToFail(false)) {
-                stage = REWIND_ALL;
-                fail_sweep_sizes.push_back(sweep_list.size()-start_sweep_size);
-            } else {
-                succ_sweep_sizes.push_back(sweep_list.size()-start_sweep_size);
-                sim->speculationSuccess(current_sweep);
-                stage = NORMAL_OPERATION;
-                num_local_sweeps.val = sweep_list.size() - start_sweep_size;
-                num_local_sweeps.block_id = UNDEFINED_BLOCK_ID;
-                sim->allReduceBlockVal(num_local_sweeps, max_sweeps, BLOCK_VAL_MAX);
-            }
-        } else if (stage == CHECK_IF_SELF_FAILED) {
-            local_blocks_failed = !blocks2fail.empty();
-
-            if (sim->blocksToFail(local_blocks_failed)) {
-                stage = REWIND_ALL;
-            } else {
-                sim->speculationSuccess(current_sweep);
-                stage = NORMAL_OPERATION;
-                num_local_sweeps.val = 1;
-                num_local_sweeps.block_id = UNDEFINED_BLOCK_ID;
-                sim->allReduceBlockVal(num_local_sweeps, max_sweeps, BLOCK_VAL_MAX);
-
-                for (i=0; i<max_sweeps.val; ++i) sweep_list.push_back(VCEventSweep());
-            }
-        }
-
-        // Collect the sweep history from all nodes onto the root
-        if (stage != LOCALIZED_FAILURE && stage != REWIND_ALL) {
-            for (i=max_sweeps.val; i>0; --i) sim->collectEventSweep(*(sweep_list.end()-i));
-
-            sim->collectEventSweep(current_sweep);
-        }
+        sim->collectEventSweep(current_sweep);
 
         // Add the recorded sweep to the list
         sweep_list.push_back(current_sweep);
 
-        // If we need to rewind, then reset everything to the values at the event start
-        if (stage == REWIND_ALL) {
-            // Note that the current speculation failed
-            sim->speculationFailed(current_sweep);
-
-            // Clear the sweeps and block fail lists
-            sweep_list.clear();
-            blocks2fail.clear();
-
-            // Return to the initial state
-            if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
-                blocks2fail.insert(triggerID);
-            }
-
-            for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).restoreStresses();
-
-            stage = NORMAL_OPERATION;
-        }
-
-        if (stage != LOCALIZED_FAILURE) more_blocks_to_fail = sim->blocksToFail(!blocks2fail.empty());
+        more_blocks_to_fail = sim->blocksToFail(!blocks2fail.empty());
     }
 
     // Set the completed list as the sweep list for the entire event
@@ -414,7 +286,6 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Update the cumulative slip for this fault and turn off dynamic triggering
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        sim->getBlock(gid).state.slipCumulative += sim->getCurrentEvent().getEventSlip(gid);
         sim->getBlock(gid).setFailed(false);
         sim->getBlock(gid).setFailedThisSweep(false);
         sim->getBlock(gid).dynamicOff();
@@ -448,25 +319,4 @@ void RunEvent::recordEventStresses(VCSimulation *sim) {
 #endif
 
     sim->getCurrentEvent().setEventStresses(total_shear_init, total_shear_final, total_normal_init, total_normal_final);
-}
-
-void RunEvent::finish(SimFramework *_sim) {
-    /*std::vector<int>::iterator        it;
-    int     i;
-
-    for (i=0;i<_sim->getWorldSize();++i) {
-        if (i == _sim->getNodeRank()) {
-            std::cerr << "Node " << i << std::endl;
-            std::cerr << "Success: ";
-            for (it=succ_sweep_sizes.begin();it!=succ_sweep_sizes.end();++it) {
-                std::cerr << *it << " ";
-            }
-            std::cerr << std::endl << "Failure: ";
-            for (it=fail_sweep_sizes.begin();it!=fail_sweep_sizes.end();++it) {
-                std::cerr << *it << " ";
-            }
-            std::cerr << std::endl;
-        }
-        _sim->barrier();
-    }*/
 }

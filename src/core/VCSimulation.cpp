@@ -28,8 +28,6 @@
 #include <list>
 #include <vector>
 
-#undef HAVE_PAPI_H
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -56,21 +54,8 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "sim.noise.event: Stress noise value must be between 0 and 1.");
     assertThrow(getSlipDeficitNoise()>=0 && getSlipDeficitNoise()<=1,
                 "sim.noise.slip_deficit: Initial slip deficit noise value must be between 0 and 1.");
-    assertThrow(getStressNoise()>=0 && getStressNoise()<=1,
-                "sim.noise.stress: Stress drop noise value must be between 0 and 1.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
-                "Greens calculation method must be either 2011, Barnes Hut or file based.");
-    assertThrow(getSpecExecMethod() != SPEC_EXEC_UNDEFINED,
-                "Speculative execution method must be either none, fixed or adaptive.");
-
-#ifdef HAVE_PAPI_H
-    int     retval;
-
-    assertThrow(PAPI_query_event (PAPI_TOT_INS) == PAPI_OK, "No instruction counter");
-    multiply_event_set = PAPI_NULL;
-    assertThrow(PAPI_create_eventset(&multiply_event_set) == PAPI_OK, PAPI_strerror(retval));
-    assertThrow(PAPI_add_event(multiply_event_set, PAPI_TOT_INS) == PAPI_OK, PAPI_strerror(retval));
-#endif
+                "Greens calculation method must be either standard, Barnes Hut or file based.");
 }
 
 /*!
@@ -79,20 +64,6 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
 VCSimulation::~VCSimulation(void) {
 #ifdef DEBUG
     console() << "Number matrix multiplies: " << num_mults << std::endl;
-#endif
-
-    if (getSpecExecMethod() != SPEC_EXEC_NONE) {
-        console() << "Number of predictions: " << num_predictions << std::endl;
-        console() << "Number predicted local: " << num_predicted_local << std::endl;
-        console() << "Number predictions failed: " << num_predictions_failed << std::endl;
-        console() << "Number predictions succeed: " << num_predictions_success << std::endl;
-    }
-
-    // Deallocate PAPI event set
-#ifdef HAVE_PAPI_H
-    console() << "Number instructions: " << total_inst << std::endl;
-    PAPI_cleanup_eventset(multiply_event_set);
-    PAPI_destroy_eventset(&multiply_event_set);
 #endif
 
     if (mult_buffer) delete mult_buffer;
@@ -119,11 +90,11 @@ void VCSimulation::init(void) {
     SimFramework::init();
 
     //CFF output hack.
-    std::string file_prepend;
-    size_t pos;
+    //std::string file_prepend;
+    //size_t pos;
 
-    pos = getHDF5File().find(".");
-    file_prepend = getHDF5File().substr(0,pos);
+    //pos = getHDF5File().find(".");
+    //file_prepend = getHDF5File().substr(0,pos);
     //sprintf(CFF_out_filename, "%s_CFF.dat", file_prepend.c_str());
     //CFF_out_filename_str = CFF_out_filename;
     //CFF_out_file.open(CFF_out_filename_str.c_str());
@@ -210,34 +181,6 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
 }
 
 /*!
- Blocks must have trace flags defined for this to work
-*/
-int VCSimulation::numSurfaceBlocks(void) const {
-    //return numGlobalBlocks()/numLayers();
-    BlockList::const_iterator   it;
-    BlockIDSet                  block_set;
-
-    for (it=begin(); it!=end(); ++it) {
-        if (it->on_trace()) {
-            block_set.insert(it->getFaultID());
-        }
-    }
-
-    return block_set.size();
-}
-
-/*!
- Get the set of FaultIDs associated with the given set of blocks.
- */
-void VCSimulation::getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const {
-    BlockIDSet::const_iterator      it;
-
-    for (it=block_ids.begin(); it!=block_ids.end(); ++it) {
-        fault_ids.insert(getBlock(*it).getFaultID());
-    }
-}
-
-/*!
  Get a mapping of exactly which faults are associated with a specified set of blocks.
  */
 void VCSimulation::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const {
@@ -270,36 +213,6 @@ void VCSimulation::getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_fai
     }
 }
 
-/*!
- Get a mapping of exactly which sections are associated with a specified set of blocks.
- */
-void VCSimulation::getSectionBlockMapping(SectionBlockMapping &section_block_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    quakelib::SectionID                     section_id;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        section_id = getBlock(*it).getSectionID();
-        section_block_mapping[section_id].insert(*it);
-    }
-}
-
-/*!
- Determines the boundaries of depth and DAS in the specified set of blocks.
- Since depth is negative below ground, the lowest depth is the lowest (most negative) value.
- */
-void VCSimulation::depthDASBounds(const BlockIDSet &block_set, double &low_depth, double &high_depth, double &low_das, double &high_das) const {
-    BlockIDSet::const_iterator      it;
-    high_das = high_depth = -DBL_MAX;
-    low_das = low_depth = DBL_MAX;
-
-    for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        low_depth = fmin(low_depth, getBlock(*it).max_depth());
-        high_depth = fmax(high_depth, getBlock(*it).min_depth());
-        low_das = fmin(low_das, getBlock(*it).min_das());
-        high_das = fmax(high_das, getBlock(*it).max_das());
-    }
-}
-
 void VCSimulation::sumStresses(const BlockIDSet &block_set,
                                double &shear_stress,
                                double &shear_stress0,
@@ -314,38 +227,6 @@ void VCSimulation::sumStresses(const BlockIDSet &block_set,
         shear_stress0 += getBlock(*it).getStressS0();
         normal_stress += getNormalStress(*it);
         normal_stress0 += getBlock(*it).getStressN0();
-    }
-}
-
-/*!
- Determines whether a specified block is on top of all blocks it overlaps.
- Used for writing slip maps in EqSim output files.
- */
-bool VCSimulation::isTopOfSlipRectangle(const BlockID &bid, const BlockIDSet &block_set) {
-    BlockIDSet::const_iterator      it;
-    Block &main_block = getBlock(bid);
-
-    for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        Block &target_block = getBlock(*it);
-
-        if (!main_block.is_above(target_block) && main_block.overlaps(target_block)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void VCSimulation::getSlipRectangleBlocks(BlockIDSet &slip_rect_blocks, const BlockID &bid, const BlockIDSet &event_blocks) {
-    BlockIDSet::const_iterator      it;
-    Block &main_block = getBlock(bid);
-
-    slip_rect_blocks.insert(bid);
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        Block &target_block = getBlock(*it);
-
-        if (main_block.overlaps(target_block)) slip_rect_blocks.insert(*it);
     }
 }
 
@@ -471,15 +352,6 @@ void VCSimulation::printSlipDeficits(void) {
     console() << std::endl;
 }
 
-void VCSimulation::printSlipCumulative(void) {
-    BlockList::iterator it;
-    console() << getYear() << " ";
-
-    for (it=begin(); it!=end(); ++it) console() << it->getSlipCumulative() << " ";
-
-    console() << std::endl;
-}
-
 
 void VCSimulation::printCFFs(void) {
     BlockList::iterator it;
@@ -530,11 +402,6 @@ void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMat
         startTimer(mult_timer);
     }
 
-#endif
-#ifdef HAVE_PAPI_H
-    int     retval;
-    retval = PAPI_start(multiply_event_set);
-    assertThrow(retval == PAPI_OK, PAPI_strerror(retval));
 #endif
 
     height = numLocalBlocks();
@@ -596,13 +463,6 @@ void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMat
             c[x] += val;
         }
     }
-
-#ifdef HAVE_PAPI_H
-    long_long   num_inst;
-    retval = PAPI_stop(multiply_event_set, &num_inst);
-    //assertMsg(retval == PAPI_OK, PAPI_strerror(retval));
-    total_inst += num_inst;
-#endif
 
 #ifdef DEBUG
 
@@ -828,9 +688,7 @@ void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, c
  Distributes the local part of the update field to other nodes and
  receives their local update fields.
  */
-int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
-    double      num_spec_exec = 0;
-
+void VCSimulation::distributeUpdateField(void) {
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
     startTimer(dist_comm_timer);
@@ -844,9 +702,8 @@ int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];
     }
 
-    updateFieldSendBuf[i] = (did_spec_exec ? 1.0 : 0.0);
     MPI_Allgatherv(updateFieldSendBuf,
-                   numLocalBlocks()+1,
+                   numLocalBlocks(),
                    MPI_DOUBLE,
                    updateFieldRecvBuf,
                    updateFieldCounts,
@@ -855,21 +712,15 @@ int VCSimulation::distributeUpdateField(const bool &did_spec_exec) {
                    MPI_COMM_WORLD);
 
     // Copy the received values from the buffer to the update field
-    for (i=0; i<numGlobalBlocks()+getWorldSize(); ++i) {
+    for (i=0; i<numGlobalBlocks(); ++i) {
         bid = updateFieldRecvIDs[i];
-
-        if (bid != UINT_MAX) {
-            getUpdateFieldPtr()[bid] = updateFieldRecvBuf[i];
-        } else {
-            num_spec_exec += updateFieldRecvBuf[i];
-        }
+        getUpdateFieldPtr()[bid] = updateFieldRecvBuf[i];
     }
 
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
 #endif
-    return num_spec_exec;
 }
 
 /*!
@@ -916,73 +767,6 @@ void VCSimulation::distributeFailedBlocks(BlockIDSet &failed_blocks) {
 }
 
 /*!
- Try to predict whether a rupture on the given faults will propagate
- to another node during this sweep.
- */
-bool VCSimulation::isLocalizedFailure(const BlockIDSet &fail_set) {
-    BlockIDSet::const_iterator      it;
-    BlockList::iterator             bit;
-    double                          min_dist, fixed_dist;
-    int                             i;
-    bool                            predict_local;
-
-    // If we're using the fixed distance method, calculate the boundary distances
-    if ((getSpecExecMethod() == SPEC_EXEC_FIXED_DIST || getSpecExecMethod() == SPEC_EXEC_ADAPTIVE) && boundary_dist_map.empty()) {
-        // For each local block
-        for (i=0; i<numLocalBlocks(); ++i) {
-            Block       &local_block = getBlock(getGlobalBID(i));
-            min_dist = DBL_MAX;
-
-            // Compute the distance to the boundary over all global blocks
-            for (bit=begin(); bit!=end(); ++bit) {
-                // For non-local blocks, compute the minimum distance
-                if (!isLocalBlockID(bit->getBlockID())) {
-                    min_dist = fmin(min_dist, bit->center().dist(local_block.center()));
-                }
-            }
-
-            boundary_dist_map.insert(std::make_pair(getGlobalBID(i), min_dist));
-        }
-    }
-
-    // If our last prediction failed, just do the normal
-    // execution method for the rest of the event
-    if (last_prediction_failed) return false;
-
-    if (fail_set.empty()) return false;
-
-    num_predictions++;
-
-    switch (getSpecExecMethod()) {
-        case SPEC_EXEC_NONE:
-            predict_local = false;
-            break;
-
-        case SPEC_EXEC_FIXED_DIST:
-        case SPEC_EXEC_ADAPTIVE:
-            fixed_dist = getSpecExecDistance();
-            predict_local = true;
-
-            for (it=fail_set.begin(); it!=fail_set.end(); ++it) {
-                if (boundary_dist_map.at(*it) < fixed_dist) {
-                    predict_local = false;
-                    break;
-                }
-            }
-
-            break;
-
-        default:
-            predict_local = false;
-            break;
-    }
-
-    if (predict_local) num_predicted_local++;
-
-    return predict_local;
-}
-
-/*!
  Collect the individual event sweeps spread through all nodes
  on to the root node in a single sweep.
  NOTE: This does not transfer stresses, these will be zeroed in the output file
@@ -1004,6 +788,8 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
     if (isRootNode()) {
         block_counts = new int[world_size];
         block_offsets = new int[world_size];
+    } else {
+        block_counts = block_offsets = NULL;
     }
 
     MPI_Gather(&num_blocks, 1, MPI_INT, block_counts, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
@@ -1186,12 +972,11 @@ void VCSimulation::partitionBlocks(void) {
 
     if (isRootNode()) assertThrow(avail_ids.size()==0, "Did not assign all blocks in partitioning.");
 
-    // One extra field for speculative execution information
-    updateFieldRecvIDs = new BlockID[num_global_blocks+world_size];
-    updateFieldRecvBuf = new GREEN_VAL[num_global_blocks+world_size];
+    updateFieldRecvIDs = new BlockID[num_global_blocks];
+    updateFieldRecvBuf = new GREEN_VAL[num_global_blocks];
 
-    updateFieldSendIDs = new BlockID[numLocalBlocks()+1];
-    updateFieldSendBuf = new GREEN_VAL[numLocalBlocks()+1];
+    updateFieldSendIDs = new BlockID[numLocalBlocks()];
+    updateFieldSendBuf = new GREEN_VAL[numLocalBlocks()];
 
     updateFieldCounts = new int[world_size];
     updateFieldDisps = new int[world_size];
@@ -1212,13 +997,9 @@ void VCSimulation::partitionBlocks(void) {
         // Figure out what IDs we will get in the receive buffer
         for (it=it_start; it!=it_end; ++it,++j) updateFieldRecvIDs[j] = it->second;
 
-        updateFieldRecvIDs[j++] = UINT_MAX;
-
         // If we're on the local node, also record the order of IDs for the send buffer
         if (i == local_rank) {
             for (n=0,it=it_start; it!=it_end; ++it,++n) updateFieldSendIDs[n] = it->second;
-
-            updateFieldSendIDs[n] = UINT_MAX;
         }
     }
 

@@ -46,42 +46,6 @@
 #define SIM_YEARS_HDF5              "sim_years"
 #define BASE_LAT_LON_HDF5           "base_lat_lon"
 
-// Block info related definitions
-#define B_INFO_TABLE_HDF5               "block_info_table"
-#define B_INFO_NUM_ENTRIES_HDF5         32
-#define B_INFO_BLOCK_ID_HDF5            "block_id"
-#define B_INFO_FAULT_ID_HDF5            "fault_id"
-#define B_INFO_SECTION_ID_HDF5          "section_id"
-#define B_INFO_M_X_PT1_HDF5             "m_x_pt1"
-#define B_INFO_M_Y_PT1_HDF5             "m_y_pt1"
-#define B_INFO_M_Z_PT1_HDF5             "m_z_pt1"
-#define B_INFO_M_DAS_PT1_HDF5           "m_das_pt1"
-#define B_INFO_M_TRACE_FLAG_PT1_HDF5    "m_trace_flag_pt1"
-#define B_INFO_M_X_PT2_HDF5             "m_x_pt2"
-#define B_INFO_M_Y_PT2_HDF5             "m_y_pt2"
-#define B_INFO_M_Z_PT2_HDF5             "m_z_pt2"
-#define B_INFO_M_DAS_PT2_HDF5           "m_das_pt2"
-#define B_INFO_M_TRACE_FLAG_PT2_HDF5    "m_trace_flag_pt2"
-#define B_INFO_M_X_PT3_HDF5             "m_x_pt3"
-#define B_INFO_M_Y_PT3_HDF5             "m_y_pt3"
-#define B_INFO_M_Z_PT3_HDF5             "m_z_pt3"
-#define B_INFO_M_DAS_PT3_HDF5           "m_das_pt3"
-#define B_INFO_M_TRACE_FLAG_PT3_HDF5    "m_trace_flag_pt3"
-#define B_INFO_M_X_PT4_HDF5             "m_x_pt4"
-#define B_INFO_M_Y_PT4_HDF5             "m_y_pt4"
-#define B_INFO_M_Z_PT4_HDF5             "m_z_pt4"
-#define B_INFO_M_DAS_PT4_HDF5           "m_das_pt4"
-#define B_INFO_M_TRACE_FLAG_PT4_HDF5    "m_trace_flag_pt4"
-#define B_INFO_SLIP_VELOCITY_HDF5       "slip_velocity"
-#define B_INFO_ASEISMICITY_HDF5         "aseismicity"
-#define B_INFO_RAKE_HDF5                "rake_rad"
-#define B_INFO_DIP_HDF5                 "dip_rad"
-#define B_INFO_DYNAMIC_STRENGTH_HDF5    "dynamic_strength"
-#define B_INFO_STATIC_STRENGTH_HDF5     "static_strength"
-#define B_INFO_LAME_MU_HDF5             "lame_mu"
-#define B_INFO_LAME_LAMBDA_HDF5         "lame_lambda"
-#define B_INFO_FAULT_NAME_HDF5          "fault_name"
-
 // Event info related definitions
 #define EVENT_TABLE_HDF5            "event_table"
 #define EVENT_NUM_ENTRIES_HDF5      12
@@ -128,15 +92,10 @@
 #define CHECKPOINT_EVENT_HDF5       "checkpoint_event"
 #define CHECKPOINT_NUM_ENTRIES_HDF5 6
 #define CHECKPOINT_SLIP_DFCT_HDF5   "slipDeficit"
-#define CHECKPOINT_SLIP_CUM_HDF5    "slipCumulative"
 #define CHECKPOINT_CFF_HDF5         "cff"
 #define CHECKPOINT_STRESS_S_HDF5    "stressS"
 #define CHECKPOINT_STRESS_N_HDF5    "stressN"
 #define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
-
-#define BG_EVENT_TABLE_HDF5         "background_event_table"
-
-#define FILE_NAME_MAX_LEN           256
 
 struct EventInfo {
     unsigned int    event_number;
@@ -163,7 +122,7 @@ struct EventSweepInfo {
 
 typedef struct EventSweepInfo EventSweepInfo;
 
-struct AftershockBGInfo {
+struct AftershockInfo {
     unsigned int    event_number;
     unsigned int    gen;
     float           mag;
@@ -172,12 +131,13 @@ struct AftershockBGInfo {
     float           y;
 };
 
-typedef struct AftershockBGInfo AftershockBGInfo;
+typedef struct AftershockInfo AftershockInfo;
+
+#ifdef HDF5_FOUND
 
 // Classes representing a file containing checkpoint data
 class HDF5Checkpoint {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to checkpoint data file
         hid_t               data_file;
 
@@ -189,7 +149,6 @@ class HDF5Checkpoint {
 
         // Access control handle
         hid_t               plist_id;
-#endif
 };
 
 class HDF5CheckpointReader : public HDF5Checkpoint {
@@ -212,7 +171,6 @@ class HDF5CheckpointWriter : public HDF5Checkpoint {
 // Classes representing a file containing Greens function calculation data
 class HDF5GreensData {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to data file
         hid_t               data_file;
 
@@ -224,7 +182,6 @@ class HDF5GreensData {
 
         // Dimension of Greens matrix
         unsigned int        greens_dim;
-#endif
 
     public:
         HDF5GreensData(void) {};
@@ -247,24 +204,14 @@ class HDF5GreensDataWriter : public HDF5GreensData {
 
 class HDF5Data {
     protected:
-#ifdef HDF5_FOUND
         // HDF5 handle to data file
         hid_t               data_file;
 
         // Handles to data in the file
-        hid_t               sim_years_set, base_lat_lon_set;
-
-        // Handles to data types
-        hid_t               fault_name_datatype;
+        hid_t               sim_years_set;
 
         // Handles to data space specifications
-        hid_t               block_info_dataspace, pair_val_dataspace, fault_name_dataspace;
-
-        // Names, types, offsets and sizes for block info table
-        const char *binfo_field_names[B_INFO_NUM_ENTRIES_HDF5];
-        size_t binfo_field_offsets[B_INFO_NUM_ENTRIES_HDF5];
-        hid_t binfo_field_types[B_INFO_NUM_ENTRIES_HDF5];
-        size_t binfo_field_sizes[B_INFO_NUM_ENTRIES_HDF5];
+        hid_t               pair_val_dataspace;
 
         // Names, types, offsets and sizes for event table
         const char *event_field_names[EVENT_NUM_ENTRIES_HDF5];
@@ -283,10 +230,9 @@ class HDF5Data {
         size_t aftershock_field_offsets[AFTERSHOCK_NUM_ENTRIES_HDF5];
         hid_t aftershock_field_types[AFTERSHOCK_NUM_ENTRIES_HDF5];
         size_t aftershock_field_sizes[AFTERSHOCK_NUM_ENTRIES_HDF5];
-#endif
 
         // Values read from shared memory (pointers are set to within shared memory segment)
-        unsigned int    num_blocks, num_layers;
+        unsigned int    num_blocks;
 
         void createH5Handles(void);
 
@@ -300,20 +246,6 @@ class HDF5Data {
 
 typedef std::pair<const double, VCEvent *> EventYear;
 typedef std::multimap<double, VCEvent *> EventYearMap;
-typedef std::map<double, VCGeneralEvent *> BGEventMap;
-
-/*!
- Represents a filter for GUI information based on faults, layers and time.
- */
-class GUIFilter {
-    public:
-        // Sets of which fault IDs and layers to filter out of the Greens functions and events
-        FaultIDSet                  fault_filter;
-        std::set<int>               layer_filter;
-
-        // Range of years to return events for
-        std::pair<double,double>    year_range;
-};
 
 class HDF5DataReader : public HDF5Data {
     private:
@@ -323,79 +255,24 @@ class HDF5DataReader : public HDF5Data {
         //! Set of events indexed by year
         EventYearMap                event_set;
 
-        //! Set of background events indexed by year
-        BGEventMap                  bg_events;
-
-        //! Filter for events/Greens function
-        GUIFilter                   filter;
-
         void getStartEndYears(double &start_year, double &end_year) const;
-        void getLatLon0(double &lat0, double &lon0) const;
 
     public:
         typedef EventYearMap::iterator          iterator;
         typedef EventYearMap::const_iterator    const_iterator;
 
-        iterator begin(const double &lower_bound=-1) {
-            if (lower_bound >= 0) return event_set.lower_bound(lower_bound);
-            else return event_set.lower_bound(filter.year_range.first);
-        };
-        iterator end(const double &upper_bound=-1) {
-            if (upper_bound >= 0) return event_set.upper_bound(upper_bound);
-            else return event_set.upper_bound(filter.year_range.second);
-        };
-
-        BGEventMap::iterator bgbegin(const double &lower_bound=-1) {
-            if (lower_bound >= 0) return bg_events.lower_bound(lower_bound);
-            else return bg_events.lower_bound(filter.year_range.first);
-        };
-        BGEventMap::iterator bgend(const double &upper_bound=-1) {
-            if (upper_bound >= 0) return bg_events.upper_bound(upper_bound);
-            else return bg_events.upper_bound(filter.year_range.second);
-        };
-
         HDF5DataReader(const std::string &hdf5_file_name);
-
-        void getFilterDims(int &dim_x, int &dim_y) const;
-
-        void filterData(const unsigned int &max_dim_x, const unsigned int &max_dim_y, const bool &green_log);
-        //void addLayerFilter(const int &add_layer);
-        //void removeLayerFilter(const int &remove_layer);
-        void addFaultFilter(const FaultID &add_fault);
-        void removeFaultFilter(const FaultID &remove_fault);
-        void setYearFilterRange(const double &min_year, const double &max_year);
-        void getYearFilterRange(double &min_year, double &max_year) const;
-
-        bool isBlockInFaultFilter(const BlockID &block_id) const;
-        bool isBlockInLayerFilter(const BlockID &block_id) const;
-        BlockInfo getBlockInfo(const BlockID &block_id) const;
-
-        void getFaultNames(std::set<std::pair<FaultID, std::string> > &fault_name_map) const;
-        void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
-        unsigned int getNumLayers(void) const {
-            return num_layers;
-        };
-        unsigned int getNumEvents(void) const {
-            return event_set.size();
-        };
-        double getSimStart(void) const;
-        double getSimLength(void) const;
-        double getSimEnd(void) const;
-        double getLat0(void) const;
-        double getLon0(void) const;
-
-        void readAllAvailableEvents(void);
 };
 
 class HDF5DataWriter : public HDF5Data {
     public:
-        HDF5DataWriter(const std::string &hdf5_file_name, const int &nblocks);
-        void setBlockInfo(const Block &block);
+        HDF5DataWriter(const std::string &hdf5_file_name);
         void setStartEndYears(const double &new_start_year, const double &new_end_year);
-        void setLatLon0(const quakelib::LatLonDepth &new_lat_lon);
         void flush(void);
 
-        void writeEvent(VCEvent &event, VCGeneralEventSet &bg_events);
+        void writeEvent(VCEvent &event);
 };
+
+#endif
 
 #endif

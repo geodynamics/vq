@@ -201,7 +201,7 @@ void UpdateBlockStress::stressRecompute(void) {
     }
 
     // Distribute the new update field over all nodes
-    sim->distributeUpdateField(false);
+    sim->distributeUpdateField();
 
     // Multiply the Greens shear function by the slipDeficit vector
     // to get shear on local blocks

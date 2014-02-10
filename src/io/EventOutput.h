@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2014 Eric M. Heien, Michael K. Sachs, John B. Rundle
+// Copyright (c) 2012-2013 Eric M. Heien, Michael K. Sachs, John B. Rundle
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -19,21 +19,44 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "VCSimulation.h"
+#include "HDF5Data.h"
 
-#ifndef _SYSTEM_FILE_OUTPUT_H_
-#define _SYSTEM_FILE_OUTPUT_H_
+#ifdef VC_HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifndef _HDF5_DATA_SHARE_H_
+#define _HDF5_DATA_SHARE_H_
+
+#define PAUSE_FILE_NAME     "pause_vc"
 
 /*!
- Writes the simulation model information to a file.
+ Manages the HDF5 format data output for VC program.
  */
-class SystemFileOutput : public SimPlugin {
-    public:
-        virtual std::string name() const {
-            return "System file output";
-        };
-        virtual void initDesc(const SimFramework *_sim) const;
+class EventOutput : public SimPlugin {
+    private:
+#ifdef HDF5_FOUND
+        HDF5DataWriter      *h5_data;
+#else
+        void                *h5_data;
+#endif
+        unsigned int        next_pause_check;
+        std::ofstream       event_outfile, sweep_outfile;
 
+        bool pauseFileExists(void);
+
+    public:
+        virtual std::string name(void) const {
+            return "Data Writer";
+        }
+        void initDesc(const SimFramework *_sim) const;
+
+        virtual bool needsTimer(void) const {
+            return true;
+        };
         virtual void init(SimFramework *_sim);
+        virtual SimRequest run(SimFramework *_sim);
+        virtual void finish(SimFramework *_sim);
 };
 
 #endif

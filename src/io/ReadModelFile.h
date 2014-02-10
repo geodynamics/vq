@@ -18,37 +18,24 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCParams.h"
-#include "VCBlock.h"
-#include "VCEvent.h"
+#include "VCSimulation.h"
+#include "QuakeLibIO.h"
 
-#ifndef _VC_COMM_SPEC_EXEC_H_
-#define _VC_COMM_SPEC_EXEC_H_
+#ifndef _READ_MODEL_FILE_H_
+#define _READ_MODEL_FILE_H_
 
-class VCCommSpecExec {
-    protected:
-        SpecExecMethod      spec_exec_method;
-
-        //! Map of blocks to boundary of node (for speculative execution)
-        std::map<BlockID, double>   boundary_dist_map;
-
-        bool                        last_prediction_failed;
-
-        //! Statistics for speculative execution
-        int                         num_predictions;
-        int                         num_predicted_local;
-        int                         num_predictions_failed;
-        int                         num_predictions_success;
-
+/*!
+ Parses input model file and creates corresponding simulation structures.
+ */
+class ReadModelFile : public SimPlugin {
     public:
-        VCCommSpecExec(void) : spec_exec_method(SPEC_EXEC_UNDEFINED), num_predictions(0), num_predicted_local(0), num_predictions_failed(0), num_predictions_success(0) {};
-        void setSpecExecMethod(const SpecExecMethod &new_method) {
-            spec_exec_method = new_method;
-        };
+        virtual std::string name(void) const {
+            return "EqSim file parsing";
+        }
+        virtual void initDesc(const SimFramework *_sim) const;
 
-        void startEvent(void);
-        void speculationFailed(VCEventSweep &fail_sweep);
-        void speculationSuccess(VCEventSweep &success_sweep);
+        virtual void dryRun(SimFramework *_sim);
+        virtual void init(SimFramework *_sim);
 };
 
 #endif

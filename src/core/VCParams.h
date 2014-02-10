@@ -31,14 +31,7 @@ enum GreensCalcMethod {
     GREENS_CALC_NONE,           // do not calculate Greens function
     GREENS_FILE_PARSE,          // use file parsing method
     GREENS_CALC_BARNES_HUT,     // use Barnes Hut method to calculate Greens function
-    GREENS_CALC_2011            // use the new Okada class to calculate Greens functions
-};
-
-enum SpecExecMethod {
-    SPEC_EXEC_UNDEFINED,        // undefined behavior
-    SPEC_EXEC_NONE,             // do not use speculative execution
-    SPEC_EXEC_FIXED_DIST,       // use speculative execution with fixed boundary distance
-    SPEC_EXEC_ADAPTIVE          // use speculative execution with adaptive prediction
+    GREENS_CALC_STANDARD        // use the new Okada class to calculate Greens functions
 };
 
 enum FrictionLawMethod {
@@ -57,17 +50,11 @@ class VCParams {
 
         std::string         version;
 
-        SpecExecMethod      spec_exec_method;
-        double              spec_exec_dist;
-
         double              year;
         double              sim_end_year;
-        double              event_start_year;
 
         double              noise_event;
         double              noise_slip_deficit;
-        double              noise_stress;
-        double              noise_stress_resolution;
 
         double              fault_kill_cff;
 
@@ -85,10 +72,6 @@ class VCParams {
         double              barnes_hut_theta;       // controls how much smoothing occurs in Barnes-Hutt approximation
         std::string         greens_infile;
 
-        int                 asperity_num;
-        int                 asperity_width;
-        double              asperity_mag;
-
         unsigned int        bass_max_generations;
         double              bass_min_magnitude_mm;
         double              bass_aftershock_strength_dm;
@@ -98,32 +81,17 @@ class VCParams {
         double              bass_distance_d;
         double              bass_distance_decay_q;
 
-        double              bg_event_mean_interevent;
-        double              bg_event_min_mag;
-        double              bg_event_max_mag;
-        double              bg_event_distance;
-        double              bg_event_distance_decay;
-
-        bool                depth_dependent_velocity;
         bool                sanity_check;
         bool                do_normal_stress;
         bool                use_transpose_matrix;
 
-        double              model_lat0;
-        double              model_lon0;
+        std::string         input_model_file;
+        std::string         input_model_file_type;
 
-        std::string         state_begin_file;
-        std::string         system_outfile;
         std::string         greens_outfile;
-        std::string         events_file;
-        std::string         hdf5_file;
-        std::string         section_params_file;
 
-        std::string         eqsim_condition_file;
-        std::string         eqsim_friction_file;
-        std::string         eqsim_geometry_file;
-        std::string         eqsim_output_file;
-        double              eqsim_slipmap_mag;
+        std::string         event_outfile, sweep_outfile;
+        std::string         event_outfile_type;
 
     public:
         VCParams(void) : valid(false) {};
@@ -133,21 +101,11 @@ class VCParams {
             return version;
         };
 
-        SpecExecMethod getSpecExecMethod(void) const {
-            return spec_exec_method;
-        };
-        double getSpecExecDistance(void) const {
-            return spec_exec_dist;
-        };
-
         double getSimStart(void) const {
             return year;
         };
         double getSimDuration(void) const {
             return sim_end_year;
-        };
-        double getRecordingStart(void) const {
-            return event_start_year;
         };
 
         double getEventNoise(void) const {
@@ -155,12 +113,6 @@ class VCParams {
         };
         double getSlipDeficitNoise(void) const {
             return noise_slip_deficit;
-        };
-        double getStressNoise(void) const {
-            return noise_stress;
-        };
-        double getStressNoiseResolution(void) const {
-            return noise_stress_resolution;
         };
 
         double getFaultKillCFF(void) const {
@@ -201,16 +153,6 @@ class VCParams {
             return greens_infile;
         };
 
-        int getNumAsperities(void) const {
-            return asperity_num;
-        };
-        int getAsperityWidth(void) const {
-            return asperity_width;
-        };
-        double getAsperityMagnitude(void) const {
-            return asperity_mag;
-        };
-
         unsigned int getBASSMaxGenerations(void) const {
             return bass_max_generations;
         };
@@ -236,25 +178,6 @@ class VCParams {
             return bass_distance_decay_q;
         };
 
-        double getBGEventMeanInterevent(void) const {
-            return bg_event_mean_interevent;
-        };
-        double getBGEventMinMagnitude(void) const {
-            return bg_event_min_mag;
-        };
-        double getBGEventMaxMagnitude(void) const {
-            return bg_event_max_mag;
-        };
-        double getBGEventDistance(void) const {
-            return bg_event_distance;
-        };
-        double getBGEventDistanceDecay(void) const {
-            return bg_event_distance_decay;
-        };
-
-        bool doDepthDependentVelocity(void) const {
-            return depth_dependent_velocity;
-        };
         bool doSanityCheck(void) const {
             return sanity_check;
         };
@@ -265,43 +188,25 @@ class VCParams {
             return use_transpose_matrix;
         };
 
-        quakelib::LatLonDepth getBaseLatLon(void) const {
-            return quakelib::LatLonDepth(model_lat0, model_lon0, 0);
+        std::string getModelFile(void) const {
+            return input_model_file;
+        };
+        std::string getModelFileType(void) const {
+            return input_model_file_type;
         };
 
-        std::string getStateBeginFile(void) const {
-            return state_begin_file;
-        };
-        std::string getSystemOutfile(void) const {
-            return system_outfile;
-        };
         std::string getGreensOutfile(void) const {
             return greens_outfile;
         };
-        std::string getEventsFile(void) const {
-            return events_file;
-        };
-        std::string getHDF5File(void) const {
-            return hdf5_file;
-        };
-        std::string getSectionParamsFile(void) const {
-            return section_params_file;
-        };
 
-        std::string getEqSimConditionFile(void) const {
-            return eqsim_condition_file;
+        std::string getEventOutfile(void) const {
+            return event_outfile;
         };
-        std::string getEqSimFrictionFile(void) const {
-            return eqsim_friction_file;
+        std::string getSweepOutfile(void) const {
+            return sweep_outfile;
         };
-        std::string getEqSimGeometryFile(void) const {
-            return eqsim_geometry_file;
-        };
-        std::string getEqSimOutputFile(void) const {
-            return eqsim_output_file;
-        };
-        double getEqSimOutputSlipMapMag(void) const {
-            return eqsim_slipmap_mag;
+        std::string getEventOutfileType(void) const {
+            return event_outfile_type;
         };
 
         friend std::ostream &operator<<(std::ostream &os, const VCParams &params);

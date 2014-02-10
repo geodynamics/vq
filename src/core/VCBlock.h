@@ -20,6 +20,8 @@
 
 #include "QuakeLib.h"
 
+#include <map>
+
 #ifndef _VCBLOCK_H_
 #define _VCBLOCK_H_
 
@@ -62,35 +64,16 @@ class VCRand {
 
 typedef unsigned int BlockID;
 typedef unsigned int FaultID;
+typedef unsigned int SectionID;
 
 #define UNDEFINED_BLOCK_ID      UINT_MAX
 #define UNDEFINED_FAULT_ID      UINT_MAX
 #define UNDEFINED_SECTION_ID    UINT_MAX
 #define ALL_FAULTS_ID           UINT_MAX-1
 
-#define FAULT_NAME_MAX_LEN      256
-
-struct BlockInfo {
-    BlockID     bid;
-    FaultID     fid;
-    quakelib::SectionID sid;
-    double      x_pt[4], y_pt[4], z_pt[4], das_pt[4];
-    quakelib::TraceFlag   trace_flag_pt[4];
-    double      slip_velocity;
-    double      aseismicity;
-    double      rake;
-    double      dip;
-    double      dynamic_strength, static_strength;
-    double      lame_mu, lame_lambda;
-    char        fault_name[FAULT_NAME_MAX_LEN];
-};
-
-typedef struct BlockInfo BlockInfo;
-
 // TODO: add VCRand?
 struct StateCheckpointData {
     double      slipDeficit;
-    double      slipCumulative;
     double      cff;
     double      stressS;
     double      stressN;
@@ -130,12 +113,10 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv);
  */
 class State {
     public:
-        State(void) : slipDeficit(0), slipCumulative(0), cff(0), Fcff(0), Fcff0(0),
-            cff0(0), stressS0(0), stressN0(0), FstressS0(0), FstressN0(0), stressS(NULL), stressN(NULL), FstressS(NULL), FstressN(NULL), updateField(NULL) {};
+        State(void) : slipDeficit(0), Fcff(0), Fcff0(0),
+            cff(0), cff0(0), stressS0(0), stressN0(0), FstressS0(0), FstressN0(0), stressS(NULL), stressN(NULL), FstressS(NULL), FstressN(NULL), updateField(NULL) {};
         //! slip - Vt
         double slipDeficit;
-        //! cumulative slip over all times.
-        double slipCumulative;
         //! coulomb failure function for failed block
         double Fcff;
         //! coulomb failure function for failed block after a failure
@@ -176,11 +157,11 @@ class State {
 /*!
  Class of block attributes. These attributes are static during the simulation except rand.
 */
-class Block : public quakelib::Element<4> {
+class Block : public quakelib::SimElement {
     private:
         BlockID         id;                 // block id
         FaultID         fid;                // fault id
-        quakelib::SectionID     sid;                // section id
+        SectionID       sid;                // section id
 
         // constants during simulation
         double          self_shear;         // Greens function shear by block on itself
@@ -197,6 +178,7 @@ class Block : public quakelib::Element<4> {
 
         double          rhogd;              // normal stress
 
+        double          max_slip;           // Maximum slip of this block based on whatever scaling relationship we're using
         double          friction_val;       // friction value for this block
 
         double          section_layers;
@@ -318,10 +300,6 @@ class Block : public quakelib::Element<4> {
         double getSlipDeficit(void) const {
             return state.slipDeficit;
         };
-        //! Returns the cumulative slip of this block.
-        double getSlipCumulative(void) const {
-            return state.slipCumulative;
-        };
         //! Returns the slip deficit of this block.
         double getShearStress(void) const {
             return state.stressS[0];
@@ -398,14 +376,20 @@ class Block : public quakelib::Element<4> {
         };
 
         //! Set the section ID of this block.
-        void setSectionID(const quakelib::SectionID &new_sid) {
+        void setSectionID(const SectionID &new_sid) {
             sid = new_sid;
         };
         //! Return the section ID of this block.
-        quakelib::SectionID getSectionID(void) const {
+        SectionID getSectionID(void) const {
             return sid;
         };
 
+        double getMaxSlip(void) const {
+            return max_slip;
+        };
+        void setMaxSlip(const double &new_max_slip) {
+            max_slip = new_max_slip;
+        };
         //! Calculate the expected recurrence of this block in years.
         double getRecurrence(void) const {
             return stress_drop/(_slip_rate*(self_shear-self_normal*friction_val));
@@ -504,8 +488,6 @@ class Block : public quakelib::Element<4> {
         };
         std::string header(void) const;
         std::string headerUnits(void) const;
-
-        BlockInfo getBlockInfo(void) const;
 };
 
 typedef std::vector<Block> BlockList;
