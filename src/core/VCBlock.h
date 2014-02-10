@@ -113,8 +113,8 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv);
  */
 class State {
     public:
-        State(void) : slipDeficit(0), cff(0), Fcff(0), Fcff0(0),
-            cff0(0), stressS0(0), stressN0(0), FstressS0(0), FstressN0(0), stressS(NULL), stressN(NULL), FstressS(NULL), FstressN(NULL), updateField(NULL) {};
+        State(void) : slipDeficit(0), Fcff(0), Fcff0(0),
+            cff(0), cff0(0), stressS0(0), stressN0(0), FstressS0(0), FstressN0(0), stressS(NULL), stressN(NULL), FstressS(NULL), FstressN(NULL), updateField(NULL) {};
         //! slip - Vt
         double slipDeficit;
         //! coulomb failure function for failed block

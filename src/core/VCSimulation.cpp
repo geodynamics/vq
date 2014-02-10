@@ -788,6 +788,8 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
     if (isRootNode()) {
         block_counts = new int[world_size];
         block_offsets = new int[world_size];
+    } else {
+        block_counts = block_offsets = NULL;
     }
 
     MPI_Gather(&num_blocks, 1, MPI_INT, block_counts, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);

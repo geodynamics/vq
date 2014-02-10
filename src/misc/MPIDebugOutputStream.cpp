@@ -52,6 +52,9 @@ void MPIDebugOutputStream::flush(void) {
     int     *msg_lens, *msg_disps, my_msg_len, i, total_len;
     char    *my_msg_storage, *all_msg_storage;
 
+    total_len = 0;
+    my_msg_storage = all_msg_storage = NULL;
+    msg_lens = NULL;
     my_msg_len = output_buf.size();
 
     if (my_node_rank == output_node_rank) {
