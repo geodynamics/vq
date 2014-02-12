@@ -149,8 +149,8 @@ void print_usage(int argc, char **argv) {
     std::cerr << "\tSpecify a model file to import and merge. Must have a paired import_file_type." << std::endl;
     std::cerr << "-j TYPE, --import_file_type=TYPE" << std::endl;
     std::cerr << "\tSpecify a model file type for importing. Must have a paired import_file." << std::endl;
-    std::cerr << "-l FILE, --import_trace_element_size=FILE" << std::endl;
-    std::cerr << "\tSpecify the element size to use for trace file meshing. Must have a paired trace type file import." << std::endl;
+    std::cerr << "-l SIZE, --import_trace_element_size=SIZE" << std::endl;
+    std::cerr << "\tSpecify the element size (in meters) to use for trace file meshing. Must have a paired trace type file import." << std::endl;
     std::cerr << "-t METHOD, --taper_trace_method=METHOD" << std::endl;
     std::cerr << "\tSpecify the how to taper the imported trace when meshing. Must have a paired trace type file import." << std::endl;
     std::cerr << "-C FILE, --import_eqsim_condition=FILE" << std::endl;
