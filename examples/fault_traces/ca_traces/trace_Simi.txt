@@ -1,0 +1,25 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+62 11 Simi
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.2849 -118.813 0 12000 0.032 0 45 59.9897 3e+10 3.2e+10
+34.2761 -118.844 0 12000 0.127 0 45 59.9899 3e+10 3.2e+10
+34.2673 -118.875 0 12000 0.127 0 45 59.9672 3e+10 3.2e+10
+34.2559 -118.907 0 12000 0.127 0 45 60.0992 3e+10 3.2e+10
+34.2626 -118.939 0 12000 0.127 0 45 59.9997 3e+10 3.2e+10
+34.2613 -118.971 0 12000 0.127 0 45 59.9799 3e+10 3.2e+10
+34.2575 -119.004 0 12000 0.127 0 45 60.0717 3e+10 3.2e+10
+34.2517 -119.035 0 12000 0.127 0 45 59.9532 3e+10 3.2e+10
+34.2439 -119.067 0 12000 0.127 0 45 59.9687 3e+10 3.2e+10
+34.2338 -119.097 0 12000 0.032 0 45 59.9636 3e+10 3.2e+10
+34.2214 -119.126 0 12000 0.032 0 45 59.9636 3e+10 3.2e+10

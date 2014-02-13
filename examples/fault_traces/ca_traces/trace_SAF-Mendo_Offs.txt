@@ -1,0 +1,31 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+1 17 SAF-Mendo_Offs
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+40.3593 -124.932 0 12000 0 0 180 90 3e+10 3.2e+10
+40.3555 -124.897 0 12000 2.555 0 180 90 3e+10 3.2e+10
+40.351 -124.862 0 12000 3.238 0 180 90 3e+10 3.2e+10
+40.346 -124.827 0 12000 3.576 0 180 90 3e+10 3.2e+10
+40.3406 -124.793 0 12000 4.208 0 180 90 3e+10 3.2e+10
+40.3347 -124.758 0 12000 4.313 0 180 90 3e+10 3.2e+10
+40.3283 -124.724 0 12000 4.376 0 180 90 3e+10 3.2e+10
+40.3214 -124.689 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.3142 -124.656 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.3064 -124.622 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2981 -124.588 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2894 -124.554 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2802 -124.521 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2705 -124.488 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2602 -124.455 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2493 -124.423 0 12000 4.421 0 180 90 3e+10 3.2e+10
+40.2361 -124.392 0 12000 4.421 0 180 90 3e+10 3.2e+10

@@ -1,0 +1,24 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+81 10 Casmalia
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.9321 -120.632 0 12000 0.009 0 90 74.9528 3e+10 3.2e+10
+34.9254 -120.599 0 12000 0.038 0 90 75.1316 3e+10 3.2e+10
+34.9134 -120.57 0 12000 0.038 0 90 74.9597 3e+10 3.2e+10
+34.8963 -120.544 0 12000 0.038 0 90 75.0775 3e+10 3.2e+10
+34.8777 -120.52 0 12000 0.038 0 90 74.9442 3e+10 3.2e+10
+34.8605 -120.495 0 12000 0.038 0 90 74.8961 3e+10 3.2e+10
+34.8483 -120.465 0 12000 0.038 0 90 74.8816 3e+10 3.2e+10
+34.8481 -120.432 0 12000 0.038 0 90 75.0839 3e+10 3.2e+10
+34.8465 -120.397 0 12000 0.009 0 90 75.0473 3e+10 3.2e+10
+34.8279 -120.373 0 12000 0.009 0 90 75.0473 3e+10 3.2e+10

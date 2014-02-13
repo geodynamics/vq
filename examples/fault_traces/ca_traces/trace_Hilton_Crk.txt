@@ -1,0 +1,24 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+92 10 Hilton_Crk
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+37.6766 -118.877 0 12000 0.079 0 -90 120.022 3e+10 3.2e+10
+37.654 -118.858 0 12000 0.317 0 -90 119.877 3e+10 3.2e+10
+37.637 -118.831 0 12000 0.317 0 -90 119.829 3e+10 3.2e+10
+37.6189 -118.805 0 12000 0.317 0 -90 119.926 3e+10 3.2e+10
+37.595 -118.789 0 12000 0.317 0 -90 120.157 3e+10 3.2e+10
+37.569 -118.78 0 12000 0.317 0 -90 120.016 3e+10 3.2e+10
+37.5424 -118.774 0 12000 0.317 0 -90 120.163 3e+10 3.2e+10
+37.516 -118.767 0 12000 0.317 0 -90 120.077 3e+10 3.2e+10
+37.4907 -118.755 0 12000 0.079 0 -90 120.01 3e+10 3.2e+10
+37.4681 -118.736 0 12000 0.079 0 -90 120.01 3e+10 3.2e+10

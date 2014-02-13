@@ -1,0 +1,23 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+5 9 Superstion_Mt.
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+32.9868 -115.912 0 12000 0.577 0 180 90 3e+10 3.2e+10
+32.9716 -115.886 0 12000 0.587 0 180 90 3e+10 3.2e+10
+32.9571 -115.858 0 12000 0.59 0 180 90 3e+10 3.2e+10
+32.9432 -115.831 0 12000 0.586 0 180 90 3e+10 3.2e+10
+32.93 -115.803 0 12000 0.503 0 180 90 3e+10 3.2e+10
+32.9173 -115.775 0 12000 0.463 0 180 90 3e+10 3.2e+10
+32.9051 -115.746 0 12000 0.365 0 180 90 3e+10 3.2e+10
+32.8935 -115.717 0 12000 0 0 180 90 3e+10 3.2e+10
+32.8827 -115.688 0 12000 0 0 180 90 3e+10 3.2e+10

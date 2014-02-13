@@ -1,0 +1,37 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+100 23 Ortigalita
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+37.2585 -121.271 0 12000 0 0 180 90 3e+10 3.2e+10
+37.235 -121.254 0 12000 0.073 0 180 90 3e+10 3.2e+10
+37.2115 -121.238 0 12000 0.093 0 180 90 3e+10 3.2e+10
+37.188 -121.221 0 12000 0.102 0 180 90 3e+10 3.2e+10
+37.1645 -121.204 0 12000 0.12 0 180 90 3e+10 3.2e+10
+37.141 -121.188 0 12000 0.123 0 180 90 3e+10 3.2e+10
+37.1175 -121.171 0 12000 0.125 0 180 90 3e+10 3.2e+10
+37.094 -121.155 0 12000 0.126 0 180 90 3e+10 3.2e+10
+37.0705 -121.138 0 12000 0.126 0 180 90 3e+10 3.2e+10
+37.047 -121.121 0 12000 0.126 0 180 90 3e+10 3.2e+10
+37.0235 -121.105 0 12000 0.126 0 180 90 3e+10 3.2e+10
+37 -121.088 0 12000 0.126 0 180 90 3e+10 3.2e+10
+36.9765 -121.072 0 12000 0.126 0 180 90 3e+10 3.2e+10
+36.953 -121.055 0 12000 0.126 0 180 90 3e+10 3.2e+10
+36.9294 -121.039 0 12000 0.126 0 180 90 3e+10 3.2e+10
+36.9059 -121.022 0 12000 0.125 0 180 90 3e+10 3.2e+10
+36.8824 -121.006 0 12000 0.123 0 180 90 3e+10 3.2e+10
+36.8588 -120.989 0 12000 0.12 0 180 90 3e+10 3.2e+10
+36.8353 -120.973 0 12000 0.102 0 180 90 3e+10 3.2e+10
+36.8118 -120.956 0 12000 0.093 0 180 90 3e+10 3.2e+10
+36.7882 -120.94 0 12000 0.073 0 180 90 3e+10 3.2e+10
+36.7647 -120.924 0 12000 0 0 180 90 3e+10 3.2e+10
+36.7407 -120.908 0 12000 0 0 180 90 3e+10 3.2e+10

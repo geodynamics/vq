@@ -1,0 +1,37 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+83 23 San_Juan
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+35.6667 -120.291 0 12000 0 0 180 90 3e+10 3.2e+10
+35.6408 -120.282 0 12000 0.073 0 180 90 3e+10 3.2e+10
+35.615 -120.272 0 12000 0.093 0 180 90 3e+10 3.2e+10
+35.5894 -120.261 0 12000 0.102 0 180 90 3e+10 3.2e+10
+35.5638 -120.251 0 12000 0.12 0 180 90 3e+10 3.2e+10
+35.5381 -120.241 0 12000 0.123 0 180 90 3e+10 3.2e+10
+35.5122 -120.232 0 12000 0.125 0 180 90 3e+10 3.2e+10
+35.486 -120.224 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.4597 -120.216 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.4335 -120.209 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.4074 -120.2 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.3818 -120.19 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.357 -120.177 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.3337 -120.16 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.3132 -120.138 0 12000 0.126 0 180 90 3e+10 3.2e+10
+35.2976 -120.112 0 12000 0.125 0 180 90 3e+10 3.2e+10
+35.284 -120.083 0 12000 0.123 0 180 90 3e+10 3.2e+10
+35.2677 -120.057 0 12000 0.12 0 180 90 3e+10 3.2e+10
+35.2488 -120.033 0 12000 0.102 0 180 90 3e+10 3.2e+10
+35.2277 -120.012 0 12000 0.093 0 180 90 3e+10 3.2e+10
+35.2052 -119.994 0 12000 0.073 0 180 90 3e+10 3.2e+10
+35.1815 -119.978 0 12000 0 0 180 90 3e+10 3.2e+10
+35.1567 -119.965 0 12000 0 0 180 90 3e+10 3.2e+10

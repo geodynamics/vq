@@ -1,0 +1,23 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+143 9 Great_Val_14
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+36.1241 -120.125 -8100 12000 0.048 0 90 22.0093 3e+10 3.2e+10
+36.1085 -120.098 -8100 12000 0.191 0 90 22.0472 3e+10 3.2e+10
+36.0929 -120.071 -8100 12000 0.191 0 90 22.0483 3e+10 3.2e+10
+36.0773 -120.043 -8100 12000 0.191 0 90 21.9802 3e+10 3.2e+10
+36.0617 -120.016 -8100 12000 0.191 0 90 21.9782 3e+10 3.2e+10
+36.0462 -119.989 -8100 12000 0.191 0 90 21.9768 3e+10 3.2e+10
+36.0306 -119.962 -8100 12000 0.191 0 90 21.976 3e+10 3.2e+10
+36.015 -119.935 -8100 12000 0.048 0 90 21.977 3e+10 3.2e+10
+35.9988 -119.908 -8100 12000 0.048 0 90 21.977 3e+10 3.2e+10

@@ -5,16 +5,20 @@ cmake_minimum_required (VERSION 2.6)
 project (VC) 
 
 # Enable testing
-#INCLUDE (CTest)
+INCLUDE (CTest)
+
 # Check for common include files
 INCLUDE (CheckIncludeFiles)
 CHECK_INCLUDE_FILES ("sys/time.h" VC_HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILES ("stdlib.h" VC_HAVE_STDLIB_H)
 CHECK_INCLUDE_FILES ("unistd.h" VC_HAVE_UNISTD_H)
 
-SET( ENV{CMAKE_OSX_ARCHITECTURES} x86_64 )
+# Check for functions
+INCLUDE (CheckFunctionExists)
+CHECK_FUNCTION_EXISTS (sleep VC_HAVE_SLEEP_FUNC)
+CHECK_FUNCTION_EXISTS (usleep VC_HAVE_USLEEP_FUNC)
 
-#SET(VC_EXAMPLE_DIR ${VC_SOURCE_DIR}/examples/)
+SET( ENV{CMAKE_OSX_ARCHITECTURES} x86_64 )
 
 # Check for optional libraries
 FIND_PACKAGE(MPI)
@@ -44,5 +48,5 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/quakelib/)
 # Recurse into the "quakelib" and "src" subdirectories.
 ADD_SUBDIRECTORY(quakelib) 
 ADD_SUBDIRECTORY(src)
-#ADD_SUBDIRECTORY(examples)
+ADD_SUBDIRECTORY(examples)
 

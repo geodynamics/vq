@@ -1,0 +1,33 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+42 19 Death_Vlly-Grb
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+36.517 -116.877 0 12000 0 0 -90 59.9998 3e+10 3.2e+10
+36.4922 -116.863 0 12000 0.146 0 -90 59.9438 3e+10 3.2e+10
+36.4665 -116.853 0 12000 0.186 0 -90 59.9813 3e+10 3.2e+10
+36.4403 -116.845 0 12000 0.205 0 -90 59.9317 3e+10 3.2e+10
+36.4143 -116.836 0 12000 0.241 0 -90 59.9728 3e+10 3.2e+10
+36.3895 -116.823 0 12000 0.247 0 -90 59.8557 3e+10 3.2e+10
+36.3659 -116.806 0 12000 0.251 0 -90 59.8897 3e+10 3.2e+10
+36.3425 -116.79 0 12000 0.253 0 -90 59.9917 3e+10 3.2e+10
+36.318 -116.775 0 12000 0.253 0 -90 60.0457 3e+10 3.2e+10
+36.2923 -116.765 0 12000 0.253 0 -90 59.8136 3e+10 3.2e+10
+36.2659 -116.758 0 12000 0.253 0 -90 59.9345 3e+10 3.2e+10
+36.2391 -116.754 0 12000 0.251 0 -90 59.9413 3e+10 3.2e+10
+36.2121 -116.753 0 12000 0.247 0 -90 59.9199 3e+10 3.2e+10
+36.1852 -116.755 0 12000 0.241 0 -90 60.0377 3e+10 3.2e+10
+36.1583 -116.758 0 12000 0.205 0 -90 59.9264 3e+10 3.2e+10
+36.1313 -116.758 0 12000 0.186 0 -90 59.8825 3e+10 3.2e+10
+36.1045 -116.754 0 12000 0.146 0 -90 59.9539 3e+10 3.2e+10
+36.078 -116.747 0 12000 0 0 -90 59.9077 3e+10 3.2e+10
+36.0522 -116.737 0 12000 0 0 -90 59.9077 3e+10 3.2e+10

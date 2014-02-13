@@ -1,0 +1,30 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+2 16 Brawley
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+33.3343 -115.701 0 12000 0 0 180 90 3e+10 3.2e+10
+33.3096 -115.688 0 12000 0 0 180 90 3e+10 3.2e+10
+33.2848 -115.675 0 12000 0 0 180 90 3e+10 3.2e+10
+33.26 -115.662 0 12000 0 0 180 90 3e+10 3.2e+10
+33.2352 -115.65 0 12000 0 0 180 90 3e+10 3.2e+10
+33.2105 -115.637 0 12000 0 0 180 90 3e+10 3.2e+10
+33.1857 -115.624 0 12000 0 0 180 90 3e+10 3.2e+10
+33.1609 -115.611 0 12000 0 0 180 90 3e+10 3.2e+10
+33.1361 -115.599 0 12000 0 0 180 90 3e+10 3.2e+10
+33.1113 -115.586 0 12000 0 0 180 90 3e+10 3.2e+10
+33.0865 -115.573 0 12000 0 0 180 90 3e+10 3.2e+10
+33.0618 -115.56 0 12000 0 0 180 90 3e+10 3.2e+10
+33.037 -115.548 0 12000 0 0 180 90 3e+10 3.2e+10
+33.0122 -115.535 0 12000 0 0 180 90 3e+10 3.2e+10
+32.9874 -115.522 0 12000 0 0 180 90 3e+10 3.2e+10
+32.9628 -115.509 0 12000 0 0 180 90 3e+10 3.2e+10

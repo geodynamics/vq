@@ -1,0 +1,22 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+15 8 Concord
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+38.0487 -122.091 0 12000 0.127 0 180 90 3e+10 3.2e+10
+38.0253 -122.074 0 12000 0.507 0 180 90 3e+10 3.2e+10
+38.002 -122.056 0 12000 0.507 0 180 90 3e+10 3.2e+10
+37.9786 -122.039 0 12000 0.507 0 180 90 3e+10 3.2e+10
+37.9553 -122.022 0 12000 0.507 0 180 90 3e+10 3.2e+10
+37.9319 -122.005 0 12000 0.507 0 180 90 3e+10 3.2e+10
+37.9085 -121.988 0 12000 0.127 0 180 90 3e+10 3.2e+10
+37.8845 -121.972 0 12000 0.127 0 180 90 3e+10 3.2e+10

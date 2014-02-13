@@ -1,0 +1,32 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+120 18 West_Tahoe
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+39.2498 -120.112 0 12000 0 0 -90 130.125 3e+10 3.2e+10
+39.2228 -120.109 0 12000 0.044 0 -90 130.032 3e+10 3.2e+10
+39.198 -120.096 0 12000 0.056 0 -90 130.137 3e+10 3.2e+10
+39.1722 -120.082 0 12000 0.062 0 -90 130.262 3e+10 3.2e+10
+39.1453 -120.087 0 12000 0.072 0 -90 130.108 3e+10 3.2e+10
+39.1196 -120.098 0 12000 0.074 0 -90 130.199 3e+10 3.2e+10
+39.0936 -120.107 0 12000 0.075 0 -90 130.095 3e+10 3.2e+10
+39.0666 -120.108 0 12000 0.076 0 -90 130.19 3e+10 3.2e+10
+39.0399 -120.103 0 12000 0.076 0 -90 130.139 3e+10 3.2e+10
+39.014 -120.094 0 12000 0.076 0 -90 130.082 3e+10 3.2e+10
+38.9885 -120.082 0 12000 0.075 0 -90 130.199 3e+10 3.2e+10
+38.9626 -120.072 0 12000 0.074 0 -90 130.248 3e+10 3.2e+10
+38.9359 -120.067 0 12000 0.072 0 -90 130.141 3e+10 3.2e+10
+38.909 -120.064 0 12000 0.062 0 -90 130.18 3e+10 3.2e+10
+38.8824 -120.058 0 12000 0.056 0 -90 130.06 3e+10 3.2e+10
+38.8567 -120.048 0 12000 0.044 0 -90 130.004 3e+10 3.2e+10
+38.8321 -120.033 0 12000 0 0 -90 130.046 3e+10 3.2e+10
+38.8079 -120.018 0 12000 0 0 -90 130.046 3e+10 3.2e+10

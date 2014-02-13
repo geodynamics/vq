@@ -1,0 +1,35 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+10 21 C_Maacama
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+39.3375 -123.287 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.3132 -123.272 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.289 -123.257 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.2648 -123.241 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.2406 -123.226 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.2163 -123.211 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.192 -123.196 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.1677 -123.18 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.1434 -123.165 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.119 -123.151 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.0946 -123.136 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.07 -123.121 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.0454 -123.107 0 12000 1.137 0 180 90 3e+10 3.2e+10
+39.0208 -123.093 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.996 -123.079 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.9712 -123.066 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.9464 -123.052 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.9219 -123.038 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.8974 -123.023 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.8732 -123.008 0 12000 1.137 0 180 90 3e+10 3.2e+10
+38.8488 -122.993 0 12000 1.137 0 180 90 3e+10 3.2e+10

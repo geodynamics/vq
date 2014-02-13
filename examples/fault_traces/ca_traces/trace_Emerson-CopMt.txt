@@ -1,0 +1,31 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+76 17 Emerson-CopMt
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.5115 -116.519 0 12000 0 0 180 90 3e+10 3.2e+10
+34.4902 -116.499 0 12000 0.044 0 180 90 3e+10 3.2e+10
+34.4714 -116.475 0 12000 0.056 0 180 90 3e+10 3.2e+10
+34.4574 -116.447 0 12000 0.061 0 180 90 3e+10 3.2e+10
+34.4453 -116.418 0 12000 0.072 0 180 90 3e+10 3.2e+10
+34.4269 -116.394 0 12000 0.074 0 180 90 3e+10 3.2e+10
+34.4048 -116.375 0 12000 0.075 0 180 90 3e+10 3.2e+10
+34.3823 -116.357 0 12000 0.076 0 180 90 3e+10 3.2e+10
+34.361 -116.337 0 12000 0.076 0 180 90 3e+10 3.2e+10
+34.337 -116.322 0 12000 0.075 0 180 90 3e+10 3.2e+10
+34.3111 -116.312 0 12000 0.074 0 180 90 3e+10 3.2e+10
+34.2848 -116.305 0 12000 0.072 0 180 90 3e+10 3.2e+10
+34.2589 -116.295 0 12000 0.061 0 180 90 3e+10 3.2e+10
+34.2349 -116.279 0 12000 0.056 0 180 90 3e+10 3.2e+10
+34.2179 -116.254 0 12000 0.044 0 180 90 3e+10 3.2e+10
+34.2006 -116.228 0 12000 0 0 180 90 3e+10 3.2e+10
+34.1768 -116.213 0 12000 0 0 180 90 3e+10 3.2e+10

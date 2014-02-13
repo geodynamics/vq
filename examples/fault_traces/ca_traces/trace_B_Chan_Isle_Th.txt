@@ -1,0 +1,34 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+110 20 B_Chan_Isle_Th
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.0212 -119.278 -5000 12000 0 0 90 19.983 3e+10 3.2e+10
+34.0131 -119.309 -5000 12000 0.11 0 90 20.0148 3e+10 3.2e+10
+34.0055 -119.34 -5000 12000 0.14 0 90 20.0227 3e+10 3.2e+10
+33.9982 -119.372 -5000 12000 0.154 0 90 20.023 3e+10 3.2e+10
+33.9915 -119.403 -5000 12000 0.181 0 90 20.0334 3e+10 3.2e+10
+33.9852 -119.435 -5000 12000 0.186 0 90 20.038 3e+10 3.2e+10
+33.9794 -119.467 -5000 12000 0.189 0 90 20.0563 3e+10 3.2e+10
+33.9744 -119.499 -5000 12000 0.19 0 90 20.0491 3e+10 3.2e+10
+33.9699 -119.531 -5000 12000 0.19 0 90 20.043 3e+10 3.2e+10
+33.9661 -119.563 -5000 12000 0.19 0 90 20.0349 3e+10 3.2e+10
+33.9632 -119.595 -5000 12000 0.19 0 90 20.0786 3e+10 3.2e+10
+33.961 -119.628 -5000 12000 0.19 0 90 20.0315 3e+10 3.2e+10
+33.9599 -119.66 -5000 12000 0.189 0 90 20.0362 3e+10 3.2e+10
+33.9595 -119.693 -5000 12000 0.186 0 90 20.0216 3e+10 3.2e+10
+33.9601 -119.726 -5000 12000 0.181 0 90 20.0584 3e+10 3.2e+10
+33.9615 -119.758 -5000 12000 0.154 0 90 20.0112 3e+10 3.2e+10
+33.9637 -119.79 -5000 12000 0.14 0 90 20.0118 3e+10 3.2e+10
+33.9667 -119.823 -5000 12000 0.11 0 90 20.0144 3e+10 3.2e+10
+33.9704 -119.855 -5000 12000 0 0 90 20.0708 3e+10 3.2e+10
+33.9754 -119.887 -5000 12000 0 0 90 20.0708 3e+10 3.2e+10

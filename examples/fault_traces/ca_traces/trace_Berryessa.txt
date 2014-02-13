@@ -1,0 +1,39 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+13 25 Berryessa
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+38.964 -122.504 0 12000 0 0 180 90 3e+10 3.2e+10
+38.9497 -122.475 0 12000 0.438 0 180 90 3e+10 3.2e+10
+38.934 -122.447 0 12000 0.555 0 180 90 3e+10 3.2e+10
+38.9166 -122.42 0 12000 0.613 0 180 90 3e+10 3.2e+10
+38.8973 -122.395 0 12000 0.721 0 180 90 3e+10 3.2e+10
+38.8756 -122.374 0 12000 0.739 0 180 90 3e+10 3.2e+10
+38.8519 -122.358 0 12000 0.75 0 180 90 3e+10 3.2e+10
+38.8267 -122.345 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.8008 -122.335 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.7744 -122.328 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.7477 -122.322 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.721 -122.317 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.6943 -122.313 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.6677 -122.308 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.6411 -122.302 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.6148 -122.295 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.5889 -122.285 0 12000 0.758 0 180 90 3e+10 3.2e+10
+38.5638 -122.273 0 12000 0.75 0 180 90 3e+10 3.2e+10
+38.5394 -122.258 0 12000 0.739 0 180 90 3e+10 3.2e+10
+38.5157 -122.242 0 12000 0.721 0 180 90 3e+10 3.2e+10
+38.4926 -122.224 0 12000 0.613 0 180 90 3e+10 3.2e+10
+38.4701 -122.205 0 12000 0.555 0 180 90 3e+10 3.2e+10
+38.4481 -122.185 0 12000 0.438 0 180 90 3e+10 3.2e+10
+38.4264 -122.165 0 12000 0 0 180 90 3e+10 3.2e+10
+38.4042 -122.145 0 12000 0 0 180 90 3e+10 3.2e+10

@@ -1,0 +1,26 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+4 12 San_Bernardino
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.2356 -117.496 0 12000 0 0 180 90 3e+10 3.2e+10
+34.2167 -117.473 0 12000 1.098 0 180 90 3e+10 3.2e+10
+34.1978 -117.45 0 12000 1.392 0 180 90 3e+10 3.2e+10
+34.1788 -117.427 0 12000 1.537 0 180 90 3e+10 3.2e+10
+34.1598 -117.403 0 12000 1.809 0 180 90 3e+10 3.2e+10
+34.1408 -117.38 0 12000 1.854 0 180 90 3e+10 3.2e+10
+34.1217 -117.357 0 12000 1.881 0 180 90 3e+10 3.2e+10
+34.1027 -117.334 0 12000 1.9 0 180 90 3e+10 3.2e+10
+34.0834 -117.311 0 12000 1.9 0 180 90 3e+10 3.2e+10
+34.0642 -117.289 0 12000 1.9 0 180 90 3e+10 3.2e+10
+34.0448 -117.266 0 12000 1.9 0 180 90 3e+10 3.2e+10
+34.0254 -117.243 0 12000 1.9 0 180 90 3e+10 3.2e+10

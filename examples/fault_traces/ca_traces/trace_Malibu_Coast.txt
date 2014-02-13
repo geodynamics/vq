@@ -1,0 +1,27 @@
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+67 13 Malibu_Coast
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+34.046 -118.918 0 12000 0 0 45 105.008 3e+10 3.2e+10
+34.037 -118.887 0 12000 0.022 0 45 104.847 3e+10 3.2e+10
+34.0298 -118.856 0 12000 0.028 0 45 104.954 3e+10 3.2e+10
+34.0247 -118.824 0 12000 0.031 0 45 104.966 3e+10 3.2e+10
+34.0218 -118.792 0 12000 0.036 0 45 104.869 3e+10 3.2e+10
+34.0213 -118.759 0 12000 0.037 0 45 104.919 3e+10 3.2e+10
+34.0238 -118.727 0 12000 0.037 0 45 105.177 3e+10 3.2e+10
+34.0296 -118.695 0 12000 0.036 0 45 104.974 3e+10 3.2e+10
+34.0396 -118.665 0 12000 0.031 0 45 105.105 3e+10 3.2e+10
+34.0519 -118.635 0 12000 0.028 0 45 105.027 3e+10 3.2e+10
+34.0578 -118.603 0 12000 0.022 0 45 105.051 3e+10 3.2e+10
+34.0578 -118.571 0 12000 0 0 45 104.926 3e+10 3.2e+10
+34.0528 -118.539 0 12000 0 0 45 104.926 3e+10 3.2e+10
