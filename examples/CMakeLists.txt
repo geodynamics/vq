@@ -1,3 +1,6 @@
+# Set the example directory path
+SET(VC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/)
+
 # Copy the fault traces to the build directory for use in the tests
 file(COPY ${VC_EXAMPLE_DIR}/fault_traces DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
 

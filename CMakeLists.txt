@@ -48,5 +48,5 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/quakelib/)
 # Recurse into the "quakelib" and "src" subdirectories.
 ADD_SUBDIRECTORY(quakelib) 
 ADD_SUBDIRECTORY(src)
-#ADD_SUBDIRECTORY(examples)
+ADD_SUBDIRECTORY(examples)
 
