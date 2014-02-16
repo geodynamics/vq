@@ -242,99 +242,12 @@ std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::
 void VCSimulation::computeCFFs(bool in_event) {
     int         i;
 
-
     for (i=0; i<numLocalBlocks(); ++i) {
         getBlock(getGlobalBID(i)).calcCFF(in_event);
     }
-
-    /* uncomment to have slip deficit and cff dumped to a text file.*/
-    static bool inited = false;
-
-    if (!inited) {
-        block_dat_out_file.open("block_info.dat");
-        //console() << "in_event" << " ";
-        printHeaders();
-        inited = true;
-    }
-
-    printAll();
-    //end text dump. comment to here to stop text dumping
-
-
 }
 
 void VCSimulation::finish(void) {
-    //block_dat_out_file.close();
-}
-
-void VCSimulation::printAll(void) {
-    BlockList::iterator it;
-    block_dat_out_file << std::setprecision(6) << getYear() << " " << std::flush;
-
-    for (it=begin(); it!=end(); ++it) {
-        block_dat_out_file
-                << std::setprecision(6) << it->getSlipDeficit() << " "
-                << std::setprecision(6) << it->getCFF() << " " << std::flush;
-    }
-
-    block_dat_out_file << std::endl << std::flush;
-}
-
-void VCSimulation::printHeaders(void) {
-    BlockList::iterator it;
-    block_dat_out_file << "year" << " " << std::flush;
-
-    for (it=begin(); it!=end(); ++it) {
-        block_dat_out_file
-                << it->getBlockID() << "_slip_deficit" << " "
-                << it->getBlockID() << "_cff" << " " << std::flush;
-    }
-
-    block_dat_out_file << std::endl << std::flush;
-}
-
-void VCSimulation::printStresses(void) {
-    BlockList::iterator it;
-    console() << getYear() << " " << getEventCount() << " ";
-
-    for (it=begin(); it!=end(); ++it) {
-        if (it->getSectionID() == 13) {
-
-            console()
-                    << it->getShearStress() << " " << it->getNormalStress() << " " << it->getCFF() << " " << it->getFCFF() << " ";
-        }
-    }
-
-    console() << std::endl;
-}
-
-
-void VCSimulation::printSlipDeficits(void) {
-    BlockList::iterator it;
-    console() << getYear() << " ";
-
-    for (it=begin(); it!=end(); ++it) console() << it->getSlipDeficit() << " ";
-
-    console() << std::endl;
-}
-
-void VCSimulation::printShearStress(void) {
-    BlockList::iterator it;
-    console() << getYear() << " ";
-
-    //for(it=begin();it!=end();++it) console() << it->getShearStress() << " " << it->getFShearStress() << " ";
-    for (it=begin(); it!=end(); ++it) console() << it->getShearStress() << " ";
-
-    console() << std::endl;
-}
-
-void VCSimulation::printNormalStress(void) {
-    BlockList::iterator it;
-    console() << getYear() << " ";
-
-    for (it=begin(); it!=end(); ++it) console() << it->getNormalStress() << " ";
-
-    console() << std::endl;
 }
 
 /*!

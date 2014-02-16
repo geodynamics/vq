@@ -117,12 +117,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void determineBlockNeighbors(void);
 
         void computeCFFs(bool in_event);
-        void printHeaders(void);
-        void printAll(void);
-        void printStresses(void);
-        void printSlipDeficits(void);
-        void printShearStress(void);
-        void printNormalStress(void);
         void matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatrix<GREEN_VAL> *a, const double *b, const bool dense);
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
@@ -143,11 +137,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         static bool distanceCompare(BlockVal first, BlockVal second) {
             return (first.val < second.val);
         };
-
-        // This stuff is so I can dump CFF data to a file. This is just a hack.
-        //char block_dat_out_filename[100];
-        //std::string block_dat_out_filename_str;
-        std::ofstream block_dat_out_file;
 
     private:
 #ifdef DEBUG
