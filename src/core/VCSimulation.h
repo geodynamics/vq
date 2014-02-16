@@ -120,7 +120,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void printHeaders(void);
         void printAll(void);
         void printStresses(void);
-        void printCFFs(void);
         void printSlipDeficits(void);
         void printShearStress(void);
         void printNormalStress(void);

@@ -71,8 +71,6 @@ VCSimulation::~VCSimulation(void) {
     if (decompress_buf) delete decompress_buf;
 
     deallocateArrays();
-
-    //CFF_out_file.close();
 }
 
 /*!
@@ -88,22 +86,6 @@ void VCSimulation::init(void) {
     num_mults = 0;
 #endif
     SimFramework::init();
-
-    //CFF output hack.
-    //std::string file_prepend;
-    //size_t pos;
-
-    //pos = getHDF5File().find(".");
-    //file_prepend = getHDF5File().substr(0,pos);
-    //sprintf(CFF_out_filename, "%s_CFF.dat", file_prepend.c_str());
-    //CFF_out_filename_str = CFF_out_filename;
-    //CFF_out_file.open(CFF_out_filename_str.c_str());
-
-    //BlockList::iterator   it;
-    //CFF_out_file << "-1 -1 ";
-    //for(it=begin();it!=end();++it) CFF_out_file << it->getBlockID() << " ";
-    //CFF_out_file << std::endl;
-}
 }
 
 /*!
@@ -334,14 +316,6 @@ void VCSimulation::printSlipDeficits(void) {
     for (it=begin(); it!=end(); ++it) console() << it->getSlipDeficit() << " ";
 
     console() << std::endl;
-}
-
-
-void VCSimulation::printCFFs(void) {
-    BlockList::iterator it;
-    //CFF_out_file << getYear() << " ";
-    //for(it=begin();it!=end();++it) CFF_out_file << it->getCFF() << " ";
-    //CFF_out_file << std::endl;
 }
 
 void VCSimulation::printShearStress(void) {
