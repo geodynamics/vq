@@ -71,7 +71,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         double shearStress(void);
         double normalStress(void);
         void getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
-        //int numLayers(void) const;
         void getFaultNames(std::map<FaultID, std::string> &fault_names) const;
         void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
         void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;

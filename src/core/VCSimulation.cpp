@@ -104,23 +104,7 @@ void VCSimulation::init(void) {
     //for(it=begin();it!=end();++it) CFF_out_file << it->getBlockID() << " ";
     //CFF_out_file << std::endl;
 }
-
-/*!
- Calculate the number of layers in the simulation based on
- the number of unique block top depths.
-
- This is deprecated.
-
-int VCSimulation::numLayers(void) const {
-    BlockList::const_iterator   it;
-    std::set<double>            depth_set;
-
-    //for(it=begin();it!=end();++it) depth_set.insert(it->getTop());
-
-    //return depth_set.size();
-    return;
 }
-  */
 
 /*!
  Calculate the number of faults in the simulation based on
