@@ -21,8 +21,6 @@
 #include "QuakeLibIO.h"
 #include "QuakeLibEQSim.h"
 
-#include <fstream>
-
 quakelib::ModelSection &quakelib::ModelWorld::section(const UIndex &ind) throw(std::domain_error) {
     std::map<UIndex, ModelSection>::iterator it = _sections.find(ind);
 
@@ -79,7 +77,7 @@ void quakelib::ModelIO::next_line(std::ostream &out_stream) const {
 
 void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     hid_t           section_name_datatype;
 
     // Create the datatype for the section name strings
@@ -89,7 +87,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "id";
     field_desc.details = "Unique ID of the section.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SectionData, _id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -98,7 +96,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "fault_id";
     field_desc.details = "ID of the parent fault.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SectionData, _fault_id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -107,7 +105,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "name";
     field_desc.details = "Name of the fault.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SectionData, _name);
     field_desc.type = section_name_datatype;
     field_desc.size = sizeof(char)*NAME_MAX_LEN;
@@ -147,7 +145,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "id";
     field_desc.details = "Unique ID of the element.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -156,7 +154,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "section_id";
     field_desc.details = "ID of the section associated with the element.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _section_id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -165,7 +163,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "vertex_0";
     field_desc.details = "ID of vertex 0.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _vertices[0]);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -174,7 +172,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "vertex_1";
     field_desc.details = "ID of vertex 1.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _vertices[1]);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -183,7 +181,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "vertex_2";
     field_desc.details = "ID of vertex 2.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _vertices[2]);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -192,7 +190,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "is_quad";
     field_desc.details = "Whether the vertices constitute 3 points of a triangle (zero) or 3 points of a parallelogram (non-zero).";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _is_quad);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(unsigned int);
@@ -201,7 +199,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "slip_rate";
     field_desc.details = "Long term slip rate of element in meters per second.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _slip_rate);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -210,7 +208,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "aseismic";
     field_desc.details = "Fraction of slip on element that is aseismic.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _aseismic);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -219,7 +217,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "rake";
     field_desc.details = "Rake angle of element in radians.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _rake);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -228,7 +226,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "lame_mu";
     field_desc.details = "Lame's parameter describing the shear modulus of the material for this element (Units?).";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _lame_mu);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -237,7 +235,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "lame_lambda";
     field_desc.details = "Lame's lambda parameter of the material for this element, in Pascals.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _lame_lambda);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -492,7 +490,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "id";
     field_desc.details = "Unique ID of the vertex.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(VertexData, _id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
@@ -501,7 +499,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "latitude";
     field_desc.details = "Latitude of the vertex.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(VertexData, _lat);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -510,7 +508,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "longitude";
     field_desc.details = "Longitude of the vertex.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(VertexData, _lon);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -519,7 +517,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "altitude";
     field_desc.details = "Altitude of the vertex in meters (negative is below ground).";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(VertexData, _alt);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -528,7 +526,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
 
     field_desc.name = "das";
     field_desc.details = "Vertex distance along fault strike in meters.";
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(VertexData, _das);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
@@ -856,7 +854,7 @@ int quakelib::ModelWorld::write_file_ascii(const std::string &file_name) const {
 }
 
 int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     hid_t       plist_id, data_file;
     herr_t      res;
     LatLonDepth min_latlon, max_latlon;
@@ -897,7 +895,7 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
     return 0;
 }
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelSection>::const_iterator  fit;
@@ -1293,7 +1291,7 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
 #endif
 
 int quakelib::ModelWorld::write_file_hdf5(const std::string &file_name) const {
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
     hid_t       plist_id, data_file;
     herr_t      res;
 
