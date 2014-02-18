@@ -22,7 +22,7 @@ class TestGreenFunctionCalc(unittest.TestCase):
             loc = quakelib.Vec3(fault_length/2.0, 1, 0)
             source_dim = quakelib.Vec3(fault_length, 1, 0)
             # Ensure displacement is within acceptable bounds
-            disp = self.ok.calc_displacement_vector(loc, source_dim[2], self.dip_rad, source_dim[0], source_dim[1],      self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
+            disp = self.ok.calc_displacement_vector(loc, source_dim[2], self.dip_rad, source_dim[0], source_dim[1], self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
             rel_err = abs(baseline[i]-disp.mag())/baseline[i]
             self.assertTrue(rel_err < 1e-8)
 
