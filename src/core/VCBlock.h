@@ -166,26 +166,12 @@ class Block : public quakelib::SimElement {
         double          max_slip;           // Maximum slip of this block based on whatever scaling relationship we're using
         double          friction_val;       // friction value for this block
 
-        double          dynamic_strength;
-        double          static_strength;
-
         std::string     fault_name;
         bool            failed;
 
     public:
 
         void get_rake_and_normal_stress_due_to_block(double stresses[2], const Block &source_block) const;
-
-        double getDynamicStrength(void) const {
-            return dynamic_strength;
-        };
-        double getStaticStrength(void) const {
-            return static_strength;
-        };
-        void setStrengths(double new_dynamic, double new_static) {
-            dynamic_strength = new_dynamic;
-            static_strength = new_static;
-        };
 
         State           state;
 
