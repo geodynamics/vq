@@ -31,8 +31,6 @@ SET(VC_SIMULATION
     ${VC_SIM_DIR}/BadFaultKill.h
     ${VC_SIM_DIR}/BASSAftershocks.cpp
     ${VC_SIM_DIR}/BASSAftershocks.h
-    ${VC_SIM_DIR}/BlockValCompute.h
-    ${VC_SIM_DIR}/BlockValCompute.cpp
     ${VC_SIM_DIR}/GracefulQuit.cpp
     ${VC_SIM_DIR}/GracefulQuit.h
     ${VC_SIM_DIR}/GreensInit.cpp
