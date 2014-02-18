@@ -88,7 +88,7 @@ void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const Bl
     mrake_vec   = rake_vec.   rotate_around_axis(rot_axis, theta);
     mcenter_vec = mcenter_vec.rotate_around_axis(rot_axis, theta);
 
-    stress_tensor = source_block.calc_stress_tensor(mcenter_vec, unit_slip, getLambda(), getMu());
+    stress_tensor = source_block.calc_stress_tensor(mcenter_vec, slip_rate(), lame_lambda(), lame_mu());
 
     stress_vec = stress_tensor*mnormal_vec;
 
@@ -185,7 +185,7 @@ void Block::clear(void) {
     fid = UNDEFINED_FAULT_ID;
     sid = UNDEFINED_SECTION_ID;
     self_shear = self_normal = dynamic_val = stress_drop = init_shear_stress = 0;
-    init_normal_stress = rhogd = friction_val = section_layers = lambda = mu = unit_slip = 0;
+    init_normal_stress = rhogd = friction_val = 0;
     fault_name.clear();
     active_dynamic_val = 1.0;
 }

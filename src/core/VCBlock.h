@@ -193,35 +193,8 @@ class Block : public quakelib::SimElement {
 
         int             fault_size;
 
-        /*!
-         New properties defined for the updated okada functions
-         */
-
-        double          lambda;
-        double          mu;
-        double          unit_slip;
 
     public:
-
-        double getUnitSlip() const {
-            return unit_slip;
-        }
-        void setUnitSlip(double inunit_slip) {
-            unit_slip = inunit_slip;
-        }
-
-        double getLambda() const {
-            return lambda;
-        }
-        double getMu() const {
-            return mu;
-        }
-        void setLambda(double in_lambda) {
-            lambda = in_lambda;
-        }
-        void setMu(double in_mu) {
-            mu = in_mu;
-        }
 
         void get_rake_and_normal_stress_due_to_block(double stresses[2], const Block &source_block) const;
 
