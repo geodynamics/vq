@@ -219,11 +219,11 @@ std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::
 /*!
  Computes CFF values for all blocks on this node.
  */
-void VCSimulation::computeCFFs(bool in_event) {
+void VCSimulation::computeCFFs(void) {
     int         i;
 
     for (i=0; i<numLocalBlocks(); ++i) {
-        getBlock(getGlobalBID(i)).calcCFF(in_event);
+        getBlock(getGlobalBID(i)).calcCFF();
     }
 }
 

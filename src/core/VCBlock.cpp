@@ -180,14 +180,12 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv) {
 
 void Block::clear(void) {
     quakelib::SimElement::clear();
-    is_valid = false;
     id = UNDEFINED_BLOCK_ID;
     fid = UNDEFINED_FAULT_ID;
     sid = UNDEFINED_SECTION_ID;
     self_shear = self_normal = dynamic_val = stress_drop = init_shear_stress = 0;
     init_normal_stress = rhogd = friction_val = 0;
     fault_name.clear();
-    active_dynamic_val = 1.0;
 }
 
 void Block::calcFriction(void) {
@@ -202,61 +200,11 @@ bool Block::dynamicFailure(const FaultID &event_fault) const {
     return (fid == event_fault &&
             state.cff > state.cff0 &&
             state.cff > getStressDrop() &&
-            (state.cff0-state.cff)/state.cff0 > active_dynamic_val);
+            fabs((state.cff0-state.cff)/state.cff0) > dynamic_val);
 }
 
-bool Block::additionalFailure(void) const {
-    return (state.stressS[0] > 0.0 && (state.cff-state.Fcff)/state.cff > dynamic_val);
-}
-
-void Block::calcCFF(bool in_event) {
-    if (in_event) {
-        if (failed) {
-            if (failed_this_sweep) {
-                if (state.FstressS[0] > state.stressS[0] ) {
-                    state.stressS[0] =  2.0 * state.stressS[0] - state.FstressS[0];
-                } else {
-                    state.stressS[0] = state.FstressS[0];
-                }
-
-                //double new_stress = state.FstressS[0];//state.stressS[0] - (state.FstressS0 - state.FstressS[0]);
-                if (state.stressS[0] < 0) {
-                    state.stressS[0] = 0;
-                }
-
-
-
-                ////state.stressS[0] -= state.FstressS0 - state.FstressS[0];
-                //state.stressN[0] -= state.FstressN0 - state.FstressN[0];
-                //state.FstressS[0] = state.stressS[0];
-                //state.FstressN[0] = state.stressN[0];
-                state.stressN[0] = state.FstressN[0];
-                state.FstressS[0] = state.stressS[0];
-                state.cff = state.stressS[0] - friction()*state.stressN[0];
-                failed_this_sweep = false;
-            }
-
-            state.Fcff = state.FstressS[0] - friction()*state.FstressN[0];
-
-            //if (state.Fcff > 0 ) {
-            //  state.Fcff = 0;
-            //}
-
-
-        } else {
-            state.stressS[0] = state.FstressS[0];
-            state.stressN[0] = state.FstressN[0];
-            state.cff = state.stressS[0] - friction()*state.stressN[0];
-            state.Fcff = state.cff;
-        }
-    } else {
-        state.FstressS[0] = state.stressS[0];
-        state.FstressN[0] = state.stressN[0];
-        state.cff = state.stressS[0] - friction()*state.stressN[0];
-        state.Fcff = state.FstressS[0] - friction()*state.FstressN[0];
-    }
-
-    //state.cff = state.stressS[0] - stress_drop;
+void Block::calcCFF(void) {
+    state.cff = fabs(state.stressS[0]) - fabs(friction()*state.stressN[0]);
 }
 
 void Block::setStatePtrs(double *stressS, double *stressN, double *update_field) {

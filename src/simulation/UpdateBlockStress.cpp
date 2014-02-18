@@ -212,7 +212,7 @@ void UpdateBlockStress::stressRecompute(void) {
     }
 
     // Recompute the CFF on blocks based on the new shear/normal stresses
-    sim->computeCFFs(false);
+    sim->computeCFFs();
 
 }
 
