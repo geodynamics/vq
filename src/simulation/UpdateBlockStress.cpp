@@ -21,12 +21,6 @@
 #include "UpdateBlockStress.h"
 #include "SimError.h"
 
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
-
-#include <limits.h>
-
 /*!
  Initialize the stress calculation by setting initial block slip and stresses
  then calculating the stress in the whole system.

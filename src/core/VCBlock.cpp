@@ -20,19 +20,10 @@
 
 #include "VCBlock.h"
 #include "QuakeLibOkada.h"
-#include <math.h>
 #include <sstream>
 #include <string.h>
 #include <iomanip>
 #include <list>
-
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
 
 #define IM1 2147483563
 #define IM2 2147483399
