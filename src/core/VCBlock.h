@@ -347,7 +347,7 @@ class Block : public quakelib::SimElement {
             return state.cff0;
         };
         //! Set pointers into arrays for the stress values of this block
-        void setStatePtrs(double *stressS, double *stressN, double *FstressS, double *FstressN, double *update_field);
+        void setStatePtrs(double *stressS, double *stressN, double *update_field);
 
         // Functions for manipulation of block parameters
         //! Set the block ID of this block.

@@ -268,9 +268,7 @@ void Block::calcCFF(bool in_event) {
     //state.cff = state.stressS[0] - stress_drop;
 }
 
-void Block::setStatePtrs(double *stressS, double *stressN, double *FstressS, double *FstressN, double *update_field) {
-    state.FstressS = FstressS;
-    state.FstressN = FstressN;
+void Block::setStatePtrs(double *stressS, double *stressN, double *update_field) {
     state.stressS = stressS;
     state.stressN = stressN;
     state.updateField = update_field;

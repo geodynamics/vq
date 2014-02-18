@@ -240,13 +240,13 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         }
 
         // Calculate the new shear stresses and CFFs given the new update field values
-        sim->matrixVectorMultiplyAccum(sim->getFShearStressPtr(),
+        sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
                                        false);
 
         if (sim->doNormalStress()) {
-            sim->matrixVectorMultiplyAccum(sim->getFNormalStressPtr(),
+            sim->matrixVectorMultiplyAccum(sim->getNormalStressPtr(),
                                            sim->greenNormal(),
                                            sim->getUpdateFieldPtr(),
                                            false);
