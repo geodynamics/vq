@@ -65,7 +65,6 @@ class VCParams {
 
         double              dynamic;
         FrictionLawMethod   friction_law_method;
-        unsigned int        slip_scaling_threshold;
 
         double              greens_kill_distance;
         GreensCalcMethod    greens_calc_method;
@@ -135,9 +134,6 @@ class VCParams {
         };
         FrictionLawMethod getFrictionLaw(void) const {
             return friction_law_method;
-        };
-        unsigned int getSlipScalingThreshold(void) const {
-            return slip_scaling_threshold;
         };
 
         double getGreensKillDistance(void) const {

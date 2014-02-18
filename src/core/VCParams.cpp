@@ -48,7 +48,6 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     dynamic = param_file.read<double>("sim.dynamic", -1.0);
     friction_law_str = param_file.read<string>("sim.friction_law", "original");
-    slip_scaling_threshold = param_file.read<unsigned int>("sim.slip_scaling_threshold", 10);
 
     greens_kill_distance = param_file.read<double>("sim.greens.kill_distance", 0.0);
     greens_method = param_file.read<string>("sim.greens.method", "original");
