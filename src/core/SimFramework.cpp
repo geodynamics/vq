@@ -20,17 +20,11 @@
 
 #include "SimFramework.h"
 #include <iomanip>
-#include <math.h>
 #include <sstream>
 #include <stdexcept>
-#include <string.h>
 
 #ifdef _OPENMP
 #include <omp.h>
-#endif
-
-#ifdef VC_HAVE_STDLIB_H
-#include <stdlib.h>
 #endif
 
 /*

@@ -25,7 +25,11 @@
 void GreensFileOutput::initDesc(const SimFramework *_sim) const {
     const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
 
+#ifdef HDF5_FOUND
     sim->console() << "# Greens output file: " << sim->getGreensOutfile() << std::endl;
+#else
+    sim->console() << "# ERROR: Greens output file requires HDF5, will not be generated" << std::endl;
+#endif
 }
 
 /*!
@@ -34,6 +38,7 @@ void GreensFileOutput::initDesc(const SimFramework *_sim) const {
  can write in parallel.
  */
 void GreensFileOutput::init(SimFramework *_sim) {
+#ifdef HDF5_FOUND
     VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
     std::string             file_name = sim->getGreensOutfile();
     unsigned int            green_dim;
@@ -63,4 +68,5 @@ void GreensFileOutput::init(SimFramework *_sim) {
     delete shear_vals;
     delete norm_vals;
     delete h5_greens_data;
+#endif
 }

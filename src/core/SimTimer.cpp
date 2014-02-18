@@ -23,7 +23,6 @@
 #include "QuakeLibUtil.h"
 
 #include <iomanip>
-#include <math.h>
 #include <stdexcept>
 #include <valarray>
 

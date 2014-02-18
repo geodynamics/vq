@@ -25,6 +25,10 @@
 
 #include "config.h"
 
+#ifdef VC_HAVE_MATH_H
+#include <math.h>
+#endif
+
 #ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2013 Eric M. Heien, Michael K. Sachs, John B. Rundle
+// Copyright (c) 2012-2014 Eric M. Heien, Michael K. Sachs, John B. Rundle
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),

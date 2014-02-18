@@ -18,13 +18,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include <map>
-
 #include "config.h"
 
 #ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
+
+#ifdef VC_HAVE_MATH_H
+#include <math.h>
+#endif
+
+#ifdef VC_HAVE_STRING_H
+#include <string.h>
+#endif
+
+#ifdef VC_HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+#include <map>
 
 #include "SimTimer.h"
 

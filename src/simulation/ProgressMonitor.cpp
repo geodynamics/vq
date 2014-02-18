@@ -57,7 +57,6 @@ void ProgressMonitor::init(SimFramework *_sim) {
     sim->console() << "# **********************************************" << std::endl;
     sim->console() << "# ***" << std::endl;
     sim->console() << std::setw(width) << std::left << "# *** Blocks" << ": " << sim->numGlobalBlocks() << std::endl;
-    //sim->console() << std::setw(width) << std::left << "# *** Layers" << ": " << sim->numLayers() << std::endl;
     sim->console() << std::setw(width) << std::left << "# *** Faults" << ": " << sim->numFaults() << std::endl;
     sim->console() << std::setw(width) << std::left << "# ***" << std::endl;
     sim->console() << std::setw(width) << std::left << "# *** Present Time (years)" << ": " << sim->getYear() << std::endl;

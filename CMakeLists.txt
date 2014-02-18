@@ -10,6 +10,7 @@ INCLUDE (CTest)
 # Check for common include files
 INCLUDE (CheckIncludeFiles)
 CHECK_INCLUDE_FILES ("sys/time.h" VC_HAVE_SYS_TIME_H)
+CHECK_INCLUDE_FILES ("math.h" VC_HAVE_MATH_H)
 CHECK_INCLUDE_FILES ("stdlib.h" VC_HAVE_STDLIB_H)
 CHECK_INCLUDE_FILES ("unistd.h" VC_HAVE_UNISTD_H)
 
