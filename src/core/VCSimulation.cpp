@@ -21,8 +21,7 @@
 #include "VCSimulation.h"
 #include "SimFramework.h"
 #include "SimError.h"
-#include <limits.h>
-#include <float.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <list>
@@ -157,26 +156,6 @@ void VCSimulation::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, 
     for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
         fault_id = getBlock(*it).getFaultID();
         fault_block_mapping[fault_id].insert(*it);
-    }
-}
-
-/*!
- Get a mapping of faults to current failure area.
- */
-void VCSimulation::getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    FaultID                         fault_id;
-    double                          block_area;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        fault_id = getBlock(*it).getFaultID();
-        block_area = getBlock(*it).get_area();
-
-        if (fault_failure_area_mapping.find(fault_id) == fault_failure_area_mapping.end() ) {
-            fault_failure_area_mapping[fault_id] = block_area;
-        } else {
-            fault_failure_area_mapping[fault_id] += block_area;
-        }
     }
 }
 
@@ -703,7 +682,7 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
             cur_sweep.setSlipAndArea(bid,
                                      all_blocks[i].slip,
                                      getBlock(bid).get_area(),
-                                     getBlock(bid).getMu());
+                                     getBlock(bid).lame_mu());
             cur_sweep.setInitStresses(bid,
                                       all_blocks[i].init_shear,
                                       all_blocks[i].init_normal);

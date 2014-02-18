@@ -27,6 +27,14 @@
 #include "VCCommPartition.h"
 #include "HDF5Data.h"
 
+#ifdef VC_HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
+#ifdef VC_HAVE_FLOAT_H
+#include <float.h>
+#endif
+
 #ifndef _VCSIMULATION_H_
 #define _VCSIMULATION_H_
 
@@ -74,7 +82,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void getFaultNames(std::map<FaultID, std::string> &fault_names) const;
         void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
         void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
-        void getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const;
 
         void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
 

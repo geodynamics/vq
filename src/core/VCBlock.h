@@ -459,8 +459,6 @@ class Block : public quakelib::SimElement {
         static std::string getStateHeader(void) {
             return "       cff updateField   stressS   stressN";
         };
-        std::string header(void) const;
-        std::string headerUnits(void) const;
 };
 
 typedef std::vector<Block> BlockList;
