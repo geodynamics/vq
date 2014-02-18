@@ -38,9 +38,10 @@
 VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
     srand(time(0));
 
-    // TODO: more thorough argument checking
-    if (argc == 1) read_params("params.d");
-    else read_params(argv[argc-1]);
+    // Ensure we are given the parameter file name
+    assertThrow(argc == 2, "");
+    
+    read_params(argv[argc-1]);
 
     // Check validity of parameters
     // TODO: add more checks here
