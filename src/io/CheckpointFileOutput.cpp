@@ -38,11 +38,13 @@ void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, co
         checkpoint_set[bid] = sim->getBlock(bid).state.readCheckpointData();
     }
 
+#ifdef HDF5_FOUND
     HDF5CheckpointWriter checkpoint_file(ckpt_file_name,
                                          sim->numGlobalBlocks(),
                                          sim->getYear(),
                                          sim->getEventCount(),
                                          checkpoint_set);
+#endif
 }
 
 SimRequest CheckpointFileOutput::run(SimFramework *_sim) {
