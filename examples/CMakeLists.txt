@@ -15,7 +15,7 @@ FOREACH(RES ${RESOLUTIONS})
     SET(SWEEP_FILE ${CMAKE_CURRENT_BINARY_DIR}/none/sweeps_${RES}.txt)
 
     # Test that the mesher works
-    ADD_TEST(NAME mesh_single_${RES} COMMAND ${SETUP_SCRIPT} ${RES} none 0.0)
+    ADD_TEST(NAME mesh_single_${RES} COMMAND ${SETUP_SCRIPT} ${RES} none)
     # Test that the simulation runs with the resulting mesh
     ADD_TEST(NAME run_single_${RES} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/none/ COMMAND vc params_${RES}.d)
     SET_TESTS_PROPERTIES (run_single_${RES} PROPERTIES DEPENDS mesh_single_${RES})
@@ -36,7 +36,7 @@ FOREACH(RES ${RESOLUTIONS})
     SET(SWEEP_FILE ${CMAKE_CURRENT_BINARY_DIR}/taper/sweeps_${RES}.txt)
 
     # Test that the mesher works
-    ADD_TEST(NAME mesh_taper_${RES} COMMAND ${SETUP_SCRIPT} ${RES} taper 0.0)
+    ADD_TEST(NAME mesh_taper_${RES} COMMAND ${SETUP_SCRIPT} ${RES} taper)
     # Test that the simulation runs with the resulting mesh
     ADD_TEST(NAME run_taper_${RES} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/taper/ COMMAND vc params_${RES}.d)
     SET_TESTS_PROPERTIES (run_taper_${RES} PROPERTIES DEPENDS mesh_taper_${RES})
@@ -51,7 +51,7 @@ FOREACH(RES ${RESOLUTIONS})
     SET(SWEEP_FILE ${CMAKE_CURRENT_BINARY_DIR}/taper_renorm/sweeps_${RES}.txt)
 
     # Test that the mesher works
-    ADD_TEST(NAME mesh_taper_renorm_${RES} COMMAND ${SETUP_SCRIPT} ${RES} taper_renorm 0.0)
+    ADD_TEST(NAME mesh_taper_renorm_${RES} COMMAND ${SETUP_SCRIPT} ${RES} taper_renorm)
     # Test that the simulation runs with the resulting mesh
     ADD_TEST(NAME run_taper_renorm_${RES} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/taper_renorm/ COMMAND vc params_${RES}.d)
     SET_TESTS_PROPERTIES (run_taper_renorm_${RES} PROPERTIES DEPENDS mesh_taper_renorm_${RES})
