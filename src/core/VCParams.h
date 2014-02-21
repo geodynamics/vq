@@ -34,12 +34,6 @@ enum GreensCalcMethod {
     GREENS_CALC_STANDARD        // use the new Okada class to calculate Greens functions
 };
 
-enum FrictionLawMethod {
-    FRIC_LAW_UNDEFINED,         // undefined behavior
-    FRIC_LAW_ORIG,              // Original friction law where blocks slip full amount each time
-    FRIC_LAW_STEPPED            // Updated friction law where slip is proportional to number of ruptured blocks
-};
-
 /*!
  The set of possible parameters for a VC simulation.
  These are described in detail in the example/sample_params.d file.
@@ -64,7 +58,6 @@ class VCParams {
         unsigned int        progress_period;
 
         double              dynamic;
-        FrictionLawMethod   friction_law_method;
 
         double              greens_kill_distance;
         GreensCalcMethod    greens_calc_method;
@@ -131,9 +124,6 @@ class VCParams {
 
         double getDynamic(void) const {
             return dynamic;
-        };
-        FrictionLawMethod getFrictionLaw(void) const {
-            return friction_law_method;
         };
 
         double getGreensKillDistance(void) const {
@@ -210,6 +200,5 @@ class VCParams {
 
 std::ostream &operator<<(std::ostream &os, const VCParams &params);
 std::ostream &operator<<(std::ostream &os, const GreensCalcMethod &calc_method);
-std::ostream &operator<<(std::ostream &os, const FrictionLawMethod &calc_method);
 
 #endif

@@ -86,15 +86,6 @@ void VCParams::read_params(const std::string &param_file_name) {
         greens_calc_method = GREENS_CALC_UNDEFINED;
     }
 
-    // Parse the friction law method string
-    if (!friction_law_str.compare("original")) {
-        friction_law_method = FRIC_LAW_ORIG;
-    } else if (!friction_law_str.compare("stepped")) {
-        friction_law_method = FRIC_LAW_STEPPED;
-    } else {
-        friction_law_method = FRIC_LAW_UNDEFINED;
-    }
-
     //std::cout << *this;
 }
 
@@ -110,24 +101,6 @@ std::ostream &operator<<(std::ostream &os, const GreensCalcMethod &calc_method) 
 
         case GREENS_CALC_BARNES_HUT:
             os << "bh";
-            break;
-
-        default:
-            os << "undefined";
-            break;
-    }
-
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const FrictionLawMethod &calc_method) {
-    switch (calc_method) {
-        case FRIC_LAW_ORIG:
-            os << "original";
-            break;
-
-        case FRIC_LAW_STEPPED:
-            os << "stepped";
             break;
 
         default:
@@ -155,7 +128,6 @@ std::ostream &operator<<(std::ostream &os, const VCParams &params) {
     os << "sim.progress.period\t\t\t\t\t= " << params.progress_period << "\n";
 
     os << "sim.dynamic\t\t\t\t\t\t\t= " << params.dynamic << "\n";
-    os << "sim.friction_law\t\t\t\t\t= " << params.friction_law_method << "\n";
 
     os << "sim.greens.kill_distance\t\t\t= " << params.greens_kill_distance << "\n";
     os << "sim.greens.method\t\t\t\t\t\t= " << params.greens_calc_method << "\n";
