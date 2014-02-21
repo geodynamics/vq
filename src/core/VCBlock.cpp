@@ -125,8 +125,8 @@ void Block::clear(void) {
     id = UNDEFINED_BLOCK_ID;
     fid = UNDEFINED_FAULT_ID;
     sid = UNDEFINED_SECTION_ID;
-    self_shear = self_normal = dynamic_val = stress_drop = init_shear_stress = 0;
-    init_normal_stress = rhogd = friction_val = 0;
+    self_shear = self_normal = dynamic_val = stress_drop = std::numeric_limits<float>::quiet_NaN();
+    init_shear_stress = init_normal_stress = rhogd = friction_val = std::numeric_limits<float>::quiet_NaN();
 }
 
 void Block::calcFriction(void) {
@@ -140,7 +140,7 @@ bool Block::cffFailure(void) const {
 bool Block::dynamicFailure(const FaultID &event_fault) const {
     return (fid == event_fault &&
             state.cff > state.cff0 &&
-            state.cff > getStressDrop() &&
+            //state.cff > getStressDrop() &&
             fabs((state.cff0-state.cff)/state.cff0) > dynamic_val);
 }
 
