@@ -30,7 +30,6 @@
 #include "CheckpointFileParse.h"
 
 // Simulation related
-#include "BadFaultKill.h"
 #include "BASSAftershocks.h"
 #include "GracefulQuit.h"
 #include "GreensInit.h"
@@ -43,7 +42,7 @@
 
 int main (int argc, char **argv) {
     PluginID        read_model_file, init_blocks;
-    PluginID        greens_init, greens_outfile, bad_fault_kill;
+    PluginID        greens_init, greens_outfile;
     PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        event_output, graceful_quit;
@@ -62,9 +61,6 @@ int main (int argc, char **argv) {
 
     // Write the Greens values to a file if a file name is specified
     greens_outfile = vc_sim->registerPlugin(new GreensFileOutput, !vc_sim->getGreensOutfile().empty());
-
-    // Kill faults that drop below a certain CFF value
-    bad_fault_kill = vc_sim->registerPlugin(new BadFaultKill, vc_sim->getFaultKillCFF() < 0);
 
     // Implement Greens matrix killing if the kill distance is greater than 0
     greens_kill = vc_sim->registerPlugin(new GreensKillInteraction, vc_sim->getGreensKillDistance() > 0);
@@ -115,7 +111,6 @@ int main (int argc, char **argv) {
 
     // Sanity checking occurs after the events are run
     vc_sim->registerDependence(sanity_checking, run_event, DEP_OPTIONAL);
-    vc_sim->registerDependence(bad_fault_kill, run_event, DEP_OPTIONAL);
 
     // Output occurs after events (including aftershocks) are finished
     vc_sim->registerDependence(display_progress, run_event, DEP_OPTIONAL);

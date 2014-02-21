@@ -27,8 +27,6 @@ SET(VC_MISC
     )
 
 SET(VC_SIMULATION
-    ${VC_SIM_DIR}/BadFaultKill.cpp
-    ${VC_SIM_DIR}/BadFaultKill.h
     ${VC_SIM_DIR}/BASSAftershocks.cpp
     ${VC_SIM_DIR}/BASSAftershocks.h
     ${VC_SIM_DIR}/GracefulQuit.cpp
