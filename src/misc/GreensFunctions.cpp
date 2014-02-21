@@ -107,7 +107,7 @@ void GreensFuncCalcStandard::InnerCalcStandard(VCSimulation *sim,
     for (bit=target_blocks.begin(); bit!=target_blocks.end(); ++bit) {
         Block target_block = sim->getBlock(*bit);
 
-        target_block.get_rake_and_normal_stress_due_to_block(stress_values, source_block);
+        target_block.get_rake_and_normal_stress_due_to_block(stress_values, sim->getGreensSampleDistance(), source_block);
 
         ssh[bnum][*bit] = stress_values[0];
         snorm[bnum][*bit] = stress_values[1];
@@ -390,7 +390,7 @@ void GreensFuncCalcBarnesHut::bhInnerCalc(VCSimulation *sim, quakelib::Octree<3>
         repr_block.set_lame_mu(mean_mu);
         repr_block.set_slip_rate(mean_unit_slip);
 
-        repr_block.get_rake_and_normal_stress_due_to_block(stress_values, source_block);
+        repr_block.get_rake_and_normal_stress_due_to_block(stress_values, sim->getGreensSampleDistance(), source_block);
 
         // Set Green's values to averaged values
         for (bit=target_blocks.begin(); bit!=target_blocks.end(); ++bit) {

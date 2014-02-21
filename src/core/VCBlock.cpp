@@ -29,9 +29,7 @@
  New methods defined for the updated okada functions
  */
 
-#define TRIG_TOLERANCE 0.0001
-
-void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const Block &source_block) const {
+void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const double &sample_dist, const Block &source_block) const {
     // test block vectors. This block is the test block
     quakelib::Vec<3> rake_vec, normal_vec, center_vec;
     // source block vectors
@@ -41,7 +39,11 @@ void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const Bl
     // other stuff
     quakelib::Vec<3> rot_axis, stress_vec, shift_vec, xy_projected_source_normal;
     quakelib::Tensor<3,3> stress_tensor;
-    double theta;
+    // Points to sample the Greens function at
+    std::vector<quakelib::Vec<3> >  sample_points;
+    unsigned int                    i, n, n_horiz_samples, n_vert_samples;
+    double                          horiz_step, vert_step, horiz_pos, vert_pos;
+    double                          theta;
 
     normal_vec = normal();
     rake_vec = rake_vector();
@@ -50,49 +52,65 @@ void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const Bl
     source_normal_vec = source_block.normal();
     source_center_vec = source_block.center();
 
-    // first shift all points
-    shift_vec = quakelib::Vec<3>(source_block._vert[1][0],source_block._vert[1][1],0.0);
-    mcenter_vec = center_vec - shift_vec;
+    // Take samples of the Greens function at minimum distances and average the results
+    // This allows better convergence between models with few large blocks and models with many small blocks
+    n_horiz_samples = fmax((_vert[2] - _vert[0]).mag()/sample_dist, 1);
+    n_vert_samples = fmax((_vert[1] - _vert[0]).mag()/sample_dist, 1);
 
-    // now we need to perform a 2d rotation in the x-y plane so that the new x axis
-    // aligns with the pt3-pt2 vector of the source block. this is okada's coord sys
-    xy_projected_source_normal[0] = source_normal_vec[0];
-    xy_projected_source_normal[1] = source_normal_vec[1];
-    xy_projected_source_normal[2] = 0.0;
+    // Select a grid of N x M evenly spaced sample points on the block
+    horiz_step = 1.0/n_horiz_samples;
+    vert_step = 1.0/n_vert_samples;
+    horiz_pos = horiz_step/2;
 
-    theta = xy_projected_source_normal.vector_angle(quakelib::Vec<3>(0.0, -1.0, 0.0));
+    for (i=0; i<n_horiz_samples; ++i) {
+        vert_pos = vert_step/2;
 
-    if (normal_vec[0] >= 0.0) {
-        rot_axis = quakelib::Vec<3>(0.0, 0.0, 1.0);
-    } else {
-        rot_axis = quakelib::Vec<3>(0.0, 0.0, -1.0);
+        for (n=0; n<n_vert_samples; ++n) {
+            sample_points.push_back(interpolate_point(horiz_pos, vert_pos));
+            vert_pos += vert_step;
+        }
+
+        horiz_pos += horiz_step;
     }
 
-    mnormal_vec = normal_vec. rotate_around_axis(rot_axis, theta);
-    mrake_vec   = rake_vec.   rotate_around_axis(rot_axis, theta);
-    mcenter_vec = mcenter_vec.rotate_around_axis(rot_axis, theta);
+    stress_vec = quakelib::Vec<3>();
 
-    stress_tensor = source_block.calc_stress_tensor(mcenter_vec, slip_rate(), lame_lambda(), lame_mu());
+    for (i=0; i<sample_points.size(); ++i) {
+        // first shift all points
+        shift_vec = quakelib::Vec<3>(source_block._vert[1][0],source_block._vert[1][1],0.0);
+        //mcenter_vec = center_vec - shift_vec;
+        mcenter_vec = sample_points[i] - shift_vec;
 
-    stress_vec = stress_tensor*mnormal_vec;
+        // now we need to perform a 2d rotation in the x-y plane so that the new x axis
+        // aligns with the pt3-pt2 vector of the source block. this is okada's coord sys
+        xy_projected_source_normal[0] = source_normal_vec[0];
+        xy_projected_source_normal[1] = source_normal_vec[1];
+        xy_projected_source_normal[2] = 0.0;
 
+        theta = xy_projected_source_normal.vector_angle(quakelib::Vec<3>(0.0, -1.0, 0.0));
+
+        if (normal_vec[0] >= 0.0) {
+            rot_axis = quakelib::Vec<3>(0.0, 0.0, 1.0);
+        } else {
+            rot_axis = quakelib::Vec<3>(0.0, 0.0, -1.0);
+        }
+
+        mnormal_vec = normal_vec. rotate_around_axis(rot_axis, theta);
+        mrake_vec   = rake_vec.   rotate_around_axis(rot_axis, theta);
+        mcenter_vec = mcenter_vec.rotate_around_axis(rot_axis, theta);
+
+        // Assume unit slip of 1.0
+        stress_tensor = source_block.calc_stress_tensor(mcenter_vec, 1.0, lame_lambda(), lame_mu());
+
+        stress_vec += stress_tensor*mnormal_vec;
+    }
+
+    stress_vec *= 1.0/sample_points.size();
     stresses[0] = stress_vec.dot_product(mrake_vec);
     stresses[1] = stress_vec.dot_product(mnormal_vec);
 }
 
 /*!*/
-
-
-
-
-
-
-
-
-    }
-
-}
-
 
 std::ostream &operator<<(std::ostream &os, const BlockVal &bv) {
     if (bv.block_id == UNDEFINED_BLOCK_ID) os << "(Undef, ";

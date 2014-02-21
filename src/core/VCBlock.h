@@ -136,7 +136,7 @@ class Block : public quakelib::SimElement {
 
     public:
 
-        void get_rake_and_normal_stress_due_to_block(double stresses[2], const Block &source_block) const;
+        void get_rake_and_normal_stress_due_to_block(double stresses[2], const double &sample_dist, const Block &source_block) const;
 
         State           state;
 
@@ -247,6 +247,7 @@ class Block : public quakelib::SimElement {
             max_slip = new_max_slip;
         };
         //! Calculate the expected recurrence of this block in years.
+        // TODO: fix this, it is currently incorrect for multiple block models
         double getRecurrence(void) const {
             return stress_drop/(_slip_rate*(self_shear-self_normal*friction_val));
         };
