@@ -38,7 +38,7 @@ void VCEvent::addSweeps(EventSweeps &sweep_list) {
     for (lit=sweep_list.begin(); lit!=sweep_list.end(); ++lit) {
         for (it=lit->begin(); it!=lit->end(); ++it) {
             total_slip[it->first].slip += it->second.slip;
-            total_slip[it->first].area += it->second.area;
+            total_slip[it->first].area = it->second.area;
             total_slip[it->first].mu = it->second.mu;
         }
     }
