@@ -63,7 +63,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         ~VCSimulation(void);
 
         void init(void);
-        void finish(void);
 
         double getYear(void) const {
             return year;
@@ -76,12 +75,7 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         };
 
         int numFaults(void) const;
-        double shearStress(void);
-        double normalStress(void);
         void getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
-        void getFaultNames(std::map<FaultID, std::string> &fault_names) const;
-        void getBlockFaultIDs(FaultIDSet &fault_ids, const BlockIDSet &block_ids) const;
-        void getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const;
 
         void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
 
@@ -131,7 +125,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void distributeFailedBlocks(BlockIDSet &failed_blocks);
         void collectEventSweep(VCEventSweep &cur_sweep);
 
-        void addNeighbor(const BlockID &b1, const BlockID &b2);
         std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
         void printTimers(void);
 
@@ -140,10 +133,6 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         };
 
         void partitionBlocks(void);
-
-        static bool distanceCompare(BlockVal first, BlockVal second) {
-            return (first.val < second.val);
-        };
 
     private:
 #ifdef DEBUG

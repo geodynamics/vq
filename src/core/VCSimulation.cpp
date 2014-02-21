@@ -102,30 +102,6 @@ int VCSimulation::numFaults(void) const {
 }
 
 /*!
- Calculate the total shear stress in the simulation.
- */
-double VCSimulation::shearStress(void) {
-    BlockList::const_iterator   it;
-    double shear_stress = 0.0;
-
-    for (it=begin(); it!=end(); ++it) shear_stress += it->getShearStress();
-
-    return shear_stress;
-}
-
-/*!
- Calculate the total normal stress in the simulation.
- */
-double VCSimulation::normalStress(void) {
-    BlockList::const_iterator   it;
-    double normal_stress = 0.0;
-
-    for (it=begin(); it!=end(); ++it) normal_stress += it->getNormalStress();
-
-    return normal_stress;
-}
-
-/*!
  Calculate the stress before and after an event of the blocks that failed during the event.
  */
 void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
@@ -143,19 +119,6 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
             normal_init += getBlock(*it).getStressN0();
             normal_final += getBlock(*it).getNormalStress();
         }
-    }
-}
-
-/*!
- Get a mapping of exactly which faults are associated with a specified set of blocks.
- */
-void VCSimulation::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    FaultID                         fault_id;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        fault_id = getBlock(*it).getFaultID();
-        fault_block_mapping[fault_id].insert(*it);
     }
 }
 
@@ -192,15 +155,11 @@ void VCSimulation::determineBlockNeighbors(void) {
             if (bit->getBlockID() != iit->getBlockID() &&           // ensure blocks are not the same
                 bit->getFaultID() == iit->getFaultID() &&           // ensure blocks are on the same fault
                 bit->center().dist(iit->center()) < block_size * 2.0) { // ensure blocks are "nearby" each other
-                addNeighbor(bit->getBlockID(), iit->getBlockID());
+                neighbor_map[bit->getBlockID()].insert(iit->getBlockID());
+                neighbor_map[iit->getBlockID()].insert(bit->getBlockID());
             }
         }
     }
-}
-
-void VCSimulation::addNeighbor(const BlockID &b1, const BlockID &b2) {
-    neighbor_map[b1].insert(b2);
-    neighbor_map[b2].insert(b1);
 }
 
 std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
@@ -225,9 +184,6 @@ void VCSimulation::computeCFFs(void) {
     for (i=0; i<numLocalBlocks(); ++i) {
         getBlock(getGlobalBID(i)).calcCFF();
     }
-}
-
-void VCSimulation::finish(void) {
 }
 
 /*!
