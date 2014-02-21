@@ -39,10 +39,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(bid, it->getInitShearStress());
         sim->setNormalStress(bid, it->getInitNormalStress());
 
-        //double a = sim->getSlipDeficitNoise();        // TODO: move slip deficit noise to AddNoise class
         // noise in the range [1-a, 1+a)
-        //double rn = (1.0-a) + 2*a*it->state.rand.nextDouble();
-        //it->state.slipDeficit = -0.5*rn*it->slipCharacteristic();
         it->state.slipDeficit = 0;
 
         if (sim->isLocalBlockID(bid)) {

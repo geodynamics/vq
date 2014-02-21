@@ -50,10 +50,6 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "sim.start_year: Start year must be at least 0.");
     assertThrow(getSimStart() < getSimDuration(),
                 "sim.start_year: Start year must be before end year.");
-    assertThrow(getEventNoise()>=0 && getEventNoise()<=1,
-                "sim.noise.event: Stress noise value must be between 0 and 1.");
-    assertThrow(getSlipDeficitNoise()>=0 && getSlipDeficitNoise()<=1,
-                "sim.noise.slip_deficit: Initial slip deficit noise value must be between 0 and 1.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
                 "Greens calculation method must be either standard, Barnes Hut or file based.");
 }

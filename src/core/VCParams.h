@@ -47,11 +47,6 @@ class VCParams {
         double              year;
         double              sim_end_year;
 
-        double              noise_event;
-        double              noise_slip_deficit;
-
-        double              fault_kill_cff;
-
         int                 checkpoint_period;  // in terms of # of events between state saves
         std::string         checkpoint_save_prefix;
 
@@ -60,6 +55,7 @@ class VCParams {
         double              dynamic;
 
         double              greens_kill_distance;
+        double              greens_sample_distance;
         GreensCalcMethod    greens_calc_method;
         double              barnes_hut_theta;       // controls how much smoothing occurs in Barnes-Hutt approximation
         std::string         greens_infile;
@@ -100,17 +96,6 @@ class VCParams {
             return sim_end_year;
         };
 
-        double getEventNoise(void) const {
-            return noise_event;
-        };
-        double getSlipDeficitNoise(void) const {
-            return noise_slip_deficit;
-        };
-
-        double getFaultKillCFF(void) const {
-            return fault_kill_cff;
-        };
-
         int getCheckpointPeriod(void) const {
             return checkpoint_period;
         };
@@ -128,6 +113,9 @@ class VCParams {
 
         double getGreensKillDistance(void) const {
             return greens_kill_distance;
+        };
+        double getGreensSampleDistance(void) const {
+            return greens_sample_distance;
         };
         GreensCalcMethod getGreensCalcMethod(void) const {
             return greens_calc_method;
