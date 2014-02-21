@@ -132,7 +132,6 @@ class Block : public quakelib::SimElement {
         double          max_slip;           // Maximum slip of this block based on whatever scaling relationship we're using
         double          friction_val;       // friction value for this block
 
-        std::string     fault_name;
         bool            failed;
 
     public:
@@ -302,15 +301,6 @@ class Block : public quakelib::SimElement {
         void setRhogd(const double &new_rhogd) {
             rhogd = new_rhogd;
             calcFriction();
-        };
-
-        //! Get the fault name for this block.
-        std::string getFaultName(void) const {
-            return fault_name;
-        };
-        //! Set the fault name for this block.
-        void setFaultName(const std::string &new_fault_name) {
-            fault_name = new_fault_name;
         };
 
         //! Get the string header for state files.

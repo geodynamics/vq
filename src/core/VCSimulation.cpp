@@ -39,7 +39,7 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
 
     // Ensure we are given the parameter file name
     assertThrow(argc == 2, "");
-    
+
     read_params(argv[argc-1]);
 
     // Check validity of parameters

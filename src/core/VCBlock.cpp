@@ -109,7 +109,6 @@ void Block::clear(void) {
     sid = UNDEFINED_SECTION_ID;
     self_shear = self_normal = dynamic_val = stress_drop = init_shear_stress = 0;
     init_normal_stress = rhogd = friction_val = 0;
-    fault_name.clear();
 }
 
 void Block::calcFriction(void) {

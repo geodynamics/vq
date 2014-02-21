@@ -43,7 +43,7 @@ SimRequest BadFaultKill::run(SimFramework *_sim) {
                 sim->setGreens(gid, i, 0, 0);
             }
 
-            sim->console() << "# WARNING: Killed segment " << gid << " (" << sim->getBlock(gid).getFaultName() << ") due to low CFF (" << cff << ")" << std::endl;
+            sim->console() << "# WARNING: Killed segment " << gid << " due to low CFF (" << cff << ")" << std::endl;
         }
     }
 
