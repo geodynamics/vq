@@ -31,37 +31,6 @@
 
 #define GREEN_VAL       double
 
-class VCRand {
-    public:
-        enum {NTAB=32, INT_SIZE = NTAB+3};
-        struct State {
-            int idum1;
-            int idum2;
-            int iy;
-            int iv[NTAB];
-        };
-
-        VCRand(int seed = 17) {
-            init(seed);
-        }
-        VCRand(const VCRand::State &state);
-        void init(int seed);
-
-        double nextDouble();
-        int nextInt(int max) {
-            return ((int)(max*nextDouble()))%max;
-        }
-
-        void save(VCRand::State &state);
-        void save(int *stream);
-        void init(int *stream);
-    private:
-        int idum1;
-        int idum2;
-        int iy;
-        int iv[NTAB];
-};
-
 typedef unsigned int BlockID;
 typedef unsigned int FaultID;
 typedef unsigned int SectionID;
@@ -132,9 +101,6 @@ class State {
         double *stressN;
         //! ptr to update_field in simulation
         double *updateField;
-
-        //! To have identical mpi and serial results
-        VCRand          rand;
 
         StateCheckpointData readCheckpointData(void) const;
         void storeCheckpointData(const StateCheckpointData &ckpt_data);

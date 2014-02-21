@@ -39,8 +39,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(bid, it->getInitShearStress());
         sim->setNormalStress(bid, it->getInitNormalStress());
 
-        // Give each block a different random seed based on the block ID
-        it->state.rand.init(bid*17);
         //double a = sim->getSlipDeficitNoise();        // TODO: move slip deficit noise to AddNoise class
         // noise in the range [1-a, 1+a)
         //double rn = (1.0-a) + 2*a*it->state.rand.nextDouble();
