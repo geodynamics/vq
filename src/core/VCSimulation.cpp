@@ -38,7 +38,7 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
     srand(time(0));
 
     // Ensure we are given the parameter file name
-    assertThrow(argc == 2, "");
+    assertThrow(argc == 2, "usage: vc param_file");
 
     read_params(argv[argc-1]);
 

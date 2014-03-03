@@ -40,7 +40,6 @@ typedef unsigned int SectionID;
 #define UNDEFINED_SECTION_ID    UINT_MAX
 #define ALL_FAULTS_ID           UINT_MAX-1
 
-// TODO: add VCRand?
 struct StateCheckpointData {
     double      slipDeficit;
     double      cff;
