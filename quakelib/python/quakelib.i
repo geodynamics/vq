@@ -4,17 +4,13 @@
 %include "std_map.i"
 %{
 #include "QuakeLib.h"
-#include "QuakeLibEQSim.h"
+#include "QuakeLibIO.h"
 #include "QuakeLibUtil.h"
 #include "QuakeLibOkada.h"
+#include "QuakeLibEQSim.h"
 
 using namespace quakelib;
 %}
-
-%include "QuakeLib.h"
-%include "QuakeLibEQSim.h"
-%include "QuakeLibOkada.h"
-%include "QuakeLibUtil.h"
 
 // Ignore the reader/writer classes since the user shouldn't be using these anyway
 %ignore quakelib::EQSimFileReader;
@@ -24,40 +20,12 @@ using namespace quakelib;
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
-// %template(EventElementList) std::vector< quakelib::EventElement<4> >;
-%template(VectorList) std::vector< quakelib::Vec<3> >;
-%template(FloatList) std::vector< double >;
 
-// Add an append method and methods to allow these objects to be pickled
-%extend std::vector< quakelib::EventElement<4> > {
-	void append( quakelib::EventElement<4> item) {(*$self).push_back(item);};
-	%insert("python") %{
-	def __setstate__(self, state):
-        self.__init__(*state['args'])%}
-	%insert("python") %{
-    def __getstate__(self):
-        return {'args': self.args}%}
-};
-
-%extend std::vector< quakelib::Vec<3> > {
-	void append( quakelib::Vec<3> item ) {(*$self).push_back(item);};
-	%insert("python") %{
-	def __setstate__(self, state):
-        self.__init__(*state['args'])%}
-	%insert("python") %{
-    def __getstate__(self):
-        return {'args': self.args}%}
-};
-
-%extend std::vector< double > {
-	void append( float item ) {(*$self).push_back(item);};
-	%insert("python") %{
-	def __setstate__(self, state):
-        self.__init__(*state['args'])%}
-	%insert("python") %{
-    def __getstate__(self):
-        return {'args': self.args}%}
-};
+%include "QuakeLib.h"
+%include "QuakeLibIO.h"
+%include "QuakeLibUtil.h"
+%include "QuakeLibOkada.h"
+%include "QuakeLibEQSim.h"
 
 // Create aliases for 2D and 3D vector templates
 %template(Vec2) quakelib::Vec<2>;
@@ -91,78 +59,8 @@ using namespace quakelib;
 %template(Octree2) quakelib::Octree<2>;
 %template(Octree3) quakelib::Octree<3>;
 
-// %template(SimElement4) quakelib::SimElement<4>;
-// %template(EventElement4) quakelib::EventElement<4>;
-
 // TODO: check all these for potential buffer overflows
 // Python __str__ and __repr__ functions for QuakeLib classes
-/*
-%extend quakelib::VectorField {
-
-	char *__repr__(void) {
-		static char tmp[1024];
-		sprintf(tmp, "quakelib.VectorField(dx len:%zu, dy len:%zu, dz len:%zu)", $self->dx.size(), $self->dy.size(), $self->dz.size());
-		return tmp;
-	}
-};
-*/
-
-/*
-%extend quakelib::Event {
-	%insert("python") %{
-		__safe_for_unpickling__ = True
-		def __reduce__(self): return (quakelib::Event, self.Get())
-		def Get(self):
-			print self
-	#def __getstate__(self):
-	#	return {'args': self.args}
-		
-	#def __setstate__(self, dict):
-	#	self.__init__(*state['args'])
-	%}
-
-}
-
-%pythoncode %{
-class PickalableSWIG:
-
-    def __setstate__(self, state):
-        self.__init__(*state['args'])
-
-    def __getstate__(self):
-        return {'args': self.args}
-
-class P_Event(Event, PickalableSWIG):
-
-    def __init__(self, *args):
-        self.args = args
-        Event.__init__(self)
-
-class P_VectorList(VectorList, PickalableSWIG):
-
-    def __init__(self, *args):
-        self.args = args
-        VectorList.__init__(self)
-%}
-
-%extend quakelib::Event {
-	%insert("python") %{
-	def P_event_displacements(self, *args):
-		ret = P_VectorList()
-		ret.assign(_quakelib.Event_event_displacements(self, *args))
-		return ret
-	%}
-};
-
-%extend quakelib::Conversion {
-	%insert("python") %{
-	def P_convertArray2xyz(self, *args):
-		ret = P_VectorList()
-		ret.assign(_quakelib.Conversion_convertArray2xyz(self, *args))
-		return ret
-	%}
-};
-*/
 %extend quakelib::LatLonDepth {
 	char *__str__(void) {
 		static char			tmp[1024];
