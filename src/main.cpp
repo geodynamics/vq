@@ -30,9 +30,7 @@
 #include "CheckpointFileParse.h"
 
 // Simulation related
-#include "BadFaultKill.h"
 #include "BASSAftershocks.h"
-#include "BlockValCompute.h"
 #include "GracefulQuit.h"
 #include "GreensInit.h"
 #include "GreensKillInteraction.h"
@@ -43,8 +41,8 @@
 #include "VCInitBlocks.h"
 
 int main (int argc, char **argv) {
-    PluginID        read_model_file, init_blocks, block_val_compute;
-    PluginID        greens_init, greens_outfile, bad_fault_kill;
+    PluginID        read_model_file, init_blocks;
+    PluginID        greens_init, greens_outfile;
     PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        event_output, graceful_quit;
@@ -58,18 +56,11 @@ int main (int argc, char **argv) {
     // EqSim files are parsed if a geometry file name is specified
     read_model_file = vc_sim->registerPlugin(new ReadModelFile, !vc_sim->getModelFile().empty());
 
-    // Calculate block values if we aren't using EqSim files
-    // TODO: put this back in
-    //block_val_compute = vc_sim->registerPlugin(new BlockValCompute, vc_sim->getEqSimGeometryFile().empty());
-
     // Calculate Greens function if a calculation method is specified
     greens_init = vc_sim->registerPlugin(new GreensInit, vc_sim->getGreensCalcMethod() != GREENS_CALC_NONE);
 
     // Write the Greens values to a file if a file name is specified
     greens_outfile = vc_sim->registerPlugin(new GreensFileOutput, !vc_sim->getGreensOutfile().empty());
-
-    // Kill faults that drop below a certain CFF value
-    bad_fault_kill = vc_sim->registerPlugin(new BadFaultKill, vc_sim->getFaultKillCFF() < 0);
 
     // Implement Greens matrix killing if the kill distance is greater than 0
     greens_kill = vc_sim->registerPlugin(new GreensKillInteraction, vc_sim->getGreensKillDistance() > 0);
@@ -106,13 +97,12 @@ int main (int argc, char **argv) {
     vc_sim->registerDependence(greens_init, graceful_quit, DEP_OPTIONAL);
 
     // Block modifications occur after block initialization
-    vc_sim->registerDependence(block_val_compute, greens_init, DEP_OPTIONAL);
     vc_sim->registerDependence(greens_outfile, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_kill, greens_init, DEP_REQUIRE);
     vc_sim->registerDependence(greens_outfile, greens_kill, DEP_OPTIONAL);
 
     // The core of the simulation, which must occur after Greens function is calculated
-    vc_sim->registerDependence(update_block_stress, block_val_compute, DEP_OPTIONAL);
+    vc_sim->registerDependence(update_block_stress, greens_outfile, DEP_OPTIONAL);
     vc_sim->registerDependence(update_block_stress, greens_kill, DEP_OPTIONAL);
     vc_sim->registerDependence(run_event, update_block_stress, DEP_REQUIRE);
 
@@ -121,7 +111,6 @@ int main (int argc, char **argv) {
 
     // Sanity checking occurs after the events are run
     vc_sim->registerDependence(sanity_checking, run_event, DEP_OPTIONAL);
-    vc_sim->registerDependence(bad_fault_kill, run_event, DEP_OPTIONAL);
 
     // Output occurs after events (including aftershocks) are finished
     vc_sim->registerDependence(display_progress, run_event, DEP_OPTIONAL);

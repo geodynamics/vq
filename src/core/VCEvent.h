@@ -41,7 +41,6 @@ typedef std::set<BlockID> BlockIDSet;
 typedef std::set<FaultID> FaultIDSet;
 typedef std::set<SectionID> SectionIDSet;
 typedef std::map<FaultID, BlockIDSet> FaultBlockMapping;
-typedef std::map<FaultID, double> FaultFailureAreaMapping;
 typedef std::map<SectionID, BlockIDSet> SectionBlockMapping;
 typedef std::vector<FaultID> FaultIDList;
 typedef std::vector<SectionID> SectionIDList;

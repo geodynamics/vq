@@ -34,12 +34,6 @@ enum GreensCalcMethod {
     GREENS_CALC_STANDARD        // use the new Okada class to calculate Greens functions
 };
 
-enum FrictionLawMethod {
-    FRIC_LAW_UNDEFINED,         // undefined behavior
-    FRIC_LAW_ORIG,              // Original friction law where blocks slip full amount each time
-    FRIC_LAW_STEPPED            // Updated friction law where slip is proportional to number of ruptured blocks
-};
-
 /*!
  The set of possible parameters for a VC simulation.
  These are described in detail in the example/sample_params.d file.
@@ -53,21 +47,15 @@ class VCParams {
         double              year;
         double              sim_end_year;
 
-        double              noise_event;
-        double              noise_slip_deficit;
-
-        double              fault_kill_cff;
-
         int                 checkpoint_period;  // in terms of # of events between state saves
         std::string         checkpoint_save_prefix;
 
         unsigned int        progress_period;
 
         double              dynamic;
-        FrictionLawMethod   friction_law_method;
-        unsigned int        slip_scaling_threshold;
 
         double              greens_kill_distance;
+        double              greens_sample_distance;
         GreensCalcMethod    greens_calc_method;
         double              barnes_hut_theta;       // controls how much smoothing occurs in Barnes-Hutt approximation
         std::string         greens_infile;
@@ -108,17 +96,6 @@ class VCParams {
             return sim_end_year;
         };
 
-        double getEventNoise(void) const {
-            return noise_event;
-        };
-        double getSlipDeficitNoise(void) const {
-            return noise_slip_deficit;
-        };
-
-        double getFaultKillCFF(void) const {
-            return fault_kill_cff;
-        };
-
         int getCheckpointPeriod(void) const {
             return checkpoint_period;
         };
@@ -133,15 +110,12 @@ class VCParams {
         double getDynamic(void) const {
             return dynamic;
         };
-        FrictionLawMethod getFrictionLaw(void) const {
-            return friction_law_method;
-        };
-        unsigned int getSlipScalingThreshold(void) const {
-            return slip_scaling_threshold;
-        };
 
         double getGreensKillDistance(void) const {
             return greens_kill_distance;
+        };
+        double getGreensSampleDistance(void) const {
+            return greens_sample_distance;
         };
         GreensCalcMethod getGreensCalcMethod(void) const {
             return greens_calc_method;
@@ -214,6 +188,5 @@ class VCParams {
 
 std::ostream &operator<<(std::ostream &os, const VCParams &params);
 std::ostream &operator<<(std::ostream &os, const GreensCalcMethod &calc_method);
-std::ostream &operator<<(std::ostream &os, const FrictionLawMethod &calc_method);
 
 #endif

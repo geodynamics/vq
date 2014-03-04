@@ -44,9 +44,6 @@ class UpdateBlockStress : public SimPlugin {
     private:
         void nextTimeStep(BlockVal &fail_time);
         void stressRecompute(void);
-        //void stressRecompute(double backslip);
-        //void stressRecomputeB(void);
-        //void stressRecompute(BlockVal &fail_time);
 
         double          *tmpBuffer;
         VCSimulation    *sim;

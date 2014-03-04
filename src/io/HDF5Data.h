@@ -244,26 +244,6 @@ class HDF5Data {
         };
 };
 
-typedef std::pair<const double, VCEvent *> EventYear;
-typedef std::multimap<double, VCEvent *> EventYearMap;
-
-class HDF5DataReader : public HDF5Data {
-    private:
-        //! Current offset into the events file, so new events can immediately be read when they are appended
-        unsigned int                last_event_read;
-
-        //! Set of events indexed by year
-        EventYearMap                event_set;
-
-        void getStartEndYears(double &start_year, double &end_year) const;
-
-    public:
-        typedef EventYearMap::iterator          iterator;
-        typedef EventYearMap::const_iterator    const_iterator;
-
-        HDF5DataReader(const std::string &hdf5_file_name);
-};
-
 class HDF5DataWriter : public HDF5Data {
     public:
         HDF5DataWriter(const std::string &hdf5_file_name);

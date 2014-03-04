@@ -19,8 +19,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "SanityCheck.h"
-#include <cmath>
-#include <iomanip>
 
 void SanityCheck::initDesc(const SimFramework *_sim) const {
     const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);

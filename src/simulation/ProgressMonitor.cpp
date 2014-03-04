@@ -22,14 +22,6 @@
 #include <iomanip>
 #include <numeric>
 
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
-
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
 void ProgressMonitor::initDesc(const SimFramework *_sim) const {
     const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
 

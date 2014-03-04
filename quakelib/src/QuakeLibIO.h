@@ -25,7 +25,7 @@
 #include <string.h>
 #endif
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #endif
@@ -62,7 +62,7 @@ namespace quakelib {
     struct FieldDesc {
         std::string name;
         std::string details;
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
         size_t      offset;
         hid_t       type;
         size_t      size;
@@ -156,7 +156,7 @@ namespace quakelib {
                 _data._das = das;
             };
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
             static std::string hdf5_table_name(void) {
                 return "vertices";
             };
@@ -270,7 +270,7 @@ namespace quakelib {
                 _data._lame_lambda = lame_lambda;
             };
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
             static std::string hdf5_table_name(void) {
                 return "elements";
             };
@@ -329,7 +329,7 @@ namespace quakelib {
                 _data._name[NAME_MAX_LEN-1] = '\0';
             };
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
             static std::string hdf5_table_name(void) {
                 return "sections";
             };
@@ -488,7 +488,7 @@ namespace quakelib {
             std::map<UIndex, ModelElement>  _elements;
             std::map<UIndex, ModelSection>  _sections;
 
-#ifdef HAVE_HDF5
+#ifdef HDF5_FOUND
             void read_section_hdf5(const hid_t &data_file);
             void read_element_hdf5(const hid_t &data_file);
             void read_vertex_hdf5(const hid_t &data_file);

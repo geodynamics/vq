@@ -21,8 +21,7 @@
 #include "VCSimulation.h"
 #include "SimFramework.h"
 #include "SimError.h"
-#include <limits.h>
-#include <float.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <list>
@@ -39,8 +38,8 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
     srand(time(0));
 
     // Ensure we are given the parameter file name
-    assertThrow(argc == 2, "");
-    
+    assertThrow(argc == 2, "usage: vc param_file");
+
     read_params(argv[argc-1]);
 
     // Check validity of parameters
@@ -51,10 +50,6 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "sim.start_year: Start year must be at least 0.");
     assertThrow(getSimStart() < getSimDuration(),
                 "sim.start_year: Start year must be before end year.");
-    assertThrow(getEventNoise()>=0 && getEventNoise()<=1,
-                "sim.noise.event: Stress noise value must be between 0 and 1.");
-    assertThrow(getSlipDeficitNoise()>=0 && getSlipDeficitNoise()<=1,
-                "sim.noise.slip_deficit: Initial slip deficit noise value must be between 0 and 1.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
                 "Greens calculation method must be either standard, Barnes Hut or file based.");
 }
@@ -103,30 +98,6 @@ int VCSimulation::numFaults(void) const {
 }
 
 /*!
- Calculate the total shear stress in the simulation.
- */
-double VCSimulation::shearStress(void) {
-    BlockList::const_iterator   it;
-    double shear_stress = 0.0;
-
-    for (it=begin(); it!=end(); ++it) shear_stress += it->getShearStress();
-
-    return shear_stress;
-}
-
-/*!
- Calculate the total normal stress in the simulation.
- */
-double VCSimulation::normalStress(void) {
-    BlockList::const_iterator   it;
-    double normal_stress = 0.0;
-
-    for (it=begin(); it!=end(); ++it) normal_stress += it->getNormalStress();
-
-    return normal_stress;
-}
-
-/*!
  Calculate the stress before and after an event of the blocks that failed during the event.
  */
 void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
@@ -143,39 +114,6 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
             shear_final += getBlock(*it).getShearStress();
             normal_init += getBlock(*it).getStressN0();
             normal_final += getBlock(*it).getNormalStress();
-        }
-    }
-}
-
-/*!
- Get a mapping of exactly which faults are associated with a specified set of blocks.
- */
-void VCSimulation::getFaultBlockMapping(FaultBlockMapping &fault_block_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    FaultID                         fault_id;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        fault_id = getBlock(*it).getFaultID();
-        fault_block_mapping[fault_id].insert(*it);
-    }
-}
-
-/*!
- Get a mapping of faults to current failure area.
- */
-void VCSimulation::getFaultFailureAreaMapping(FaultFailureAreaMapping &fault_failure_area_mapping, const BlockIDSet &event_blocks) const {
-    BlockIDSet::const_iterator      it;
-    FaultID                         fault_id;
-    double                          block_area;
-
-    for (it=event_blocks.begin(); it!=event_blocks.end(); ++it) {
-        fault_id = getBlock(*it).getFaultID();
-        block_area = getBlock(*it).get_area();
-
-        if (fault_failure_area_mapping.find(fault_id) == fault_failure_area_mapping.end() ) {
-            fault_failure_area_mapping[fault_id] = block_area;
-        } else {
-            fault_failure_area_mapping[fault_id] += block_area;
         }
     }
 }
@@ -213,15 +151,11 @@ void VCSimulation::determineBlockNeighbors(void) {
             if (bit->getBlockID() != iit->getBlockID() &&           // ensure blocks are not the same
                 bit->getFaultID() == iit->getFaultID() &&           // ensure blocks are on the same fault
                 bit->center().dist(iit->center()) < block_size * 2.0) { // ensure blocks are "nearby" each other
-                addNeighbor(bit->getBlockID(), iit->getBlockID());
+                neighbor_map[bit->getBlockID()].insert(iit->getBlockID());
+                neighbor_map[iit->getBlockID()].insert(bit->getBlockID());
             }
         }
     }
-}
-
-void VCSimulation::addNeighbor(const BlockID &b1, const BlockID &b2) {
-    neighbor_map[b1].insert(b2);
-    neighbor_map[b2].insert(b1);
 }
 
 std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
@@ -240,15 +174,12 @@ std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::
 /*!
  Computes CFF values for all blocks on this node.
  */
-void VCSimulation::computeCFFs(bool in_event) {
+void VCSimulation::computeCFFs(void) {
     int         i;
 
     for (i=0; i<numLocalBlocks(); ++i) {
-        getBlock(getGlobalBID(i)).calcCFF(in_event);
+        getBlock(getGlobalBID(i)).calcCFF();
     }
-}
-
-void VCSimulation::finish(void) {
 }
 
 /*!
@@ -703,7 +634,7 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
             cur_sweep.setSlipAndArea(bid,
                                      all_blocks[i].slip,
                                      getBlock(bid).get_area(),
-                                     getBlock(bid).getMu());
+                                     getBlock(bid).lame_mu());
             cur_sweep.setInitStresses(bid,
                                       all_blocks[i].init_shear,
                                       all_blocks[i].init_normal);

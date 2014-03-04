@@ -61,16 +61,11 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
     assertThrow(shear_stress, "Not enough memory to allocate shear stress array.");
     normal_stress = (double *)malloc(sizeof(double)*global_size);
     assertThrow(normal_stress, "Not enough memory to allocate normal stress array.");
-    f_shear_stress = (double *)malloc(sizeof(double)*global_size);
-    assertThrow(f_shear_stress, "Not enough memory to allocate shear stress array.");
-    f_normal_stress = (double *)malloc(sizeof(double)*global_size);
-    assertThrow(f_normal_stress, "Not enough memory to allocate normal stress array.");
     update_field = (double *)malloc(sizeof(double)*global_size);
     assertThrow(update_field, "Not enough memory to allocate update field array.");
 
     for (i=0; i<global_size; ++i) {
         shear_stress[i] = normal_stress[i] = 0;
-        f_shear_stress[i] = f_normal_stress[i] = 0;
         update_field[i] = 0;
     }
 }
@@ -101,12 +96,8 @@ void VCSimData::deallocateArrays(void) {
 
     if (normal_stress) free(normal_stress);
 
-    if (f_shear_stress) free(f_shear_stress);
-
-    if (f_normal_stress) free(f_normal_stress);
-
     if (update_field) free(update_field);
 
     green_shear = green_normal = NULL;
-    shear_stress = normal_stress = f_shear_stress = f_normal_stress = update_field = NULL;
+    shear_stress = normal_stress = update_field = NULL;
 }

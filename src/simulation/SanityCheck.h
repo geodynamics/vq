@@ -19,6 +19,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "VCSimulation.h"
+#include <cmath>
 
 #ifndef _SANITY_CHECK_H_
 #define _SANITY_CHECK_H_

@@ -338,34 +338,6 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
     H5Sclose(mem_select);
 }
 
-/*!
- Initialize the HDF5 reader.
- This opens the memory mapped file and sets the class pointers
- to the correct positions in the file.
- */
-HDF5DataReader::HDF5DataReader(const std::string &hdf5_file_name) : HDF5Data() {
-    hsize_t     *dims;
-
-    last_event_read = 0;
-
-    if (!H5Fis_hdf5(hdf5_file_name.c_str())) exit(-1);
-
-    // Open the data file in read only mode
-    data_file = H5Fopen(hdf5_file_name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
-    if (data_file < 0) exit(-1);
-
-    createH5Handles();
-
-    sim_years_set = H5Dopen2(data_file, SIM_YEARS_HDF5, H5P_DEFAULT);
-
-    if (sim_years_set < 0) exit(-1);
-
-    // Open the data sets
-    num_blocks = dims[0];
-    delete dims;
-}
-
 HDF5Data::~HDF5Data(void) {
     herr_t      res;
 
@@ -597,15 +569,6 @@ void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double
     tmp[0] = new_start_year;
     tmp[1] = new_end_year;
     status = H5Dwrite(sim_years_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
-}
-
-void HDF5DataReader::getStartEndYears(double &start_year, double &end_year) const {
-    herr_t      status;
-    double      tmp[2];
-
-    status = H5Dread(sim_years_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
-    start_year = tmp[0];
-    end_year = tmp[1];
 }
 
 /*!

@@ -61,8 +61,6 @@ void VCInitBlocks::init(SimFramework *_sim) {
     for (i=0,bit=sim->begin(); bit!=sim->end(); ++bit,++i)
         bit->setStatePtrs(sim->getShearStressPtr(i),
                           sim->getNormalStressPtr(i),
-                          sim->getFShearStressPtr(i),
-                          sim->getFNormalStressPtr(i),
                           sim->getUpdateFieldPtr(i));
 
     // Set the starting year of the simulation

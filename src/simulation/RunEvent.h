@@ -23,8 +23,6 @@
 #ifndef _RUN_EVENT_H_
 #define _RUN_EVENT_H_
 
-typedef std::map<BlockID, unsigned int> FailureCount;
-
 /*!
  Starts with an initial failed block and propagates the failure
  throughout the system using static and dynamic failure functions.
@@ -32,10 +30,10 @@ typedef std::map<BlockID, unsigned int> FailureCount;
 class RunEvent : public SimPlugin {
     private:
         BlockIDSet          blocks2fail;
-        FailureCount        num_failures;
+        BlockIDSet          looseBlocks;
 
-        void processBlocksOrigFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
-        void processBlocksNewFrictionLaw(VCSimulation *sim, VCEventSweep &current_sweep);
+        void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
+        void processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep);
         virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep);
         void recordEventStresses(VCSimulation *sim);
 

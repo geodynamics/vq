@@ -21,19 +21,14 @@
 #include "UpdateBlockStress.h"
 #include "SimError.h"
 
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
-
-#include <limits.h>
-
 /*!
  Initialize the stress calculation by setting initial block slip and stresses
  then calculating the stress in the whole system.
  */
 void UpdateBlockStress::init(SimFramework *_sim) {
-    BlockList::iterator it;
+    BlockList::iterator it, nt;
     BlockID             bid;
+    double              stress_drop, norm_velocity;
 
     sim = static_cast<VCSimulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
@@ -45,12 +40,17 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(bid, it->getInitShearStress());
         sim->setNormalStress(bid, it->getInitNormalStress());
 
-        // Give each block a different random seed based on the block ID
-        it->state.rand.init(bid*17);
-        //double a = sim->getSlipDeficitNoise();        // TODO: move slip deficit noise to AddNoise class
+        // Set the stress drop based on the Greens function calculations
+        stress_drop = 0;
+        norm_velocity = it->slip_rate();
+        
+        for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+            stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(it->getBlockID(), nt->getBlockID());
+        }
+        
+        it->setStressDrop(it->getMaxSlip()*stress_drop);
+        
         // noise in the range [1-a, 1+a)
-        //double rn = (1.0-a) + 2*a*it->state.rand.nextDouble();
-        //it->state.slipDeficit = -0.5*rn*it->slipCharacteristic();
         it->state.slipDeficit = 0;
 
         if (sim->isLocalBlockID(bid)) {
@@ -218,7 +218,7 @@ void UpdateBlockStress::stressRecompute(void) {
     }
 
     // Recompute the CFF on blocks based on the new shear/normal stresses
-    sim->computeCFFs(false);
+    sim->computeCFFs();
 
 }
 

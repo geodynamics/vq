@@ -107,7 +107,7 @@ void GreensFuncCalcStandard::InnerCalcStandard(VCSimulation *sim,
     for (bit=target_blocks.begin(); bit!=target_blocks.end(); ++bit) {
         Block target_block = sim->getBlock(*bit);
 
-        target_block.get_rake_and_normal_stress_due_to_block(stress_values, source_block);
+        target_block.get_rake_and_normal_stress_due_to_block(stress_values, sim->getGreensSampleDistance(), source_block);
 
         ssh[bnum][*bit] = stress_values[0];
         snorm[bnum][*bit] = stress_values[1];
@@ -359,9 +359,9 @@ void GreensFuncCalcBarnesHut::bhInnerCalc(VCSimulation *sim, quakelib::Octree<3>
             mean_rake += target_block.rake();
             mean_area += target_block.get_area();
             mean_normal += target_block.normal();
-            mean_lambda += target_block.getLambda();
-            mean_mu += target_block.getMu();
-            mean_unit_slip += target_block.getUnitSlip();
+            mean_lambda += target_block.lame_lambda();
+            mean_mu += target_block.lame_mu();
+            mean_unit_slip += target_block.slip_rate();
         }
 
         mean_center /= target_blocks.size();
@@ -386,11 +386,11 @@ void GreensFuncCalcBarnesHut::bhInnerCalc(VCSimulation *sim, quakelib::Octree<3>
         repr_block.set_vert(1, v1);
         repr_block.set_vert(2, v2);
         repr_block.set_vert(3, v3);
-        repr_block.setLambda(mean_lambda);
-        repr_block.setMu(mean_mu);
-        repr_block.setUnitSlip(mean_unit_slip);
+        repr_block.set_lame_lambda(mean_lambda);
+        repr_block.set_lame_mu(mean_mu);
+        repr_block.set_slip_rate(mean_unit_slip);
 
-        repr_block.get_rake_and_normal_stress_due_to_block(stress_values, source_block);
+        repr_block.get_rake_and_normal_stress_due_to_block(stress_values, sim->getGreensSampleDistance(), source_block);
 
         // Set Green's values to averaged values
         for (bit=target_blocks.begin(); bit!=target_blocks.end(); ++bit) {

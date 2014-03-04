@@ -20,7 +20,6 @@
 
 #include "BASSAftershocks.h"
 #include <algorithm>
-#include <math.h>
 
 void BASSAftershocks::initDesc(const SimFramework *_sim) const {
     const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
