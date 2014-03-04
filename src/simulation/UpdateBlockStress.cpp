@@ -26,8 +26,9 @@
  then calculating the stress in the whole system.
  */
 void UpdateBlockStress::init(SimFramework *_sim) {
-    BlockList::iterator it;
+    BlockList::iterator it, nt;
     BlockID             bid;
+    double              stress_drop, norm_velocity;
 
     sim = static_cast<VCSimulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
@@ -39,6 +40,16 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(bid, it->getInitShearStress());
         sim->setNormalStress(bid, it->getInitNormalStress());
 
+        // Set the stress drop based on the Greens function calculations
+        stress_drop = 0;
+        norm_velocity = it->slip_rate();
+        
+        for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+            stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(it->getBlockID(), nt->getBlockID());
+        }
+        
+        it->setStressDrop(it->getMaxSlip()*stress_drop);
+        
         // noise in the range [1-a, 1+a)
         it->state.slipDeficit = 0;
 
