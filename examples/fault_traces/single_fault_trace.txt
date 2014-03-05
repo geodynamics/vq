@@ -1,7 +1,7 @@
 # fault_id: ID number of the parent fault of this section
 # num_points: Number of trace points comprising this section
 # section_name: Name of the section
-0 2 One_Fault_GG_Example
+0 2 One_Fault_Example
 # latitude: Latitude of trace point
 # longitude: Longitude of trace point
 # altitude: Altitude of trace point (meters)
@@ -12,5 +12,5 @@
 # dip: Fault dip at trace point (degrees)
 # lame_mu: Lame's mu parameter at trace point (Pascals)
 # lame_lambda: Lame's lambda parameter at trace point (Pascals)
-37.83 -122.4797 0 3000 1 0 180 90 3e+10 3.2e+10
-37.803 -122.4765 0 3000 1 0 180 90 3e+10 3.2e+10
+0 0 0 12000 1 0 180 90 3e+10 3.2e+10
+0 0.1078 0 12000 1 0 180 90 3e+10 3.2e+10
