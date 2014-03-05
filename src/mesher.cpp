@@ -110,6 +110,11 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
             rake_vals.push_back(c.rad2deg(eit->rake()));
             slip_rate_vals.push_back(c.m_per_sec2cm_per_yr(eit->slip_rate()));
         }
+        
+        if (world.num_elements(fid) == 0) {
+            rake_vals.push_back(std::numeric_limits<double>::quiet_NaN());
+            slip_rate_vals.push_back(std::numeric_limits<double>::quiet_NaN());
+        }
 
         std::sort(rake_vals.begin(), rake_vals.end());
         std::sort(slip_rate_vals.begin(), slip_rate_vals.end());
