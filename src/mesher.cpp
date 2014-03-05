@@ -47,7 +47,7 @@ static struct option longopts[] = {
 
 std::string mem_string(const double &num_bytes) {
     std::stringstream       ss;
-    int unit_place = (int)(log(num_bytes)/log(1024));
+    int unit_place = (num_bytes > 0 ? (int)(log(num_bytes)/log(1024)) : 0);
     ss << num_bytes/pow(1024, unit_place) << " " << std::string(" KMGTPE").at(unit_place) << "B";
     return ss.str();
 }
