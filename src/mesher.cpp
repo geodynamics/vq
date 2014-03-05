@@ -47,7 +47,7 @@ static struct option longopts[] = {
 
 std::string mem_string(const double &num_bytes) {
     std::stringstream       ss;
-    int unit_place = (int)(log(num_bytes)/log(1024));
+    int unit_place = (num_bytes > 0 ? (int)(log(num_bytes)/log(1024)) : 0);
     ss << num_bytes/pow(1024, unit_place) << " " << std::string(" KMGTPE").at(unit_place) << "B";
     return ss.str();
 }
@@ -109,6 +109,11 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
         for (eit=world.begin_element(fid); eit!=world.end_element(fid); ++eit) {
             rake_vals.push_back(c.rad2deg(eit->rake()));
             slip_rate_vals.push_back(c.m_per_sec2cm_per_yr(eit->slip_rate()));
+        }
+        
+        if (num_elements == 0) {
+            rake_vals.push_back(std::numeric_limits<double>::quiet_NaN());
+            slip_rate_vals.push_back(std::numeric_limits<double>::quiet_NaN());
         }
 
         std::sort(rake_vals.begin(), rake_vals.end());
