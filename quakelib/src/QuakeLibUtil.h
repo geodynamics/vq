@@ -44,11 +44,9 @@
 #include <cassert>
 #include <limits>
 
-//#define HAVE_GEOGRAPHIC_LIB
-
 #define assertThrow(COND, ERR_MSG) assert(COND);
 
-#ifdef HAVE_GEOGRAPHIC_LIB
+#ifdef GEOGRAPHICLIB_FOUND
 #include </opt/local/include/GeographicLib/Geodesic.hpp>
 #include </opt/local/include/GeographicLib/Constants.hpp>
 #endif
