@@ -42,7 +42,7 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
         ADD_TEST(
             NAME param_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.0
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7
             )
         SET_TESTS_PROPERTIES (
             param_${TAPER}_${RES} PROPERTIES DEPENDS mesh_${TAPER}_${RES}
