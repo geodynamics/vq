@@ -6,10 +6,10 @@ TAPER_METHOD=$2
 mkdir -p $TAPER_METHOD
 
 cd $TAPER_METHOD
-BASE_NAME=two_fault_$ELEM_SIZE
+BASE_NAME=single_$ELEM_SIZE
 
 ../../../build/src/mesher \
-    --import_file=../../fault_traces/multiple_fault_trace.txt \
+    --import_file=../../fault_traces/golden_gate.txt \
     --import_file_type=trace \
     --import_trace_element_size=$ELEM_SIZE \
     --taper_fault_method=$TAPER_METHOD \
