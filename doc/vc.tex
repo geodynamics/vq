@@ -6,16 +6,21 @@
 \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
+\usepackage{babel}
 \usepackage{array}
 \usepackage{varioref}
 \usepackage{textcomp}
 \usepackage{url}
 \usepackage{graphicx}
+\usepackage[unicode=true]
+ {hyperref}
 
 \makeatletter
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-\providecommand{\LyX}{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
+\providecommand{\LyX}{\texorpdfstring%
+  {L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
+  {LyX}}
 %% Because html converters don't know tabularnewline
 \providecommand{\tabularnewline}{\\}
 
@@ -44,7 +49,6 @@
 \usepackage{subfig}
 \makeatother
 
-\usepackage{babel}
 \begin{document}
 
 \title{Virtual California User Manual}
@@ -286,28 +290,27 @@ the local fault geometry and motion.
 
 Each element in the model is given a constant back-slip velocity along
 a fixed rake vector and a failure stress. The rake vector always lies
-in the plane of the element; and, the angle of the vector relative
-to the surface of the Earth, along with the rate of slip, are quantities
-that are taken from the UCERF2 model. The failure stresses, which
-are also required for the model, are derived from paleoseismic event
-recurrence times.
+in the plane of the element. The failure stresses, which are also
+required for the model, are derived from paleoseismic event recurrence
+times.
 
 
 \subsection{Current California Fault Model}
 
 The full model for the California fault system that we currently use
-is based on the UCERF2 fault model developed by the Working Group
-on California Earthquake Probabilities \cite{UCERF2}, and is shown
-in Figure \ref{fig:UCERF2_google_earth}. The model includes 181 fault
-sections roughly corresponding to known faults in California, with
-some faults modeled by multiple sections. Each fault section is meshed
-into square elements that are roughly 3 km \texttimes{} 3 km, for
-a total of 14,474 elements. In the present version of our model, the
-creeping section of the San Andreas fault is removed. This section
-produces many events, slowing the simulation down considerably. 
+is based on the ALLCAL2 fault model, shown in Figure \ref{fig:UCERF2_google_earth}.
+A detailed description of the ALLCAL2 model is at \url{http://scec.usc.edu/research/eqsims/documentation.html},
+and description of file formats is in \cite{Barall01112012}. The
+model includes 181 fault sections roughly corresponding to known faults
+in California, with some faults modeled by multiple sections. Each
+fault section is meshed into square elements that are roughly 3 km
+\texttimes{} 3 km, for a total of 14,474 elements. In the present
+version of our model, the creeping section of the San Andreas fault
+is removed. This section produces many events, slowing the simulation
+down considerably. 
 
 \begin{figure}[th]
-\includegraphics[width=1\textwidth]{graphics/UCERF2_faults_GoogleEarth_100dpi}\caption{California fault system based on UCERF2, meshed into fault elements
+\includegraphics[width=1\textwidth]{graphics/UCERF2_faults_GoogleEarth}\caption{California fault system based on UCERF2, meshed into fault elements
 and shown above ground.\label{fig:UCERF2_google_earth}}
 \end{figure}
 
@@ -436,7 +439,7 @@ unless there are memory or computing constraints. In the event that
 the meshing process skips a trace point because of overly large element
 size, a warning will be output. Appropriate element size is further
 discussed in Section \ref{sec:element_size_discussion}. The meshing
-program and related parameters are described in Section \ref{sec:mesher}.
+program and related parameters are described in Section \ref{sec:building_faults}.
 
 \begin{figure}
 \subfloat[\label{fig:mesh6km}Example 12km x 12km fault meshed at 6km resolution
@@ -459,28 +462,6 @@ the Atlantic ocean. In output KML files the depth is reversed so faults
 are visible above the surface. When performing simulations with realistic
 fault systems it is better to use actual fault latitude/longitude
 in the traces to help visualize the simulation results.
-
-
-\subsection{Slip Velocity Tapering\label{sec:tapering}}
-
-Slip tapering is commonly used to handle singularities at the tips
-of faults. Tapering decreases the long term slip rates near the edges
-and bottom of the fault to avoid singularities. The tapering is expressed
-analytically as:
-
-\begin{equation}
-v_{taper}=4v_{0}(x-x^{2})\sqrt{1-z}
-\end{equation}
-where $x \in [0,1]$ measures fractional distance along strike and
-$z \in [0,1]$ measures fractional depth below surface. Figure \ref{fig:tapering}
-shows how the meshed fault element size affects the tapering accuracy,
-with $v_0 = 1.0$ for three 3km x 3km fault sections broken up into
-an increasing number of elements. 
-
-\begin{figure}[th]
-\includegraphics[width=1\textwidth]{graphics/velocity_tapering}\caption{Slip tapering as a function of element size.\label{fig:tapering}}
-\end{figure}
-
 
 
 \section{Element Stress Interactions}
@@ -577,22 +558,14 @@ the change in CFF over time is governed by the equation:
 where $\alpha$ represents the fraction of fault slip that is aseismic
 and $T_{\alpha}^{A}=\frac{CFF^{A}T^{AA}}{rec}$ represents the instanteous
 change in CFF due to aseismic slip. Aseismic slip on an element transmits
-stress to other elements but not on the element itself. If $\alpha$
-is 0, the equation simplifies to:
+stress to other elements but not on the element itself. 
 
-\begin{equation}
-t_{f}=t_{0}+\frac{CFF^{A}}{(\sigma_{s}^{A}-\mu_{s}^{A}\sigma_{n}^{A})}
-\end{equation}
-
-
-where $t_{0}$ is the starting time of long term stress accumulation
-in the system. If $\alpha>0$ then Equation \ref{eq:cff_change} can
-be solved analytically to yield:
-
-\[
-t_{f}=-log((\sigma_{s}^{A}-\mu_{s}^{A}\sigma_{n}^{A})+
-\]
-
+Knowing the relationship between slip and stress (equations \ref{eq:shear_stress_sum}
+and \ref{eq:norm_stress_sum}), it is not necesary to evolve the system
+time step by time step. Rather, the simulation time is advanced directly
+to the point at which the next element fails. Equations \ref{eq:cff_function}
+and \ref{eq:cff_change} allow us to analytically solve for the time
+when the next element will fail.
 
 
 \section{Rupture Event Model\label{sec:Event_Model}}
@@ -912,7 +885,7 @@ California, the UCERF2 model described in section \ref{sec:Fault_model}.
 
 Figure \ref{fig:Displacement_field} shows vertical displacement field
 on the surface as seen by an orbiting satellite for a very large (moment
-magnitude 7.79) earthquake involving multiple sections of the San Andreas
+magnitude 8.0) earthquake involving multiple sections of the San Andreas
 Fault. 
 
 \begin{figure}
@@ -935,8 +908,6 @@ for the same simulated earthquake as Figure \ref{fig:Displacement_field}.
 the same simulated earthquake as in Figure \ref{fig:Displacement_field}. }
 \end{figure}
 
-
-TODO: Surface Gravitational Potential Changes. 
 
 
 \chapter{Getting Started and Installation\label{cha:Installation}}
@@ -1014,8 +985,8 @@ then you are done. Upon successful completion, the \texttt{make} command
 creates two executables ''mesher'' and \texttt{''vc''} in the
 \texttt{/build/src/} subdirectory. VC is the script you will use to
 run a Virtual California simulation, and the mesher program can create
-fault models as described in section \ref{sec:mesher}. You may wish
-to add the \texttt{bin} directory to your \texttt{PATH}.
+fault models as described in section \ref{sec:building_faults}. You
+may wish to add the \texttt{bin} directory to your \texttt{PATH}.
 
 For more details about \texttt{configure}, see Section \ref{sec:Configuration}
 below.
@@ -1033,10 +1004,42 @@ With the OS X default python:
 
 \$~make
 \end{lyxcode}
+If you have a third party installation of python (ie. from homebrew
+or macports) Virtual California will build and install, but the python
+quakelib module may not work. This is because cmake builds against
+the system python. To fix this do the following: 
+\begin{lyxcode}
+\$~./configure
+\end{lyxcode}
+cmake will output the following: 
+\begin{lyxcode}
+-{}-~Found~PythonLibs:~/usr/lib/libpythonx.x.dylib~
+\end{lyxcode}
+where \char`\"{}x.x\char`\"{} is a version number (ie. \char`\"{}2.7\char`\"{}).
+We need to move this file and create a link to the correct python. 
+\begin{lyxcode}
+\$~sudo~mv~/usr/lib/libpythonx.x.dylib~/usr/lib/libpythonx.x.sys.dylib~
+
+\$~which~python~\textbar{}~xargs~otool~-L~
+\end{lyxcode}
+This will output /the/path/to/python/library. 
+\begin{lyxcode}
+\$~sudo~ln~-s~/the/path/to/python/library~/usr/lib/libpythonx.x.dylib
+
+\$~rm~-r~build/~
+
+\$~./configure~
+
+\$~cd~build~
+
+\$~make~
+
+\$~sudo~make~install~
+\end{lyxcode}
 
 \subsection{Linux}
 
-This is untested so use at your own risk!
+Follow the steps below:
 \begin{lyxcode}
 \$~mkdir~build
 
@@ -1146,63 +1149,63 @@ Test~project~/Users/{[}username{]}/vc/build~
 
 ~~Start~1:~CondUnitTest~
 
-1/69~Test~\#1:~CondUnitTest~.........................{*}{*}{*}Exception:~Other~0.42~sec~
+1/79~Test~\#1:~CondUnitTest~.........................~Passed~0.11~sec~
 
 ~~Start~2:~FricUnitTest~
 
-2/69~Test~\#2:~FricUnitTest~.........................{*}{*}{*}Exception:~Other~0.27~sec~
+2/79~Test~\#2:~FricUnitTest~.........................~Passed~0.03~sec~
 
 ~~Start~3:~GreenUnitTest~
 
-3/69~Test~\#3:~GreenUnitTest~........................{*}{*}{*}Exception:~Other~0.30~sec~
+3/79~Test~\#3:~GreenUnitTest~........................~Passed~0.08~sec~
 
 ~~Start~4:~OctreeTest~
 
-4/69~Test~\#4:~OctreeTest~...........................{*}{*}{*}Exception:~Other~0.30~sec~
+4/79~Test~\#4:~OctreeTest~...........................~Passed~0.13~sec~
 
 ~~Start~5:~UtilUnitTest~
 
-5/69~Test~\#5:~UtilUnitTest~.........................{*}{*}{*}Exception:~Other~0.28~sec~
+5/79~Test~\#5:~UtilUnitTest~.........................~Passed~0.15~sec~
 
 ~~Start~6:~EventUnitTest~
 
-6/69~Test~\#6:~EventUnitTest~........................{*}{*}{*}Exception:~Other~0.28~sec~
+6/79~Test~\#6:~EventUnitTest~........................~Passed~0.01~sec~
 
 ~~Start~7:~GeomUnitTest~
 
-7/69~Test~\#7:~GeomUnitTest~.........................{*}{*}{*}Exception:~Other~0.27~sec~
+7/79~Test~\#7:~GeomUnitTest~.........................~Passed~0.04~sec~
 
 ~~Start~8:~MetadataUnitTest~
 
-8/69~Test~\#8:~MetadataUnitTest~.....................{*}{*}{*}Exception:~Other~0.28~sec~
+8/79~Test~\#8:~MetadataUnitTest~.....................~Passed~0.11~sec~
 
 ~~Start~9:~RectBoundTest~
 
-9/69~Test~\#9:~RectBoundTest~........................{*}{*}{*}Exception:~Other~0.28~sec~
+9/79~Test~\#9:~RectBoundTest~........................~Passed~0.00~sec~
 
 ~~Start~10:~mesh\_single\_12000~
 
-10/69~Test~\#10:~mesh\_single\_12000~....................~Passed~0.02~sec~
+10/79~Test~\#10:~mesh\_single\_12000~....................~Passed~0.02~sec~
 
 ~~Start~11:~run\_single\_12000~
 
-11/69~Test~\#11:~run\_single\_12000~.....................{*}{*}{*}Exception:~Other~0.40~sec~
+11/79~Test~\#11:~run\_single\_12000~.....................~Passed~0.16~sec~
 
 ~~Start~12:~test\_consistent\_single\_12000~
 
-12/69~Test~\#12:~test\_consistent\_single\_12000~.........{*}{*}{*}Passed~0.06~sec~
+12/79~Test~\#12:~test\_consistent\_single\_12000~.........~Passed~0.06~sec~
 
 ~~Start~13:~test\_slip\_single\_12000~
 
-13/69~Test~\#13:~test\_slip\_single\_12000~...............{*}{*}{*}Failed~0.03~sec
+13/79~Test~\#13:~test\_slip\_single\_12000~...............~Passed~0.03~sec
 
 ...
 
-69/69~Test~\#69:~test\_slip\_taper\_renorm\_2000~..........{*}{*}{*}Failed~~~~0.03~sec
+79/79~Test~\#79:~test\_consistent\_taper\_renorm\_2000~....~Passed~0.39~sec
 
 
 
-XX\%~tests~passed,~XX~tests~failed~out~of~69
+100\%~tests~passed,~0~tests~failed~out~of~79
 
 Total~Test~time~(real)~=~~~5.51~sec
 \end{lyxcode}
@@ -1216,11 +1219,6 @@ output summarize the results from the unit tests and test simulations.
 If you would rather explicitly follow the steps of building your own
 fault model, generating the parameter files and running the simulation,
 then you should consult the tutorial in section \ref{sec:Tutorial_single}. 
-
-
-\subsection{Checking Simulation Results}
-
-\textbf{TODO: Document the ''check\_results.py'' script.}
 
 
 \section{Advanced Usage}
@@ -1440,16 +1438,16 @@ If you do not wish to create your own mesh at this time, the meshes
 are also provided as part of the tutorial. 
 
 
-\section{Mesher Program\label{sec:mesher}}
+\section{Building a Fault Model\label{sec:building_faults}}
 
-The mesher program is used for model file manipulation with VC. Mesher
-imports one or more files (e.g. a trace file), manipulates them based
-on user arguments and exports one or more files to be used as input
-parameter files for a VC simulation. After following install instructions
-in Section \ref{sec:Install}, the mesher program is compiled to an
-executable located in VirtualCalifornia/build/src/. This program is
-called by the shell scripts in the examples below to generate a fault
-model for VC. See section \vref{cha:Appendix-C:Mesher_Parameters}
+Currently, VC uses a simple mesher program for fault model file manipulation.
+Mesher imports one or more files (e.g. a trace file), manipulates
+them based on user arguments and exports one or more files to be used
+as input parameter files for a VC simulation. After following install
+instructions in Section \ref{sec:Install}, the mesher program is
+compiled to an executable located in VirtualCalifornia/build/src/.
+This program is called by the shell scripts in the examples below
+to generate a fault model for VC. See section \vref{cha:Appendix-C:Mesher_Parameters}
 for more information on the options for the mesher program.
 
 Before using the mesher program, the next sections with give examples
@@ -1634,14 +1632,12 @@ sim.file.output\_sweep~~~~~~~=~sweeps\_1000.txt~
 sim.file.output\_event\_type~~=~text
 \end{lyxcode}
 
-\subsection{Building a Fault Model\label{sec:Using-Mesher}}
+\subsection{Producing a Fault Model\label{sec:Using-Mesher}}
 
-There are two function calls required to build a fault model. The
-first uses ``setup\_mesh.sh'' to generate the fault trace file, and
-the second ``setup\_params.sh'' edits the simulation parameter file
-to match your newly generated fault model. Both of these scripts come
-with a new installation of Virtual California and are used in the
-tutorials in the following sections.
+There are two final steps to produce a fault model. The first step
+uses ``setup\_mesh.sh'' to generate the fault trace file, and the
+second step is to edit the simulation parameter file ``params.d''.
+This method is illustrated in the tutorials in the following sections.
 
 
 \subsubsection{Using the Mesher}
@@ -1667,21 +1663,11 @@ created trace file, instructs the mesher to return several files,
 and tells the mesher to merge doubly named vertices in the trace file.
 
 
-\subsubsection{Generating the Parameter File}
+\subsubsection{Parameter File}
 
-The sample Bash shell script that edits the prototype ``params.d''
-file to match the fault model generated by the mesher is located in
-VirtualCalifornia/examples/single\_fault/ (or two\_fault/). The syntax
-is shown below.
-\begin{lyxcode}
-\$~bash~setup\_params.sh~ELEM\_SIZE~TAPER\_METHOD~DYNAMIC
-\end{lyxcode}
-This script copies the prototype ``params.d'' from the /single\_fault/
-directory (or two\_fault/), edits the parameter values to match the
-command line arguments given, then saves the file in the appropriate
-subfolder corresponding to the specific simulation. In the case that
-the user is running a custom simulation, it is fairly straightforward
-to edit this file directly.
+Simply copy the ``params.d'' file into the subfolder generated by
+the mesher. Edit the file so the simulation parameters are set correctly
+for the current run. 
 
 
 \section{Single Element Tutorial\label{sec:Tutorial_single}}
@@ -1739,7 +1725,7 @@ and the fault element is shown above ground in figure \ref{fig:Golden_Gate_singl
 37.7425~-122.47~~0~3000~1~0~180~90~3e+10~3.2e+10
 \end{lyxcode}
 To create the input files, we use the mesher program as follows (arguments
-explained in section \ref{sec:mesher}).
+explained in section \ref{sec:building_faults}).
 \begin{lyxcode}
 \$~cd~examples/single\_fault/
 
@@ -1766,10 +1752,12 @@ mesher program created from the trace file.}
 \end{figure}
 
 
-We will also need a friction file. This specifies the failing stress
-for each fault element. Values for the faults in California can be
-taken from Ward's AllCal model \cite{Ward01112012}. For this example
-we will use the file printed in section \ref{sec:Friction_file}. 
+We will also need a friction file that specifies the failing stress
+for each fault element. For this example we will use the file printed
+in section \ref{sec:Friction_file}. 
+
+Values for the faults in California are taken from Ward's ALLCAL2
+model \cite{Ward01112012}, more information at \href{http://scec.usc.edu/research/eqsims/documentation.html}{http://scec.usc.edu/research/eqsims/documentation.html}. 
 
 
 \subsection{Assimilating Input Files}
@@ -1829,11 +1817,8 @@ simulation by simply executing the vc executable and passing the parameter
 file as a command line argument:
 \begin{lyxcode}
 \$~cd~./none/
-
-\$~./vc~./params\_3000.d
 \end{lyxcode}
-
-\subsection{Results}
+\$ ./vc ./params\_3000.d
 
 
 \section{Tutorial Using Multiple Elements\label{sec:Tutorial_multiple}}
@@ -1944,82 +1929,19 @@ Again we run the simulation by simply executing the vc executable:
 \$~./vc~./params\_1000.d
 \end{lyxcode}
 
-\subsection{Results}
-
-
-\section{Changing the Dynamic Triggering Factor $\eta$}
-
-
-\subsection{Overview}
-
-This tutorial will illustrate the effect of changing the dynamic triggering
-factor. As mentioned in section \ref{sec:tuning_parameters}, the
-dynamic triggering factor -- $\eta \in [0,1]$ -- controls rupture
-propagation during a simulated earthquake. As $\eta \rightarrow 0$,
-rupture propagation is encouraged and if a single element reaches
-the failure stress then all neighboring elements are allowed to slip
-at their current stress level. As $\eta \rightarrow 1$, rupture propagation
-is discouraged and each element must reach its own failure stress
-in order to slip.
-
-In this tutorial, we will run essentially the same simulation as the
-previous tutorial, but we will use a larger value for $\eta$. 
-
-
-\subsection{Input Files}
-
-We have already created these in the previous tutorial, so you can
-either make a copy of the entire single\_fault/none/ directory and
-then change the ``params\_1000.d'' file, or simply navigate to the
-single\_fault/none/ directory and edit the parameter file. Either
-way, we will set the dynamic triggering factor to 1.0 to encourage
-rupture propagation throughout the entire fault section, so that all
-the elements fail together. We will also need to change the ouput
-file names so we do not overwrite the results from the previous simulation.
-\begin{lyxcode}
-sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~~~=~1.0
-
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_fault\_1000.txt~
-
-sim.file.input\_type~~~~~~~~~~~~~~~=~text~
-
-sim.eqsim.file.friction~~~~~~~~~~~=~../multiple\_friction\_uniform.dat~
-
-sim.file.output\_event~~~~~~~~~~~~~=~events\_1000\_dyn\_1.txt~
-
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_1000\_dyn\_1.txt~
-
-sim.file.output\_event\_type~~~~~~~~=~text
-\end{lyxcode}
-
-\subsection{Running VC}
-\begin{lyxcode}
-\$~./vc~./params\_1000.d
-\end{lyxcode}
-
-\subsection{Results}
-
-
 \section{Multiple Fault Sections}
 
 
 \subsection{Overview}
 
 This tutorial will explore a Virtual California simulation involved
-two neighboring fault sections (each 15km long and 12km deep). We
-will also use larger fault elements than the previous example, which
-allows us to have larger magnitude earthquakes. Furthermore, we now
-will be simulating the interaction between 40 elements so the computational
-resource requirements grow as well (see section \ref{sec:element_size_discussion}
-for a detailed discussion).
+two neighboring fault sections --- each 15km long and 12km deep meshed
+into 3km by 3km elements. We will also use larger fault elements than
+the previous example, which raises the lower bound for magnitudes
+in the output data set. Furthermore, we now will be simulating the
+interaction between 40 elements so the computational resource requirements
+grow as well (see section \ref{sec:element_size_discussion} for a
+detailed discussion).
 
 
 \subsection{Input Files}
@@ -2092,9 +2014,6 @@ Again we run the simulation by simply executing the vc executable:
 \begin{lyxcode}
 \$~./vc~./params\_3000.d
 \end{lyxcode}
-
-\subsection{Results}
-
 
 \part{Appendices}
 
