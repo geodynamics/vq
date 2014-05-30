@@ -8,6 +8,6 @@
 #cmakedefine QUAKELIB_HAVE_STRING_H
 #cmakedefine HDF5_FOUND
 #cmakedefine MPI_C_FOUND
+#cmakedefine GEOGRAPHICLIB_FOUND
 #endif
-
 

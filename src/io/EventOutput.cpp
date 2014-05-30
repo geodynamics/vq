@@ -133,7 +133,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
             while (pauseFileExists()) {
 #ifdef VC_HAVE_USLEEP_FUNC
                 usleep(1000000);
-#elif VC_HAVE_SLEEP_FUNC
+#elif defined VC_HAVE_SLEEP_FUNC
                 sleep(1);
 #endif
             }

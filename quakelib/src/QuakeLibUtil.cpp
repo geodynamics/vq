@@ -25,7 +25,7 @@ std::string quakelib::SetupInfo(void) {
 
     ss << "QuakeLib v1.0" << std::endl;
     ss << "Using geographic lib: ";
-#ifdef HAVE_GEOGRAPHIC_LIB
+#ifdef GEOGRAPHICLIB_FOUND
     ss << "TRUE" << std::endl;
 #else
     ss << "FALSE" << std::endl;
@@ -84,7 +84,7 @@ std::ostream &quakelib::operator<<(std::ostream &os, const RectBound<3> &rb) {
  Converts an (x, y) value (given in km) to lattitude/longitude (in degrees decimal) relative to a set origin.
  This just inverts the conversion done in convert2xy
  */
-#ifdef HAVE_GEOGRAPHIC_LIB
+#ifdef GEOGRAPHICLIB_FOUND
 quakelib::LatLonDepth quakelib::Conversion::convert2LatLon(const Vec<3> &in_pt) const {
     double  a = GeographicLib::Constants::WGS84_a(),    // major radius
             f = GeographicLib::Constants::WGS84_f();    // flattening
@@ -153,7 +153,7 @@ quakelib::LatLonDepth quakelib::Conversion::convert2LatLon(const Vec<3> &in_pt) 
 /*!
  Converts a latitude/longitude point to (x, y) in meters from a set origin.
  */
-#ifdef HAVE_GEOGRAPHIC_LIB
+#ifdef GEOGRAPHICLIB_FOUND
 quakelib::Vec<3> quakelib::Conversion::convert2xyz(const LatLonDepth &in_pt) const {
     double  a = GeographicLib::Constants::WGS84_a(),  // major radius
             f = GeographicLib::Constants::WGS84_f();  // flattening
