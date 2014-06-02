@@ -12,8 +12,10 @@
 \usepackage{textcomp}
 \usepackage{url}
 \usepackage{graphicx}
-\usepackage[unicode=true]
- {hyperref}
+\usepackage[unicode=true]{hyperref}
+\usepackage{mathptmx}
+\usepackage{color}
+\usepackage{textpos}
 
 \makeatletter
 
@@ -49,20 +51,108 @@
 \usepackage{subfig}
 \makeatother
 
+
+
 \begin{document}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual California User Manual}
-
-
-\author{© University of California, Davis\\
+\author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Donald L. Turcotte\\John B. Rundle\\\\© University of California, Davis\\
 Version 1.0.0}
+%\date{\noindent \today}
 
 
-\date{\noindent \today}
+
+%%%%%%%%%%%%%%%%%%%%    CIG Cover Template
+
+
+%LINE 1%
+{
+\renewcommand{\familydefault}{\sfdefault}
+\definecolor{dark_grey}{gray}{0.3}
+
+\pagenumbering{gobble}
+\begin{center}
+\resizebox{\textwidth}{!}{\textcolor{dark_grey}{\fontfamily{\sfdefault}\selectfont
+COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
+}}
+
+\hrule
+
+%LINE 2%
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+
+%LINE 3%
+\color{dark_grey}
+% FILL: additional organizations
+% e.g.: {\Large Organization 1\\Organization 2}
+{\Large }
+\end{center}
+
+%COLOR AND CODENAME BLOCK%
+\begin{center}
+\resizebox{\textwidth}{!}{\colorbox
+% FILL: color of code name text box
+% e.g. blue
+{blue}{\fontfamily{\rmdefault}\selectfont \textcolor{white} {
+% FILL: name of the code
+% You may want to add \hspace to both sides of the codename to better center it, such as:
+% \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
+\hspace{0.1in}Virtual California\hspace{0.1in}
+}}}
+\end{center}
+
+%MAIN PICTURE%
+\begin{textblock*}{0in}(0.3in,-0.1in)
+% FILL: image height
+% e.g. height=6.5in
+\begin{center}
+\vspace{.5in}
+\includegraphics[height=5.8in]
+% FILL: image file name
+% e.g. cover_image.png
+{graphics/overlay_fields_109382.png}
+\end{center}
+\end{textblock*}
+
+%USER MANUAL%
+\color{dark_grey}
+\hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
+% FILL: manual version
+% e.g. 1.0
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.0}\\}
+
+%AUTHOR(S) & WEBSITE%
+\null
+\vfill
+\color{dark_grey}
+\Large \hfill {\raggedleft \fontfamily{\sfdefault}\selectfont
+% FILL: author list
+% e.g. Author One\\Author Two\\Author Three\\
+% be sure to have a newline (\\) after the final author
+Kasey W. Schultz~~~Eric M. Heien\\Michael K. Sachs~~~Donald L. Turcotte~~~John B. Rundle\\
+}
+{\fontfamily{\sfdefault}\selectfont www.geodynamics.org}
+
+\hrule
+
+%LINE%
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+
+}
+
+\pagebreak
+\pagenumbering{arabic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%% Begin VC manual from Lyx code
 
 \maketitle
 \tableofcontents{}
-
 \listoffigures
 
 
@@ -1059,13 +1149,22 @@ the locations of installed files. The Virtual California binary is
 build/src/vc.
 
 
-\subsection{Selecting a Compiler}
+\subsection{Selecting a Compiler --- Multiprocessing\label{sec:Selecting-a-Compiler-Multiproc}}
 
 Depending on the machine used to run VC, you may need to change which
 compiler CMake uses to compile VC. For example, if the user wants
 to compile VC with gcc 3.3, execute cmake as shown below.
 \begin{lyxcode}
 \$~CC=gcc-3.3~CXX=g++-3.3~cmake~..
+
+\$~make
+\end{lyxcode}
+To compile Virtual California and deploy it across multicore processors
+or many processors, execute cmake instead as:
+\begin{lyxcode}
+\$~CC=mpicc~CXX=mpicxx~cmake~..
+
+\$~make
 \end{lyxcode}
 
 \subsection{Additional Tools}
@@ -1535,67 +1634,18 @@ trace files for all of California's major fault sections in the subfolder
 named fault\_traces/ca\_traces/.
 
 
-\subsection{Friction File\label{sec:Friction_file}}
+\subsection{Friction Parameters}
 
-Virtual California requires one more input file regarding the strengths
-of the fault elements. An example friction file is shown below.
-\begin{lyxcode}
-101~EQSim\_Input\_Friction\_2~1~
-
-111~Fault~friction~from~Ward~All-California~model~
-
-102~End\_Metadata~
-
-120~200~summary~4~~~~Record~200:~Fault~friction~summary,~4~fields
-
-121~1~n\_element~1~~~~Field~1:~Total~number~of~elements~in~the~file~
-
-121~2~elastic\_flag~1~~~~Field~2:~1~if~elastic~parameters~(record~201)~are~included,~0~if~not~
-
-121~3~strength\_flag~1~~~~Field~3:~1~if~fault~strength~(record~202)~is~included,~0~if~not~
-
-121~4~rate\_state\_flag~1~~~~Field~4:~1~if~rate-state~parameters~(record~203)~are~included,~0~if~not~
-
-120~201~elastic\_param~2~~~~Record~201:~Elastic~parameters~
-
-121~1~lame\_lambda~2~~~~Field~1:~Lame~modulus~lambda~(Pascal)~
-
-121~2~lame\_mu~2~~~~Field~2:~Lame~modulus~mu,~also~known~as~the~shear~modulus~(Pascal)~
-
-120~202~fault\_strength~3~~~~Record~202:~Fault~strength~
-
-121~1~index~1~~~~Field~1:~Element~index~number~(consecutive~integers,~starting~with~1)~
-
-121~2~static\_strength~2~~~~Field~2:~Element~static~yield~strength~(Pascal)~
-
-121~3~dynamic\_strength~2~~~~Field~3:~Element~dynamic~sliding~strength~(Pascal)~
-
-120~203~rate\_state~6~~~~Record~203:~Rate-state~parameters~
-
-121~1~index~1~~~~Field~1:~Element~index~number~(consecutive~integers,~starting~with~1)~
-
-121~2~A~2~~~~Field~2:~Element~rate-state~parameter~A~
-
-121~3~B~2~~~~Field~3:~Element~rate-state~parameter~B~
-
-121~4~L~2~~~~Field~4:~Element~rate-state~characteristic~distance~L~(meters)~
-
-121~5~f0~2~~~~Field~5:~Element~rate-state~friction~coefficient~f0~
-
-121~6~V0~2~~~~Field~6:~Element~rate-state~reference~velocity~V0~(meters/second)~
-
-103~End\_Descriptor~
-
-200~1~1~1~0~
-
-201~~3.200000e+010~~3.000000e+010~
-
-202~1~~2.008100e+007~~0.000000e+000~
-
-999~End
-\end{lyxcode}
-The static strength for the fault sections in California are given
-by Ward's All-California model \cite{Ward01112012}. 
+Virtual California uses established scaling laws to determine certain
+model parameters and initial conditions. Past simulations required
+that the user specify the stress parameters on each element then run
+the simulation based on this. However, the parameters that produce
+realistic results depend strongly on the model fault geometry, size
+of fault elements and friction properties. Furthermore these parameters
+can be easily modified to produce arbitrary fault behavior. Rather
+than require the user to specify these parameters, they are internally
+calculated by VC to match established physical laws and empirical
+observations.
 
 
 \subsection{Simulation Parameter File}
@@ -1603,41 +1653,16 @@ by Ward's All-California model \cite{Ward01112012}.
 The main simulation input file is the parameter file. This file tells
 the simulator where the fault model files are located, sets various
 simulation variables, and specifies the output of the simulation.
-The parameter file is generated by the ``setup\_params.sh'' script,
-this script is included in VirtualCalifornia/examples/single\_fault/
-and VirtualCalifornia/examples/two\_fault/. An example parameter file
-is shown below, and the usage of the ``setup\_params.sh'' script is
-documented in the following section.
-\begin{lyxcode}
-sim.version~~~~~~~~~~~~~~~~~=~2.0~
+The parameter file template is located in VirtualCalifornia/examples/single\_fault/
+and VirtualCalifornia/examples/two\_fault/. 
 
-sim.time.end\_year~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~=~single\_fault\_1000.txt~
-
-sim.file.input\_type~~~~~~~~~=~text~
-
-sim.eqsim.file.friction~~~~~=~single\_friction.dat~
-
-sim.file.output\_event~~~~~~~=~events\_1000.txt~
-
-sim.file.output\_sweep~~~~~~~=~sweeps\_1000.txt~
-
-sim.file.output\_event\_type~~=~text
-\end{lyxcode}
 
 \subsection{Producing a Fault Model\label{sec:Using-Mesher}}
 
-There are two final steps to produce a fault model. The first step
-uses ``setup\_mesh.sh'' to generate the fault trace file, and the
-second step is to edit the simulation parameter file ``params.d''.
-This method is illustrated in the tutorials in the following sections.
+The first step is to use ``setup\_mesh.sh'' to generate the fault
+trace file, and the second step is to edit the simulation parameter
+file ``params.d''. This method is illustrated in the tutorials in
+the following sections.
 
 
 \subsubsection{Using the Mesher}
@@ -1678,8 +1703,7 @@ for the current run.
 This tutorial is the simplest possible implementation of Virtual California.
 In this tutorial we will build the trace file for a single vertical
 strike-slip fault element, then use this to build a fault model with
-the mesher program. We will run this simulation for 10,000 years and
-then test and explore the output. 
+the mesher program and run this simulation for 10,000 years. 
 
 
 \subsection{Creating Input Files}
@@ -1736,11 +1760,11 @@ output shown below.
 \begin{lyxcode}
 {*}{*}{*}~Summary~of~edits~{*}{*}{*}~
 
-File~import~../../fault\_traces/single\_fault\_trace.txt~with~type~trace...~done.~
+File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
 
-File~export~single\_fault\_3000.txt~with~type~text...~done.~
+File~export~single\_3000.txt~with~type~text...~done.~
 
-File~export~single\_fault\_3000.kml~with~type~kml...~done.~
+File~export~single\_3000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_3000.txt
 \end{lyxcode}
@@ -1764,61 +1788,83 @@ model \cite{Ward01112012}, more information at \href{http://scec.usc.edu/researc
 
 Now, from the same directory (examples/single\_fault/) we need to
 edit the parameter file, and place the VC executable and input files
-into the same directory.
+into the same directory. Make sure the parameter file --- ``params.d''
+--- is as printed below:
 \begin{lyxcode}
-\$~bash~setup\_params.sh~3000~none~0.5
+sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
+sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
 
+sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
 
-dynamic~triggering~factor:~~~0.5~
+sim.greens.use\_normal~~~~~~~~~~~~~=~false~
 
-taper~method:~~~~~~~~~~~~~~~~none~
+sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
 
-element~size~{[}m{]}:~~~~~~~~~~~~3000~
+sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_3000.txt~
 
-{*}{*}{*}{*}parameter~file~written:~~none/params\_3000.d
+sim.file.input\_type~~~~~~~~~~~~~~~=~text~
+
+sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.txt~
+
+sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.txt~
+
+sim.file.output\_event\_type~~~~~~~~=~text
+\end{lyxcode}
+Then copy it into the newly created directory ''none'':
+\begin{lyxcode}
+\$~cp~params.d~./none/
 \end{lyxcode}
 The next thing is to copy the compiled VC executable into the same
 directory as our parameter files.
 \begin{lyxcode}
 \$~cp~../../build/src/vc~./none/
 \end{lyxcode}
-The simulation parameter file was created in the /single\_fault/none/
-directory and should match what is printed below. 
-\begin{lyxcode}
-sim.version~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~~~~~=~single\_fault\_3000.txt~
-
-sim.file.input\_type~~~~~~~~~~~~~=~text~
-
-sim.eqsim.file.friction~~~~~~~~~=~../single\_friction.dat~
-
-sim.file.output\_event~~~~~~~~~~~=~events\_3000.txt~
-
-sim.file.output\_sweep~~~~~~~~~~~=~sweeps\_3000.txt~
-
-sim.file.output\_event\_type~~~~~~=~text
-\end{lyxcode}
 
 \subsection{Running VC}
 
 Now that we have generated the fault mesh and put all the simulation
 files in one place, we are now ready to run the simulation. Run this
-simulation by simply executing the vc executable and passing the parameter
-file as a command line argument:
+simulation by simply executing the vc executable (single processor)
+and passing the parameter file as a command line argument:
 \begin{lyxcode}
 \$~cd~./none/
+
+\$~./vc~./params.d
 \end{lyxcode}
-\$ ./vc ./params\_3000.d
+You should see output similar to:
+
+\# {*}{*}{*} MPI CPU count : 1 
+
+\# Initializing blocks. 
+
+\# To gracefully quit, create the file quit\_vc in the run directory. 
+
+\# Calculating Greens function with the standard Okada class. 
+
+\# Greens function took 0.00030303 seconds. 
+
+\# Greens shear matrix takes 128 bytes. 
+
+\# Greens normal matrix takes 128 bytes. 
+
+\# To access the event output file during the simulation, pause 
+
+\# by creating the file pause\_vc. Delete the file to resume. 
+
+\# Writing events in format hdf5 to file events\_3000.h5 
+
+\# Plugin requested simulation end: Block stress calculation...
+
+
+\subsection{Results}
+
+You should see the output data set as ``events\_3000.h5'', saved as
+an HDF5 file. For more details about the file contents, see Appendix
+\ref{chap:Virtual-California-Output}. The results are not very exciting,
+there's one earthquake that occurs regularly due to constant backslip.
+But this illustrates setting up a Virtual California simulation start
+to finish.
 
 
 \section{Tutorial Using Multiple Elements\label{sec:Tutorial_multiple}}
@@ -1841,43 +1887,22 @@ Then we generate the mesh with the following commands.
 \begin{lyxcode}
 \$~cd~examples/single\_fault/
 
-\$~bash~setup\_mesh.sh~1000~none~
+\$~bash~setup\_mesh.sh~1000~none
 \end{lyxcode}
 Which should output the following.
 \begin{lyxcode}
 {*}{*}{*}~Summary~of~edits~{*}{*}{*}~
 
-File~import~../../fault\_traces/single\_fault\_trace.txt~with~type~trace...~done.~
+File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
 
-File~export~single\_fault\_1000.txt~with~type~text...~done.~
+File~export~single\_1000.txt~with~type~text...~done.~
 
-File~export~single\_fault\_1000.kml~with~type~kml...~done.~
+File~export~single\_1000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_1000.txt
 \end{lyxcode}
-However, we cannot use the same friction file. We have more fault
-elements this time and the friction parameters must be specified for
-each element. For this simple example we will have the same failing
-stress for all the elements since they are part of the same local
-fault section and thus are likely to have the same physical properties.
-\begin{lyxcode}
-\$~bash~setup\_params.sh~1000~none~0.5~
-
-
-
-dynamic~triggering~factor:~~~0.5~
-
-taper~method:~~~~~~~~~~~~~~~~none~
-
-element~size~{[}m{]}:~~~~~~~~~~~~1000~
-
-{*}{*}{*}{*}parameter~file~written:~~none/params\_1000.d~
-\end{lyxcode}
-After executing this, we still need to make one more change to the
-parameter file. We need to use new friction file, named ``multiple\_friction\_uniform.dat''.
-So we need to edit the ``single\_fault/none/params\_1000.d'' so the
-simulation will know to use the multiple element friction file. After
-the edits the parameter file should match what is printed below.
+Copy the ``params.d'' file into the ''none'' directory and edit
+it to match below:
 \begin{lyxcode}
 sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
@@ -1889,17 +1914,15 @@ sim.greens.use\_normal~~~~~~~~~~~~~=~false~
 
 sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
 
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_fault\_1000.txt~
+sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_1000.txt~
 
 sim.file.input\_type~~~~~~~~~~~~~~~=~text~
 
-sim.eqsim.file.friction~~~~~~~~~~~=~../multiple\_friction\_uniform.dat
+sim.file.output\_event~~~~~~~~~~~~~=~events\_1000.h5~
 
-sim.file.output\_event~~~~~~~~~~~~~=~events\_1000.txt~
+sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_1000.h5~
 
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_1000.txt~
-
-sim.file.output\_event\_type~~~~~~~~=~text
+sim.file.output\_event\_type~~~~~~~~=~hdf5
 \end{lyxcode}
 \begin{figure}
 \centering{}\includegraphics[width=0.72\textwidth]{graphics/Golden_Gate_Multi_Element}\caption{\label{fig:Golden_Gate_multiple}The same 3km x 3km fault section
@@ -1913,26 +1936,70 @@ that the mesher program created using the trace file.}
 \subsection{Assimilating Input Files}
 
 Now lets navigate to the newly created directory and assimilate our
-simulation files. The only difference is that since the VC executable
-is a large file, we will just move it over from the previous example's
-directory.
+simulation files. If you re-compiled for multiprocessing, you have
+a new executable to use:
 \begin{lyxcode}
 \$~cd~./none/
 
-\$~mv~../single\_fault/none/vc~./
+\$~cp~../../../build/src/vc~./
 \end{lyxcode}
 
 \subsection{Running VC}
 
 Again we run the simulation by simply executing the vc executable:
 \begin{lyxcode}
-\$~./vc~./params\_1000.d
+\$~./vc~./params.d
 \end{lyxcode}
+Output should be similar to:
+\begin{lyxcode}
+\#~{*}{*}{*}~MPI~CPU~count~~~~~~~~~~~~~~~:~1~
+
+\#~Initializing~blocks.~
+
+\#~To~gracefully~quit,~create~the~file~quit\_vc~in~the~run~directory.~
+
+\#~Calculating~Greens~function~with~the~standard~Okada~class.~
+
+\#~Greens~function~took~0.00778508~seconds.~
+
+\#~Greens~shear~matrix~takes~1.125~kilobytes.~
+
+\#~Greens~normal~matrix~takes~1.125~kilobytes.~
+
+\#~To~access~the~event~output~file~during~the~simulation,~pause~
+
+\#~by~creating~the~file~pause\_vc.~Delete~the~file~to~resume.~
+
+\#~Writing~events~in~format~hdf5~to~file~events\_1000.txt~
+
+\#~Plugin~requested~simulation~end:~Block~stress~calculation~
+
+\#~~~~~~~~~~~~~~~~~~~Timer~Name~~AvgCounts~~~~~~Min~~~~~Max~~~~~Mean~~~~StdDev~
+
+0~~~~~~~~~~~~~~~~~~~Total~Time~~~~~~~~~~1~~~~0.452~~~0.452~~~~0.452~~~~~0.000~
+
+1~~~~~~~~~~~~~Init~and~Cleanup~~~~~~~~~~2~~~~0.012~~~0.012~~~~0.012~~~~~0.000~
+
+2~~~~~~~~~~~~~~~~~Comm~Barrier~~~~~~~~~~2~~~~0.000~~~0.000~~~~0.000~~~~~0.000~
+
+3~~~~~Block~stress~calculation~~~~~~~~748~~~~0.012~~~0.012~~~~0.012~~~~~0.000~ 
+
+4~~~~~Propagate~event~ruptures~~~~~~~~748~~~~0.124~~~0.124~~~~0.124~~~~~0.000~
+
+5~~~~~~~~~~~~~~~~~~Data~Writer~~~~~~~~748~~~~0.302~~~0.302~~~~0.302~~~~~0.000
+\end{lyxcode}
+
+\subsection{Results}
+
+You should see the output data set as ``events\_1000.h5'', saved as
+an HDF5 file. For more details about the file contents, see Appendix
+\ref{chap:Virtual-California-Output}. 
+
 
 \section{Multiple Fault Sections}
 
 
-\subsection{Overview}
+\subsubsection{Overview}
 
 This tutorial will explore a Virtual California simulation involved
 two neighboring fault sections --- each 15km long and 12km deep meshed
@@ -1942,6 +2009,10 @@ in the output data set. Furthermore, we now will be simulating the
 interaction between 40 elements so the computational resource requirements
 grow as well (see section \ref{sec:element_size_discussion} for a
 detailed discussion).
+
+Also, if you would prefer to run this simulation in parallel, remove
+the build directory and re-compile Virtual California per instructions
+in section \ref{sec:Selecting-a-Compiler-Multiproc}.
 
 
 \subsection{Input Files}
@@ -1963,30 +2034,37 @@ Which should output the following.
 
 File~import~../../fault\_traces/multiple\_fault\_trace.txt~with~type~trace...~done.~
 
-File~export~Davis\_multiple\_3000.txt~with~type~text...~done.~
+File~export~two\_fault\_3000.txt~with~type~text...~done.~
 
-File~export~Davis\_multiple\_3000.kml~with~type~kml...~done.~
+File~export~two\_fault\_3000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_3000.txt
 \end{lyxcode}
-Next we will generate the parameter file.
+Next, copy the ``params.d'' into the ''none'' folder and it should
+be edited to match:
 \begin{lyxcode}
-\$bash~setup\_params.sh~3000~none~0.5
+sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
+
+sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
+
+sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
+
+sim.greens.use\_normal~~~~~~~~~~~~~=~false~
+
+sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
+
+sim.file.input~~~~~~~~~~~~~~~~~~~~=~two\_fault\_3000.txt~
+
+sim.file.input\_type~~~~~~~~~~~~~~~=~text~
+
+sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.h5~
+
+sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.h5~
+
+sim.file.output\_event\_type~~~~~~~~=~hdf5
 
 
-
-dynamic~triggering~factor:~~0.5~
-
-taper~method:~~~~~~~~~~~~~~~none~
-
-element~size~{[}m{]}:~~~~~~~~~~~3000~
-
-{*}{*}{*}{*}parameter~file~written:~none/params\_3000.d~
 \end{lyxcode}
-We will be using a supplied friction file for this example. This friction
-file gives each element a slightly different failure stress, to ensure
-that the faults do not simply act like one large fault element.
-
 \begin{figure}
 \centering{}\includegraphics[bb=0bp 0bp 1096bp 900bp,width=0.72\textwidth]{graphics/Davis_2_Fault}\caption{\label{fig:Davis_2_fault}Two fault sections that meet at the UC Davis
 campus. The fault sections are 15km x 12km and meshed into 3km x 3km
@@ -1999,21 +2077,32 @@ that the mesher program created using the trace file.}
 \subsection{Assimilating Input Files}
 
 Now lets navigate to the newly created directory and assimilate our
-simulation files. The caveat is that since the VC executable is a
-large file, we will just move it over from the previous example's
-directory instead of making multiple copies from VirtualCalifornia/build/src/vc.
+simulation files. If you re-compiled for multiprocessing, you have
+a new executable to use:
 \begin{lyxcode}
 \$~cd~./none/
 
-\$~mv~../single\_fault/none/vc~./
+\$~cp~../../../build/src/vc~./
 \end{lyxcode}
 
 \subsection{Running VC}
 
-Again we run the simulation by simply executing the vc executable:
+Again we run the simulation on a single processor by simply executing
+the vc executable:
 \begin{lyxcode}
-\$~./vc~./params\_3000.d
+\$~./vc~./params.d
 \end{lyxcode}
+To instead run VC in parallel on 2 processors/cores, execute:
+\begin{lyxcode}
+\$~mpirun~-np~2~./vc~params.d
+\end{lyxcode}
+
+\subsection{Results}
+
+You should see the output data set as ``events\_3000.h5'', saved as
+an HDF5 file. For more details about the file contents, see Appendix
+\ref{chap:Virtual-California-Output}.
+
 
 \part{Appendices}
 
@@ -2690,3 +2779,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\bibli
 \bibliography{citations}
 
 \end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END VC manual from Lyx code
