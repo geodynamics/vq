@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <string.h> 
 
 #ifdef _OPENMP
 #include <omp.h>
