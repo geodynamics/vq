@@ -13,7 +13,7 @@ BASE_NAME=single_fault_$ELEM_SIZE
 
 sed -e s/DYN/$DYNAMIC/ \
     -e s/RES/$ELEM_SIZE/g \
-    -e s/OUTFILE/$BASE_NAME/ < params.d > params_$ELEM_SIZE.d
+    -e s/OUTFILE/$BASE_NAME/ <../../../examples/single_fault/params.d >params_$ELEM_SIZE.d
 
 exit $?
 

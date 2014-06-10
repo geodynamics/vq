@@ -23,9 +23,9 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
     FOREACH(RES ${RESOLUTIONS})
         SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/${TAPER}/)
         FILE(MAKE_DIRECTORY ${TEST_DIR})
-        SET(EVENT_FILE ${TEST_DIR}/events_${RES}.txt)
-        SET(SWEEP_FILE ${TEST_DIR}/sweeps_${RES}.txt)
-        FILE(COPY ${VC_EXAMPLE_DIR}/single_fault/params.d DESTINATION ${TEST_DIR})
+        SET(EVENT_FILE ${TEST_DIR}events_${RES}.txt)
+        SET(SWEEP_FILE ${TEST_DIR}sweeps_${RES}.txt)
+        #FILE(COPY ${VC_EXAMPLE_DIR}/single_fault/params.d DESTINATION ${TEST_DIR})
 
         # Test that the mesher works and generate a parameter file
         ADD_TEST(
@@ -42,6 +42,7 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
         ADD_TEST(
             NAME param_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            #COMMAND sed -e s/RES/${RES}/g ${VC_EXAMPLE_DIR}single_fault/params.d params_${RES}.d
             COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7
             )
         SET_TESTS_PROPERTIES (
