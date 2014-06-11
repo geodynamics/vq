@@ -26,37 +26,38 @@
  then calculating the stress in the whole system.
  */
 void UpdateBlockStress::init(SimFramework *_sim) {
-    BlockList::iterator it, nt;
-    BlockID             bid;
+    BlockList::iterator nt;
+    BlockID             gid;
+    int                 lid;
     double              stress_drop, norm_velocity;
 
     sim = static_cast<VCSimulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
 
-    for (it=sim->begin(); it!=sim->end(); ++it) {
-        bid = it->getBlockID();
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
 
         // Set stresses to their specified initial values
-        sim->setShearStress(bid, it->getInitShearStress());
-        sim->setNormalStress(bid, it->getInitNormalStress());
+        sim->setShearStress(gid, sim->getBlock(gid).getInitShearStress());
+        sim->setNormalStress(gid, sim->getBlock(gid).getInitNormalStress());
 
         // Set the stress drop based on the Greens function calculations
         stress_drop = 0;
-        norm_velocity = it->slip_rate();
+        norm_velocity = sim->getBlock(gid).slip_rate();
         
         for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-            stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(it->getBlockID(), nt->getBlockID());
+            stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
         }
         
-        it->setStressDrop(it->getMaxSlip()*stress_drop);
+        sim->getBlock(gid).setStressDrop(sim->getBlock(gid).getMaxSlip()*stress_drop);
         
         // noise in the range [1-a, 1+a)
-        it->state.slipDeficit = 0;
+        sim->getBlock(gid).state.slipDeficit = 0;
 
-        if (sim->isLocalBlockID(bid)) {
-            sim->decompressNormalRow(bid);
+        if (sim->isLocalBlockID(gid)) {
+            sim->decompressNormalRow(gid);
             //sim->setGreenNormal(bid, bid, 0.0);  // Erase diagonal for normal Greens matrix
-            sim->compressNormalRow(bid, 0.7);
+            sim->compressNormalRow(gid, 0.7);
         }
     }
 
