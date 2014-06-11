@@ -381,7 +381,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             element_step_vec = element_end-element_start;
 
             // Use the t value in the middle of the element for interpolation
-            inter_t = t;//+0.5*element_size/(next_trace_point-cur_trace_point).mag();
+            inter_t = t;
             elem_depth = inter_t*trace.at(i).depth_along_dip()+(1.0-inter_t)*trace.at(i-1).depth_along_dip();
             // Warn user if element depth is smaller than element size
             num_vert_elems = floor(elem_depth/element_size);
@@ -404,10 +404,18 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 // Calculate values for element based on interpolation between trace points
                 taper_t = 1;
 
-                if (taper_method == "taper" || taper_method == "taper_renorm") {
-                    double x = (dist_along_trace+t*(next_trace_point-cur_trace_point).mag()-0.5*element_size)/total_trace_length;
+                double cur_dist = dist_along_trace+t*(next_trace_point-cur_trace_point).mag()-0.5*element_size;
+                if (taper_method == "taper_full" || taper_method == "taper_renorm") {
+                    double x = cur_dist/total_trace_length;
                     double z = (float(ve)+0.5)/num_vert_elems;
                     taper_t *= 4*(x-x*x)*sqrt(1-z);
+                } else if (taper_method == "taper") {
+                    double inside_dist = (total_trace_length/2.0 - fabs(total_trace_length/2.0-cur_dist));
+                    if (inside_dist <= elem_depth) {
+                        double x = inside_dist/elem_depth;
+                        double z = (float(ve)+0.5)/num_vert_elems;
+                        taper_t *= sqrt(x)*sqrt(1-z);
+                    }
                 }
 
                 taper_flow += taper_t*elem_slip_rate*(element_size*element_size);

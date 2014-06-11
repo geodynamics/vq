@@ -303,8 +303,8 @@ int main (int argc, char **argv) {
     // Check that the taper methods are valid
     for (i=0; i<taper_fault_methods.size(); ++i) {
         if (taper_fault_methods[i] != "none" && taper_fault_methods[i] != "taper"
-            && taper_fault_methods[i] != "taper_renorm") {
-            std::cerr << "ERROR: Taper method " << taper_fault_methods[i] << " must be one of: none, taper, taper_renorm." << std::endl;
+            && taper_fault_methods[i] != "taper_full" && taper_fault_methods[i] != "taper_renorm") {
+            std::cerr << "ERROR: Taper method " << taper_fault_methods[i] << " must be one of: none, taper, taper_full, taper_renorm." << std::endl;
             arg_error = true;
         }
     }
