@@ -184,7 +184,7 @@ if __name__ == "__main__":
         mean_interevent = calc_mean_interevent(events)
 
         reldiff = abs(mean_interevent-expected_mean_interevent)/expected_mean_interevent
-        if reldiff > 0.01: err = True
+        if reldiff > 0.02: err = True
         print("Calculated mean interevent:", mean_interevent, "vs. expected:", expected_mean_interevent)
 
     if err: exit(1)
