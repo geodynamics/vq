@@ -49,7 +49,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
         }
         
-        sim->getBlock(gid).setStressDrop(sim->getBlock(gid).getMaxSlip()*stress_drop);
+        sim->getBlock(gid).setStressDrop(sim->getBlock(gid).max_slip()*stress_drop);
         
         // noise in the range [1-a, 1+a)
         sim->getBlock(gid).state.slipDeficit = 0;

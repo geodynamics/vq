@@ -57,6 +57,8 @@ namespace quakelib {
             double      _static_strength;
             //! Dynamic sliding strength (Pascals)
             double      _dynamic_strength;
+            //! Maximum slip distance of this element (meters)
+            double      _max_slip;
 
         public:
             //! Calculate the stress tensor at a location with Lame parameters lambda and mu
@@ -154,13 +156,24 @@ namespace quakelib {
                 _lame_lambda = new_lame_lambda;
             };
 
+            //! Get the maximum slip distance for this element
+            double max_slip(void) const {
+                return _max_slip;
+            }
+            //! Set the maximum slip distance for this element
+            void set_max_slip(const double &new_max_slip) throw(std::invalid_argument) {
+                if (new_max_slip < 0) throw std::invalid_argument("quakelib::Element::set_max_slip");
+                _max_slip = new_max_slip;
+            }
+        
             //! Clear all variables for this element.
             void clear(void) {
                 for (unsigned int i=0; i<3; ++i) {
                     _vert[i] = Vec<3>();
                 }
 
-                _rake = _slip_rate = _aseis_factor = _lame_mu = _lame_lambda = _static_strength = _dynamic_strength = nan("");
+                _rake = _slip_rate = _aseis_factor = _lame_mu = _lame_lambda = nan("");
+                _static_strength = _dynamic_strength = _max_slip = nan("");
             };
 
             //! Returns a unit vector along the direction of fault dip.

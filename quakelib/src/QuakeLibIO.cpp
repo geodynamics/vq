@@ -241,6 +241,15 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+    
+    field_desc.name = "max_slip";
+    field_desc.details = "Maximum slip distance for this element, in meters.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(ElementData, _max_slip);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
 }
 
 void quakelib::ModelElement::read_data(const ElementData &in_data) {
@@ -266,6 +275,7 @@ void quakelib::ModelElement::read_ascii(std::istream &in_stream) {
     ss >> _data._rake;
     ss >> _data._lame_mu;
     ss >> _data._lame_lambda;
+    ss >> _data._max_slip;
 }
 
 void quakelib::ModelElement::write_ascii(std::ostream &out_stream) const {
@@ -281,7 +291,8 @@ void quakelib::ModelElement::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._aseismic << " ";
     out_stream << _data._rake << " ";
     out_stream << _data._lame_mu << " ";
-    out_stream << _data._lame_lambda;
+    out_stream << _data._lame_lambda << " ";
+    out_stream << _data._max_slip;
 
     next_line(out_stream);
 }
@@ -320,15 +331,14 @@ void quakelib::FaultTracePoint::write_ascii(std::ostream &out_stream) const {
 
 void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method) {
     Vec<3>              cur_trace_point, next_trace_point, element_start, element_end, element_step_vec, vert_step;
-    double              dist_along_strike, t, inter_t;
+    double              t, inter_t;
     std::vector<UIndex> elem_ids;
     double              x_0, x_1, x_s, y_0, y_1, y_s, l;
     double              elem_depth, elem_slip_rate, elem_aseismic;
     double              elem_rake, elem_dip;
     double              elem_lame_mu, elem_lame_lambda;
-    unsigned int        i, num_vert_elems, ve;
-    bool                used_trace_segment;
-    double              total_trace_length, dist_along_trace, taper_t, taper_flow, taper_full;
+    unsigned int        num_vert_elems, ve;
+    double              total_trace_length, taper_t;
     Conversion          conv(base_coord);
 
     if (element_size <= 0) return;
@@ -343,20 +353,23 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     total_trace_length = 0;
     cur_trace_point = conv.convert2xyz(trace.at(0).pos());
 
-    for (i=1; i<trace.size(); ++i) {
+    for (unsigned int i=1; i<trace.size(); ++i) {
         next_trace_point = conv.convert2xyz(trace.at(i).pos());
         total_trace_length += (next_trace_point-cur_trace_point).mag();
         cur_trace_point = next_trace_point;
     }
 
-    dist_along_strike = dist_along_trace = 0;
-    taper_flow = taper_full = 0;
+    double dist_along_strike = 0;
+    double dist_along_trace = 0;
+    double taper_flow = 0;
+    double taper_full = 0;
+    double fault_area = 0;
     cur_trace_point = element_start = conv.convert2xyz(trace.at(0).pos());
-
-    for (i=1; i<trace.size(); ++i) {
+    
+    for (unsigned int i=1; i<trace.size(); ++i) {
         next_trace_point = conv.convert2xyz(trace.at(i).pos());
         t = 0;
-        used_trace_segment = false;
+        bool used_trace_segment = false;
 
         while (t <= 1) {
             // Treat the line between the current two trace points as a parameterized equation with t in [0,1]
@@ -449,6 +462,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 elem.set_rake(elem_rake);
                 elem.set_lame_mu(elem_lame_mu);
                 elem.set_lame_lambda(elem_lame_lambda);
+                
+                fault_area += element_size*element_size;
             }
 
             element_start = element_end;
@@ -465,10 +480,19 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     if (taper_method == "taper_renorm") {
         double renorm_factor = taper_full/taper_flow, cur_slip_rate;
 
-        for (i=0; i<elem_ids.size(); ++i) {
+        for (unsigned int i=0; i<elem_ids.size(); ++i) {
             cur_slip_rate = element(elem_ids[i]).slip_rate();
             element(elem_ids[i]).set_slip_rate(renorm_factor*cur_slip_rate);
         }
+    }
+    
+    // Go through the created elements and assign maximum slip based on the total fault area
+    // From Table 2A in Wells Coppersmith 1994
+    double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
+    
+    for (unsigned int i=0; i<elem_ids.size(); ++i) {
+        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*element(elem_ids[i]).lame_mu()*fault_area);
+        element(elem_ids[i]).set_max_slip(max_slip);
     }
 }
 
@@ -1381,6 +1405,7 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     new_element.set_aseismic(eit->second.aseismic());
     new_element.set_lame_mu(eit->second.lame_mu());
     new_element.set_lame_lambda(eit->second.lame_lambda());
+    new_element.set_max_slip(eit->second.max_slip());
 
     return new_element;
 }
