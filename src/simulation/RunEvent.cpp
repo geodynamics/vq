@@ -33,7 +33,7 @@ void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
 
-        // Blocks can only once per event, after that they slide freely
+        // Blocks can only fail once per event, after that they slide freely
         if (sim->getBlock(gid).getFailed()) continue;
 
         // Add this block if it has a static CFF failure
