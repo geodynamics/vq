@@ -160,3 +160,8 @@ xcuserdata
 xcode/
 doc/#vc.lyx#
 doc/vc.lyx~
+
+examples/ca_model/all_cal*
+examples/ca_model/events*
+examples/ca_model/sweeps*
+
