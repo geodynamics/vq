@@ -527,44 +527,66 @@ void VCSimulation::distributeUpdateField(void) {
 }
 
 /*!
- Distributes a bit field of which blocks failed in the current sweep.
- Needed for slip calculation if faults are spread over multiple processors.
+ Distributes a list of blocks among all processors. Used for determining failed blocks in a sweep.
  */
-void VCSimulation::distributeFailedBlocks(BlockIDSet &failed_blocks) {
+void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
 #ifdef MPI_C_FOUND
-    int                         i;
-    BlockIDSet::iterator        it;
-
-    for (i=0; i<numGlobalBlocks(); ++i) failBlockRecvBuf[i] = 0;
-
-    for (i=0; i<numLocalBlocks(); ++i) failBlockSendBuf[i] = -1;
-
-    for (i=0,it=failed_blocks.begin(); it!=failed_blocks.end(); ++i,++it) {
-        if (isLocalBlockID(*it)) {
-            failBlockSendBuf[i] = *it;
-        }
-    }
+    int                         i, n, p;
+    BlockIDSet::const_iterator  it;
+    int                         *proc_block_count = new int[world_size];
+    int                         *proc_block_disps = new int[world_size];
+    BlockID                     *local_block_ids = new BlockID[local_id_list.size()];
 
 #ifdef DEBUG
     startTimer(dist_comm_timer);
 #endif
-    MPI_Allgatherv(failBlockSendBuf,
-                   numLocalBlocks(),
+
+    // Let all procs know how many blocks there were on other processors
+    int local_block_count = local_id_list.size();
+    MPI_Allgather(&local_block_count, 1, MPI_INT, proc_block_count, 1, MPI_INT, MPI_COMM_WORLD);
+
+#ifdef DEBUG
+    stopTimer(dist_comm_timer);
+#endif
+    
+    // Create list of local block IDs
+    for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) local_block_ids[i] = *it;
+    
+    // Count total, displacement of block IDs
+    int total_blocks = 0;
+    for (i=0;i<world_size;++i) {
+        proc_block_disps[i] = total_blocks;
+        total_blocks += proc_block_count[i];
+    }
+    
+    BlockID                     *block_ids = new BlockID[total_blocks];
+    
+#ifdef DEBUG
+    startTimer(dist_comm_timer);
+#endif
+    MPI_Allgatherv(local_block_ids,
+                   local_block_count,
                    MPI_INT,
-                   failBlockRecvBuf,
-                   failBlockCounts,
-                   failBlockDisps,
+                   block_ids,
+                   proc_block_count,
+                   proc_block_disps,
                    MPI_INT,
                    MPI_COMM_WORLD);
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
 
-    for (i=0; i<numGlobalBlocks(); ++i) {
-        if (failBlockRecvBuf[i] >= 0) {
-            failed_blocks.insert(failBlockRecvBuf[i]);
+    n = 0;
+    for (p=0;p<world_size;++p) {
+        for (i=0;i<proc_block_count[p];++i) {
+            global_id_list.insert(std::make_pair(p, block_ids[n]));
+            ++n;
         }
     }
+    
+    delete block_ids;
+    delete proc_block_count;
+    delete proc_block_disps;
 
 #endif
 }

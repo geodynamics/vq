@@ -122,7 +122,7 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
         void distributeUpdateField(void);
-        void distributeFailedBlocks(BlockIDSet &failed_blocks);
+        void distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list);
         void collectEventSweep(VCEventSweep &cur_sweep);
 
         std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> getNeighbors(const BlockID &bid) const;

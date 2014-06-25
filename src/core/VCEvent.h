@@ -38,6 +38,7 @@ class EventBlockData {
 
 typedef std::map<BlockID, EventBlockData> EventBlockMap;
 typedef std::set<BlockID> BlockIDSet;
+typedef std::map<BlockID, int> BlockIDProcMapping;
 typedef std::set<FaultID> FaultIDSet;
 typedef std::set<SectionID> SectionIDSet;
 typedef std::map<FaultID, BlockIDSet> FaultBlockMapping;

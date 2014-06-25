@@ -29,7 +29,8 @@
  */
 class RunEvent : public SimPlugin {
     private:
-        BlockIDSet          blocks2fail;
+        BlockIDSet          local_failed_blocks;
+        BlockIDProcMapping  global_failed_blocks;
         BlockIDSet          looseBlocks;
 
         void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
