@@ -579,7 +579,7 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
     n = 0;
     for (p=0;p<world_size;++p) {
         for (i=0;i<proc_block_count[p];++i) {
-            global_id_list.insert(std::make_pair(p, block_ids[n]));
+            global_id_list.insert(std::make_pair(block_ids[n], p));
             ++n;
         }
     }
