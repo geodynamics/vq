@@ -6,6 +6,12 @@ import math
 import sys
 import argparse
 
+scipy_available = True
+try:
+    import scipy.stats
+except ImportError:
+    scipy_available = False
+
 class EventSweep:
     def __init__(self):
         self.sweep_num = -1
@@ -151,6 +157,24 @@ def calc_b_val(events):
         print(cur_mag, n_above_mag)
     print(a_val, min_mag, max_mag)
 
+def rupture_area_vs_mag(events):
+    log_ra = []
+    mag = []
+    for event_num in events.event_list:
+        event = events.event_list[event_num]
+        rupture_area = 0
+        sweep_list = event.get_sweeps()
+        block_areas = {}
+        for sweep in sweep_list:
+            block_areas[sweep.block_id] = sweep.area
+        rupture_area = sum([block_areas[bnum] for bnum in block_areas])
+
+        if not math.isnan(event.magnitude):
+            log_ra.append(math.log10(rupture_area/1e6))
+            mag.append(event.magnitude)
+    slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(log_ra, mag)
+    print(slope, intercept)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze result file.")
     parser.add_argument('--event_file', nargs=1, required=True,
@@ -165,6 +189,10 @@ if __name__ == "__main__":
             help="Perform mean interevent time analysis with specified expected value.")
     parser.add_argument('--gb_b_val', nargs=1, type=float,
             help="Calculate Gutenberg-Richter b value and compare with specified value.")
+    if scipy_available:
+        parser.add_argument('--rupture_area_vs_mag', action="store_true",
+                help="Calculate rupture area vs magnitude, compare to Wells and Coppersmith.")
+
     args = parser.parse_args()
 
     event_file = args.event_file[0]
@@ -204,6 +232,9 @@ if __name__ == "__main__":
     if args.gb_b_val:
         expected_gb_b_val = args.gb_b_val[0]
         b_val = calc_b_val(events)
+
+    if scipy_available and args.rupture_area_vs_mag:
+        rupture_area_vs_mag(events)
 
     if err: exit(1)
 
