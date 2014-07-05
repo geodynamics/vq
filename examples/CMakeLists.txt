@@ -42,50 +42,32 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             --export_file_type=kml
             --print_statistics=statistics_${RES}.txt
             )
-        ADD_TEST(
-            NAME param_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7
-            )
-        SET_TESTS_PROPERTIES (
-            param_${TAPER}_${RES} PROPERTIES DEPENDS mesh_${TAPER}_${RES}
-            )
+        ADD_TEST(NAME param_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7)
+        SET_TESTS_PROPERTIES (param_${TAPER}_${RES} PROPERTIES DEPENDS mesh_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
-        ADD_TEST(
-            NAME run_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND vc params_${RES}.d
-            )
-        SET_TESTS_PROPERTIES (
-            run_${TAPER}_${RES} PROPERTIES DEPENDS param_${TAPER}_${RES}
-            )
+        ADD_TEST(NAME run_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND vc params_${RES}.d)
+        SET_TESTS_PROPERTIES (run_${TAPER}_${RES} PROPERTIES DEPENDS param_${TAPER}_${RES})
 
         # Check that the results are internally self consistent
-        ADD_TEST(
-            NAME test_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent
-            )
+        ADD_TEST(NAME test_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
         SET_TESTS_PROPERTIES (test_consistent_${TAPER}_${RES} PROPERTIES DEPENDS run_${TAPER}_${RES})
 
         # Check that the mean slip is near our expectations
         IF (NOT ${MEANSLIP} EQUAL 0)
-            ADD_TEST(
-                NAME test_slip_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP}
-                )
-            SET_TESTS_PROPERTIES (
-                test_slip_${TAPER}_${RES} PROPERTIES DEPENDS run_${TAPER}_${RES}
-                )
+            ADD_TEST(NAME test_slip_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
+            SET_TESTS_PROPERTIES (test_slip_${TAPER}_${RES} PROPERTIES DEPENDS run_${TAPER}_${RES})
         ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
         # Check that the mean interevent time is near our expectations
         IF (NOT ${INTEREVENT} EQUAL 0)
-            ADD_TEST(
-                NAME test_interevent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT}
-                )
-            SET_TESTS_PROPERTIES (
-                test_interevent_${TAPER}_${RES} PROPERTIES DEPENDS run_${TAPER}_${RES}
-                )
+            ADD_TEST(NAME test_interevent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
+            SET_TESTS_PROPERTIES (test_interevent_${TAPER}_${RES} PROPERTIES DEPENDS run_${TAPER}_${RES})
         ENDIF(NOT ${INTEREVENT} EQUAL 0)        
     ENDFOREACH()
 ENDFOREACH()
@@ -114,56 +96,36 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
 
 
         # Test that the mesher works and generate a parameter file
-        ADD_TEST(
-            NAME mesh_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_MESH_TWO_FAULT} ${RES}
-            )
-        ADD_TEST(
-            NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT_DIFF} ${RES} 0.7
-            )
-        SET_TESTS_PROPERTIES (
-            param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES}
-            )
+        ADD_TEST(NAME mesh_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${SETUP_MESH_TWO_FAULT} ${RES})
+        ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${SETUP_PARAMS_SCRIPT_DIFF} ${RES} 0.7)
+        SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
-        ADD_TEST(
-            NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND vc params_two_${RES}.d
-            )
-        SET_TESTS_PROPERTIES (
-            run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES}
-            )
+        ADD_TEST(NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND vc params_two_${RES}.d)
+        SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
         # Check that the results are internally self consistent
-        ADD_TEST(
-            NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent
-            )
+        ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
         SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
 
         # Check that the mean slip is near our expectations
         #    These two faults have same slip rate as single fault, so using
         #       same mean slip values
         IF (NOT ${MEANSLIP} EQUAL 0)
-            ADD_TEST(
-                NAME test_two_slip_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_slip ${MEANSLIP}
-                )
-            SET_TESTS_PROPERTIES (
-                test_two_slip_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES}
-                )
+            ADD_TEST(NAME test_two_slip_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_slip ${MEANSLIP})
+            SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
         ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
         # Check that the mean interevent time is near our expectations
         IF (NOT ${INTEREVENT} EQUAL 0)
-            ADD_TEST(
-                NAME test_two_interevent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_interevent ${INTEREVENT}
-                )
-            SET_TESTS_PROPERTIES (
-                test_two_interevent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES}
-                )
+            ADD_TEST(NAME test_two_interevent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_interevent ${INTEREVENT})
+            SET_TESTS_PROPERTIES (test_two_interevent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
         ENDIF(NOT ${INTEREVENT} EQUAL 0)             
     ENDFOREACH()
 ENDFOREACH()
