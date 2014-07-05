@@ -179,7 +179,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         // Send back the resulting values from x to each process
         for (i=0,n=0,jt=global_id_list.begin();jt!=global_id_list.end();++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
-                MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+                MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
             } else {
                 memcpy(&(x[n]), &(fullx[i]), sizeof(double));
                 n++;
