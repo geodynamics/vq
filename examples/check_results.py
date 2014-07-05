@@ -139,6 +139,18 @@ def calc_mean_interevent(events):
 
     return sum(interevent_times)/float(len(interevent_times))
 
+def calc_b_val(events):
+    mags = [events.event_list[enum].magnitude for enum in events.event_list if events.event_list[enum].magnitude < 10 and events.event_list[enum].magnitude > 0]
+    min_mag = reduce(lambda x,y: min(x,y), mags)
+    max_mag = reduce(lambda x,y: max(x,y), mags)
+    a_val = math.log10(len(mags))
+    for i in range(10):
+        cur_mag = min_mag + i*(max_mag-min_mag)/10.0
+        n_above_mag = sum(1 for m in mags if m >= cur_mag)
+        n_above_mag = math.log10(sum(1 for m in mags if m >= cur_mag)/float(len(mags)))
+        print(cur_mag, n_above_mag)
+    print(a_val, min_mag, max_mag)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze result file.")
     parser.add_argument('--event_file', nargs=1, required=True,
@@ -151,6 +163,8 @@ if __name__ == "__main__":
             help="Perform mean slip analysis with specified expected value.")
     parser.add_argument('--mean_interevent', nargs=1, type=float,
             help="Perform mean interevent time analysis with specified expected value.")
+    parser.add_argument('--gb_b_val', nargs=1, type=float,
+            help="Calculate Gutenberg-Richter b value and compare with specified value.")
     args = parser.parse_args()
 
     event_file = args.event_file[0]
@@ -186,6 +200,10 @@ if __name__ == "__main__":
         reldiff = abs(mean_interevent-expected_mean_interevent)/expected_mean_interevent
         if reldiff > 0.02: err = True
         print("Calculated mean interevent:", mean_interevent, "vs. expected:", expected_mean_interevent)
+
+    if args.gb_b_val:
+        expected_gb_b_val = args.gb_b_val[0]
+        b_val = calc_b_val(events)
 
     if err: exit(1)
 
