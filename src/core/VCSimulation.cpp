@@ -813,7 +813,7 @@ void VCSimulation::partitionBlocks(void) {
 
     // Get the counts of elements from each node and order them in the receive ID list
     for (j=0,i=0; i<world_size; ++i) {
-        updateFieldCounts[i] = node_block_map.count(i)+1;
+        updateFieldCounts[i] = node_block_map.count(i);
         failBlockCounts[i] = node_block_map.count(i);
 
         it_start = node_block_map.equal_range(i).first;
