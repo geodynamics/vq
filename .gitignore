@@ -165,3 +165,16 @@ examples/ca_model/all_cal*
 examples/ca_model/events*
 examples/ca_model/sweeps*
 
+
+doc/*.log
+
+doc/*.lof
+
+doc/*.out
+
+doc/*.synctex.gz
+
+doc/*.toc
+
+doc/*.aux
+
