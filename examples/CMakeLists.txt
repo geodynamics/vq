@@ -100,25 +100,38 @@ ENDFOREACH(NPROC ${NUM_PROCS})
 
 SET(RESOLUTIONS_TWO 12000 6000 3000)
 SET(METHOD_INTEREVENT_TWO 50 0 0)
-SET(SETUP_PARAMS_SCRIPT_DIFF ${VC_EXAMPLE_DIR}/diff_fault/setup_params.sh)
-SET(SETUP_MESH_TWO_FAULT ${VC_EXAMPLE_DIR}/ca_model/gen_ca_model.sh)
+SET(SETUP_TWO_FAULT_PARAMS_SCRIPT ${VC_EXAMPLE_DIR}/two_fault/setup_params.sh)
 
 FOREACH(TAPER_IND RANGE ${NUM_TAPER})
     LIST(GET TAPER_METHODS ${TAPER_IND} TAPER)
     LIST(GET METHOD_MEANSLIP ${TAPER_IND} MEANSLIP)
     LIST(GET METHOD_INTEREVENT_TWO ${TAPER_IND} INTEREVENT)
     FOREACH(RES ${RESOLUTIONS_TWO})
-        SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/diff_fault/${TAPER}/)
+        SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/two_fault/${TAPER}/)
         FILE(MAKE_DIRECTORY ${TEST_DIR})
         SET(EVENT_FILE_TWO ${TEST_DIR}events_${RES}.txt)
         SET(SWEEP_FILE_TWO ${TEST_DIR}sweeps_${RES}.txt)
 
 
         # Test that the mesher works and generate a parameter file
-        ADD_TEST(NAME mesh_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_MESH_TWO_FAULT} ${RES})
+        ADD_TEST(
+            NAME mesh_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND mesher
+            --import_file=../../../fault_traces/two_fault_1.txt
+            --import_file_type=trace --import_trace_element_size=${RES}
+            --taper_fault_method=${TAPER}
+            --import_file=../../../fault_traces/two_fault_2.txt
+            --import_file_type=trace --import_trace_element_size=${RES}
+            --taper_fault_method=${TAPER}
+            --export_file=two_fault_${RES}.txt
+            --export_file_type=text
+            --export_file=two_fault_${RES}.kml
+            --export_file_type=kml
+            --print_statistics=statistics_${RES}.txt
+            )
+ 
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT_DIFF} ${RES} 0.7)
+            COMMAND ${SETUP_TWO_FAULT_PARAMS_SCRIPT} ${RES} 0.7)
         SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
@@ -127,10 +140,9 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
         SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
         # Check that the results are internally self consistent
-        # TODO: These tests fail, Kasey needs to figure out why
-        #ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-        #    COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
-        #SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
+        ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
+        SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
 
         # Check that the mean slip is near our expectations
         #    These two faults have same slip rate as single fault, so using
