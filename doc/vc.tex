@@ -744,13 +744,12 @@ but rather iterative calculations of stress and element failure to
 approximate a rupture propagating through the fault system.
 
 
-\section{QuakeLib Visual Tour}
+\section{QuakeLib Tour}
 
 As mentioned in Section \ref{sec:About_quakelib}, the QuakeLib library
 provides tools and a Python interface to develop earthquake simulations,
-read/write EqSim format files for geometry, friction, initial conditions
+read/write EqSim or VC format files for geometry, friction, initial conditions
 and events, and calculate Okada's functions for arbitrary fault geometries. 
-
 QuakeLib can be compiled and used independently from Virtual California.
 To only compile QuakeLib, follow the install instructions in section
 \ref{sec:Install} but from the quakelib subdirectory.
@@ -758,7 +757,6 @@ To only compile QuakeLib, follow the install instructions in section
 This chapter provides a brief visual tour of a few analytical utilities
 in QuakeLib and to illustrate its capacity as the computational backbone
 for impressive and informative visualizations.
-
 
 \subsection{Conventions}
 
@@ -826,7 +824,7 @@ analytical tools applied to single fault elements.
 
 The stress field Green's function is defined in quakelib/src/QuakeLibOkada.cpp
 as \textbf{calc\_stress\_tensor. }This function computes the stress
-tensor at an arbitrary location = (x,y,z) around the fault plane.
+tensor at an arbitrary location in the elastic halfspace around the fault plane.
 Examples of the shear stress field -- equation \ref{eq:shear_stress_sum}
 -- computed by QuakeLib for a single vertical ($\delta = 90^{\circ}$)
 strike slip fault element are shown in Figure \ref{fig:okada_stress_field}.
@@ -852,8 +850,10 @@ by the arrows.\label{fig:okada_stress_field}}
 
 The Green's function is defined in quakelib/src/QuakeLibOkada.cpp
 as\textbf{ calc\_displacement\_vector.} This function computes the
-co-seismic displacement vector for an arbitrary location = (x,y,z)
-around the fault plane. The fault parameters for each fault element
+co-seismic displacement vector for an arbitrary location in the elastic halfspace
+around the fault plane. Figure \ref{fig:single_element_displacements} shows
+displacement fields for faults of different dips as calculated by this function.
+In this figure the parameters for each fault element
 are L = 10km, W = 10km, slip = 5m, and the horizontal/vertical axes
 measure distance on the surface of the halfspace in km. The fault
 plane depth values (C) are 10km for strike-slip, 11km for normal,
@@ -894,7 +894,7 @@ strike-slip $\delta = 90^{\circ}$. \textbf{Center:} normal $\delta = 60^{\circ}$
 
 The gravity Green's function is defined in quakelib/src/QuakeLibOkada.cpp
 as \textbf{calc}\_\textbf{dg. }This function computes the gravity
-anomalies at an arbitrary surface location = (x,y) around the fault
+anomalies at an arbitrary surface location on the elastic halfspace around the fault
 plane. This is the total gravity field anomaly Green's functions,
 which includes contributions from subsurface density changes (dilatational)
 and from surface displacement (free-air). Examples of the gravity
@@ -933,17 +933,17 @@ The true power of QuakeLib lies in its ability to serve as the analytical
 backbone for visualizing the results of Virtual California's simulated
 seismic histories. The following example plots illustrate this point
 by showing QuakeLib's tools applied over many fault elements involved
-in a single simulated earthquake. The simulated earthquakes visualized
+in a single simulated earthquake. The earthquakes visualized
 below come from a simulation involving all major fault sections in
 California, the UCERF2 model described in section \ref{sec:Fault_model}.
 
 
 \subsubsection{Displacement Field}
 
-Figure \ref{fig:Displacement_field} shows vertical displacement field
+Figure \ref{fig:Displacement_field} shows the vertical displacement field
 on the surface as seen by an orbiting satellite for a very large (moment
 magnitude 8.0) earthquake involving multiple sections of the San Andreas
-Fault. 
+Fault.
 
 \begin{figure}
 \centering{}\includegraphics[width=1\textwidth]{graphics/dz_54358}\caption{\label{fig:Displacement_field}Simulated InSAR interferogram showing
@@ -957,7 +957,7 @@ white lines), as seen by an orbiting satellite. }
 \subsubsection{Gravity Field Anomalies}
 
 Figure \ref{fig:Gravity_field} shows co-seismic gravitational anomaly
-field on the surface, possibly as measured by an orbiting satellite
+field on the surface, as measured by an orbiting satellite
 for the same simulated earthquake as Figure \ref{fig:Displacement_field}. 
 
 \begin{figure}
@@ -984,36 +984,38 @@ the installation process.
 
 \section{Getting Help}
 
-For help, send e-mail to the CIG Short Mailing List \url{cig-short@geodynamics.org}.
+For help, send e-mail to the Short Term Crustal Dynamics Mailing List \url{cig-short@geodynamics.org}.
 You can subscribe to the Mailing List and view archived discussion
-at the Geodynamics Mail Lists web page \url{geodynamics.org/cig/lists}.
+at the Geodynamics Mail Lists web page \url{http://geodynamics.org/cig/about/mailing-lists/}.
+For bugs found in the manual or source code, or to make feature requests please use the Github issue tracker at \url{https://github.com/geodynamics/vc/issues}.
 
 
 \section{System Requirements}
 
-Installation of Virtual California requires a C++ compiler and the
+Installation of Virtual California requires a C++ compiler.  Optional requirements are the
 headers and development libraries for
 \begin{itemize}
 \item MPI
 \item OpenMP
 \item HDF5
 \item SWIG
-\item CMAKE
+\item CMake
 \end{itemize}
 You must also have Python 2.7 or greater installed.
 
 
-\section{Downloading and Unpacking Source}
+\section{Obtaining Source}
 
-To obtain Virtual California, go to the Geodynamics Software Packages
-web page \url{geodynamics.org/cig/software/vc}, download the source
-archive and unpack it using the \texttt{tar} command: 
+To obtain the latest official release of Virtual California, go to the Geodynamics software package
+web page \url{http://geodynamics.org/cig/software/vc}, download the source
+archive and unpack it using the \texttt{tar} command:
 \begin{verbatim}
-\$~tar~xzf~VirtualCalifornia.tar.gz
+$ tar xzf vc-1.0.0.tar.gz
 \end{verbatim}
-If you don't have GNU Tar, try the following command instead: 
+
+To get the latest development version of Virtual California, use git to make a copy of the repository:
 \begin{verbatim}
-\$~gunzip~-c~VirtualCalifornia.tar.gz~\textbar{}~tar~xf~-
+$ git clone --recursive https://github.com/geodynamics/vc
 \end{verbatim}
 
 \section{\label{sec:Install}Installation Procedure}
@@ -1022,95 +1024,50 @@ After unpacking the source, use the following procedure to install
 the Virtual California executable as well as the QuakeLib library
 and the mesher program:
 \begin{enumerate}
-\item Navigate (i.e., \texttt{cd}) to the directory containing the Virtual
+\item Navigate to the directory containing the Virtual
 California source\texttt{.}~\\
 \texttt{}~\\
-\texttt{\$ cd VirtualCalifornia}
-\item Make the build directory\texttt{ and navigate to it.}~\\
+\texttt{\$ cd vc}
+\item Make the build directory and navigate to it.\\
 \texttt{}~\\
 \texttt{\$ mkdir build}~\\
 \texttt{\$ cd build}
-\item Use CMAKE to link everything before compiling VC.\texttt{}~\\
+\item Use CMake to configure before compiling VC.\texttt{}~\\
 \texttt{}~\\
 \texttt{\$ cmake ..}
-\item Use CMAKE to build the package.\texttt{}~\\
+\item Use make to build QuakeLib and the VC binaries.\texttt{}~\\
 \texttt{}~\\
 \texttt{\$ make}
 \end{enumerate}
 If you are content to run Virtual California from the build directory,
 then you are done. Upon successful completion, the \texttt{make} command
-creates two executables ''mesher'' and \texttt{''vc''} in the
-\texttt{/build/src/} subdirectory. VC is the script you will use to
+creates two executables ``mesher'' and ``vc'' in the
+\texttt{/build/src/} subdirectory. ``vc'' is the binary you will use to
 run a Virtual California simulation, and the mesher program can create
-fault models as described in section \ref{sec:building_faults}. You
-may wish to add the \texttt{bin} directory to your \texttt{PATH}.
-
-For more details about \texttt{configure}, see Section \ref{sec:Configuration}
-below.
+fault models as described in Section \ref{sec:building_faults}.
 
 
 \subsection{Mac OS X}
 
-With the OS X default python: 
+If you have a third party installation of python (e.g. from Homebrew
+or MacPorts) Virtual California will build and install, but the Python
+QuakeLib module may not work (failure will generally manifest itself as a segmentation fault). This is because CMake may build against
+a different installation of Python than it runs Python scripts with. To fix this you can specify the Python installation to use when compiling QuakeLib with:
 \begin{verbatim}
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-\end{verbatim}
-If you have a third party installation of python (ie. from homebrew
-or macports) Virtual California will build and install, but the python
-quakelib module may not work. This is because cmake builds against
-the system python. To fix this do the following: 
-\begin{verbatim}
-\$ ./configure
-\end{verbatim}
-cmake will output the following: 
-\begin{verbatim}
--{}-~Found~PythonLibs:~/usr/lib/libpythonx.x.dylib~
-\end{verbatim}
-where ``x.x'' is a version number (ie. ``2.7'').
-We need to move this file and create a link to the correct python. 
-\begin{verbatim}
-\$~sudo~mv~/usr/lib/libpythonx.x.dylib~/usr/lib/libpythonx.x.sys.dylib~
-
-\$~which~python~\textbar{}~xargs~otool~-L~
-\end{verbatim}
-This will output /the/path/to/python/library. 
-\begin{verbatim}
-\$~sudo~ln~-s~/the/path/to/python/library~/usr/lib/libpythonx.x.dylib
-
-\$~rm~-r~build/~
-
-\$~./configure~
-
-\$~cd~build~
-
-\$~make~
-
-\$~sudo~make~install~
+cmake -DPYTHON_EXECUTABLE=/.../python \
+    -DPYTHON_LIBRARY=/.../libpython2.7.dylib \
+    -DPYTHON_INCLUDE_DIR=/.../include/python2.7/ ..
 \end{verbatim}
 
-\subsection{Linux}
-
-Follow the steps below:
-\begin{verbatim}
-\$~mkdir~build
-
-\$~cd~build
-
-\$~cmake~..
-
-\$~make
-\end{verbatim}
+Be sure to change the paths to whatever is appropriate on your system.
 
 \subsection{Install Locations}
 
-Quakelib libraries will be installed in standard library directories
-based on your system configuration. Cmake will generate a file named
-``install\_manifest.txt'' in the build directory detailing
-the locations of installed files. The Virtual California binary is
-build/src/vc.
+QuakeLib libraries will be installed in standard library directories
+based on your system configuration. CMake will generate a file named
+\texttt{install\_manifest.txt} in the build directory detailing
+the locations of installed files. The Virtual California binary is at
+\texttt{build/src/vc}.
 
 
 \subsection{Selecting a Compiler --- Multiprocessing\label{sec:Selecting-a-Compiler-Multiproc}}
@@ -1119,16 +1076,13 @@ Depending on the machine used to run VC, you may need to change which
 compiler CMake uses to compile VC. For example, if the user wants
 to compile VC with gcc 3.3, execute cmake as shown below.
 \begin{verbatim}
-\$~CC=gcc-3.3~CXX=g++-3.3~cmake~..
-
-\$~make
+$ CC=gcc-3.3 CXX=g++-3.3 cmake ..
+$ make
 \end{verbatim}
-To compile Virtual California and deploy it across multicore processors
-or many processors, execute cmake instead as:
+To compile Virtual California and deploy it across multiple processors using MPI, execute cmake instead as:
 \begin{verbatim}
-\$~CC=mpicc~CXX=mpicxx~cmake~..
-
-\$~make
+$ CC=mpicc CXX=mpicxx cmake ..
+$ make
 \end{verbatim}
 
 \subsection{Additional Tools}
@@ -1137,32 +1091,31 @@ While the following software is not necessary for the normal operation
 of Virtual California, you may find it useful for accessing Virtual
 California data in HDF5 files.
 
+%
+%\subsubsection{NumPy}
+%
+%NumPy is an extension to Python which adds support for multi-dimensional
+%arrays for use in scientific computing. You may download NumPy from
+%the NumPy home page \url{numpy.scipy.org}. To compile and install
+%this extension, download it and issue the following commands after
+%extracting it:
+%\begin{verbatim}
+%\$ cd~numpy-1.0
+%\$~python~setup.py~install~-{}-prefix=\$HOME/cig
+%\end{verbatim}
+%Alternatively, under Debian Linux you can install the \texttt{python-numpy}
+%package. On Gentoo Linux, NumPy is available in the \texttt{dev-python/numpy}
+%build.
+%
 
-\subsubsection{NumPy}
-
-NumPy is an extension to Python which adds support for multi-dimensional
-arrays for use in scientific computing. You may download NumPy from
-the NumPy home page \url{numpy.scipy.org}. To compile and install
-this extension, download it and issue the following commands after
-extracting it:
-\begin{verbatim}
-\$~cd~numpy-1.0
-
-\$~python~setup.py~install~-{}-prefix=\$HOME/cig
-\end{verbatim}
-Alternatively, under Debian Linux you can install the \texttt{python-numpy}
-package. On Gentoo Linux, NumPy is available in the \texttt{dev-python/numpy}
-ebuild.
-
-
-\subsubsection{PyTables}
-
-PyTables is a package for managing hierarchical datasets and designed
-to efficiently and easily cope with extremely large amounts of data.
-PyTables is built on top of the HDF5 library, using the Python language
-and the NumPy package. After checking its dependencies, you may download
-PyTables from the PyTables home page \url{pytables.org}. To install,
-follow instructions on the installation page \url{http://pytables.github.io/usersguide/installation.html}. 
+%\subsubsection{PyTables}
+%
+%PyTables is a package for managing hierarchical datasets and designed
+%to efficiently and easily cope with extremely large amounts of data.
+%PyTables is built on top of the HDF5 library, using the Python language
+%and the NumPy package. After checking its dependencies, you may download
+%PyTables from the PyTables home page \url{pytables.org}. To install,
+%follow instructions on the installation page \url{http://pytables.github.io/usersguide/installation.html}. 
 
 
 \subsubsection{HDFView}
@@ -1176,17 +1129,17 @@ HDF5 files. You may download it from the HDFView home page \url{hdf.ncsa.uiuc.ed
 
 \section{Introduction}
 
-Now that installation and testing is finished, let's get into the
+Now that installation and testing is finished, we will get into the
 specifics of building a fault model, compiling Virtual California,
 and finally running a custom simulation. The following chapter serves
 to illustrate the main features of a Virtual California simulation,
-and will prepare the user for the explicit examples in Chapter \ref{cha:Running_VC}. 
+and will prepare the user for the examples in Chapter \ref{cha:Running_VC}. 
 
 
 \section{Basic Usage and Tests}
 
-The main procedure for running a VC simulation is to create/assimilate
-the fault model and friction parameters into a folder (see sections
+The main procedure for running a VC simulation is to create
+the fault model (see Sections
 \ref{sec:Tutorial_single} and \ref{sec:Tutorial_multiple} for examples),
 compile Virtual California following Section \ref{sec:Install} to
 generate the executable, place the executable in the same folder as
@@ -1197,83 +1150,52 @@ the parameter files, and finally execute the program.
 
 If you installed Virtual California according to Section \ref{sec:Install},
 then you successfully compiled the QuakeLib library and the VC and
-mesher executables. We used CMake to compile the simulation program,
-and we have also configured CMake to run a suite of unit tests and
-even test simulations. To run the suite of unit tests simply type
-the following into your terminal.
+mesher executables. CMake is used to configure the simulation program,
+and also provides a test framework to ensure all parts of VC are working as expected. To run the suite of tests use the following commands.
 \begin{verbatim}
-\$~cd~VirtualCalifornia/build/
-
-\$~make~test
-
-Running~tests...~
-
-Test~project~/Users/{[}username{]}/vc/build~
-
-~~Start~1:~CondUnitTest~
-
-1/79~Test~\#1:~CondUnitTest~.........................~Passed~0.11~sec~
-
-~~Start~2:~FricUnitTest~
-
-2/79~Test~\#2:~FricUnitTest~.........................~Passed~0.03~sec~
-
-~~Start~3:~GreenUnitTest~
-
-3/79~Test~\#3:~GreenUnitTest~........................~Passed~0.08~sec~
-
-~~Start~4:~OctreeTest~
-
-4/79~Test~\#4:~OctreeTest~...........................~Passed~0.13~sec~
-
-~~Start~5:~UtilUnitTest~
-
-5/79~Test~\#5:~UtilUnitTest~.........................~Passed~0.15~sec~
-
-~~Start~6:~EventUnitTest~
-
-6/79~Test~\#6:~EventUnitTest~........................~Passed~0.01~sec~
-
-~~Start~7:~GeomUnitTest~
-
-7/79~Test~\#7:~GeomUnitTest~.........................~Passed~0.04~sec~
-
-~~Start~8:~MetadataUnitTest~
-
-8/79~Test~\#8:~MetadataUnitTest~.....................~Passed~0.11~sec~
-
-~~Start~9:~RectBoundTest~
-
-9/79~Test~\#9:~RectBoundTest~........................~Passed~0.00~sec~
-
-~~Start~10:~mesh\_single\_12000~
-
-10/79~Test~\#10:~mesh\_single\_12000~....................~Passed~0.02~sec~
-
-~~Start~11:~run\_single\_12000~
-
-11/79~Test~\#11:~run\_single\_12000~.....................~Passed~0.16~sec~
-
-~~Start~12:~test\_consistent\_single\_12000~
-
-12/79~Test~\#12:~test\_consistent\_single\_12000~.........~Passed~0.06~sec~
-
-~~Start~13:~test\_slip\_single\_12000~
-
-13/79~Test~\#13:~test\_slip\_single\_12000~...............~Passed~0.03~sec
-
+$ cd build/
+$ make test
+Running tests...
+Test project /.../build
+        Start   1: CondUnitTest
+  1/230 Test   #1: CondUnitTest .............................   Passed    0.08 sec
+        Start   2: FricUnitTest
+  2/230 Test   #2: FricUnitTest .............................   Passed    0.09 sec
+        Start   3: GreenUnitTest
+  3/230 Test   #3: GreenUnitTest ............................   Passed    0.09 sec
+        Start   4: OctreeTest
+  4/230 Test   #4: OctreeTest ...............................   Passed    0.06 sec
+        Start   5: UtilUnitTest
+  5/230 Test   #5: UtilUnitTest .............................   Passed    0.15 sec
+        Start   6: EventUnitTest
+  6/230 Test   #6: EventUnitTest ............................   Passed    0.05 sec
+        Start   7: GeomUnitTest
+  7/230 Test   #7: GeomUnitTest .............................   Passed    0.05 sec
+        Start   8: MetadataUnitTest
+  8/230 Test   #8: MetadataUnitTest .........................   Passed    0.04 sec
+        Start   9: RectBoundTest
+  9/230 Test   #9: RectBoundTest ............................   Passed    0.04 sec
+        Start  10: mesh_P1_none_12000
+ 10/230 Test  #10: mesh_P1_none_12000 .......................   Passed    0.01 sec
+        Start  11: param_P1_none_12000
+ 11/230 Test  #11: param_P1_none_12000 ......................   Passed    0.01 sec
+        Start  12: run_P1_none_12000
+ 12/230 Test  #12: run_P1_none_12000 ........................   Passed    0.05 sec
+        Start  13: test_consistent_P1_none_12000
+ 13/230 Test  #13: test_consistent_P1_none_12000 ............   Passed    0.32 sec
+        Start  14: test_slip_P1_none_12000
+ 14/230 Test  #14: test_slip_P1_none_12000 ..................   Passed    0.33 sec
+        Start  15: test_interevent_P1_none_12000
+ 15/230 Test  #15: test_interevent_P1_none_12000 ............   Passed    0.31 sec
 ...
+        Start 230: test_two_consistent_taper_renorm_3000
+230/230 Test #230: test_two_consistent_taper_renorm_3000 ....   Passed    0.72 sec
 
-79/79~Test~\#79:~test\_consistent\_taper\_renorm\_2000~....~Passed~0.39~sec
+100% tests passed, 0 tests failed out of 230
 
-
-
-100\%~tests~passed,~0~tests~failed~out~of~79
-
-Total~Test~time~(real)~=~~~5.51~sec
+Total Test time (real) =  54.90 sec
 \end{verbatim}
-The example output from the CMake test suite shows the range of output,
-however you should not see any failed tests. The final lines of the
+The final lines of the
 output summarize the results from the unit tests and test simulations. 
 
 
@@ -1281,7 +1203,7 @@ output summarize the results from the unit tests and test simulations.
 
 If you would rather explicitly follow the steps of building your own
 fault model, generating the parameter files and running the simulation,
-then you should consult the tutorial in section \ref{sec:Tutorial_single}. 
+then you should consult the tutorial in Section \ref{sec:Tutorial_single}. 
 
 
 \section{Advanced Usage}
@@ -1298,76 +1220,76 @@ and properties.
 \subsection{Tuning Parameters\label{sec:tuning_parameters}}
 
 Fault simulations must initially be tuned to correctly simulate actual
-earthquakes. The primary tuning parameters in Virtual California are
-the dynamic triggering factor $\eta$ and slip scaling threshold $S_t$,
+earthquakes. The primary tuning parameter in Virtual California is
+the dynamic triggering factor $\eta$,
 defined in Section \ref{sec:Event_Model}. The dynamic triggering
 factor is used to encourage rupture propagation during a simulated
-earthquake. The slip scaling parameter is used to prevent small ruptures
-from slipping too much. These parameters act to tune the rupture and
+earthquake. This parameter acts to tune the rupture and
 slipping properties of faults without requiring field measurements
 of each fault's physical properties, a result of VC's abstraction
-and generality. Currently, these parameters are set globally for the
-fault model. Figure \ref{fig:tuning_parameters} shows a comparison
-of simulation results for a range of these parameter values.
-
-\begin{center}
-\begin{figure}
-\begin{minipage}[t]{0.48\columnwidth}%
-\begin{center}
-\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_1}}
-\par\end{center}
-
-\begin{center}
-\textbf{(a)}
-\par\end{center}%
-\end{minipage}\hfill{}%
-\begin{minipage}[t]{0.48\columnwidth}%
-\begin{center}
-\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_2}}
-\par\end{center}
-
-\begin{center}
-\textbf{(b)}
-\par\end{center}%
-\end{minipage}\bigskip{}
-\begin{minipage}[t]{0.48\columnwidth}%
-\begin{center}
-\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_3}}
-\par\end{center}
-
-\begin{center}
-\textbf{(c)}
-\par\end{center}%
-\end{minipage}\hfill{}%
-\begin{minipage}[t]{0.48\columnwidth}%
-\begin{center}
-\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_4}}
-\par\end{center}
-
-\begin{center}
-\textbf{(d)}
-\par\end{center}%
-\end{minipage}
-
-\caption{The output from several VC simulations over a range of dynamic triggering
-and slip-scaling threshold parameter values: (a) frequency-magnitude
-varying$\eta$; (b) frequency-magnitude varying $S_t$; (c) average
-slip-surface rupture length varying $\eta$; and (d) average slip-surface
-rupture length varying $S_t$. The dashed red line and error bars
-in (a) and (b) are the observed seismicity in California and 95\%
-confidence levels as reported by UCERF2 \cite{UCERF2}. The dashed
-red lines in (c) and (d) are observed relationships reported by Wells
-and Coppersmith \cite{Wells01081994}. \label{fig:tuning_parameters}}
-\end{figure}
-
-\par\end{center}
+and generality. Currently, this parameter is set globally for the
+fault model.
+%Figure \ref{fig:tuning_parameters} shows a comparison
+%of simulation results for a range of these parameter values.
+%
+%\begin{center}
+%\begin{figure}
+%\begin{minipage}[t]{0.48\columnwidth}%
+%\begin{center}
+%\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_1}}
+%\par\end{center}
+%
+%\begin{center}
+%\textbf{(a)}
+%\par\end{center}%
+%\end{minipage}\hfill{}%
+%\begin{minipage}[t]{0.48\columnwidth}%
+%\begin{center}
+%\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_2}}
+%\par\end{center}
+%
+%\begin{center}
+%\textbf{(b)}
+%\par\end{center}%
+%\end{minipage}\bigskip{}
+%\begin{minipage}[t]{0.48\columnwidth}%
+%\begin{center}
+%\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_3}}
+%\par\end{center}
+%
+%\begin{center}
+%\textbf{(c)}
+%\par\end{center}%
+%\end{minipage}\hfill{}%
+%\begin{minipage}[t]{0.48\columnwidth}%
+%\begin{center}
+%\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/tuning_parameters_4}}
+%\par\end{center}
+%
+%\begin{center}
+%\textbf{(d)}
+%\par\end{center}%
+%\end{minipage}
+%
+%\caption{The output from several VC simulations over a range of dynamic triggering
+%and slip-scaling threshold parameter values: (a) frequency-magnitude
+%varying$\eta$; (b) frequency-magnitude varying $S_t$; (c) average
+%slip-surface rupture length varying $\eta$; and (d) average slip-surface
+%rupture length varying $S_t$. The dashed red line and error bars
+%in (a) and (b) are the observed seismicity in California and 95\%
+%confidence levels as reported by UCERF2 \cite{UCERF2}. The dashed
+%red lines in (c) and (d) are observed relationships reported by Wells
+%and Coppersmith \cite{Wells01081994}. \label{fig:tuning_parameters}}
+%\end{figure}
+%
+%\par\end{center}
 
 
 \subsection{Simulation Performance and Scaling\label{sec:element_size_discussion}}
 
-Virtual California is inherently designed to support parallel computing
+Virtual California is designed to support parallel computing with OpenMP or MPI
 and this section gives some quantitative results of deploying VC in
-multiprocessing environments. It turns out that the key quantities
+multiprocessing environments. The key factors
 determining the scope of the output and the simulation performance
 are the number and size of the fault elements in the fault model.
 The size of the meshed elements will affect both simulation accuracy
@@ -1405,28 +1327,26 @@ magnitude.]{\includegraphics[width=0.48\textwidth]{graphics/min_magnitude}
 
 }
 
-\caption{Number of elements determines computational cost. Element size governs
+\caption{Number of elements determines computational cost - this will vary depending on the relative rake and dip. Element size governs
 simulated earthquake magnitude range.}
 \end{figure}
 
 
 
-\subsection{Element Size and Required Memory}
+%\subsection{Element Size and Required Memory}
 
 The number of elements in a model will also affect the required memory.
-Since VC uses a Barnes-Hut style approximation algorithm for fault
-interaction the actual memory required will depend on the accuracy
-of the approximation. For non-approximated fault interaction in a
+%Since VC uses a Barnes-Hut style approximation algorithm for fault
+%interaction the actual memory required will depend on the accuracy
+%of the approximation.
+For non-approximated fault interaction in a
 model with $N$ elements, the memory requirements are:
 
 \begin{equation}
 Memory=16N^{2}bytes
 \end{equation}
 
-
-Because the degree of approximation possible with Barnes-Hut will
-vary depending on the system geometry it is not possible to give a
-function for memory requirements. 
+%Because the degree of approximation possible with Barnes-Hut will vary depending on the system geometry it is not possible to give memory requirements. 
 
 \begin{figure}
 \subfloat[\label{fig:memory_vs_element_size_1}Element size determines computational
@@ -1442,41 +1362,41 @@ requirements with approximations.]{\includegraphics[bb=0bp -12bp 360bp 204bp,wid
 
 
 
-\subsection{Parallel Performance}
-
-The program flow in Figure \ref{fig:simulation_flow} shows three
-main communication points. The global nature of these communications
-is a serious bottleneck to simulation performance on a parallel system. 
-
-Figure \ref{fig:sim_breakdown} shows simulation run times for a 13,398
-element 100,000 year simulation on a simple cluster system using different
-numbers of processors. The cluster has 16 nodes, with two 2.4 GHz
-quad-core Xeon processors per node and a Gigabit ethernet network.
-For a single processor, most of the time is spent in the long term
-stress calculation and the initial Green\textquoteright{}s function
-calculations. As the number of processors increases these calculations
-scale well but the time spent in communi- cation significantly rises.
-By 16 processors the majority of simulation time is spent communicating
-and there is very poor strong scalability.
-
-Figure \ref{fig:sim_comm_breakdown} shows the breakdown in time for
-different types of communication. For all numbers of processors, the
-majority of time is spent distributing stress values over the processors.
-This is required because the changes in stress during a rupture potentially
-lead to other elements rupturing. However, at a given rupture propagation
-step it is highly unlikely the rupture will spread a significant distance
-past where it already has traveled.
-
-\begin{figure}
-\subfloat[\label{fig:sim_breakdown}Parallel simulation time breakdown.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_parallel_sim_time_breakdown}
-
-}\hfill{}\subfloat[\label{fig:sim_comm_breakdown}Parallel communication time breakdown.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_parallel_comm_time_breakdown}
-
-}
-
-\caption{Breakdown of total simulation time. }
-\end{figure}
-
+%\subsection{Parallel Performance}
+%
+%The program flow in Figure \ref{fig:simulation_flow} shows three
+%main communication points. The global nature of these communications
+%is a bottleneck to simulation performance on a parallel system. 
+%
+%Figure \ref{fig:sim_breakdown} shows simulation run times for a 13,398
+%element 100,000 year simulation on a simple cluster system using different
+%numbers of processors. The cluster has 16 nodes, with two 2.4 GHz
+%quad-core Xeon processors per node and a Gigabit ethernet network.
+%For a single processor, most of the time is spent in the long term
+%stress calculation and the initial Green's function
+%calculations. As the number of processors increases these calculations
+%scale well but the time spent in communication significantly rises.
+%By 16 processors the majority of simulation time is spent communicating
+%and there is very poor strong scalability.
+%
+%Figure \ref{fig:sim_comm_breakdown} shows the breakdown in time for
+%different types of communication. For all numbers of processors, the
+%majority of time is spent distributing stress values over the processors.
+%This is required because the changes in stress during a rupture potentially
+%lead to other elements rupturing. However, at a given rupture propagation
+%step it is highly unlikely the rupture will spread a significant distance
+%past where it already has traveled.
+%
+%\begin{figure}
+%\subfloat[\label{fig:sim_breakdown}Parallel simulation time breakdown.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_parallel_sim_time_breakdown}
+%
+%}\hfill{}\subfloat[\label{fig:sim_comm_breakdown}Parallel communication time breakdown.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_parallel_comm_time_breakdown}
+%
+%}
+%
+%\caption{Breakdown of total simulation time. }
+%\end{figure}
+%
 
 
 \chapter{Tutorials \label{cha:Cookbooks}}
@@ -1486,9 +1406,7 @@ past where it already has traveled.
 
 These tutorials are meant to serve as a guide to some of the types
 of problems VC can solve. These cookbook examples are distributed
-with the package under the \texttt{examples} directory. However, you
-might need to edit these example scripts slightly to launch the job
-on your cluster. Each tutorial is a self-contained lesson in how to
+with the package under the \texttt{examples} directory. Each tutorial is a self-contained lesson in how to
 use Virtual California. The tutorials increase in degree of complexity
 from one to the next. In the last section, we demonstrate how to construct
 the entire California fault system for large scale simulations.
@@ -1498,105 +1416,60 @@ the entire California fault system for large scale simulations.
 
 Before you begin any of the tutorials, you will need to install Virtual
 California following the instructions in Chapter \vref{cha:Installation}.
-If you do not wish to create your own mesh at this time, the meshes
+If you do not wish to create your own mesh, the meshes
 are also provided as part of the tutorial. 
 
 
 \section{Building a Fault Model\label{sec:building_faults}}
 
-Currently, VC uses a simple mesher program for fault model file manipulation.
-Mesher imports one or more files (e.g. a trace file), manipulates
+VC uses a simple mesher program for fault model file manipulation.
+The mesher imports one or more files (e.g. a trace file), manipulates
 them based on user arguments and exports one or more files to be used
 as input parameter files for a VC simulation. After following install
 instructions in Section \ref{sec:Install}, the mesher program is
-compiled to an executable located in VirtualCalifornia/build/src/.
+compiled to an executable located at \texttt{build/src/mesher}.
 This program is called by the shell scripts in the examples below
-to generate a fault model for VC. See section \vref{cha:Appendix-C:Mesher_Parameters}
+to generate a fault model for VC. See Section \vref{cha:Appendix-C:Mesher_Parameters}
 for more information on the options for the mesher program.
 
-Before using the mesher program, the next sections with give examples
+The next sections give examples
 and describe the model files that the mesher creates. For both files,
 each commented line describes the parameter in the corresponding column
-of the uncommented line immediately following the comments. See section
-\vref{cha:Appendix-A:-Input} and section \vref{sec:Trace-File-Format}
+of the uncommented line immediately following the comments. See Section
+\vref{cha:Appendix-A:-Input} and Section \vref{sec:Trace-File-Format}
 for more information on the input fault model files and parameters.
 
 
 \subsection{Trace File}
 
-The basic outline for creating a fault trace file is given in section
+The basic outline for creating a fault trace file is given in Section
 \vref{sec:Fault_model}. The trace file specifies the fault geometry
-and physical parameters, and exmple is printed below.
+and physical parameters. An example is printed below.
 \begin{verbatim}
-\#~Number~of~sections~
-
-\#~Number~of~elements~
-
-\#~Number~of~vertices~
-
-1~1~3~
-
-\#~id:~Unique~ID~of~the~section.~
-
-\#~fault\_id:~ID~of~the~parent~fault.~
-
-\#~name:~Name~of~the~fault.~
-
-\#~id~fault\_id~name~~
-
-0~0~One\_Fault\_Example~
-
-\#~id:~Unique~ID~of~the~element.~
-
-\#~section\_id:~ID~of~the~section~associated~with~the~element.~
-
-\#~vertex\_0:~ID~of~vertex~0.~
-
-\#~vertex\_1:~ID~of~vertex~1.~
-
-\#~vertex\_2:~ID~of~vertex~2.~
-
-\#~is\_quad:~Whether~vertices~are~3~points~of~a~triangle~(zero)~or~of~a~parallelogram~(non-zero).~
-
-\#~slip\_rate:~Long~term~slip~rate~of~element~in~meters~per~second.~
-
-\#~aseismic:~Fraction~of~slip~on~element~that~is~aseismic.~
-
-\#~rake:~Rake~angle~of~element~in~radians.~
-
-\#~lame\_mu:~Lame's~parameter~of~the~material~for~this~element~(Pascals).~
-
-\#~lame\_lambda:~Lame's~lambda~parameter~of~the~material~for~this~element~(Pascals).~
-
-\#~id~section\_id~vertex\_0~vertex\_1~vertex\_2~is\_quad~slip\_rate~aseismic~rake~lame\_mu~lame\_lambda
-
-0~0~0~1~2~1~3.16881e-10~0~3.14159~3e+10~3.2e+10~
-
-\#~id:~Unique~ID~of~the~vertex.~
-
-\#~latitude:~Latitude~of~the~vertex.~
-
-\#~longitude:~Longitude~of~the~vertex.~
-
-\#~altitude:~Altitude~of~the~vertex~in~meters~(negative~is~below~ground).~
-
-\#~das:~Vertex~distance~along~fault~strike~in~meters.~
-
-\#~id~latitude~longitude~altitude~das~~
-
-0~0~0~0~0
-
-1~6.63961e-18~0~-12000~0~
-
-2~6.6452e-18~0.107798~0~12000
+ # fault_id: ID number of the parent fault of this section
+ # num_points: Number of trace points comprising this section
+ # section_name: Name of the section
+ 0 2 One_Fault_Example
+ # latitude: Latitude of trace point
+ # longitude: Longitude of trace point
+ # altitude: Altitude of trace point (meters)
+ # depth_along_dip: Depth along dip (meters)
+ # slip_rate: Slip rate at trace point (centimeters/year)
+ # aseismic: Fraction of slip that is aseismic at point
+ # rake: Fault rake at trace point (degrees)
+ # dip: Fault dip at trace point (degrees)
+ # lame_mu: Lame's mu parameter at trace point (Pascals)
+ # lame_lambda: Lame's lambda parameter at trace point (Pascals)
+ 0 0 0 12000 1 0 180 90 3e+10 3.2e+10
+ 0 0.1078 0 12000 1 0 180 90 3e+10 3.2e+10
 \end{verbatim}
 
-\subsubsection{Example Traces}
+\subsection{Example Traces}
 
-The VirtualCalifornia/examples/fault\_traces/ folder contains the
+The \texttt{examples/fault\_traces/} folder contains the
 sample fault traces used in the examples below. In addition, we provide
 trace files for all of California's major fault sections in the subfolder
-named fault\_traces/ca\_traces/.
+\texttt{fault\_traces/ca\_traces/}.
 
 
 \subsection{Friction Parameters}
@@ -1611,7 +1484,6 @@ can be easily modified to produce arbitrary fault behavior. Rather
 than require the user to specify these parameters, they are internally
 calculated by VC to match established physical laws and empirical
 observations.
-
 
 \subsection{Simulation Parameter File}
 
@@ -1646,7 +1518,7 @@ ELEM\_SIZE~~~~~~=~the~size~of~the~square~fault~elements~in~meters
 TAPER\_METHOD~~~=~none,~taper,~or~taper\_norm~(see~section~\ref{sec:Trace-File-Format})~
 \end{verbatim}
 This script takes the trace file from the previous section, as well
-as other keyword arguments described in section \ref{cha:Appendix-C:Mesher_Parameters},
+as other keyword arguments described in Section \ref{cha:Appendix-C:Mesher_Parameters},
 and creates several simulation files in a subfolder named by the TAPER\_METHOD.
 Below is an example script that calls the mesher, gives it a previously
 created trace file, instructs the mesher to return several files,
@@ -1714,7 +1586,7 @@ and the fault element is shown above ground in figure \ref{fig:Golden_Gate_singl
 37.7425~-122.47~~0~3000~1~0~180~90~3e+10~3.2e+10
 \end{verbatim}
 To create the input files, we use the mesher program as follows (arguments
-explained in section \ref{sec:building_faults}).
+explained in Section \ref{sec:building_faults}).
 \begin{verbatim}
 \$~cd~examples/single\_fault/
 
@@ -1970,12 +1842,12 @@ into 3km by 3km elements. We will also use larger fault elements than
 the previous example, which raises the lower bound for magnitudes
 in the output data set. Furthermore, we now will be simulating the
 interaction between 40 elements so the computational resource requirements
-grow as well (see section \ref{sec:element_size_discussion} for a
+grow as well (see Section \ref{sec:element_size_discussion} for a
 detailed discussion).
 
 Also, if you would prefer to run this simulation in parallel, remove
 the build directory and re-compile Virtual California per instructions
-in section \ref{sec:Selecting-a-Compiler-Multiproc}.
+in Section \ref{sec:Selecting-a-Compiler-Multiproc}.
 
 
 \subsection{Input Files}
@@ -2358,7 +2230,7 @@ The initial fault geometry for VC runs is defined by the trace file.
 Each trace file describes a single fault by the location of points
 along the fault trace and associated fault characteristics at each
 of the points. A single VC model for a simulation can be generated
-by combining multiple fault traces using the mesher program (see section
+by combining multiple fault traces using the mesher program (see Section
 \ref{sec:Tutorial_multiple} for an example).
 
 The trace files are ASCII format with comments indicated by a \# (hash)
