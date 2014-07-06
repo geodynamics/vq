@@ -404,7 +404,7 @@ In this example we look at the earthquake cycle and rupture mechanics
 on a single 12 km by 12 km square fault. For simplicity, the trace of this
 fault runs eastward for 12km starting from latitude/longitude (0,0)
 and ending at latitude/longitude (0,0.1078). The definition of this
-fault is in the file examples/fault\_traces/single\_fault\_trace.txt
+fault is in the file \texttt{examples/fault\_traces/single\_fault\_trace.txt}
 and is also shown below.
 \begin{verbatim}
 # fault_id: ID number of the parent fault of this section
@@ -1320,7 +1320,7 @@ magnitude.
 
 \begin{figure}
 \subfloat[\label{fig:operations_per_element}Operations required to calculate
-a single element-element stress interaction.]{\includegraphics[bb=0bp -22bp 160bp 44bp,width=0.48\textwidth]{graphics/Heien_Sachs_12_number_of_operations}
+a single element-element stress interaction.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_number_of_operations}
 
 }\hfill{}\subfloat[\label{fig:min_magnitude_elem_size}Element size versus minimum event
 magnitude.]{\includegraphics[width=0.48\textwidth]{graphics/min_magnitude}
@@ -1353,7 +1353,7 @@ Memory=16N^{2}bytes
 regime.]{\includegraphics[width=0.48\textwidth]{graphics/Heien_Sachs_12_elements_vs_memory}
 
 }\hfill{}\subfloat[\label{fig:memory_vs_element_size_2}Number of elements vs. memory
-requirements with approximations.]{\includegraphics[bb=0bp -12bp 360bp 204bp,width=0.48\textwidth]{graphics/memory_reqs}
+requirements with approximations.]{\includegraphics[width=0.48\textwidth]{graphics/memory_reqs}
 
 }
 
@@ -1405,7 +1405,7 @@ requirements with approximations.]{\includegraphics[bb=0bp -12bp 360bp 204bp,wid
 \section{Overview}
 
 These tutorials are meant to serve as a guide to some of the types
-of problems VC can solve. These cookbook examples are distributed
+of simulations VC can perform. These cookbook examples are distributed
 with the package under the \texttt{examples} directory. Each tutorial is a self-contained lesson in how to
 use Virtual California. The tutorials increase in degree of complexity
 from one to the next. In the last section, we demonstrate how to construct
@@ -1422,10 +1422,10 @@ are also provided as part of the tutorial.
 
 \section{Building a Fault Model\label{sec:building_faults}}
 
-VC uses a simple mesher program for fault model file manipulation.
-The mesher imports one or more files (e.g. a trace file), manipulates
+VC uses a mesher program for fault model file manipulation.
+The mesher imports one or more trace files, manipulates
 them based on user arguments and exports one or more files to be used
-as input parameter files for a VC simulation. After following install
+as input files for a VC simulation. After following install
 instructions in Section \ref{sec:Install}, the mesher program is
 compiled to an executable located at \texttt{build/src/mesher}.
 This program is called by the shell scripts in the examples below
@@ -1442,7 +1442,7 @@ for more information on the input fault model files and parameters.
 
 \subsection{Trace File}
 
-The basic outline for creating a fault trace file is given in Section
+The basic outline for a fault trace file is given in Section
 \vref{sec:Fault_model}. The trace file specifies the fault geometry
 and physical parameters. An example is printed below.
 \begin{verbatim}
@@ -1466,8 +1466,8 @@ and physical parameters. An example is printed below.
 
 \subsection{Example Traces}
 
-The \texttt{examples/fault\_traces/} folder contains the
-sample fault traces used in the examples below. In addition, we provide
+The \texttt{examples/fault\_traces/} folder contains the 
+fault traces used in the examples below. In addition, we provide
 trace files for all of California's major fault sections in the subfolder
 \texttt{fault\_traces/ca\_traces/}.
 
@@ -1490,46 +1490,63 @@ observations.
 The main simulation input file is the parameter file. This file tells
 the simulator where the fault model files are located, sets various
 simulation variables, and specifies the output of the simulation.
-The parameter file template is located in VirtualCalifornia/examples/single\_fault/
-and VirtualCalifornia/examples/two\_fault/. 
+An example parameter file template is located in \texttt{examples/}.
 
 
 \subsection{Producing a Fault Model\label{sec:Using-Mesher}}
 
-The first step is to use ``setup\_mesh.sh'' to generate the fault
+The first step is to use \texttt{setup\_mesh.sh} to generate the fault
 trace file, and the second step is to edit the simulation parameter
 file ``params.d''. This method is illustrated in the tutorials in
 the following sections.
 
 
-\subsubsection{Using the Mesher}
+\subsection{Using the Mesher}
 
-The sample Bash shell script that uses the mesher program to generate
-the mesh from the fault traces will be located in VirtualCalifornia/examples/single\_fault/
-(or two\_fault/) and is named ``setup\_mesh.sh''. The syntax for using
-this is:
+The mesher is called on the command line.  The following runtime options are supported:
+
 \begin{verbatim}
-\$~bash~setup\_mesh.sh~ELEM\_SIZE~TAPER\_METHOD
-\end{verbatim}
-The required (bold) arguments are described below.
-\begin{verbatim}
-ELEM\_SIZE~~~~~~=~the~size~of~the~square~fault~elements~in~meters
+./mesher [options]
+-s FILE, --print_statistics=FILE
+	Print statistics regarding final model to the specified file.
+-m, --merge_duplicate_verts
+	Merge duplicate vertices after importing files.
+-d, --delete_unused
+	Delete unused vertices after importing files.
 
-TAPER\_METHOD~~~=~none,~taper,~or~taper\_norm~(see~section~\ref{sec:Trace-File-Format})~
-\end{verbatim}
-This script takes the trace file from the previous section, as well
-as other keyword arguments described in Section \ref{cha:Appendix-C:Mesher_Parameters},
-and creates several simulation files in a subfolder named by the TAPER\_METHOD.
-Below is an example script that calls the mesher, gives it a previously
-created trace file, instructs the mesher to return several files,
-and tells the mesher to merge doubly named vertices in the trace file.
+FILE IMPORT
+-i FILE, --import_file=FILE
+	Specify a model file to import and merge. Must have a paired import_file_type.
+-j TYPE, --import_file_type=TYPE
+	Specify a model file type for importing. Must have a paired import_file.
+-l SIZE, --import_trace_element_size=SIZE
+	Specify the element size (in meters) to use for trace file meshing. Must have a paired trace type file import.
+-t METHOD, --taper_trace_method=METHOD
+	Specify the how to taper the imported trace when meshing. Must have a paired trace type file import.
+-C FILE, --import_eqsim_condition=FILE
+	Specify an EQSim condition file to import for the model.
+-F FILE, --import_eqsim_friction=FILE
+	Specify an EQSim friction file to import for the model.
+-G FILE, --import_eqsim_geometry=FILE
+	Specify an EQSim geometry file to import for the model.
 
+FILE EXPORT
+-e FILE, --export_file=FILE
+	Specify a file to export the completed model to. Must have a paired export_file_type.
+-f TYPE, --export_file_type=TYPE
+	Specify a file type to export the completed model. Must have a paired export_file.
+-D FILE, --export_eqsim_condition=FILE
+	Specify an EQSim condition file to export for the model.
+-R FILE, --export_eqsim_friction=FILE
+	Specify an EQSim friction file to export for the model.
+-M FILE, --export_eqsim_geometry=FILE
+	Specify an EQSim geometry file to export for the model.
+\end{verbatim}
 
 \subsubsection{Parameter File}
 
-Simply copy the ``params.d'' file into the subfolder generated by
-the mesher. Edit the file so the simulation parameters are set correctly
-for the current run. 
+Copy the \texttt{example\_params.d} file into the same folder as the mesher generated model.
+Edit the parameter file so the simulation parameters are set correctly for the current run. 
 
 
 \section{Single Element Tutorial\label{sec:Tutorial_single}}
@@ -1547,155 +1564,121 @@ the mesher program and run this simulation for 10,000 years.
 
 We are going to create a new fault trace file for this single element.
 The only data we need for this are the latitude and longitude of the
-endpoints of our element. For this example let's use the following
+endpoints of our element. For this example we will use the following
 coordinates (37.83,-122.4797) and (37.803,-122.4765). These endpoints
-give a 3km fault element than runs parallel and directly under the
+give a 3km fault element that runs parallel to and directly under the
 Golden Gate Bridge in San Francisco. The trace file is printed below
-and the fault element is shown above ground in figure \ref{fig:Golden_Gate_single}.
+and the fault element is shown above ground in Figure \ref{fig:Golden_Gate_single}.
 \begin{verbatim}
-\#~fault\_id:~ID~number~of~the~parent~fault~of~this~section~
-
-\#~num\_points:~Number~of~trace~points~comprising~this~section~
-
-\#~section\_name:~Name~of~the~section~
-
-0~2~One\_Fault\_GG\_Example~
-
-\#~latitude:~Latitude~of~trace~point~
-
-\#~longitude:~Longitude~of~trace~point~
-
-\#~altitude:~Altitude~of~trace~point~(meters)~
-
-\#~depth\_along\_dip:~Depth~along~dip~(meters)~
-
-\#~slip\_rate:~Slip~rate~at~trace~point~(centimeters/year)~
-
-\#~aseismic:~Fraction~of~slip~that~is~aseismic~at~point~
-
-\#~rake:~Fault~rake~at~trace~point~(degrees)~
-
-\#~dip:~Fault~dip~at~trace~point~(degrees)~
-
-\#~lame\_mu:~Lame's~mu~parameter~at~trace~point~(Pascals)~
-
-\#~lame\_lambda:~Lame's~lambda~parameter~at~trace~point~(Pascals)~
-
-37.85~~~-122.482~0~3000~1~0~180~90~3e+10~3.2e+10~
-
-37.7425~-122.47~~0~3000~1~0~180~90~3e+10~3.2e+10
+ # fault_id: ID number of the parent fault of this section
+ # num_points: Number of trace points comprising this section
+ # section_name: Name of the section
+ 0 2 One_Fault_GG_Example
+ # latitude: Latitude of trace point
+ # longitude: Longitude of trace point
+ # altitude: Altitude of trace point (meters)
+ # depth_along_dip: Depth along dip (meters)
+ # slip_rate: Slip rate at trace point (centimeters/year)
+ # aseismic: Fraction of slip that is aseismic at point
+ # rake: Fault rake at trace point (degrees)
+ # dip: Fault dip at trace point (degrees)
+ # lame_mu: Lame's mu parameter at trace point (Pascals)
+ # lame_lambda: Lame's lambda parameter at trace point (Pascals)
+ 37.83 -122.4797 0 3000 1 0 180 90 3e+10 3.2e+10
+ 37.803 -122.4765 0 3000 1 0 180 90 3e+10 3.2e+10
 \end{verbatim}
 To create the input files, we use the mesher program as follows (arguments
 explained in Section \ref{sec:building_faults}).
 \begin{verbatim}
-\$~cd~examples/single\_fault/
-
-\$~bash~setup\_mesh.sh~3000~none
+$ cd examples
+$ mkdir golden_gate
+$ cd golden_gate
+$ ../../build/src/mesher \
+--import_file=../fault_traces/golden_gate.txt \
+--import_file_type=trace \
+--import_trace_element_size=3000 \
+--taper_fault_method=none \
+--export_file=golden_gate_3000.txt \
+--export_file_type=text \
+--export_file=golden_gate_3000.kml \
+--export_file_type=kml \
+--print_statistics=statistics_3000.txt
 \end{verbatim}
-Which generates several output files as listed by the command line
+
+This generates several output files as listed by the command line
 output shown below.
+
 \begin{verbatim}
-{*}{*}{*}~Summary~of~edits~{*}{*}{*}~
-
-File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
-
-File~export~single\_3000.txt~with~type~text...~done.~
-
-File~export~single\_3000.kml~with~type~kml...~done.~
-
-Print~statistics~to~statistics\_3000.txt
+*** Summary of edits ***
+File import ../fault_traces/golden_gate.txt with type trace... done.
+File export golden_gate_3000.txt with type text... done.
+File export golden_gate_3000.kml with type kml... done.
+Print statistics to statistics_3000.txt
 \end{verbatim}
+
 \begin{figure}
-\centering{}\includegraphics[bb=0bp 0bp 780bp 614bp,width=0.72\textwidth]{graphics/One_Fault_Golden_Gate}\caption{\label{fig:Golden_Gate_single}Single 3km x 3km fault element running
+\centering{}\includegraphics[width=0.72\textwidth]{graphics/One_Fault_Golden_Gate}\caption{\label{fig:Golden_Gate_single}Single 3km x 3km fault element running
 under the Golden Gate Bridge in San Francisco, shown above ground.
-This plot was generated by Google Earth from the KML file that the
-mesher program created from the trace file.}
+This plot was generated by Google Earth from the mesher generated KML file.}
 \end{figure}
 
 
-Values for the faults in California are taken from Ward's ALLCAL2
-model \cite{Ward01112012}, more information at \\ \href{http://scec.usc.edu/research/eqsims/documentation.html}{http://scec.usc.edu/research/eqsims/documentation.html}. 
+Trace values for the faults in California are taken from Ward's ALLCAL2 model \cite{Ward01112012}, more information is available at \href{http://scec.usc.edu/research/eqsims/documentation.html}{http://scec.usc.edu/research/eqsims/documentation.html}. 
 
 
-\subsection{Assimilating Input Files}
+\subsection{Edit Parameter File}
 
-Now, from the same directory (examples/single\_fault/) we need to
-edit the parameter file, and place the VC executable and input files
-into the same directory. Make sure the parameter file --- ``params.d''
---- is as printed below:
+The parameter file must be in the same directory (\texttt{examples/golden\_gate/}). Make sure the parameter file \texttt{params.d} is as shown below:
 \begin{verbatim}
-sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_3000.txt~
-
-sim.file.input\_type~~~~~~~~~~~~~~~=~text~
-
-sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.txt~
-
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.txt~
-
-sim.file.output\_event\_type~~~~~~~~=~text
-\end{verbatim}
-Then copy it into the newly created directory ''none'':
-\begin{verbatim}
-\$~cp~params.d~./none/
-\end{verbatim}
-The next thing is to copy the compiled VC executable into the same
-directory as our parameter files.
-\begin{verbatim}
-\$~cp~../../build/src/vc~./none/
+sim.version                       = 2.0 
+sim.time.end_year                 = 10000 
+sim.greens.method                 = standard 
+sim.greens.use_normal             = false 
+sim.friction.dynamic              = 0.5 
+sim.file.input                    = golden_gate_3000.txt 
+sim.file.input_type               = text 
+sim.file.output_event             = events_3000.txt 
+sim.file.output_sweep             = sweeps_3000.txt 
+sim.file.output_event_type        = text
 \end{verbatim}
 
 \subsection{Running VC}
 
-Now that we have generated the fault mesh and put all the simulation
-files in one place, we are now ready to run the simulation. Run this
-simulation by simply executing the vc executable (single processor)
-and passing the parameter file as a command line argument:
+With the generated fault mesh and and parameter file we can run the simulation.
+To do so, call the vc executable (single processor) and pass the parameter file as a command line argument:
 \begin{verbatim}
-\$~cd~./none/
-
-\$~./vc~./params.d
+$ ../../build/src/vc ./params.d
 \end{verbatim}
+
 You should see output similar to:
 
-\# {*}{*}{*} MPI CPU count : 1 
-
-\# Initializing blocks. 
-
-\# To gracefully quit, create the file quit\_vc in the run directory. 
-
-\# Calculating Greens function with the standard Okada class. 
-
-\# Greens function took 0.00030303 seconds. 
-
-\# Greens shear matrix takes 128 bytes. 
-
-\# Greens normal matrix takes 128 bytes. 
-
-\# To access the event output file during the simulation, pause 
-
-\# by creating the file pause\_vc. Delete the file to resume. 
-
-\# Writing events in format hdf5 to file events\_3000.h5 
-
-\# Plugin requested simulation end: Block stress calculation...
-
+\begin{verbatim}
+# *** MPI CPU count           : 1
+# Initializing blocks.
+# To gracefully quit, create the file quit_vc in the run directory.
+# Calculating Greens function with the standard Okada class.
+# Greens function took 0.00187707 seconds.
+# Greens shear matrix takes 128 bytes.
+# Greens normal matrix takes 128 bytes.
+# To access the event output file during the simulation, pause 
+# by creating the file pause_vc.  Delete the file to resume.
+# Writing events in format text to file events_3000.txt
+# Plugin requested simulation end: Block stress calculation
+ #                   Timer Name  AvgCounts        Min        Max       Mean     StdDev 
+ 0                   Total Time          1      0.053      0.053      0.053      0.000
+ 1             Init and Cleanup          2      0.010      0.010      0.010      0.000
+ 2                 Comm Barrier          2      0.000      0.000      0.000      0.000
+ 3     Block stress calculation        748      0.003      0.003      0.003      0.000
+ 4     Propagate event ruptures        748      0.019      0.019      0.019      0.000
+ 5                  Data Writer        748      0.018      0.018      0.018      0.000
+\end{verbatim}
 
 \subsection{Results}
 
-You should see the output data set as ``events\_3000.h5'', saved as
-an HDF5 file. For more details about the file contents, see Appendix
+The output data will be in \texttt{events\_3000.txt} and \texttt{sweeps\_3000.txt}.
+For more details about the file contents, see Appendix
 \ref{chap:Virtual-California-Output}. The results are not very exciting,
-there's one earthquake that occurs regularly due to constant backslip.
+there is one earthquake that occurs regularly due to constant backslip.
 But this illustrates setting up a Virtual California simulation start
 to finish.
 
@@ -1705,138 +1688,103 @@ to finish.
 
 \subsection{Overview }
 
-Now we are going to repeat the single vertical strike-slip fault tutorial
+Now we will repeat the single vertical strike-slip fault tutorial
 from the previous section, but we will break up the fault into multiple
 elements. 
 
 
 \subsection{Creating Input Files}
 
-We simply need to change the element size when we call the mesher
-program. To protect the previous example, first we need to edit the
-``setup\_mesh.sh'' file so that we write the files to a new directory.
-In the script, just make this change: DIR\_NAME=Golden\_Gate\_Example\_Multiple.
-Then we generate the mesh with the following commands.
-\begin{verbatim}
-\$~cd~examples/single\_fault/
+For this tutorial, changing the element size to 1000 meters instead of 3000 meters will divide the fault into a 3 by 3 set of elements.  The command to do so is shown below:
 
-\$~bash~setup\_mesh.sh~1000~none
+\begin{verbatim}
+$ cd examples/golden_gate
+$ ../../build/src/mesher \
+--import_file=../fault_traces/golden_gate.txt \
+--import_file_type=trace \
+--import_trace_element_size=1000 \
+--taper_fault_method=none \
+--export_file=golden_gate_1000.txt \
+--export_file_type=text \
+--export_file=golden_gate_1000.kml \
+--export_file_type=kml \
+--print_statistics=statistics_1000.txt
 \end{verbatim}
-Which should output the following.
+
+Which should result in the following output:
+
 \begin{verbatim}
-{*}{*}{*}~Summary~of~edits~{*}{*}{*}~
-
-File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
-
-File~export~single\_1000.txt~with~type~text...~done.~
-
-File~export~single\_1000.kml~with~type~kml...~done.~
-
-Print~statistics~to~statistics\_1000.txt
+*** Summary of edits ***
+File import ../fault_traces/golden_gate.txt with type trace... done.
+File export golden_gate_1000.txt with type text... done.
+File export golden_gate_1000.kml with type kml... done.
+Print statistics to statistics_1000.txt
 \end{verbatim}
-Copy the ``params.d'' file into the ''none'' directory and edit
-it to match below:
+
+We will copy the previous \texttt{params.d} file to \texttt{params\_multiple.d} and edit it to match the new file names, as shown below:
 \begin{verbatim}
-sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~single\_1000.txt~
-
-sim.file.input\_type~~~~~~~~~~~~~~~=~text~
-
-sim.file.output\_event~~~~~~~~~~~~~=~events\_1000.h5~
-
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_1000.h5~
-
-sim.file.output\_event\_type~~~~~~~~=~hdf5
+sim.version                       = 2.0 
+sim.time.end_year                 = 10000 
+sim.greens.method                 = standard 
+sim.greens.use_normal             = false 
+sim.friction.dynamic              = 0.5 
+sim.file.input                    = golden_gate_3000.txt 
+sim.file.input_type               = text 
+sim.file.output_event             = events_3000.txt 
+sim.file.output_sweep             = sweeps_3000.txt 
+sim.file.output_event_type        = text
 \end{verbatim}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.72\textwidth]{graphics/Golden_Gate_Multi_Element.jpg}\caption{\label{fig:Golden_Gate_multiple}The same 3km x 3km fault section
 from figure \ref{fig:Golden_Gate_single} but meshed into 1km x 1km
-elements. This plot was generated by Google Earth from the KML file
-that the mesher program created using the trace file.}
+elements. This plot was generated by Google Earth from the mesher output KML file.}
 \end{figure}
 
 
-
-\subsection{Assimilating Input Files}
-
-Now lets navigate to the newly created directory and assimilate our
-simulation files. If you re-compiled for multiprocessing, you have
-a new executable to use:
-\begin{verbatim}
-\$~cd~./none/
-
-\$~cp~../../../build/src/vc~./
-\end{verbatim}
-
 \subsection{Running VC}
 
-Again we run the simulation by simply executing the vc executable:
+Again we run the simulation by calling the vc executable:
 \begin{verbatim}
-\$~./vc~./params.d
+$ ../../build/src/vc ./params_multiple.d
 \end{verbatim}
-Output should be similar to:
+
+Output should be similar to the previous simulation:
 \begin{verbatim}
-\#~{*}{*}{*}~MPI~CPU~count~~~~~~~~~~~~~~~:~1~
-
-\#~Initializing~blocks.~
-
-\#~To~gracefully~quit,~create~the~file~quit\_vc~in~the~run~directory.~
-
-\#~Calculating~Greens~function~with~the~standard~Okada~class.~
-
-\#~Greens~function~took~0.00778508~seconds.~
-
-\#~Greens~shear~matrix~takes~1.125~kilobytes.~
-
-\#~Greens~normal~matrix~takes~1.125~kilobytes.~
-
-\#~To~access~the~event~output~file~during~the~simulation,~pause~
-
-\#~by~creating~the~file~pause\_vc.~Delete~the~file~to~resume.~
-
-\#~Writing~events~in~format~hdf5~to~file~events\_1000.txt~
-
-\#~Plugin~requested~simulation~end:~Block~stress~calculation~
-
-\#~~~~~~~~~~~~~~~~~~~Timer~Name~~AvgCounts~~~~~~Min~~~~~Max~~~~~Mean~~~~StdDev~
-
-0~~~~~~~~~~~~~~~~~~~Total~Time~~~~~~~~~~1~~~~0.452~~~0.452~~~~0.452~~~~~0.000~
-
-1~~~~~~~~~~~~~Init~and~Cleanup~~~~~~~~~~2~~~~0.012~~~0.012~~~~0.012~~~~~0.000~
-
-2~~~~~~~~~~~~~~~~~Comm~Barrier~~~~~~~~~~2~~~~0.000~~~0.000~~~~0.000~~~~~0.000~
-
-3~~~~~Block~stress~calculation~~~~~~~~748~~~~0.012~~~0.012~~~~0.012~~~~~0.000~ 
-
-4~~~~~Propagate~event~ruptures~~~~~~~~748~~~~0.124~~~0.124~~~~0.124~~~~~0.000~
-
-5~~~~~~~~~~~~~~~~~~Data~Writer~~~~~~~~748~~~~0.302~~~0.302~~~~0.302~~~~~0.000
+# *** MPI CPU count           : 1
+# Initializing blocks.
+# To gracefully quit, create the file quit_vc in the run directory.
+# Calculating Greens function with the standard Okada class.
+# Greens function took 0.00388789 seconds.
+# Greens shear matrix takes 1.125 kilobytes.
+# Greens normal matrix takes 1.125 kilobytes.
+# To access the event output file during the simulation, pause 
+# by creating the file pause_vc.  Delete the file to resume.
+# Writing events in format text to file events_1000.txt
+# Plugin requested simulation end: Block stress calculation
+ #                   Timer Name  AvgCounts        Min        Max       Mean     StdDev 
+ 0                   Total Time          1      0.228      0.228      0.228      0.000
+ 1             Init and Cleanup          2      0.005      0.005      0.005      0.000
+ 2                 Comm Barrier          2      0.000      0.000      0.000      0.000
+ 3     Block stress calculation        748      0.009      0.009      0.009      0.000
+ 4     Propagate event ruptures        748      0.124      0.124      0.124      0.000
+ 5                  Data Writer        748      0.089      0.089      0.089      0.000
 \end{verbatim}
+
+Note the Greens shear and normal matrices now require 1.125 KB of memory instead of 128 bytes of memory as in the previous simulation.  This is because the simulation now has 9 elements and a correspondingly larger Green's matrix.
 
 \subsection{Results}
 
-You should see the output data set as ``events\_1000.h5'', saved as
-an HDF5 file. For more details about the file contents, see Appendix
-\ref{chap:Virtual-California-Output}. 
-
+The output data is stored in \texttt{events\_1000.txt} and \texttt{sweeps\_1000.txt}. For more details about the file contents, see Appendix
+\ref{chap:Virtual-California-Output}.
 
 \section{Multiple Fault Sections}
 
 
-\subsubsection{Overview}
+\subsection{Overview}
 
-This tutorial will explore a Virtual California simulation involved
+This tutorial explores a VC simulation involving
 two neighboring fault sections --- each 15km long and 12km deep meshed
 into 3km by 3km elements. We will also use larger fault elements than
 the previous example, which raises the lower bound for magnitudes
@@ -1845,139 +1793,88 @@ interaction between 40 elements so the computational resource requirements
 grow as well (see Section \ref{sec:element_size_discussion} for a
 detailed discussion).
 
-Also, if you would prefer to run this simulation in parallel, remove
-the build directory and re-compile Virtual California per instructions
-in Section \ref{sec:Selecting-a-Compiler-Multiproc}.
-
-
 \subsection{Input Files}
 
-We will use another trace file that is provided with a VC install.
-This trace file specifies two neighboring vertical strike slip fault
-sections that intersect at the Earth and Physical Sciences building
-on campus at the University of California, Davis, shown in figure
+We will use another trace file that is provided with the VC package.
+This trace file specifies two neighboring vertical strike slip faults 
+that intersect at the Earth and Physical Sciences building
+on campus at the University of California, Davis, shown in Figure
 \ref{fig:Davis_2_fault}. We generate the mesh with the following
 commands.
 \begin{verbatim}
-\$~cd~examples/two\_fault/
-
-\$~bash~setup\_mesh.sh~3000~none~
+$ cd examples
+$ mkdir two_fault
+$ cd two_fault
+$ ../../build/src/mesher \
+--import_file=../fault_traces/multiple_fault_trace.txt \
+--import_file_type=trace \
+--import_trace_element_size=3000 \
+--taper_fault_method=none \
+--export_file=two_fault_3000.txt \
+--export_file_type=text \
+--export_file=two_fault_3000.kml \
+--export_file_type=kml \
+--print_statistics=statistics_3000.txt
 \end{verbatim}
 Which should output the following.
 \begin{verbatim}
-{*}{*}{*}~Summary~of~edits~{*}{*}{*}
-
-File~import~../../fault\_traces/multiple\_fault\_trace.txt~with~type~trace...~done.~
-
-File~export~two\_fault\_3000.txt~with~type~text...~done.~
-
-File~export~two\_fault\_3000.kml~with~type~kml...~done.~
-
-Print~statistics~to~statistics\_3000.txt
+*** Summary of edits ***
+File import ../fault_traces/two_fault_1.txt with type trace... done.
+File import ../fault_traces/two_fault_2.txt with type trace... done.
+File export two_fault_3000.txt with type text... done.
+File export two_fault_3000.kml with type kml... done.
+Print statistics to statistics_3000.txt
 \end{verbatim}
-Next, copy the ``params.d'' into the ''none'' folder and it should
-be edited to match:
+
+Next, create the \texttt{params.d} file as below:
 \begin{verbatim}
-sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~two\_fault\_3000.txt~
-
-sim.file.input\_type~~~~~~~~~~~~~~~=~text~
-
-sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.h5~
-
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.h5~
-
-sim.file.output\_event\_type~~~~~~~~=~hdf5
-
-
+ sim.version                       = 2.0
+ sim.time.end_year                 = 10000
+ sim.greens.method                 = standard
+ sim.greens.use_normal             = false
+ sim.friction.dynamic              = 0.5
+ sim.file.input                    = two_fault_3000.txt
+ sim.file.input_type               = text
+ sim.file.output_event             = events_3000.txt
+ sim.file.output_sweep             = sweeps_3000.txt
+ sim.file.output_event_type        = text
 \end{verbatim}
 \begin{figure}
-\centering{}\includegraphics[bb=0bp 0bp 1096bp 900bp,width=0.72\textwidth]{graphics/Davis_2_Fault}\caption{\label{fig:Davis_2_fault}Two fault sections that meet at the UC Davis
+\centering{}\includegraphics[width=0.72\textwidth]{graphics/Davis_2_Fault}\caption{\label{fig:Davis_2_fault}Two fault sections that meet at the UC Davis
 campus. The fault sections are 15km x 12km and meshed into 3km x 3km
-elements. This plot was generated by Google Earth from the KML file
-that the mesher program created using the trace file.}
+elements. This plot was generated by Google Earth from the mesher output KML file.}
 \end{figure}
-
-
-
-\subsection{Assimilating Input Files}
-
-Now lets navigate to the newly created directory and assimilate our
-simulation files. If you re-compiled for multiprocessing, you have
-a new executable to use:
-\begin{verbatim}
-\$~cd~./none/
-
-\$~cp~../../../build/src/vc~./
-\end{verbatim}
 
 \subsection{Running VC}
 
 Again we run the simulation on a single processor by simply executing
 the vc executable:
 \begin{verbatim}
-\$~./vc~./params.d
+$ ../../build/src/vc ./params.d
 \end{verbatim}
-To instead run VC in parallel on 2 processors/cores, execute:
+To instead run VC in parallel on 2 or more processors/cores with MPI, use:
 \begin{verbatim}
-\$~mpirun~-np~2~./vc~params.d
+$ mpirun -np 2 ../../build/src/vc ./params.d
 \end{verbatim}
+The output from an MPI simulation should be identical that from a single processor simulation.
 
 \subsection{Results}
 
-You should see the output data set as ``events\_3000.h5'', saved as
-an HDF5 file. For more details about the file contents, see Appendix
+The output data is stored in \texttt{events\_3000.txt} and \texttt{sweeps\_3000.txt}. For more details about the file contents, see Appendix
 \ref{chap:Virtual-California-Output}.
-
 
 
 \section{Building the California Fault Model}
 \subsection{Overview}
 
-Also in the examples folder we provide all the major fault traces in California and an executable script that can use them to build a full fault model. To build the full California fault model, execute the following commands to mesh the model into 3km elements:
+In the examples folder we also provide all the major fault traces in California and an executable script that can use them to build a full fault model. To build the full California fault model, execute the following commands to mesh the model into 3km elements:
 
 \begin{verbatim}
-\$~cd~examples/ca\_model/
-
-\$~bash~gen\_ca\_model.sh~3000
-
+$ cd examples/ca_model/
+$ ./gen_ca_model.sh 3000
 \end{verbatim}
 
-Next, to run a simulation with the entire model, copy the ``params.d'' into the ''ca\_model'' folder and it should
-be edited to match:
-\begin{verbatim}
-sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
-
-sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
-
-sim.greens.method~~~~~~~~~~~~~~~~~=~standard~
-
-sim.greens.use\_normal~~~~~~~~~~~~~=~false~
-
-sim.friction.dynamic~~~~~~~~~~~~~~=~0.5~
-
-sim.file.input~~~~~~~~~~~~~~~~~~~~=~all\_cal\_geom\_3000.dat~
-
-sim.file.input\_type~~~~~~~~~~~~~~~=~text~
-
-sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.h5~
-
-sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.h5~
-
-sim.file.output\_event\_type~~~~~~~~=~hdf5
-
-
-\end{verbatim}
-
+Next, create an appropriate parameter file and run VC as shown in the previous sections.  Note that the full CA simulation requires a fair amount of memory and may take several hours to finish.  Progress will be reported during the simulation if the \texttt{sim.system.progress\_period} parameter is set to a nonzero value.
 
 %-------------------------------- End tutorials, begin appendices
 \part{Appendices}
@@ -2011,39 +1908,21 @@ are given with their default values.
 \noindent %
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
-\texttt{\small{sim.system.rawfile.lat0 = 31.5}}{\small \par}
-
-\texttt{\small{sim.system.rawfile.lon0 = -126}} & Base latitude and longitude for coordinates of meshed model. These
-values are used in the conversion from This should be roughly within
-the bounds of your fault model to avoid warping from conversion to
-a Cartesian coordinate system. If undefined, defaults to (-126.0,
-31.5) (about 500 miles W-SW from Los Angeles).\tabularnewline
-\hline 
-\texttt{\small{sim.system.kill\_cff}} & Below what CFF a fault will be deactivated. Certain fault configurations
-can have stress sinks, and this parameter will effectively remove
-them. If undefined, defaults to being turned off (negative infinity).\tabularnewline
-\hline 
-\texttt{\small{sim.system.sanity\_check = false}} & Whether to perform sanity checks on simulation values and abort if
+\texttt{\small{sim.system.sanity\_check = false}} & Whether to perform sanity checks on simulation values each time step and abort if
 any values are outside acceptable ranges.\tabularnewline
 \hline 
 \texttt{\small{sim.system.transpose\_matrix = true}} & Whether to store the Green's matrix in a transposed form to significantly
-improve performance. This should only be set to false for performance
-profiling.\tabularnewline
+improve performance. This should only be set to false for comparative performance profiling.\tabularnewline
 \hline 
-\texttt{\small{sim.system.progress\_period = 0}} & How frequently (in real seconds) to display simulation progress. If
+\texttt{\small{sim.system.progress\_period = 0}} & How frequently (in wall time seconds) to display simulation progress. If
 undefined or \textless{}= 0, simulation progress will not be displayed.\tabularnewline
 \hline 
-\texttt{\small{sim.system.depth\_dependent\_slip = false}} & Whether the fault velocity (slip rate) should be altered by depth.
-This is based on the equation $v=v_{s}(1-(\frac{z}{d})^{2})$ where
-$v_{s}$ is the original long term slip velocity, $d$ is the total
-fault depth, and $z$ is the depth of the block center.\tabularnewline
-\hline 
-\texttt{\small{sim.system.checkpoint\_period}} & How frequently (in simulation events) a checkpoint is saved. If undefined
-or \textless{}= 0, checkpoints will not be saved.\tabularnewline
-\hline 
-\texttt{\small{sim.system.checkpoint\_prefix = sim\_state\_}} & The prefix of the state save files, which will also include the event
-count.\tabularnewline
-\hline 
+%\texttt{\small{sim.system.checkpoint\_period}} & How frequently (in simulation events) a checkpoint is saved. If undefined
+%or \textless{}= 0, checkpoints will not be saved.\tabularnewline
+%\hline 
+%\texttt{\small{sim.system.checkpoint\_prefix = sim\_state\_}} & The prefix of the state save files, which will also include the event
+%count.\tabularnewline
+%\hline 
 \end{tabular}
 
 
@@ -2054,15 +1933,7 @@ count.\tabularnewline
 \texttt{\small{sim.friction.dynamic}} & The dynamic rupture value to use in the simulation from 0 to 1. Higher
 values indicate ruptures are more likely to propagate along a fault
 and result in larger earthquakes, while lower values indicate ruptures
-are less likely to propagate and result in smaller earthquakes. If
-undefined or outside the allowed range, use the dynamic values specified
-for each fault element.\tabularnewline
-\hline 
-\texttt{\small{sim.friction.law = original}} & Either use the \texttt{\small{original}} or \texttt{\small{stepped}}
-friction law.\tabularnewline
-\hline 
-\texttt{\small{sim.friction.slip\_scaling\_threshold = 10}} & The slip scaling threshold parameter used to scale slip with rupture
-size as per Equation \ref{eq:sst_one}.\tabularnewline
+are less likely to propagate and result in smaller earthquakes.\tabularnewline
 \hline 
 \end{tabular}
 
@@ -2088,7 +1959,7 @@ defaults to 0 (meaning it effectively doesn't use Barnes Hut approximation).\tab
 this is the name of the HDF5 file to read the Green's function values
 from.\tabularnewline
 \hline 
-\texttt{\small{sim.greens.output}} & The name of the HDF5 file to write the Green's function values to.\tabularnewline
+\texttt{\small{sim.greens.output}} & The name of the HDF5 file to write the Green's function values to. If unspecified, Green's function values are not written to a file after being calculated.\tabularnewline
 \hline 
 \texttt{\small{sim.greens.use\_normal = true}} & Whether to use the Green's normal stress function in calculations
 or just the Green's shear function.\tabularnewline
@@ -2097,6 +1968,8 @@ or just the Green's shear function.\tabularnewline
 (in km) apart. If undefined or \textless{}= 0, all interactions will
 remain the same.\tabularnewline
 \hline 
+\texttt{\small{sim.greens.sample\_distance = 1000.0}} & When calculating the Green's function, take samples at this minimum distance between samples.  This allows better convergence between models with few large blocks and models with many small blocks.  If the element size is smaller than this value, it has no effect.\tabularnewline
+\hline 
 \end{tabular}
 
 
@@ -2104,56 +1977,41 @@ remain the same.\tabularnewline
 
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
-\texttt{\small{sim.file.system\_output}} & The system file of the simulation. If undefined, no system information
-file will be written.\tabularnewline
+\texttt{\small{sim.file.input}} & The input model file of the simulation.\tabularnewline
 \hline 
-\texttt{\small{sim.file.events}} & The file which events will be written to. If undefined, events will
-not be recorded in an ASCII format.\tabularnewline
+\texttt{\small{sim.file.input\_type}} & The input model file format - must be one of text or hdf5.\tabularnewline
 \hline 
-\texttt{\small{sim.file.hdf5\_output}} & The file to write HDF5 formatted simulation and event data into. If
-undefined, HDF5 data will not be recorded.\tabularnewline
+\texttt{\small{sim.file.output\_event}} & The file which events will be written to. If undefined, events will
+not be recorded.\tabularnewline
 \hline 
-\end{tabular}
-
-
-\subsection{EqSim File Parameters}
-
-\begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
+\texttt{\small{sim.file.output\_sweep}} & The file which sweeps will be written to. If undefined, sweeps will
+not be recorded.\tabularnewline
 \hline 
-\texttt{\small{sim.eqsim.file.output}} & The file which EqSim style event logging will be written to. If undefined,
-the EqSim events file will not be created.\tabularnewline
-\hline 
-\texttt{\small{sim.eqsim.file.condition}} & The file to read EqSim style initial condition information from. If
-undefined, initial shear and normal stresses will be 0 and rhogd will
-be 1.557e8.\tabularnewline
-\hline 
-\texttt{\small{sim.eqsim.file.friction}} & The file to read EqSim style friction information from. If undefined,
-EqSim input files will not be used.\tabularnewline
-\hline 
-\texttt{\small{sim.eqsim.file.geometry}} & The file to read EqSim style geometry information from. If undefined,
-EqSim input files will not be used.\tabularnewline
-\hline 
-\texttt{\small{sim.eqsim.file.slipmap\_mag = 7.5}} & The magnitude cutoff to print slip maps in the EqSim event file.\tabularnewline
+\texttt{\small{sim.file.output\_event\_type}} & The file format to output events - must be one of text or hdf5.  If hdf5, sweep and event information will be printed to the same file specified by \texttt{sim.file.output\_event}.\tabularnewline
 \hline 
 \end{tabular}
 
 
-\subsection{\noindent Noise parameters}
-
-\noindent %
-\begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
-\hline 
-\texttt{\small{sim.noise.event = 0.0}} & Noise in single stress drop events.\tabularnewline
-\hline 
-\texttt{\small{sim.noise.slip\_deficit = 0.0}} & Noise in initial slip\_deficit.\tabularnewline
-\hline 
-\texttt{\small{sim.noise.stress.stress = 0.0}} & Noise applied to stress drop at start of simulation (affects all of
-simulation).\tabularnewline
-\hline 
-\texttt{sim.noise.}\texttt{\small{resolution}}\texttt{ = 10.0} & Stress noise resolution in km (over what range to apply a single noise
-value)\tabularnewline
-\hline 
-\end{tabular}
+%\subsection{EqSim File Parameters}
+%
+%\begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
+%\hline 
+%\texttt{\small{sim.eqsim.file.output}} & The file which EqSim style event logging will be written to. If undefined,
+%the EqSim events file will not be created.\tabularnewline
+%\hline 
+%\texttt{\small{sim.eqsim.file.condition}} & The file to read EqSim style initial condition information from. If
+%undefined, initial shear and normal stresses will be 0 and rhogd will
+%be 1.557e8.\tabularnewline
+%\hline 
+%\texttt{\small{sim.eqsim.file.friction}} & The file to read EqSim style friction information from. If undefined,
+%EqSim input files will not be used.\tabularnewline
+%\hline 
+%\texttt{\small{sim.eqsim.file.geometry}} & The file to read EqSim style geometry information from. If undefined,
+%EqSim input files will not be used.\tabularnewline
+%\hline 
+%\texttt{\small{sim.eqsim.file.slipmap\_mag = 7.5}} & The magnitude cutoff to print slip maps in the EqSim event file.\tabularnewline
+%\hline 
+%\end{tabular}
 
 
 \subsection{BASS (Branching Aftershock Sequence) model parameters}
@@ -2197,31 +2055,27 @@ q: distance decay rate\tabularnewline
 \end{tabular}
 
 
-\subsection{Parallel simulation parameters}
+%\subsection{Parallel simulation parameters}
+%
+%\noindent %
+%\begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
+%\hline 
+%\texttt{\small{sim.parallel.spec\_exec = none}} & Choose the type of speculative execution to be used to improve simulation
+%speed. Currently experimental. Can be either \texttt{\small{none}},
+%\texttt{\small{fixed}}, or \texttt{\small{adaptive}}. If \texttt{none}
+%is chosen, speculative execution will not be used. If \texttt{\small{fixed}}
+%or \texttt{\small{adaptive}} are chosen, the speculative execution
+%scheme is used with either a fixed boundary distance or adaptive distance.\tabularnewline
+%\hline 
+%\texttt{sim.parallel.spec\_exec\_distance = 0} & The boundary distance to use in the \texttt{\small{fixed}} speculative
+%execution scheme. This affects how frequently the simulation goes
+%into speculative mode.\tabularnewline
+%\hline 
+%\end{tabular}
+%
 
-\noindent %
-\begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
-\hline 
-\texttt{\small{sim.parallel.spec\_exec = none}} & Choose the type of speculative execution to be used to improve simulation
-speed. Currently experimental. Can be either \texttt{\small{none}},
-\texttt{\small{fixed}}, or \texttt{\small{adaptive}}. If \texttt{none}
-is chosen, speculative execution will not be used. If \texttt{\small{fixed}}
-or \texttt{\small{adaptive}} are chosen, the speculative execution
-scheme is used with either a fixed boundary distance or adaptive distance.\tabularnewline
-\hline 
-\texttt{sim.parallel.spec\_exec\_distance = 0} & The boundary distance to use in the \texttt{\small{fixed}} speculative
-execution scheme. This affects how frequently the simulation goes
-into speculative mode.\tabularnewline
-\hline 
-\end{tabular}
+\chapter{Virtual California Input Model Format}
 
-
-\chapter{Virtual California Input File Format}
-
-
-\section{Introduction}
-
-There are several input files used in VC. 
 
 
 \section{\label{sec:Trace-File-Format}Trace File Format}
@@ -2255,8 +2109,8 @@ faults defined in separate files.\tabularnewline
 The remainder of the file defines each of the trace points for the
 fault. Each trace point is described using the following attributes.
 The units of the attributes in the file were chosen to be easily human
-understandable, however in the simulation they are converted to SI
-units.\vspace*{\bigskipamount}
+understandable. In the simulation they are converted to SI
+units though this is hidden from the user.\vspace*{\bigskipamount}
 
 
 \noindent %
@@ -2328,9 +2182,8 @@ a paired trace type file import.\tabularnewline
 \hline 
 -t METHOD, -\/-taper\_fault\_method=METHOD & Specify the how to taper the imported trace when meshing. Must have
 a paired trace type file import. Choices for taper method are: none,
-taper, taper\_renorm. Taper follows the convention of \ref{sec:tapering}.
-Taper\_norm adds a constant offset velocity everywhere so element
-behavior will more closely resemble observation.\tabularnewline
+taper, taper\_full, taper\_renorm. %Taper follows the convention of \ref{sec:tapering}.
+\tabularnewline
 \hline 
 -C FILE, -\/-import\_eqsim\_condition=FILE & Specify an EQSim condition file to import for the model.\tabularnewline
 \hline 
@@ -2368,7 +2221,7 @@ File Format}
 \section{Introduction}
 
 The format of the output files of Virtual California is described
-here. All outputs are in non-dimensional units unless specified.
+here. All outputs are in non-dimensional units unless otherwise specified.
 
 
 \section{HDF5 Output}
