@@ -178,3 +178,7 @@ doc/*.toc
 
 doc/*.aux
 
+doc/*.bbl
+
+doc/*.blg
+

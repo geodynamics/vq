@@ -19,24 +19,8 @@
 
 \makeatletter
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-\providecommand{\LyX}{\texorpdfstring%
-  {L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
-  {LyX}}
 %% Because html converters don't know tabularnewline
 \providecommand{\tabularnewline}{\\}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
-\newenvironment{lyxcode}
-{\par\begin{list}{}{
-\setlength{\rightmargin}{\leftmargin}
-\setlength{\listparindent}{0pt}% needed for AMS classes
-\raggedright
-\setlength{\itemsep}{0pt}
-\setlength{\parsep}{0pt}
-\normalfont\ttfamily}%
- \item[]}
-{\end{list}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \usepackage{hyperref}
@@ -57,7 +41,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual California User Manual}
-\author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Donald L. Turcotte\\John B. Rundle\\\\© University of California, Davis\\
+\author{Eric M. Heien\\Michael K. Sachs\\Kasey W. Schultz\\Donald L. Turcotte\\John B. Rundle\\\\© University of California, Davis\\
 Version 1.0.0}
 %\date{\noindent \today}
 
@@ -99,17 +83,17 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: name of the code
 % You may want to add \hspace to both sides of the codename to better center it, such as:
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
-\hspace{0.1in}Virtual California\hspace{0.1in}
+\hspace{0.02in}Virtual California\hspace{0.0in}
 }}}
 \end{center}
 
 %MAIN PICTURE%
-\begin{textblock*}{0in}(0.3in,-0.1in)
+\begin{textblock*}{0in}(0.6in,-0.05in)
 % FILL: image height
 % e.g. height=6.5in
 \begin{center}
 \vspace{.5in}
-\includegraphics[height=5.8in]
+\includegraphics[height=5.3in]
 % FILL: image file name
 % e.g. cover_image.png
 {graphics/overlay_fields_109382.png}
@@ -131,11 +115,11 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: author list
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
-Kasey W. Schultz~~~Eric M. Heien\\Michael K. Sachs~~~Donald L. Turcotte~~~John B. Rundle\\
+Eric M. Heien~~~Michael K. Sachs~~~Kasey W. Schultz\\Donald L. Turcotte~~~John B. Rundle\\
 }
 {\fontfamily{\sfdefault}\selectfont www.geodynamics.org}
 
-\hrule
+%\hrule
 
 %LINE%
 \color{dark_grey}
@@ -172,17 +156,8 @@ capabilities then proceeds to the details of implementation. Part
 III provides appendices and references for input and output files
 and parameters.
 
-The style of this publication is based on the Apple Publications Style
-Guide \url{developer.apple.com/library/mac/documentation/UserExperience/Conceptual/APStyleGuide/APSG_2009.pdf},
-as recommended by Python.org \url{www.python.org}. The documentation
-was produced using \LyX{} \url{www.lyx.org} to facilitate the transformation
-of files from one format to another. \LyX{} is a document processor
-that encourages an approach to writing based on the structure of your
-documents, not their appearance. It is released under a Free Software/Open
-Source license.
-
 Errors and bug fixes in this manual should be directed to the CIG
-Mantle Convection Mailing List \url{cig-mc@geodynamics.org}.
+Short Term Crustal Dynamics Mailing List \url{cig-short@geodynamics.org}.
 
 
 \section*{Who Will Use This Document}
@@ -209,8 +184,8 @@ source code available to you in the hope that the software will enhance
 your research in geophysics, and probabilistic seismic hazard analysis.
 The underlying C++ code for the Greens function calculations, stress
 evolution, simulation framework, and the QuakeLib library and associated
-Python bindings and testing framework were donated to CIG in December
-of 2012. A number of individuals have contributed a significant portion
+Python bindings and testing framework were donated to CIG in July
+of 2014. A number of individuals have contributed a significant portion
 of their careers toward the development of Virtual California. It
 is essential that you recognize these individuals in the normal scientific
 practice by citing the appropriate peer reviewed papers and making
@@ -219,9 +194,7 @@ appropriate acknowledgements.
 The Virtual California development team asks that you cite both of
 the following:
 \begin{itemize}
-\item Heien, E.M., Sachs, M.K., \char`\"{}Understanding Long-Term Earthquake
-Behavior through Simulation,\char`\"{} Computing in Science and Engineering,
-pp. 10-20, Sept.-Oct., 2012 
+\item Eric M. Heien, Michael Sachs, "Understanding Long-Term Earthquake Behavior through Simulation," Computing in Science and Engineering, vol. 14, no. 5, pp. 10-20, Sept.-Oct. 2012, doi:10.1109/MCSE.2012.39
 \item Sachs, M.K., Heien, E.M., Turcotte, D.L., Yikilmaz, M.B., Rundle,
 J.B., Kellogg, L.H. ''Virtual California Earthquake Simulator''
 Seismological Research Letters, November/December 2012, v. 83, p.
@@ -269,7 +242,8 @@ shared and distributed memory platforms. To allow increased functionality
 including development of other simulators, analysis scripts, and visualization
 tools, some key components of Virtual California have been placed
 in the QuakeLib library which can be called from C/C++ programs or
-Python scripts.
+Python scripts.  The QuakeLib library uses the SWIG framework
+and can therefore be extended to a wide variety of other languages as well.
 
 
 \section{About Virtual California}
@@ -307,13 +281,13 @@ by a Weibull distribution.
 
 In 2010 Virtual California was rewritten by Eric Heien in C++ to have
 a more modular simulation framework and add support for multiprocessor
-simulation using OpenMP and/or MPI. The fault model in Virtual California
+simulation using OpenMP and MPI. The fault model in Virtual California
 was also more cleanly separated from the fundamental stress calculation
 to allow simulation of other fault systems, including the Nankai trough
 in Japan \cite{2010PhDT}. Additional features were also added, including
 a branching aftershock sequence (BASS) model simulation of aftershocks
 \cite{npg-18-955-2011}, improved stress Green's function calculations,
-more sophisticated rupture propagation, and support of parallel HDF5
+more sophisticated rupture propagation, and support for parallel HDF5
 output. Virtual California was also used in an effort by the Southern
 California Earthquake Center to unify and compare the results from
 several earthquake simulators \cite{TullisNovember/December}.
@@ -354,7 +328,7 @@ that computations on different platforms yield the same results within
 a specified tolerance.
 
 
-\chapter{VC Simulation Components and Governing Equations\label{sec:Governing-Equations}}
+\chapter{VC Components and Governing Equations\label{sec:Governing-Equations}}
 
 There are three major components that make up Virtual California:
 a fault model, a set of quasi-static interactions (Green\textquoteright{}s
@@ -396,8 +370,9 @@ in California, with some faults modeled by multiple sections. Each
 fault section is meshed into square elements that are roughly 3 km
 \texttimes{} 3 km, for a total of 14,474 elements. In the present
 version of our model, the creeping section of the San Andreas fault
-is removed. This section produces many events, slowing the simulation
-down considerably. 
+is removed. This is because in the current simulation physics, this
+section produces many small events and considerably slows down
+the simulation.
 
 \begin{figure}[th]
 \includegraphics[width=1\textwidth]{graphics/UCERF2_faults_GoogleEarth}\caption{California fault system based on UCERF2, meshed into fault elements
@@ -426,47 +401,37 @@ velocity, dip angle, rake angle, depth, etc. Details about the trace
 file format are shown in Appendix \ref{sec:Trace-File-Format}.
 
 In this example we look at the earthquake cycle and rupture mechanics
-on a single 12 km square fault. For simplicity, the trace of this
+on a single 12 km by 12 km square fault. For simplicity, the trace of this
 fault runs eastward for 12km starting from latitude/longitude (0,0)
 and ending at latitude/longitude (0,0.1078). The definition of this
 fault is in the file examples/fault\_traces/single\_fault\_trace.txt
 and is also shown below.
-\begin{lyxcode}
-\#~fault\_id:~ID~number~of~the~parent~fault~of~this~section
-
-\#~num\_points:~Number~of~trace~points~comprising~this~section
-
-\#~section\_name:~Name~of~the~section
-
-0~2~One\_Element\_Example
-
-\#~latitude:~Latitude~of~trace~point
-
-\#~longitude:~Longitude~of~trace~point
-
-\#~altitude:~Altitude~of~trace~point~(meters)
-
-\#~depth\_along\_dip:~Depth~along~dip~(meters)
-
-\#~slip\_rate:~Slip~rate~at~trace~point~(centimeters/year)
-
-\#~aseismic:~Fraction~of~slip~that~is~aseismic~at~point
-
-\#~rake:~Fault~rake~at~trace~point~(degrees)
-
-\#~dip:~Fault~dip~at~trace~point~(degrees)
-
-\#~lame\_mu:~Lame's~mu~parameter~at~trace~point~(Pascals)
-
-\#~lame\_lambda:~Lame's~lambda~parameter~at~trace~point~(Pascals)
-
-0~0~0~12000~1~0~180~90~3e+10~3.2e+10
-
-0~0.1078~0~12000~1~0~180~90~3e+10~3.2e+10~
-\end{lyxcode}
+\begin{verbatim}
+# fault_id: ID number of the parent fault of this section
+# num_points: Number of trace points comprising this section
+# section_name: Name of the section
+0 2 One_Element_Example
+# latitude: Latitude of trace point
+# longitude: Longitude of trace point
+# altitude: Altitude of trace point (meters)
+# depth_along_dip: Depth along dip (meters)
+# slip_rate: Slip rate at trace point (centimeters/year)
+# aseismic: Fraction of slip that is aseismic at point
+# rake: Fault rake at trace point (degrees)
+# dip: Fault dip at trace point (degrees)
+# lame_mu: Lame's mu parameter at trace point (Pascals)
+# lame_lambda: Lame's lambda parameter at trace point (Pascals)
+0 0 0 12000 1 0 180 90 3e+10 3.2e+10
+0 0.1078 0 12000 1 0 180 90 3e+10 3.2e+10
+\end{verbatim}
 The first non-comment line in this file gives the fault ID, number
-of trace points, and fault name. In this example, the fault is named
-\char`\"{}One\_Fault\_Example\char`\"{}. The remaining non-comment
+of trace points, and section name. In this example, the section is named
+``One\_Fault\_Example''. The section is associated with fault number 0.
+This naming convention is used to allow a large fault to be split into multiple
+sections for identification, but maintain the same physical properties as
+a single full fault.
+
+The remaining non-comment
 lines give the fault characteristics at each trace point. This file
 defines two trace points, the first at latitude/longitude (0,0) and
 the second at (0, 0.1078), with both at altitude 0. At each point
@@ -474,13 +439,13 @@ the fault extends 12,000 meters down and has a slip rate of 1 cm/year
 with 0 aseismicity. The fault is right lateral strike slip (rake of
 180\textdegree{}, dip of 90\textdegree{}). The Lamé parameters of
 $\mu=3e10$ and $\lambda=3.2e10$ indicate the material properties
-of the fault.
+of the fault interface.
 
 Given this fault definition we can create a mesh which fits within
 the fault dimensions. Each fault is meshed by specifying the fault
 trace file in the format described above, and a fault element size.
 Currently all fault elements in Virtual California are square though
-future versions will allow triangulare elements. Furthermore, all
+future versions will allow triangular elements. Furthermore, all
 elements of a single fault are meshed at the same resolution. This
 means that if the meshing resolution is not a perfect multiple of
 the trace length or depth at a given point, the meshed elements will
@@ -527,7 +492,7 @@ the meshing process. In general it is recommended to use an element
 size smaller than the smallest distance between fault trace points
 unless there are memory or computing constraints. In the event that
 the meshing process skips a trace point because of overly large element
-size, a warning will be output. Appropriate element size is further
+size, a warning will be output during the meshing process. Appropriate element size is further
 discussed in Section \ref{sec:element_size_discussion}. The meshing
 program and related parameters are described in Section \ref{sec:building_faults}.
 
@@ -546,11 +511,11 @@ resolutions.}
 Figure \ref{fig:meshing-example} shows the result of meshing the
 One\_Fault\_Example trace with different element resolutions. Figures
 \ref{fig:mesh6km} and \ref{fig:mesh4km} show the KML output of the
-program in Google Earth (citation). Since the fault is defined to
+program in Google Earth. Since the fault is defined to
 start at latitude/longitude (0,0) it will appear in the middle of
 the Atlantic ocean. In output KML files the depth is reversed so faults
 are visible above the surface. When performing simulations with realistic
-fault systems it is better to use actual fault latitude/longitude
+fault systems it is better to use actual fault latitude/longitude rather than centering the faults on (0,0)
 in the traces to help visualize the simulation results.
 
 
@@ -646,12 +611,12 @@ the change in CFF over time is governed by the equation:
 
 
 where $\alpha$ represents the fraction of fault slip that is aseismic
-and $T_{\alpha}^{A}=\frac{CFF^{A}T^{AA}}{rec}$ represents the instanteous
+and $T_{\alpha}^{A}=\frac{CFF^{A}T^{AA}}{recurrence}$ represents the instantaneous
 change in CFF due to aseismic slip. Aseismic slip on an element transmits
 stress to other elements but not on the element itself. 
 
 Knowing the relationship between slip and stress (equations \ref{eq:shear_stress_sum}
-and \ref{eq:norm_stress_sum}), it is not necesary to evolve the system
+and \ref{eq:norm_stress_sum}), it is not necessary to evolve the system
 time step by time step. Rather, the simulation time is advanced directly
 to the point at which the next element fails. Equations \ref{eq:cff_function}
 and \ref{eq:cff_change} allow us to analytically solve for the time
@@ -659,6 +624,8 @@ when the next element will fail.
 
 
 \section{Rupture Event Model\label{sec:Event_Model}}
+
+%%% READ AND REWRITE
 
 \begin{figure}[th]
 \subfloat[CFF vs. time for a series of stress buildup and rupture events.]{\includegraphics[width=0.48\textwidth]{graphics/CFF_1}
@@ -743,6 +710,7 @@ figure shows how elements may fail multiple times during different
 sweeps in an event, but do not accumulate additional stress after
 failing.
 
+%%% ERIC TODO: READ AND REWRITE
 
 \section{Simulation Flow}
 
@@ -808,7 +776,7 @@ and their units are described in detail in Appendix \ref{sec:Trace-File-Format}.
 \begin{centering}
 \begin{minipage}[t]{0.45\columnwidth}%
 \begin{center}
-\subfloat{\noindent \centering{}\includegraphics[bb=0bp 0bp 453bp 307bp,width=1\textwidth]{graphics/Okada_Fault_Convention}}
+\subfloat{\noindent \centering{}\includegraphics[width=1\textwidth]{graphics/Okada_Fault_Convention}}
 \par\end{center}%
 \end{minipage}\hspace{1cm}%
 \begin{minipage}[t]{0.35\columnwidth}%
@@ -993,7 +961,7 @@ field on the surface, possibly as measured by an orbiting satellite
 for the same simulated earthquake as Figure \ref{fig:Displacement_field}. 
 
 \begin{figure}
-\centering{}\includegraphics[bb=0bp 0bp 790bp 768bp,width=1\textwidth]{graphics/dg_54358}\caption{\label{fig:Gravity_field}Simulated surface gravity anomalies for
+\centering{}\includegraphics[width=1\textwidth]{graphics/dg_54358}\caption{\label{fig:Gravity_field}Simulated surface gravity anomalies for
 the same simulated earthquake as in Figure \ref{fig:Displacement_field}. }
 \end{figure}
 
@@ -1040,13 +1008,13 @@ You must also have Python 2.7 or greater installed.
 To obtain Virtual California, go to the Geodynamics Software Packages
 web page \url{geodynamics.org/cig/software/vc}, download the source
 archive and unpack it using the \texttt{tar} command: 
-\begin{lyxcode}
+\begin{verbatim}
 \$~tar~xzf~VirtualCalifornia.tar.gz
-\end{lyxcode}
+\end{verbatim}
 If you don't have GNU Tar, try the following command instead: 
-\begin{lyxcode}
+\begin{verbatim}
 \$~gunzip~-c~VirtualCalifornia.tar.gz~\textbar{}~tar~xf~-
-\end{lyxcode}
+\end{verbatim}
 
 \section{\label{sec:Install}Installation Procedure}
 
@@ -1084,35 +1052,32 @@ below.
 \subsection{Mac OS X}
 
 With the OS X default python: 
-\begin{lyxcode}
-\$~mkdir~build
-
-\$~cd~build
-
-\$~cmake~..
-
-\$~make
-\end{lyxcode}
+\begin{verbatim}
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+\end{verbatim}
 If you have a third party installation of python (ie. from homebrew
 or macports) Virtual California will build and install, but the python
 quakelib module may not work. This is because cmake builds against
 the system python. To fix this do the following: 
-\begin{lyxcode}
-\$~./configure
-\end{lyxcode}
+\begin{verbatim}
+\$ ./configure
+\end{verbatim}
 cmake will output the following: 
-\begin{lyxcode}
+\begin{verbatim}
 -{}-~Found~PythonLibs:~/usr/lib/libpythonx.x.dylib~
-\end{lyxcode}
-where \char`\"{}x.x\char`\"{} is a version number (ie. \char`\"{}2.7\char`\"{}).
+\end{verbatim}
+where ``x.x'' is a version number (ie. ``2.7'').
 We need to move this file and create a link to the correct python. 
-\begin{lyxcode}
+\begin{verbatim}
 \$~sudo~mv~/usr/lib/libpythonx.x.dylib~/usr/lib/libpythonx.x.sys.dylib~
 
 \$~which~python~\textbar{}~xargs~otool~-L~
-\end{lyxcode}
+\end{verbatim}
 This will output /the/path/to/python/library. 
-\begin{lyxcode}
+\begin{verbatim}
 \$~sudo~ln~-s~/the/path/to/python/library~/usr/lib/libpythonx.x.dylib
 
 \$~rm~-r~build/~
@@ -1124,12 +1089,12 @@ This will output /the/path/to/python/library.
 \$~make~
 
 \$~sudo~make~install~
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Linux}
 
 Follow the steps below:
-\begin{lyxcode}
+\begin{verbatim}
 \$~mkdir~build
 
 \$~cd~build
@@ -1137,13 +1102,13 @@ Follow the steps below:
 \$~cmake~..
 
 \$~make
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Install Locations}
 
 Quakelib libraries will be installed in standard library directories
 based on your system configuration. Cmake will generate a file named
-\char`\"{}install\_manifest.txt\char`\"{} in the build directory detailing
+``install\_manifest.txt'' in the build directory detailing
 the locations of installed files. The Virtual California binary is
 build/src/vc.
 
@@ -1153,18 +1118,18 @@ build/src/vc.
 Depending on the machine used to run VC, you may need to change which
 compiler CMake uses to compile VC. For example, if the user wants
 to compile VC with gcc 3.3, execute cmake as shown below.
-\begin{lyxcode}
+\begin{verbatim}
 \$~CC=gcc-3.3~CXX=g++-3.3~cmake~..
 
 \$~make
-\end{lyxcode}
+\end{verbatim}
 To compile Virtual California and deploy it across multicore processors
 or many processors, execute cmake instead as:
-\begin{lyxcode}
+\begin{verbatim}
 \$~CC=mpicc~CXX=mpicxx~cmake~..
 
 \$~make
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Additional Tools}
 
@@ -1180,11 +1145,11 @@ arrays for use in scientific computing. You may download NumPy from
 the NumPy home page \url{numpy.scipy.org}. To compile and install
 this extension, download it and issue the following commands after
 extracting it:
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~numpy-1.0
 
 \$~python~setup.py~install~-{}-prefix=\$HOME/cig
-\end{lyxcode}
+\end{verbatim}
 Alternatively, under Debian Linux you can install the \texttt{python-numpy}
 package. On Gentoo Linux, NumPy is available in the \texttt{dev-python/numpy}
 ebuild.
@@ -1236,7 +1201,7 @@ mesher executables. We used CMake to compile the simulation program,
 and we have also configured CMake to run a suite of unit tests and
 even test simulations. To run the suite of unit tests simply type
 the following into your terminal.
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~VirtualCalifornia/build/
 
 \$~make~test
@@ -1306,7 +1271,7 @@ Test~project~/Users/{[}username{]}/vc/build~
 100\%~tests~passed,~0~tests~failed~out~of~79
 
 Total~Test~time~(real)~=~~~5.51~sec
-\end{lyxcode}
+\end{verbatim}
 The example output from the CMake test suite shows the range of output,
 however you should not see any failed tests. The final lines of the
 output summarize the results from the unit tests and test simulations. 
@@ -1562,7 +1527,7 @@ for more information on the input fault model files and parameters.
 The basic outline for creating a fault trace file is given in section
 \vref{sec:Fault_model}. The trace file specifies the fault geometry
 and physical parameters, and exmple is printed below.
-\begin{lyxcode}
+\begin{verbatim}
 \#~Number~of~sections~
 
 \#~Number~of~elements~
@@ -1624,7 +1589,7 @@ and physical parameters, and exmple is printed below.
 1~6.63961e-18~0~-12000~0~
 
 2~6.6452e-18~0.107798~0~12000
-\end{lyxcode}
+\end{verbatim}
 
 \subsubsection{Example Traces}
 
@@ -1671,15 +1636,15 @@ The sample Bash shell script that uses the mesher program to generate
 the mesh from the fault traces will be located in VirtualCalifornia/examples/single\_fault/
 (or two\_fault/) and is named ``setup\_mesh.sh''. The syntax for using
 this is:
-\begin{lyxcode}
+\begin{verbatim}
 \$~bash~setup\_mesh.sh~ELEM\_SIZE~TAPER\_METHOD
-\end{lyxcode}
+\end{verbatim}
 The required (bold) arguments are described below.
-\begin{lyxcode}
+\begin{verbatim}
 ELEM\_SIZE~~~~~~=~the~size~of~the~square~fault~elements~in~meters
 
 TAPER\_METHOD~~~=~none,~taper,~or~taper\_norm~(see~section~\ref{sec:Trace-File-Format})~
-\end{lyxcode}
+\end{verbatim}
 This script takes the trace file from the previous section, as well
 as other keyword arguments described in section \ref{cha:Appendix-C:Mesher_Parameters},
 and creates several simulation files in a subfolder named by the TAPER\_METHOD.
@@ -1715,7 +1680,7 @@ coordinates (37.83,-122.4797) and (37.803,-122.4765). These endpoints
 give a 3km fault element than runs parallel and directly under the
 Golden Gate Bridge in San Francisco. The trace file is printed below
 and the fault element is shown above ground in figure \ref{fig:Golden_Gate_single}.
-\begin{lyxcode}
+\begin{verbatim}
 \#~fault\_id:~ID~number~of~the~parent~fault~of~this~section~
 
 \#~num\_points:~Number~of~trace~points~comprising~this~section~
@@ -1747,17 +1712,17 @@ and the fault element is shown above ground in figure \ref{fig:Golden_Gate_singl
 37.85~~~-122.482~0~3000~1~0~180~90~3e+10~3.2e+10~
 
 37.7425~-122.47~~0~3000~1~0~180~90~3e+10~3.2e+10
-\end{lyxcode}
+\end{verbatim}
 To create the input files, we use the mesher program as follows (arguments
 explained in section \ref{sec:building_faults}).
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~examples/single\_fault/
 
 \$~bash~setup\_mesh.sh~3000~none
-\end{lyxcode}
+\end{verbatim}
 Which generates several output files as listed by the command line
 output shown below.
-\begin{lyxcode}
+\begin{verbatim}
 {*}{*}{*}~Summary~of~edits~{*}{*}{*}~
 
 File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
@@ -1767,7 +1732,7 @@ File~export~single\_3000.txt~with~type~text...~done.~
 File~export~single\_3000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_3000.txt
-\end{lyxcode}
+\end{verbatim}
 \begin{figure}
 \centering{}\includegraphics[bb=0bp 0bp 780bp 614bp,width=0.72\textwidth]{graphics/One_Fault_Golden_Gate}\caption{\label{fig:Golden_Gate_single}Single 3km x 3km fault element running
 under the Golden Gate Bridge in San Francisco, shown above ground.
@@ -1786,7 +1751,7 @@ Now, from the same directory (examples/single\_fault/) we need to
 edit the parameter file, and place the VC executable and input files
 into the same directory. Make sure the parameter file --- ``params.d''
 --- is as printed below:
-\begin{lyxcode}
+\begin{verbatim}
 sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
 sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
@@ -1806,16 +1771,16 @@ sim.file.output\_event~~~~~~~~~~~~~=~events\_3000.txt~
 sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.txt~
 
 sim.file.output\_event\_type~~~~~~~~=~text
-\end{lyxcode}
+\end{verbatim}
 Then copy it into the newly created directory ''none'':
-\begin{lyxcode}
+\begin{verbatim}
 \$~cp~params.d~./none/
-\end{lyxcode}
+\end{verbatim}
 The next thing is to copy the compiled VC executable into the same
 directory as our parameter files.
-\begin{lyxcode}
+\begin{verbatim}
 \$~cp~../../build/src/vc~./none/
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Running VC}
 
@@ -1823,11 +1788,11 @@ Now that we have generated the fault mesh and put all the simulation
 files in one place, we are now ready to run the simulation. Run this
 simulation by simply executing the vc executable (single processor)
 and passing the parameter file as a command line argument:
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~./none/
 
 \$~./vc~./params.d
-\end{lyxcode}
+\end{verbatim}
 You should see output similar to:
 
 \# {*}{*}{*} MPI CPU count : 1 
@@ -1880,13 +1845,13 @@ program. To protect the previous example, first we need to edit the
 ``setup\_mesh.sh'' file so that we write the files to a new directory.
 In the script, just make this change: DIR\_NAME=Golden\_Gate\_Example\_Multiple.
 Then we generate the mesh with the following commands.
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~examples/single\_fault/
 
 \$~bash~setup\_mesh.sh~1000~none
-\end{lyxcode}
+\end{verbatim}
 Which should output the following.
-\begin{lyxcode}
+\begin{verbatim}
 {*}{*}{*}~Summary~of~edits~{*}{*}{*}~
 
 File~import~../../fault\_traces/golden\_gate.txt~with~type~trace...~done.~
@@ -1896,10 +1861,10 @@ File~export~single\_1000.txt~with~type~text...~done.~
 File~export~single\_1000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_1000.txt
-\end{lyxcode}
+\end{verbatim}
 Copy the ``params.d'' file into the ''none'' directory and edit
 it to match below:
-\begin{lyxcode}
+\begin{verbatim}
 sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
 sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
@@ -1919,7 +1884,7 @@ sim.file.output\_event~~~~~~~~~~~~~=~events\_1000.h5~
 sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_1000.h5~
 
 sim.file.output\_event\_type~~~~~~~~=~hdf5
-\end{lyxcode}
+\end{verbatim}
 
 \begin{figure}
 \centering
@@ -1936,20 +1901,20 @@ that the mesher program created using the trace file.}
 Now lets navigate to the newly created directory and assimilate our
 simulation files. If you re-compiled for multiprocessing, you have
 a new executable to use:
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~./none/
 
 \$~cp~../../../build/src/vc~./
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Running VC}
 
 Again we run the simulation by simply executing the vc executable:
-\begin{lyxcode}
+\begin{verbatim}
 \$~./vc~./params.d
-\end{lyxcode}
+\end{verbatim}
 Output should be similar to:
-\begin{lyxcode}
+\begin{verbatim}
 \#~{*}{*}{*}~MPI~CPU~count~~~~~~~~~~~~~~~:~1~
 
 \#~Initializing~blocks.~
@@ -1985,7 +1950,7 @@ Output should be similar to:
 4~~~~~Propagate~event~ruptures~~~~~~~~748~~~~0.124~~~0.124~~~~0.124~~~~~0.000~
 
 5~~~~~~~~~~~~~~~~~~Data~Writer~~~~~~~~748~~~~0.302~~~0.302~~~~0.302~~~~~0.000
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Results}
 
@@ -2021,13 +1986,13 @@ sections that intersect at the Earth and Physical Sciences building
 on campus at the University of California, Davis, shown in figure
 \ref{fig:Davis_2_fault}. We generate the mesh with the following
 commands.
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~examples/two\_fault/
 
 \$~bash~setup\_mesh.sh~3000~none~
-\end{lyxcode}
+\end{verbatim}
 Which should output the following.
-\begin{lyxcode}
+\begin{verbatim}
 {*}{*}{*}~Summary~of~edits~{*}{*}{*}
 
 File~import~../../fault\_traces/multiple\_fault\_trace.txt~with~type~trace...~done.~
@@ -2037,10 +2002,10 @@ File~export~two\_fault\_3000.txt~with~type~text...~done.~
 File~export~two\_fault\_3000.kml~with~type~kml...~done.~
 
 Print~statistics~to~statistics\_3000.txt
-\end{lyxcode}
+\end{verbatim}
 Next, copy the ``params.d'' into the ''none'' folder and it should
 be edited to match:
-\begin{lyxcode}
+\begin{verbatim}
 sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
 sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
@@ -2062,7 +2027,7 @@ sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.h5~
 sim.file.output\_event\_type~~~~~~~~=~hdf5
 
 
-\end{lyxcode}
+\end{verbatim}
 \begin{figure}
 \centering{}\includegraphics[bb=0bp 0bp 1096bp 900bp,width=0.72\textwidth]{graphics/Davis_2_Fault}\caption{\label{fig:Davis_2_fault}Two fault sections that meet at the UC Davis
 campus. The fault sections are 15km x 12km and meshed into 3km x 3km
@@ -2077,23 +2042,23 @@ that the mesher program created using the trace file.}
 Now lets navigate to the newly created directory and assimilate our
 simulation files. If you re-compiled for multiprocessing, you have
 a new executable to use:
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~./none/
 
 \$~cp~../../../build/src/vc~./
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Running VC}
 
 Again we run the simulation on a single processor by simply executing
 the vc executable:
-\begin{lyxcode}
+\begin{verbatim}
 \$~./vc~./params.d
-\end{lyxcode}
+\end{verbatim}
 To instead run VC in parallel on 2 processors/cores, execute:
-\begin{lyxcode}
+\begin{verbatim}
 \$~mpirun~-np~2~./vc~params.d
-\end{lyxcode}
+\end{verbatim}
 
 \subsection{Results}
 
@@ -2108,16 +2073,16 @@ an HDF5 file. For more details about the file contents, see Appendix
 
 Also in the examples folder we provide all the major fault traces in California and an executable script that can use them to build a full fault model. To build the full California fault model, execute the following commands to mesh the model into 3km elements:
 
-\begin{lyxcode}
+\begin{verbatim}
 \$~cd~examples/ca\_model/
 
 \$~bash~gen\_ca\_model.sh~3000
 
-\end{lyxcode}
+\end{verbatim}
 
 Next, to run a simulation with the entire model, copy the ``params.d'' into the ''ca\_model'' folder and it should
 be edited to match:
-\begin{lyxcode}
+\begin{verbatim}
 sim.version~~~~~~~~~~~~~~~~~~~~~~~=~2.0~
 
 sim.time.end\_year~~~~~~~~~~~~~~~~~=~10000~
@@ -2139,7 +2104,7 @@ sim.file.output\_sweep~~~~~~~~~~~~~=~sweeps\_3000.h5~
 sim.file.output\_event\_type~~~~~~~~=~hdf5
 
 
-\end{lyxcode}
+\end{verbatim}
 
 
 %-------------------------------- End tutorials, begin appendices
@@ -2795,11 +2760,10 @@ Attribute Name & Attribute Description\tabularnewline
 
 \chapter{\label{chap:License}License }
 
-Copyright (c) 2012-2014 Kasey W. Schultz, Eric M. Heien, Michael K.
-Sachs, John B. Rundle
+Copyright (c) 2012-2014 Eric M. Heien, Michael K. Sachs, Kasey W. Schultz, John B. Rundle
 
 Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the \char`\"{}Software\char`\"{}),
+a copy of this software and associated documentation files (the ``Software''),
 to deal in the Software without restriction, including without limitation
 the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom
@@ -2808,7 +2772,7 @@ the Software is furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED \char`\"{}AS IS\char`\"{}, WITHOUT WARRANTY
+THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY
 OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
