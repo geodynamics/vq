@@ -17,7 +17,7 @@ ELSE(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
     SET(NUM_PROCS 1)
 ENDIF(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
 
-SET(SETUP_PARAMS_SCRIPT ${VC_EXAMPLE_DIR}/single_fault/setup_params.sh)
+SET(SETUP_PARAMS_SCRIPT ${VC_EXAMPLE_DIR}/setup_params.sh)
 SET(CHECK_SCRIPT ${VC_EXAMPLE_DIR}/check_results.py)
 SET(ENV{PATH} $ENV{PATH}:${CMAKE_CURRENT_BINARY_DIR}/../src/)
 
@@ -58,7 +58,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VC_EXAMPLE_DIR}/example_params.d)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
@@ -100,7 +100,6 @@ ENDFOREACH(NPROC ${NUM_PROCS})
 
 SET(RESOLUTIONS_TWO 12000 6000 3000)
 SET(METHOD_INTEREVENT_TWO 50 0 0)
-SET(SETUP_TWO_FAULT_PARAMS_SCRIPT ${VC_EXAMPLE_DIR}/two_fault/setup_params.sh)
 
 FOREACH(TAPER_IND RANGE ${NUM_TAPER})
     LIST(GET TAPER_METHODS ${TAPER_IND} TAPER)
@@ -131,7 +130,7 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
  
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_TWO_FAULT_PARAMS_SCRIPT} ${RES} 0.7)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VC_EXAMPLE_DIR}/example_params.d)
         SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
