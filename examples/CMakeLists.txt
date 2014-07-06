@@ -135,7 +135,7 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND vc params_two_${RES}.d)
+            COMMAND vc params_two_fault_${RES}.d)
         SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
         # Check that the results are internally self consistent
