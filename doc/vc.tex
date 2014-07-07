@@ -625,9 +625,51 @@ when the next element will fail.
 
 \section{Rupture Event Model\label{sec:Event_Model}}
 
-%%% READ AND REWRITE
+A rupture event in VC is comprised of multiple sweeps.  During each sweep one or more elements fail and one or more elements slip.  The sweeps continue as long as there are elements that fail - once no more elements fail the event is complete.
 
-\begin{figure}[th]
+Rupture propagation consists of two internal phases - rupture/slip caused by static or dynamic failure and slip caused by the stress influence of other elements.  The first phase involves elements rupturing and slipping due to static stress failure (CFF = 0) or dynamic failure (Equation \ref{eq:dynamic_trigger}).  The second phase involves ruptured elements continuing to slip due to the changing stress influence of other elements.  Each of these phases are described below.
+
+During rupture propagation elements are either in a ruptured or non-ruptured state.  Elements move from the non-ruptured to ruptured state either by static or dynamic failure.  Elements move from ruptured to non-ruptured only when the event is complete.  Static failure occurs when $CFF \geq 0$. To better model rupture propagation dynamic
+failure is also allowed during rupture events. Dynamic failure allows
+elements on the same fault and physically nearby to failed elements
+to in turn fail at a lower stress level than the static failure
+criterion. This dynamic failure is based on the increase in stress
+during the rupture event. Dynamic failure is caused when there is a significant change in CFF during the event, satisfying:
+
+\begin{equation}
+\frac{CFF_{init}-CFF_{final}}{CFF_{init}}>\eta\label{eq:dynamic_trigger}
+\end{equation}
+
+where $\eta$ is a user defined dynamic triggering parameter either
+for the whole system or uniquely defined for each element. This parameter
+approximates the stress intensity factor at the tip of a propagating
+rupture.
+
+The initial element rupture during an event is always caused by static failure.
+During rupture propagation the first element to fail slips back towards
+the equilibrium position. The amount of slip during the initial failure,
+$\Delta s$, is related to the stress drop defined for the element
+in the model, $\Delta\sigma$, by \cite{Rundle2006vc}:
+
+\begin{eqnarray}
+\Delta s & = & \frac{1}{K_{L}}(\Delta\sigma-CFF).\label{eq:sst_two}
+\end{eqnarray}
+
+where $K_{L}$ is the element's stiffness or self-stress defined as
+$K_{L}=T_{s}^{AA}-\mu_{s}^{A}T_{n}^{AA}$.  Once an element has ruptured due to static or dynamic failure it will no longer slip in the event due to these failures.  However, ruptured elements may slip further due to the movement of other elements.
+
+During each rupture sweep, ruptured elements may slip further due to movement on other elements.  The amount of slip on a failed element is related to the movement of other elements through the Green's function.  A simplistic approach to determining this is to calculate the slip on all other elements when a given element moves.  However, this is highly inefficient because the slip on a given element will in turn cause slip on all ruptured elements, which will cause slip on all ruptured elements, and so on forever.  Instead, the system is described using a set of linear equations relating the slip of each element to the stress on all other elements in the final state of a given sweep.
+
+This relationship between element slips during a sweep is determined for each ruptured element $A$ as:
+
+\begin{eqnarray}
+0 = \sum (T_s^{AB} - \mu_s^B T_n^{AB}) s_B
+\end{eqnarray}
+
+Since non-ruptured blocks do not change their slip, they are excluded from the system. This system is then solved using Gaussian elimination.
+Once the slip is calculated for all ruptured elements, a new stress state for the entire system is calculated using Equations \ref{eq:shear_stress_sum} and \ref{eq:norm_stress_sum}.  The rupture process is repeated by again checking the static/dynamic failure until no more elements have failed.
+
+\begin{figure}
 \subfloat[CFF vs. time for a series of stress buildup and rupture events.]{\includegraphics[width=0.48\textwidth]{graphics/CFF_1}
 
 }\hfill{}\subfloat[CFF vs. sweeps for the event at t=593]{\includegraphics[width=0.48\textwidth]{graphics/CFF_2}
@@ -642,65 +684,6 @@ during sweeps 0, 7, and 11.\label{fig:cff_example_history}}
 \end{figure}
 
 
-During rupture propagation the first element to fail slips back towards
-the equilibrium position. The amount of slip during the initial failure,
-$\Delta s$, is related to the stress drop defined for the element
-in the model, $\Delta\sigma$, by \cite{Rundle2006vc}:
-
-\begin{eqnarray}
-\Delta s & = & \frac{1}{K_{L}}\frac{N_{ef}}{S_{t}}(\Delta\sigma-CFF),\mbox{if }N_{ef}\leq S_{t}\label{eq:sst_one}
-\end{eqnarray}
-
-
-\begin{eqnarray}
-\Delta s & = & \frac{1}{K_{L}}(\Delta\sigma-CFF),\mbox{otherwise}.\label{eq:sst_two}
-\end{eqnarray}
-
-
-where $K_{L}$ is the element's stiffness or self-stress defined as
-$K_{L}=T_{s}^{AA}-\mu_{s}^{A}T_{n}^{AA}$. The factor $\frac{N_{ef}}{S_{t}}$
-captures the current size of the rupture with $N_{ef}$ representing
-the number of failed elements on the currently rupturing fault and
-$S_{t}$ representing the slip-scaling threshold parameter. This factor
-prevents small ruptures from excessively slipping.
-
-Once the slip is calculated for one or more elements, a new stress
-state for the entire system is calculated using Equations \ref{eq:shear_stress_sum}
-and \ref{eq:norm_stress_sum}. Additional elements will fail if their
-CFF = 0 (static failure). To better model rupture propagation dynamic
-failure is also allowed during rupture events. Dynamic failure allows
-elements on the same fault and physically nearby to failed elements
-to themselves fail at a lower stress level than the static failure
-criterion. This dynamic failure is based on the increase in stress
-during the rupture event. An element experiences dynamic failure if
-it is on the same fault as an already failed element and satisfies:
-
-\begin{equation}
-\frac{CFF_{init}-CFF_{final}}{CFF_{init}}>\eta\label{eq:dynamic_trigger}
-\end{equation}
-
-
-where $\eta$ is a user defined dynamic triggering parameter either
-for the whole system or uniquely defined for each element. This parameter
-approximates the stress intensity factor at the tip of a propagating
-rupture.
-
-During rupture propagation, elements that have not completely slipped
-back to equilibrium may fail again (potentially multiple times) and
-release more stress. However, elements may not slip away from equilibrium
-meaning they cannot absorb stress released by other failed elements.
-This reflects the fact that failed elements may not heal during a
-rupture but also may not release all accumulated stress immediately.
-It is also important to note that an element may not release all accumulated
-stress during a rupture, due to the slip-scaling threshold (Equations
-\ref{eq:sst_one} and \ref{eq:sst_two}) and dynamic triggering (Equation
-\ref{eq:dynamic_trigger}), as well as the stress state of all elements
-at the start of rupture. For example, if all elements are in a high
-stress state then a small initial rupture can quickly propagate and
-become a large stress release event, whereas if most elements are
-in a low stress state then a large initial rupture may quickly stop
-propagating and release relatively little stress.
-
 Examples of stress accumulation and release over multiple phases of
 long term stress accumulation and rupture events are shown in Figure
 \ref{fig:cff_example_history}. The first figure shows how a single
@@ -709,8 +692,6 @@ how stress builds up and releases in cycles over time. The second
 figure shows how elements may fail multiple times during different
 sweeps in an event, but do not accumulate additional stress after
 failing.
-
-%%% ERIC TODO: READ AND REWRITE
 
 \section{Simulation Flow}
 
@@ -1964,11 +1945,11 @@ from.\tabularnewline
 \texttt{\small{sim.greens.use\_normal = true}} & Whether to use the Green's normal stress function in calculations
 or just the Green's shear function.\tabularnewline
 \hline 
-\texttt{\small{sim.greens.kill\_distance = 0.0}} & Kills interaction between any two blocks greater than this distance
+\texttt{\small{sim.greens.kill\_distance = 0.0}} & Kills interaction between any two elements greater than this distance
 (in km) apart. If undefined or \textless{}= 0, all interactions will
 remain the same.\tabularnewline
 \hline 
-\texttt{\small{sim.greens.sample\_distance = 1000.0}} & When calculating the Green's function, take samples at this minimum distance between samples.  This allows better convergence between models with few large blocks and models with many small blocks.  If the element size is smaller than this value, it has no effect.\tabularnewline
+\texttt{\small{sim.greens.sample\_distance = 1000.0}} & When calculating the Green's function, take samples at this minimum distance between samples.  This allows better convergence between models with few large elements and models with many small elements.  If the element size is smaller than this value, it has no effect.\tabularnewline
 \hline 
 \end{tabular}
 
