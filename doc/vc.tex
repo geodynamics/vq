@@ -2227,15 +2227,10 @@ here. All outputs are in non-dimensional units unless otherwise specified.
 \section{HDF5 Output}
 
 If Virtual California is compiled with the HDF5 library it is possible
-to output simulation results in this format. This format aims to be
-a full description of the simulation and results, containing both
-a description of the fault system and events that occurred on the
-system. In this way the user can write scripts that can read all information
-from a single source. The output file is composed of several tables
+to output simulation results in this format. The output file is composed of several tables
 and datasets describing the input and output to a simulation. Depending
 on user options some of these tables may be empty but they will always
 exist in the file.
-
 
 \subsection{About HDF5}
 
@@ -2275,109 +2270,99 @@ datasets, with navigation arrow buttons that enable you to range over
 the entire extent of a third dimension.
 
 
-\subsection{VC HDF5 Datasets}
-
-The HDF5 file output by VC contains two datasets describing some simulation
-parameters. The first dataset is named \texttt{\small{base\_lat\_lon}}
-and describes the latitude and longitude point used as the reference
-for converting input element locations to a Cartesian grid system
-for simulation. The second dataset is named \texttt{\small{sim\_years}}
-and describes the beginning and ending simulation year.
-
-
-\subsection{Element Table}
-
-The table titled \texttt{\small{block\_info\_table}} describes the
-set of all elements used in the simulation. The information for each
-element is a row in the table, with each column representing an attribute
-of the block. The attributes are defined as follows:\vspace*{\bigskipamount}
-
-
-\begin{tabular}{|>{\raggedright}p{1.5in}|>{\raggedright}p{4.25in}|}
-\hline 
-Attribute Name & Attribute Description\tabularnewline
-\hline 
-\hline 
-\texttt{\small{block\_id}} & A numerical ID of the element. These IDs should be in contiguousascending
-numerical order.\tabularnewline
-\hline 
-\texttt{\small{fault\_id}} & A numerical ID for the fault the element belongs to. This allows elements
-to be grouped by fault.\tabularnewline
-\hline 
-\texttt{\small{section\_id}} & A numerical ID for the subsection of the fault the element belongs
-to (if any). This allows faults to be subdivided into geologically
-distinct zones.\tabularnewline
-\hline 
-\texttt{\small{m\_x\_pt1}} & The X coordinate of the 1st point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_y\_pt1}} & The Y coordinate of the 1st point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_z\_pt1}} & The Z coordinate of the 1st point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_das\_pt1}} & The distance of the 1st point along the fault strike (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_trace\_flag\_pt1}} & EqSim specific flag defining where the 1st point is on the fault trace.\tabularnewline
-\hline 
-\texttt{\small{m\_x\_pt2}} & The X coordinate of the 2nd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_y\_pt2}} & The Y coordinate of the 2nd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_z\_pt2}} & The Z coordinate of the 2nd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_das\_pt2}} & The distance of the 2nd point along the fault strike (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_trace\_flag\_pt2}} & EqSim specific flag defining where the 2nd point is on the fault trace.\tabularnewline
-\hline 
-\texttt{\small{m\_x\_pt3}} & The X coordinate of the 3rd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_y\_pt3}} & The Y coordinate of the 3rd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_z\_pt3}} & The Z coordinate of the 3rd point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_das\_pt3}} & The distance of the 3rd point along the fault strike (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_trace\_flag\_pt3}} & EqSim specific flag defining where the 3rd point is on the fault trace.\tabularnewline
-\hline 
-\texttt{\small{m\_x\_pt4}} & The X coordinate of the 4th point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_y\_pt4}} & The Y coordinate of the 4th point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_z\_pt4}} & The Z coordinate of the 4th point defining the element (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_das\_pt4}} & The distance of the 4th point along the fault strike (in meters).\tabularnewline
-\hline 
-\texttt{\small{m\_trace\_flag\_pt4}} & EqSim specific flag defining where the 4th point is on the fault trace.\tabularnewline
-\hline 
-\texttt{\small{slip\_velocity}} & The long term slip velocity of the element (in meters/second).\tabularnewline
-\hline 
-\texttt{\small{aseismicity}} & The fraction of the element slip that is aseismic (from 0 to 1).\tabularnewline
-\hline 
-\texttt{\small{rake\_rad}} & The rake angle of the element (in radians).\tabularnewline
-\hline 
-\texttt{\small{dip\_rad}} & The dip angle of the element (in radians).\tabularnewline
-\hline 
-\texttt{\small{dynamic\_strength}} & The dynamic strength of the element (in Pascals).\tabularnewline
-\hline 
-\texttt{\small{static\_strength}} & The static strength of the element (in Pascals).\tabularnewline
-\hline 
-\texttt{\small{lame\_mu}} & The Lamé mu parameter used to calculate Green's function values on
-the element (in Pascals).\tabularnewline
-\hline 
-\texttt{\small{lame\_lambda}} & The Lamé lambda parameter used to calculate Green's function values
-on the element (in Pascals).\tabularnewline
-\hline 
-\texttt{\small{fault\_name}} & The name of the fault associated with the element.\tabularnewline
-\hline 
-\end{tabular}
+%\subsection{Element Table}
+%
+%The table titled \texttt{\small{block\_info\_table}} describes the
+%set of all elements used in the simulation. The information for each
+%element is a row in the table, with each column representing an attribute
+%of the block. The attributes are defined as follows:\vspace*{\bigskipamount}
+%
+%
+%\begin{tabular}{|>{\raggedright}p{1.5in}|>{\raggedright}p{4.25in}|}
+%\hline 
+%Attribute Name & Attribute Description\tabularnewline
+%\hline 
+%\hline 
+%\texttt{\small{block\_id}} & A numerical ID of the element. These IDs should be in contiguousascending
+%numerical order.\tabularnewline
+%\hline 
+%\texttt{\small{fault\_id}} & A numerical ID for the fault the element belongs to. This allows elements
+%to be grouped by fault.\tabularnewline
+%\hline 
+%\texttt{\small{section\_id}} & A numerical ID for the subsection of the fault the element belongs
+%to (if any). This allows faults to be subdivided into geologically
+%distinct zones.\tabularnewline
+%\hline 
+%\texttt{\small{m\_x\_pt1}} & The X coordinate of the 1st point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_y\_pt1}} & The Y coordinate of the 1st point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_z\_pt1}} & The Z coordinate of the 1st point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_das\_pt1}} & The distance of the 1st point along the fault strike (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_trace\_flag\_pt1}} & EqSim specific flag defining where the 1st point is on the fault trace.\tabularnewline
+%\hline 
+%\texttt{\small{m\_x\_pt2}} & The X coordinate of the 2nd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_y\_pt2}} & The Y coordinate of the 2nd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_z\_pt2}} & The Z coordinate of the 2nd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_das\_pt2}} & The distance of the 2nd point along the fault strike (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_trace\_flag\_pt2}} & EqSim specific flag defining where the 2nd point is on the fault trace.\tabularnewline
+%\hline 
+%\texttt{\small{m\_x\_pt3}} & The X coordinate of the 3rd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_y\_pt3}} & The Y coordinate of the 3rd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_z\_pt3}} & The Z coordinate of the 3rd point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_das\_pt3}} & The distance of the 3rd point along the fault strike (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_trace\_flag\_pt3}} & EqSim specific flag defining where the 3rd point is on the fault trace.\tabularnewline
+%\hline 
+%\texttt{\small{m\_x\_pt4}} & The X coordinate of the 4th point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_y\_pt4}} & The Y coordinate of the 4th point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_z\_pt4}} & The Z coordinate of the 4th point defining the element (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_das\_pt4}} & The distance of the 4th point along the fault strike (in meters).\tabularnewline
+%\hline 
+%\texttt{\small{m\_trace\_flag\_pt4}} & EqSim specific flag defining where the 4th point is on the fault trace.\tabularnewline
+%\hline 
+%\texttt{\small{slip\_velocity}} & The long term slip velocity of the element (in meters/second).\tabularnewline
+%\hline 
+%\texttt{\small{aseismicity}} & The fraction of the element slip that is aseismic (from 0 to 1).\tabularnewline
+%\hline 
+%\texttt{\small{rake\_rad}} & The rake angle of the element (in radians).\tabularnewline
+%\hline 
+%\texttt{\small{dip\_rad}} & The dip angle of the element (in radians).\tabularnewline
+%\hline 
+%\texttt{\small{dynamic\_strength}} & The dynamic strength of the element (in Pascals).\tabularnewline
+%\hline 
+%\texttt{\small{static\_strength}} & The static strength of the element (in Pascals).\tabularnewline
+%\hline 
+%\texttt{\small{lame\_mu}} & The Lamé mu parameter used to calculate Green's function values on
+%the element (in Pascals).\tabularnewline
+%\hline 
+%\texttt{\small{lame\_lambda}} & The Lamé lambda parameter used to calculate Green's function values
+%on the element (in Pascals).\tabularnewline
+%\hline 
+%\texttt{\small{fault\_name}} & The name of the fault associated with the element.\tabularnewline
+%\hline 
+%\end{tabular}
 
 
-\subsection{Event Table}
+\section{Events}
 
 The table titled \texttt{\small{event\_table}} describes the events
 that occurred during a simulation. This table gives a more general
 overview of the event information, with detailed information (e.g.
 which blocks slipped by how much in what order releasing how much
-stress) given in \texttt{\small{event\_sweep\_table}}.\vspace*{\bigskipamount}
+stress) given in \texttt{\small{event\_sweep\_table}}. Corresponding data is instead written to ASCII text files if the appropriate parameter is set in the simulation parameter file.  \vspace*{\bigskipamount}
 
 
 \begin{tabular}{|>{\raggedright}p{1.5in}|>{\raggedright}p{4.25in}|}
@@ -2418,13 +2403,13 @@ and shear modulus.\tabularnewline
 \end{tabular}
 
 
-\subsection{Event Sweep Table}
+\section{Event Sweeps}
 
 The table titled \texttt{\small{event\_sweep\_table}} describes the
 individual block failures in the sweeps during an event. There can
 be multiple sweeps within an event and there can be multiple block
 failures within each sweep. Each line in the table represents a block
-failure in a given sweep\vspace*{\bigskipamount}
+failure in a given sweep. Corresponding data is instead written to ASCII text files if the appropriate parameter is set in the simulation parameter file. \vspace*{\bigskipamount}
 
 
 \begin{tabular}{|>{\raggedright}p{1.5in}|>{\raggedright}p{4.25in}|}
