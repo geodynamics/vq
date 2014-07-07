@@ -21,7 +21,7 @@ do
     EDITOR_ARGS="$EDITOR_ARGS--import_file=$FILE --import_file_type=trace --import_trace_element_size=$ELEM_SIZE --taper_fault_method=none "
 done
 
-../../../../build/src/mesher $EDITOR_ARGS \
+../../build/src/mesher $EDITOR_ARGS \
     --export_file=all_cal_fault_${ELEM_SIZE}.txt \
     --export_file_type=text \
     --export_file=all_cal_fault_${ELEM_SIZE}.kml \
