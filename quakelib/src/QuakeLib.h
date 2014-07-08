@@ -163,9 +163,10 @@ namespace quakelib {
             //! Set the maximum slip distance for this element
             void set_max_slip(const double &new_max_slip) throw(std::invalid_argument) {
                 if (new_max_slip < 0) throw std::invalid_argument("quakelib::Element::set_max_slip");
+
                 _max_slip = new_max_slip;
             }
-        
+
             //! Clear all variables for this element.
             void clear(void) {
                 for (unsigned int i=0; i<3; ++i) {

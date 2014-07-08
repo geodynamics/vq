@@ -241,7 +241,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
-    
+
     field_desc.name = "max_slip";
     field_desc.details = "Maximum slip distance for this element, in meters.";
 #ifdef HDF5_FOUND
@@ -365,7 +365,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     double taper_full = 0;
     double fault_area = 0;
     cur_trace_point = element_start = conv.convert2xyz(trace.at(0).pos());
-    
+
     for (unsigned int i=1; i<trace.size(); ++i) {
         next_trace_point = conv.convert2xyz(trace.at(i).pos());
         t = 0;
@@ -395,19 +395,19 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
             // Use the t value in the middle of the element for interpolation
             inter_t = t;
-            elem_depth = inter_t*trace.at(i).depth_along_dip()+(1.0-inter_t)*trace.at(i-1).depth_along_dip();
+            elem_depth = inter_t *trace.at(i).depth_along_dip()+(1.0-inter_t)*trace.at(i-1).depth_along_dip();
             // Warn user if element depth is smaller than element size
             num_vert_elems = floor(elem_depth/element_size);
 
             if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
                                                    << i << ". Element size may be too big." << std::endl;
 
-            elem_slip_rate = conv.cm_per_yr2m_per_sec(inter_t*trace.at(i).slip_rate()+(1.0-inter_t)*trace.at(i-1).slip_rate());
-            elem_aseismic = inter_t*trace.at(i).aseismic()+(1.0-inter_t)*trace.at(i-1).aseismic();
-            elem_dip = conv.deg2rad(inter_t*trace.at(i).dip()+(1.0-inter_t)*trace.at(i-1).dip());
-            elem_rake = conv.deg2rad(inter_t*trace.at(i).rake()+(1.0-inter_t)*trace.at(i-1).rake());
-            elem_lame_mu = inter_t*trace.at(i).lame_mu()+(1.0-inter_t)*trace.at(i-1).lame_mu();
-            elem_lame_lambda = inter_t*trace.at(i).lame_lambda()+(1.0-inter_t)*trace.at(i-1).lame_lambda();
+            elem_slip_rate = conv.cm_per_yr2m_per_sec(inter_t *trace.at(i).slip_rate()+(1.0-inter_t)*trace.at(i-1).slip_rate());
+            elem_aseismic = inter_t *trace.at(i).aseismic()+(1.0-inter_t)*trace.at(i-1).aseismic();
+            elem_dip = conv.deg2rad(inter_t *trace.at(i).dip()+(1.0-inter_t)*trace.at(i-1).dip());
+            elem_rake = conv.deg2rad(inter_t *trace.at(i).rake()+(1.0-inter_t)*trace.at(i-1).rake());
+            elem_lame_mu = inter_t *trace.at(i).lame_mu()+(1.0-inter_t)*trace.at(i-1).lame_mu();
+            elem_lame_lambda = inter_t *trace.at(i).lame_lambda()+(1.0-inter_t)*trace.at(i-1).lame_lambda();
 
             // Set up the vertical step to go along the dip
             vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
@@ -418,12 +418,14 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 taper_t = 1;
 
                 double cur_dist = dist_along_trace+t*(next_trace_point-cur_trace_point).mag()-0.5*element_size;
+
                 if (taper_method == "taper_full" || taper_method == "taper_renorm") {
                     double x = cur_dist/total_trace_length;
                     double z = (float(ve)+0.5)/num_vert_elems;
                     taper_t *= 4*(x-x*x)*sqrt(1-z);
                 } else if (taper_method == "taper") {
                     double inside_dist = (total_trace_length/2.0 - fabs(total_trace_length/2.0-cur_dist));
+
                     if (inside_dist <= elem_depth) {
                         double x = inside_dist/elem_depth;
                         double z = (float(ve)+0.5)/num_vert_elems;
@@ -431,7 +433,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                     }
                 }
 
-                taper_flow += taper_t*elem_slip_rate*(element_size*element_size);
+                taper_flow += taper_t *elem_slip_rate*(element_size*element_size);
                 taper_full += elem_slip_rate*(element_size*element_size);
 
                 // Create the new vertices
@@ -462,7 +464,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 elem.set_rake(elem_rake);
                 elem.set_lame_mu(elem_lame_mu);
                 elem.set_lame_lambda(elem_lame_lambda);
-                
+
                 fault_area += element_size*element_size;
             }
 
@@ -485,11 +487,11 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             element(elem_ids[i]).set_slip_rate(renorm_factor*cur_slip_rate);
         }
     }
-    
+
     // Go through the created elements and assign maximum slip based on the total fault area
     // From Table 2A in Wells Coppersmith 1994
     double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
-    
+
     for (unsigned int i=0; i<elem_ids.size(); ++i) {
         double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*element(elem_ids[i]).lame_mu()*fault_area);
         element(elem_ids[i]).set_max_slip(max_slip);
@@ -1080,8 +1082,8 @@ void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     ModelSection::get_field_descs(descs);
     num_fields = descs.size();
     num_sections = _sections.size();
-    field_names = new char*[num_fields];
-    field_details = new char*[num_fields];
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
     field_offsets = new size_t[num_fields];
     field_types = new hid_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -1166,8 +1168,8 @@ void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     ModelElement::get_field_descs(descs);
     num_fields = descs.size();
     num_elements = _elements.size();
-    field_names = new char*[num_fields];
-    field_details = new char*[num_fields];
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
     field_offsets = new size_t[num_fields];
     field_types = new hid_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -1252,8 +1254,8 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     ModelVertex::get_field_descs(descs);
     num_fields = descs.size();
     num_vertices = _vertices.size();
-    field_names = new char*[num_fields];
-    field_details = new char*[num_fields];
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
     field_offsets = new size_t[num_fields];
     field_types = new hid_t[num_fields];
     field_sizes = new size_t[num_fields];

@@ -134,15 +134,15 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
 
     // Figure out how many failures there were over all processors
     sim->distributeBlocks(local_id_list, global_id_list);
-    
+
     int num_local_failed = local_id_list.size();
     int num_global_failed = global_id_list.size();
-    
+
     double *A = new double[num_local_failed*num_global_failed];
     double *b = new double[num_local_failed];
     double *x = new double[num_local_failed];
 
-    for (i=0,it=local_id_list.begin(); it!=local_id_list.end();++i,++it) {
+    for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
         Block &blk = sim->getBlock(*it);
 
         for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
@@ -160,9 +160,9 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         double *fullA = new double[num_global_failed*num_global_failed];
         double *fullb = new double[num_global_failed];
         double *fullx = new double[num_global_failed];
-        
+
         // Fill in the A matrix and b vector from the various processes
-        for (i=0,n=0,jt=global_id_list.begin();jt!=global_id_list.end();++jt,++i) {
+        for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
                 MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -172,12 +172,12 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
                 n++;
             }
         }
-        
+
         // Solve the global system on the root node
         solve_it(num_global_failed, fullx, fullA, fullb);
-        
+
         // Send back the resulting values from x to each process
-        for (i=0,n=0,jt=global_id_list.begin();jt!=global_id_list.end();++jt,++i) {
+        for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
                 MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
             } else {
@@ -185,18 +185,18 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
                 n++;
             }
         }
-        
+
         // Delete the memory arrays created
         delete fullx;
         delete fullb;
         delete fullA;
     } else {
-        for (i=0;i<num_local_failed;++i) {
+        for (i=0; i<num_local_failed; ++i) {
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
-        
-        for (i=0;i<num_local_failed;++i) {
+
+        for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
     }

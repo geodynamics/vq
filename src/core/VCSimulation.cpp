@@ -548,19 +548,20 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
-    
+
     // Create list of local block IDs
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) local_block_ids[i] = *it;
-    
+
     // Count total, displacement of block IDs
     int total_blocks = 0;
-    for (i=0;i<world_size;++i) {
+
+    for (i=0; i<world_size; ++i) {
         proc_block_disps[i] = total_blocks;
         total_blocks += proc_block_count[i];
     }
-    
+
     BlockID                     *block_ids = new BlockID[total_blocks];
-    
+
 #ifdef DEBUG
     startTimer(dist_comm_timer);
 #endif
@@ -577,13 +578,14 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
 #endif
 
     n = 0;
-    for (p=0;p<world_size;++p) {
-        for (i=0;i<proc_block_count[p];++i) {
+
+    for (p=0; p<world_size; ++p) {
+        for (i=0; i<proc_block_count[p]; ++i) {
             global_id_list.insert(std::make_pair(block_ids[n], p));
             ++n;
         }
     }
-    
+
     delete block_ids;
     delete proc_block_count;
     delete proc_block_disps;

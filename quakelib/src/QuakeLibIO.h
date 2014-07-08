@@ -270,7 +270,7 @@ namespace quakelib {
             void set_lame_lambda(const float &lame_lambda) {
                 _data._lame_lambda = lame_lambda;
             };
-        
+
             float max_slip(void) const {
                 return _data._max_slip;
             };
