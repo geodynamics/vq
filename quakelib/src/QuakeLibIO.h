@@ -178,7 +178,7 @@ namespace quakelib {
         UIndex              _id;
         UIndex              _section_id;
         UIndex              _vertices[3];
-        bool                _is_quad;
+        unsigned int        _is_quad;
         float               _slip_rate;
         float               _aseismic;
         float               _rake;
