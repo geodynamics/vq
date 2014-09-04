@@ -329,153 +329,280 @@ void quakelib::FaultTracePoint::write_ascii(std::ostream &out_stream) const {
     next_line(out_stream);
 }
 
+/*
+ Provides a spline to help mesh faults along trace points. This spline is referenced by t (in [0,1])
+ representing how long along the trace a point is. The spline is a linear interpolation between successive points.
+ */
+class TraceSpline {
+private:
+    //! The points comprising the spline
+    std::vector<quakelib::Vec<3> >  _pts;
+    //! Total length of the distances between successive points
+    double                          _spline_len;
+    //! Individual lengths between successive points
+    //! _point_dists[i] is the distance between _pts[i] and _pts[i+1]
+    std::vector<double>             _point_dists;
+    
+public:
+    TraceSpline(void) : _spline_len(0) {};
+    
+    // Add another point to the spline
+    void add_point(const quakelib::Vec<3> &new_pt) {
+        double add_dist = (_pts.size() > 0 ? _pts.back().dist(new_pt) : 0);
+        _spline_len += add_dist;
+        if (_pts.size() > 0) _point_dists.push_back(add_dist);
+        _pts.push_back(new_pt);
+    }
+    
+    // Return the element index and inner t corresponding to parameter t
+    void get_element(const double t, unsigned int &index, double &inner_t) {
+        double spline_dist = t * _spline_len;
+        
+        // Ensure t is in [0,1]
+        assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
+        
+        // Go through each point
+        for (unsigned int i=0;i<_pts.size()-1;++i) {
+            // If we're between the points for this t, interpolate and return
+            if (spline_dist <= _point_dists[i]) {
+                index = i;
+                if (_point_dists[i] != 0) inner_t = spline_dist / _point_dists[i];
+                else inner_t = 0;
+                return;
+            }
+            spline_dist -= _point_dists[i];
+        }
+        // If we reach the end, we return the final point and inner_t = 0
+        index = _pts.size()-1;
+        inner_t = 0;
+    }
+    
+    // Return the point on this spline at t
+    quakelib::Vec<3> interpolate(const double t) {
+        unsigned int    ind;
+        double          inner_t;
+        
+        assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
+        get_element(t, ind, inner_t);
+        if (ind == _pts.size() - 1) return _pts.back();
+        else return _pts.at(ind) * (1-inner_t) + _pts.at(ind+1) * inner_t;
+    }
+    
+    // Given a starting point t (in [0,1]) and an element size,
+    // returns the next t which is linear elem_size away (not distance along the spline)
+    double advance_element(const double t, const double elem_size) {
+        unsigned int    ind;
+        double          inner_t;
+        
+        // Find the starting point on the spline at t
+        quakelib::Vec<3> start_pt = interpolate(t);
+        
+        // Get the element that the starting point is associated iwth
+        get_element(t, ind, inner_t);
+        
+        // Keep going until we find a trace point which would create
+        // an element greater than our target size
+        double cur_dist = t * _spline_len;
+        while (ind+1 < _pts.size() && start_pt.dist(_pts.at(ind+1)) < elem_size) {
+            ind++;
+            if (ind < _point_dists.size()) cur_dist += (1-inner_t) * _point_dists.at(ind);
+            else cur_dist += elem_size;
+            inner_t = 0;
+        }
+        
+        // If we're past the end of the trace, return our best guess
+        // for t based on the size of the last segment
+        // This is needed to adjust the element size during meshing
+        if (ind+1 == _pts.size()) return cur_dist/_spline_len;
+        
+        // Now we know the points between which our element must exist (ind and ind+1)
+        double      x_0 = _pts.at(ind)[0], x_1 = _pts.at(ind+1)[0], x_s = start_pt[0];
+        double      y_0 = _pts.at(ind)[1], y_1 = _pts.at(ind+1)[1], y_s = start_pt[1], l = elem_size;
+        
+        // Calculate the inner t between these two points
+        double next_t = fabs((sqrt(pow(-2*x_0*x_0+2*x_0*x_1+2*x_0*x_s-2*x_1*x_s-2*y_0*y_0+2*y_0*y_1+2*y_0*y_s-2*y_1*y_s, 2)-
+                             4*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)*
+                             (x_0*x_0-2*x_0*x_s+x_s*x_s+y_0*y_0-2*y_0*y_s+y_s*y_s-l*l))+
+                        2*x_0*x_0-2*x_0*x_1-2*x_0*x_s+2*x_1*x_s+2*y_0*y_0-2*y_0*y_1-2*y_0*y_s+2*y_1*y_s)/
+                       (2*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)));
+        
+        // Given this point, recalculate t and return
+        cur_dist += (next_t-inner_t) * _point_dists[ind];
+        return cur_dist/_spline_len;
+    };
+};
+
 void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method) {
-    Vec<3>              cur_trace_point, next_trace_point, element_start, element_end, element_step_vec, vert_step;
-    double              t, inter_t;
+    Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
     std::vector<UIndex> elem_ids;
-    double              x_0, x_1, x_s, y_0, y_1, y_s, l;
+    std::set<unsigned int> unused_trace_pts;
     double              elem_depth, elem_slip_rate, elem_aseismic;
     double              elem_rake, elem_dip;
     double              elem_lame_mu, elem_lame_lambda;
-    unsigned int        num_vert_elems, ve;
-    double              total_trace_length, taper_t;
+    unsigned int        num_vert_elems, ve, elem_count;
+    double              taper_t;
     Conversion          conv(base_coord);
+    unsigned int        i, num_trace_pts;
+    TraceSpline         spline;
 
     if (element_size <= 0) return;
 
-    if (trace.size() == 0 || trace.size() == 1) return;
+    num_trace_pts = trace.size();
+    if (num_trace_pts == 0 || num_trace_pts == 1) return;
 
     ModelSection &section = new_section();
     section.set_name(section_name);
     section.set_fault_id(fault_id);
 
-    // Determine the total length of the trace
-    total_trace_length = 0;
-    cur_trace_point = conv.convert2xyz(trace.at(0).pos());
-
-    for (unsigned int i=1; i<trace.size(); ++i) {
-        next_trace_point = conv.convert2xyz(trace.at(i).pos());
-        total_trace_length += (next_trace_point-cur_trace_point).mag();
-        cur_trace_point = next_trace_point;
+    // Create a spline with the trace points
+    for (i=0;i<num_trace_pts;++i) {
+        Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+        spline.add_point(pt);
+        unused_trace_pts.insert(i);
     }
+    
+    // Initially we don't know the appropriate element size to exactly mesh
+    // the trace points. This is solved by starting with the user suggested
+    // element size and iteratively adjusting it until the mesh fits the
+    // trace exactly. Iterate for 10 steps or until relative error is below 0.1%.
+    double cur_elem_size_guess = element_size;
+    double overshoot = DBL_MAX, undershoot = DBL_MAX, t_per_meter=1;
+    unsigned int num_iters = 0;
+    while ((fmin(overshoot, undershoot)/t_per_meter)/element_size > 1e-3 && num_iters < 10) {
+        double cur_t, next_t, sum_t=0;
+        elem_count = 0;
+        cur_t = 0;
+        while (cur_t < 1) {
+            next_t = spline.advance_element(cur_t, cur_elem_size_guess);
+            if (next_t < 1) {
+                sum_t += next_t-cur_t;
+                elem_count++;
+                cur_t = next_t;
+            } else {
+                break;
+            }
+        }
+        t_per_meter = (sum_t/elem_count)/cur_elem_size_guess;
+        overshoot = fabs(1-next_t)/elem_count;
+        undershoot = fabs(1-cur_t)/elem_count;
+        // If we're undershooting by less than we're overshooting, the best solution is to increase block size
+        if (undershoot < overshoot) cur_elem_size_guess += undershoot/t_per_meter;
+        // Otherwise we decrease block size
+        else cur_elem_size_guess -= overshoot/t_per_meter;
+        num_iters++;
+    }
+    
+    double  horiz_elem_size = cur_elem_size_guess;
+    double  vert_elem_size;
+    unsigned int cur_elem_ind, next_elem_ind;
+    double cur_t = 0, next_t;
 
     double dist_along_strike = 0;
-    double dist_along_trace = 0;
     double taper_flow = 0;
     double taper_full = 0;
     double fault_area = 0;
-    cur_trace_point = element_start = conv.convert2xyz(trace.at(0).pos());
+    cur_trace_point = spline.interpolate(cur_t);
+    cur_elem_ind = 0;
+    unused_trace_pts.erase(0);
 
-    for (unsigned int i=1; i<trace.size(); ++i) {
-        next_trace_point = conv.convert2xyz(trace.at(i).pos());
-        t = 0;
-        bool used_trace_segment = false;
+    for (i=0;i<elem_count;++i) {
+        // Get the next t value along the trace by advancing the element size
+        next_t = spline.advance_element(cur_t, horiz_elem_size);
+        
+        // If we go past the end of the spline, align ourselves with the end
+        if (next_t > 1) next_t = 1;
+        
+        // And get the actual point corresponding to this t
+        next_trace_point = spline.interpolate(next_t);
+        
+        double          inner_t;
+        // And the element and inner_t corresponding to it
+        spline.get_element(cur_t, next_elem_ind, inner_t);
+        
+        // Mark the element corresponding to this point as having been used
+        unused_trace_pts.erase(next_elem_ind);
+        
+        element_step_vec = next_trace_point-cur_trace_point;
 
-        while (t <= 1) {
-            // Treat the line between the current two trace points as a parameterized equation with t in [0,1]
-            // We then want to solve for t in the equation: element_size = dist(element_start, line(t))
-            // If t < 0 or t > 1, no element will fit using this trace segment so we move to the next one
-            x_0 = cur_trace_point[0];
-            x_1 = next_trace_point[0];
-            x_s = element_start[0];
-            y_0 = cur_trace_point[1];
-            y_1 = next_trace_point[1];
-            y_s = element_start[1];
-            l = element_size;
-            // Horribly ugly equation to find the next point on the parameterized line
-            t = fabs((sqrt(pow(-2*x_0*x_0+2*x_0*x_1+2*x_0*x_s-2*x_1*x_s-2*y_0*y_0+2*y_0*y_1+2*y_0*y_s-2*y_1*y_s, 2)-
-                           4*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)*(x_0*x_0-2*x_0*x_s+x_s*x_s+y_0*y_0-2*y_0*y_s+y_s*y_s-l*l))+
-                      2*x_0*x_0-2*x_0*x_1-2*x_0*x_s+2*x_1*x_s+2*y_0*y_0-2*y_0*y_1-2*y_0*y_s+2*y_1*y_s)/(2*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)));
+        // Use the t value between the trace points for interpolation
+        elem_depth = inner_t *trace.at(next_elem_ind).depth_along_dip()+(1.0-inner_t)*trace.at(cur_elem_ind).depth_along_dip();
+        
+        // Change vertical element size to exactly match the required depth
+        num_vert_elems = round(elem_depth/element_size);
+        vert_elem_size = elem_depth / num_vert_elems;
 
-            if (t > 1) break;
+        if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
+                                               << next_elem_ind << ". Element size may be too big." << std::endl;
 
-            used_trace_segment = true;
-            element_end = cur_trace_point*(1-t) + next_trace_point*t;
-            element_step_vec = element_end-element_start;
+        elem_slip_rate = conv.cm_per_yr2m_per_sec(inner_t*trace.at(next_elem_ind).slip_rate()+(1.0-inner_t)*trace.at(cur_elem_ind).slip_rate());
+        elem_aseismic = inner_t*trace.at(next_elem_ind).aseismic()+(1.0-inner_t)*trace.at(cur_elem_ind).aseismic();
+        elem_dip = conv.deg2rad(inner_t*trace.at(next_elem_ind).dip()+(1.0-inner_t)*trace.at(cur_elem_ind).dip());
+        elem_rake = conv.deg2rad(inner_t*trace.at(next_elem_ind).rake()+(1.0-inner_t)*trace.at(cur_elem_ind).rake());
+        elem_lame_mu = inner_t *trace.at(next_elem_ind).lame_mu()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_mu();
+        elem_lame_lambda = inner_t*trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
-            // Use the t value in the middle of the element for interpolation
-            inter_t = t;
-            elem_depth = inter_t *trace.at(i).depth_along_dip()+(1.0-inter_t)*trace.at(i-1).depth_along_dip();
-            // Warn user if element depth is smaller than element size
-            num_vert_elems = floor(elem_depth/element_size);
+        // Set up the vertical step to go along the dip
+        vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
+        vert_step = vert_step.rotate_around_axis(element_step_vec, elem_dip);
 
-            if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
-                                                   << i << ". Element size may be too big." << std::endl;
+        // Create each of the elements along dip
+        for (ve=0; ve<num_vert_elems; ++ve) {
+            // Calculate values for element based on interpolation between trace points
+            taper_t = 1;
 
-            elem_slip_rate = conv.cm_per_yr2m_per_sec(inter_t *trace.at(i).slip_rate()+(1.0-inter_t)*trace.at(i-1).slip_rate());
-            elem_aseismic = inter_t *trace.at(i).aseismic()+(1.0-inter_t)*trace.at(i-1).aseismic();
-            elem_dip = conv.deg2rad(inter_t *trace.at(i).dip()+(1.0-inter_t)*trace.at(i-1).dip());
-            elem_rake = conv.deg2rad(inter_t *trace.at(i).rake()+(1.0-inter_t)*trace.at(i-1).rake());
-            elem_lame_mu = inter_t *trace.at(i).lame_mu()+(1.0-inter_t)*trace.at(i-1).lame_mu();
-            elem_lame_lambda = inter_t *trace.at(i).lame_lambda()+(1.0-inter_t)*trace.at(i-1).lame_lambda();
+            double mid_t = (cur_t+next_t)/2.0;
 
-            // Set up the vertical step to go along the dip
-            vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
-            vert_step = vert_step.rotate_around_axis(element_step_vec, elem_dip);
+            if (taper_method == "taper_full" || taper_method == "taper_renorm") {
+                double x = mid_t;
+                double z = (float(ve)+0.5)/num_vert_elems;
+                taper_t *= 4*(x-x*x)*sqrt(1-z);
+            } else if (taper_method == "taper") {
+                double inside_dist = (0.5 - fabs(0.5-mid_t));
 
-            for (ve=0; ve<num_vert_elems; ++ve) {
-                // Calculate values for element based on interpolation between trace points
-                taper_t = 1;
-
-                double cur_dist = dist_along_trace+t*(next_trace_point-cur_trace_point).mag()-0.5*element_size;
-
-                if (taper_method == "taper_full" || taper_method == "taper_renorm") {
-                    double x = cur_dist/total_trace_length;
+                if (inside_dist <= elem_depth) {
+                    double x = inside_dist/elem_depth;
                     double z = (float(ve)+0.5)/num_vert_elems;
-                    taper_t *= 4*(x-x*x)*sqrt(1-z);
-                } else if (taper_method == "taper") {
-                    double inside_dist = (total_trace_length/2.0 - fabs(total_trace_length/2.0-cur_dist));
-
-                    if (inside_dist <= elem_depth) {
-                        double x = inside_dist/elem_depth;
-                        double z = (float(ve)+0.5)/num_vert_elems;
-                        taper_t *= sqrt(x)*sqrt(1-z);
-                    }
+                    taper_t *= sqrt(x)*sqrt(1-z);
                 }
-
-                taper_flow += taper_t *elem_slip_rate*(element_size*element_size);
-                taper_full += elem_slip_rate*(element_size*element_size);
-
-                // Create the new vertices
-                ModelVertex &v0 = new_vertex();
-                ModelVertex &v1 = new_vertex();
-                ModelVertex &v2 = new_vertex();
-
-                // Set xyz for the vertices
-                v0.set_xyz(element_start+vert_step*ve, base_coord);
-                v1.set_xyz(element_start+vert_step*(ve+1), base_coord);
-                v2.set_xyz(element_start+vert_step*ve+element_step_vec, base_coord);
-
-                // Set distance along strike for each vertex
-                v0.set_das(dist_along_strike);
-                v1.set_das(dist_along_strike);
-                v2.set_das(dist_along_strike+element_size);
-
-                // Create element and set up with the created vertices and values
-                ModelElement &elem = new_element();
-                elem_ids.push_back(elem.id());
-                elem.set_section_id(section.id());
-                elem.set_vertex(0, v0.id());
-                elem.set_vertex(1, v1.id());
-                elem.set_vertex(2, v2.id());
-                elem.set_is_quad(true);
-                elem.set_slip_rate(elem_slip_rate*taper_t);
-                elem.set_aseismic(elem_aseismic);
-                elem.set_rake(elem_rake);
-                elem.set_lame_mu(elem_lame_mu);
-                elem.set_lame_lambda(elem_lame_lambda);
-
-                fault_area += element_size*element_size;
             }
 
-            element_start = element_end;
-            dist_along_strike += element_size;
+            taper_flow += taper_t *elem_slip_rate*(horiz_elem_size*vert_elem_size);
+            taper_full += elem_slip_rate*(horiz_elem_size*vert_elem_size);
+
+            // Create the new vertices
+            ModelVertex &v0 = new_vertex();
+            ModelVertex &v1 = new_vertex();
+            ModelVertex &v2 = new_vertex();
+
+            // Set xyz for the vertices
+            v0.set_xyz(cur_trace_point+vert_step*ve, base_coord);
+            v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
+            v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
+
+            // Set distance along strike for each vertex
+            v0.set_das(dist_along_strike);
+            v1.set_das(dist_along_strike);
+            v2.set_das(dist_along_strike+horiz_elem_size);
+
+            // Create element and set up with the created vertices and values
+            ModelElement &elem = new_element();
+            elem_ids.push_back(elem.id());
+            elem.set_section_id(section.id());
+            elem.set_vertex(0, v0.id());
+            elem.set_vertex(1, v1.id());
+            elem.set_vertex(2, v2.id());
+            elem.set_is_quad(true);
+            elem.set_slip_rate(elem_slip_rate*taper_t);
+            elem.set_aseismic(elem_aseismic);
+            elem.set_rake(elem_rake);
+            elem.set_lame_mu(elem_lame_mu);
+            elem.set_lame_lambda(elem_lame_lambda);
+
+            fault_area += horiz_elem_size*vert_elem_size;
         }
 
-        dist_along_trace += (next_trace_point-cur_trace_point).mag();
-
-        if (!used_trace_segment) unused_trace_segments.push_back(i);
-
+        cur_t = next_t;
+        dist_along_strike += horiz_elem_size;
         cur_trace_point = next_trace_point;
     }
 
