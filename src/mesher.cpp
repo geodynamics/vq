@@ -196,8 +196,12 @@ int main (int argc, char **argv) {
     eqsim_geom_in_file = eqsim_fric_in_file = eqsim_cond_in_file = "";
     eqsim_geom_out_file = eqsim_fric_out_file = eqsim_cond_out_file = "";
 
-    while ((ch = getopt_long(argc, argv, "s:C:F:G:e:f:i:j:d", longopts, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "mds:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
         switch (ch) {
+            case 'd':
+                delete_unused = true;
+                break;
+                
             case 'm':
                 merge_duplicate_vertices = true;
                 break;
