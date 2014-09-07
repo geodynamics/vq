@@ -146,6 +146,34 @@ class TestGreenFunctionCalc(unittest.TestCase):
                 abs_err = abs(orig_normal_stress + mirror_normal_stress)
                 self.assertTrue(abs_err < self.mag_tol)
 
+    # Green's function gravity tests
+    def testGreenSymmetricDGDV(self):
+        source_dim = quakelib.Vec3(1, 1, 1)
+
+        for x in range(-2, 8):
+            for y in range(-2, 8):
+                # Set up the test location and mirror location
+                z = 0
+                xloc = source_dim[0]/2.0+2**x
+                yloc = 2**y
+                zloc = -z
+                orig_loc_dg = quakelib.Vec2(xloc, yloc)
+                orig_loc_dv = quakelib.Vec3(xloc, yloc, zloc)
+                xloc = source_dim[0]/2.0-2**x
+                yloc = -2**y
+                mirror_loc_dg = quakelib.Vec2(xloc, yloc)
+                mirror_loc_dv = quakelib.Vec3(xloc, yloc, zloc)
+
+                # Calculate dudz
+                orig_dg = self.ok.calc_dg(orig_loc_dg, source_dim[2], self.dip_rad, source_dim[0], source_dim[1], self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
+                mirror_dg = self.ok.calc_dg(mirror_loc_dg, source_dim[2], self.dip_rad, source_dim[0], source_dim[1], self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
+                orig_dv = self.ok.calc_dV(orig_loc_dv, source_dim[2], self.dip_rad, source_dim[0], source_dim[1], self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
+                mirror_dv = self.ok.calc_dV(mirror_loc_dv, source_dim[2], self.dip_rad, source_dim[0], source_dim[1], self.slip_vec[0], self.slip_vec[1], self.slip_vec[2], 1, 1)
+                abs_err_dg = abs(orig_dg+mirror_dg)
+                abs_err_dv = abs(orig_dv+mirror_dv)
+                self.assertTrue(abs_err_dg < self.mag_tol)
+                self.assertTrue(abs_err_dv < self.mag_tol)
+
 if __name__ == "__main__":
     unittest.main()
 

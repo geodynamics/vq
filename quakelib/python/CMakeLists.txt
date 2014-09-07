@@ -1,6 +1,8 @@
 SET(CMAKE_SWIG_FLAGS "-I${QUAKELIB_SOURCE_DIR}")
 
 # If we have SWIG, run the .i files through it
+# NOTE: this will error out during CMake if the user has SWIG but not SWIG Python installed
+# NOTE: I'm not sure how to fix this
 if(PYTHONLIBS_FOUND AND SWIG_FOUND)
     SET_SOURCE_FILES_PROPERTIES(quakelib.i PROPERTIES CPLUSPLUS ON)
     #SET_SOURCE_FILES_PROPERTIES(quakelib.i PROPERTIES SWIG_FLAGS "-includeall")
