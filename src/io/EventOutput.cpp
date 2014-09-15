@@ -80,7 +80,7 @@ void EventOutput::init(SimFramework *_sim) {
 SimRequest EventOutput::run(SimFramework *_sim) {
     VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
 
-    if (sim->getEventOutfileType() == "hdf5") {
+    if (sim->getEventOutfileType() == "hdf5" && sim->isRootNode()) {
 #ifdef HDF5_FOUND
         h5_data->writeEvent(sim->getCurrentEvent());
 #endif

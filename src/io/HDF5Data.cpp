@@ -364,6 +364,7 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name) : HDF5Data() {
 
 #ifdef MPI_C_FOUND
 #ifdef H5_HAVE_PARALLEL
+    // No need to synchronize since only the root node outputs the results
     //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
 #endif
