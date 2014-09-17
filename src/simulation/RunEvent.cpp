@@ -76,7 +76,7 @@ void RunEvent::processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sw
             if (slip > -b.state.slipDeficit) slip = -b.state.slipDeficit;
 
             // Record how much the block slipped in this sweep and initial stresses
-            current_sweep.setSlipAndArea(b.getBlockID(), slip, b.get_area(), b.lame_mu());
+            current_sweep.setSlipAndArea(b.getBlockID(), slip, b.area(), b.lame_mu());
             current_sweep.setInitStresses(b.getBlockID(), b.getShearStress(), b.getNormalStress());
 
             b.state.slipDeficit += slip;
@@ -209,7 +209,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
 
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresses
-            current_sweep.setSlipAndArea(block.getBlockID(), slip, block.get_area(), block.lame_mu());
+            current_sweep.setSlipAndArea(block.getBlockID(), slip, block.area(), block.lame_mu());
             current_sweep.setInitStresses(block.getBlockID(), block.getShearStress(), block.getNormalStress());
 
             block.state.slipDeficit += slip;

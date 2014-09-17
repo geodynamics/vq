@@ -209,7 +209,7 @@ namespace quakelib {
             };
 
             //! Calculates the area of this block based on vertices and whether it is a triangle or quad.
-            double get_area(void) const {
+            double area(void) const {
                 Vec<3> a,b;
                 a=_vert[1]-_vert[0];
                 b=_vert[2]-_vert[0];

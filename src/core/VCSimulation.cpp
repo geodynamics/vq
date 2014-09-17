@@ -657,7 +657,7 @@ void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
             bid = all_blocks[i].block_id;
             cur_sweep.setSlipAndArea(bid,
                                      all_blocks[i].slip,
-                                     getBlock(bid).get_area(),
+                                     getBlock(bid).area(),
                                      getBlock(bid).lame_mu());
             cur_sweep.setInitStresses(bid,
                                       all_blocks[i].init_shear,
