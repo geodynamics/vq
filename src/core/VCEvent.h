@@ -131,12 +131,18 @@ class VCGeneralEvent {
         float x;
         //! "y"-position (km) of earthquake
         float y;
+        //! "z"-position (km) of earthquake
+        float z;
 
-        VCGeneralEvent(float _m=0.0, float _t=0.0, float _x=0.0, float _y=0.0) : mag(_m), t(_t), x(_x), y(_y) {};
+        VCGeneralEvent(float _m=0.0, float _t=0.0, float _x=0.0, float _y=0.0, float _z=0.0) : mag(_m), t(_t), x(_x), y(_y), z(_z) {};
         void clear(void) {
-            mag = t = x = y = 0;
+            mag = t = x = y = z = 0;
         };
 
+        quakelib::Vec<3> loc(void) const {
+            return quakelib::Vec<3>(x,y,z);
+        };
+    
         // Comparison operator (for sorting)
         bool operator < (const VCGeneralEvent &as) const {
             return (this->t < as.t);
