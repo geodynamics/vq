@@ -132,7 +132,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
  */
 void UpdateBlockStress::nextAftershock(BlockVal &next_aftershock) {
     if (sim->isRootNode() && sim->numAftershocksToProcess() > 0) {
-        next_aftershock.val = sim->curTime() - sim->nextAftershockTime();
+        next_aftershock.val = sim->getYear() - sim->nextAftershockTime();
         next_aftershock.block_id = UNDEFINED_BLOCK_ID;
     } else {
         next_aftershock.val = DBL_MAX;
