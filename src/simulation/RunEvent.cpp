@@ -321,6 +321,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
             sim->setUpdateField(gid, (block.getFailed() ? 0 : block.state.slipDeficit));
         }
 
+        sim->distributeUpdateField();
+        
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),

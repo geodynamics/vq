@@ -167,9 +167,13 @@ void UpdateBlockStress::nextTimeStep(BlockVal &fail_time) {
         if (ts <= 0) continue;
 
         // If the time to slip is less than the current shortest time, record the block
+        // To ensure reproducibility with multiple processes, if multiple blocks fail
+        // at the same time then we choose the block with the lowest ID over all the processes
         if (ts < temp_block_fail.val) {
             temp_block_fail.block_id = gid;
             temp_block_fail.val = ts;
+        } else if (ts == temp_block_fail.val) {
+            temp_block_fail.block_id = (gid < temp_block_fail.block_id ? gid : temp_block_fail.block_id);
         }
     }
 
