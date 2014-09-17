@@ -32,7 +32,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
     unsigned int                genNum = 0, start, stop, count = 0;
     VCEventAftershock           initial_shock;
-    VCGeneralEventSet::iterator it;
+    AftershockVector::iterator  it;
     quakelib::Conversion        convert;
 
     // Get BASS parameters
@@ -45,7 +45,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     _q = sim->getBASSDistanceDecay();
 
     first = true;
-    events_to_process = sim->getCurrentEvent().getAftershockPtr();
+    events_to_process.clear();
 
     // Generate initial seed shock based on the current event
     event_blocks.clear();
@@ -57,28 +57,30 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
                                       0,        // No need to set x,y coords since they will be selected from entire fault
                                       0,
                                       0);
-    events_to_process->push_back(initial_shock);
+    events_to_process.push_back(initial_shock);
 
     start = 0;
-    stop  = events_to_process->size();
+    stop  = events_to_process.size();
 
     // Loop over N generations of aftershocks
     do {
         count = 0;
 
         for (unsigned int i=start; i<stop; ++i)
-            count += generateAftershocks(sim, events_to_process->at(i));
+            count += generateAftershocks(sim, events_to_process.at(i));
 
         start = stop;
-        stop  = events_to_process->size();
+        stop  = events_to_process.size();
     } while ( (++genNum < sim->getBASSMaxGenerations()) && (count > 0) );
 
     // Remove the initial seed event (main shock)
-    events_to_process->erase(events_to_process->begin(), events_to_process->begin()+1);
+    events_to_process.erase(events_to_process.begin());
 
     // Finally we sort the events into time order since the aftershocks in the
     // BASS model are usually not generated in ordered time sequence.
-    std::sort(events_to_process->begin(), events_to_process->end());
+    for (it=events_to_process.begin();it!=events_to_process.end();++it) {
+        sim->addAftershock(*it);
+    }
 
     return SIM_STOP_OK;
 }
@@ -136,7 +138,7 @@ unsigned int BASSAftershocks::generateAftershocks(VCSimulation *sim, VCEventAfte
         aftershock.y = seed_y + r*sin(theta);
 
         // Add the aftershock to our list
-        events_to_process->push_back(aftershock);
+        events_to_process.push_back(aftershock);
     }
 
     first = false;

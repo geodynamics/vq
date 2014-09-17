@@ -166,13 +166,13 @@ class VCEventAftershock : public VCGeneralEvent {
 };
 
 typedef std::vector<VCEventSweep> EventSweeps;
-typedef std::vector<VCEventAftershock> AftershockSet;
+typedef std::vector<VCEventAftershock> AftershockVector;
+typedef std::set<VCEventAftershock> AftershockSet;
 
 /*!
  A VCEvent is a rupture of one or more blocks on one or more faults in a VC model.
  This consists of origin information (trigger block, year) and information about
- how the event propagated through the system (event sweeps). It also contains
- the set of aftershocks associated with this event which may not be on any fault.
+ how the event propagated through the system (event sweeps).
  */
 class VCEvent {
     private:
@@ -194,7 +194,10 @@ class VCEvent {
         //! Sum of the EventSweeps slips, used to quickly calculate magnitude
         EventBlockMap   total_slip;
 
+        //! Initial and final sum of shear stress on all elements involved in the event
         double shear_stress_init, shear_stress_final;
+    
+        //! Initial and final sum of normal stress on all elements involved in the event
         double normal_stress_init, normal_stress_final;
 
     public:
