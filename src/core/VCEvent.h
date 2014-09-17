@@ -194,9 +194,6 @@ class VCEvent {
         //! Sum of the EventSweeps slips, used to quickly calculate magnitude
         EventBlockMap   total_slip;
 
-        //! Generated event aftershocks
-        AftershockSet   aftershocks;
-
         double shear_stress_init, shear_stress_final;
         double normal_stress_init, normal_stress_final;
 
@@ -263,14 +260,6 @@ class VCEvent {
 
         //! Add a list of event sweeps to this event.
         void addSweeps(EventSweeps &sweep_list);
-        //! Add an aftershock to this event.
-        void addAftershock(VCEventAftershock &aftershock) {
-            aftershocks.push_back(aftershock);
-        };
-        //! Get a pointer to the set of aftershocks associated with this event.
-        AftershockSet *getAftershockPtr(void) {
-            return &aftershocks;
-        };
 
         //! Get the total amount a given block slipped during this event
         double getEventSlip(const BlockID &block_id) const {
@@ -313,10 +302,6 @@ class VCEvent {
         unsigned int getNumSweeps(void) const {
             return event_sweeps.size();
         };
-        //! Get the number of aftershocks resulting from this event.
-        unsigned int getNumAftershocks(void) const {
-            return aftershocks.size();
-        };
 
         void clear(void);
 
@@ -332,13 +317,6 @@ class VCEvent {
         };
         EventSweeps::iterator sweepEnd(void) {
             return event_sweeps.end();
-        };
-
-        AftershockSet::iterator aftershockBegin(void) {
-            return aftershocks.begin();
-        };
-        AftershockSet::iterator aftershockEnd(void) {
-            return aftershocks.end();
         };
 
         friend std::ostream &operator<<(std::ostream &os, const VCEvent &e);
