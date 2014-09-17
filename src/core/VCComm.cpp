@@ -26,6 +26,7 @@
 // Note: We assume these operations are only called for the BlockVal MPI datatype
 /*!
  Calculates the minimum value and its associated block among the specified input array.
+ If two blocks have the same value, order by block ID.
  */
 void BlockValMinimum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
     BlockVal        *in, *out;
@@ -38,6 +39,8 @@ void BlockValMinimum(void *invec, void *inoutvec, int *len, MPI_Datatype *dataty
         if (in[i].val < out[i].val) {
             out[i].val = in[i].val;
             out[i].block_id = in[i].block_id;
+        } else if (in[i].val == out[i].val) {
+            out[i].block_id = (in[i].block_id < out[i].block_id ? in[i].block_id : out[i].block_id);
         }
 
         // else leave the out array as it is
@@ -46,6 +49,7 @@ void BlockValMinimum(void *invec, void *inoutvec, int *len, MPI_Datatype *dataty
 
 /*!
  Calculates the maximum value and its associated block among the specified input array.
+ If two blocks have the same value, order by block ID.
  */
 void BlockValMaximum(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
     BlockVal        *in, *out;
@@ -58,6 +62,8 @@ void BlockValMaximum(void *invec, void *inoutvec, int *len, MPI_Datatype *dataty
         if (in[i].val > out[i].val) {
             out[i].val = in[i].val;
             out[i].block_id = in[i].block_id;
+        } else if (in[i].val == out[i].val) {
+            out[i].block_id = (in[i].block_id < out[i].block_id ? in[i].block_id : out[i].block_id);
         }
 
         // else leave the out array as it is
