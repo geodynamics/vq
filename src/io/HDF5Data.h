@@ -48,7 +48,7 @@
 
 // Event info related definitions
 #define EVENT_TABLE_HDF5            "event_table"
-#define EVENT_NUM_ENTRIES_HDF5      12
+#define EVENT_NUM_ENTRIES_HDF5      10
 #define EVENT_NUM_HDF5              "event_number"
 #define EVENT_YEAR_HDF5             "event_year"
 #define EVENT_TRIGGER_HDF5          "event_trigger"
@@ -59,8 +59,6 @@
 #define EVENT_NORMAL_FINAL_HDF5     "event_normal_final"
 #define EVENT_START_SWEEP_HDF5      "start_sweep_rec"
 #define EVENT_END_SWEEP_HDF5        "end_sweep_rec"
-#define EVENT_START_AS_HDF5         "start_aftershock_rec"
-#define EVENT_END_AS_HDF5           "end_aftershock_rec"
 
 // Event sweeps table definitions
 #define SWEEP_TABLE_HDF5            "event_sweep_table"
@@ -75,16 +73,6 @@
 #define SWEEP_SHEAR_FINAL_HDF5      "shear_final"
 #define SWEEP_NORMAL_INIT_HDF5      "normal_init"
 #define SWEEP_NORMAL_FINAL_HDF5     "normal_final"
-
-// Aftershock/background table definitions
-#define AFTERSHOCK_TABLE_HDF5       "aftershock_table"
-#define AFTERSHOCK_NUM_ENTRIES_HDF5 6
-#define AFTERSHOCK_EVT_NUM_HDF5     "event_number"
-#define AFTERSHOCK_GEN_HDF5         "generation"
-#define AFTERSHOCK_MAG_HDF5         "magnitude"
-#define AFTERSHOCK_TIME_HDF5        "time"
-#define AFTERSHOCK_X_HDF5           "x"
-#define AFTERSHOCK_Y_HDF5           "y"
 
 // State checkpoint table definitions
 #define CHECKPOINT_STATE_HDF5       "checkpoint_state"
@@ -103,7 +91,6 @@ struct EventInfo {
     BlockID         event_trigger;
     double          event_magnitude;
     unsigned int    start_sweep_rec, end_sweep_rec;
-    unsigned int    start_aftershock_rec, end_aftershock_rec;
     double          init_shear, final_shear, init_normal, final_normal;
 };
 
@@ -121,17 +108,6 @@ struct EventSweepInfo {
 };
 
 typedef struct EventSweepInfo EventSweepInfo;
-
-struct AftershockInfo {
-    unsigned int    event_number;
-    unsigned int    gen;
-    float           mag;
-    float           time;
-    float           x;
-    float           y;
-};
-
-typedef struct AftershockInfo AftershockInfo;
 
 #ifdef HDF5_FOUND
 
@@ -224,12 +200,6 @@ class HDF5Data {
         size_t sweep_field_offsets[SWEEP_NUM_ENTRIES_HDF5];
         hid_t sweep_field_types[SWEEP_NUM_ENTRIES_HDF5];
         size_t sweep_field_sizes[SWEEP_NUM_ENTRIES_HDF5];
-
-        // Names, types, offsets and sizes for aftershock/background event table
-        const char *aftershock_field_names[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        size_t aftershock_field_offsets[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        hid_t aftershock_field_types[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        size_t aftershock_field_sizes[AFTERSHOCK_NUM_ENTRIES_HDF5];
 
         // Values read from shared memory (pointers are set to within shared memory segment)
         unsigned int    num_blocks;

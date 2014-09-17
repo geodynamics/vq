@@ -413,23 +413,6 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name) : HDF5Data() {
 
     if (status < 0) exit(-1);
 
-    // Create the aftershock table
-    status = H5TBmake_table("Aftershock Table",
-                            data_file,
-                            AFTERSHOCK_TABLE_HDF5,
-                            AFTERSHOCK_NUM_ENTRIES_HDF5,
-                            0,
-                            sizeof(AftershockInfo),
-                            aftershock_field_names,
-                            aftershock_field_offsets,
-                            aftershock_field_types,
-                            1000,
-                            NULL,
-                            0,
-                            NULL);
-
-    if (status < 0) exit(-1);
-
     H5Pclose(plist_id);
 }
 
@@ -459,8 +442,6 @@ void HDF5Data::createH5Handles(void) {
     event_field_offsets[7] = HOFFSET(EventInfo, final_normal);
     event_field_offsets[8] = HOFFSET(EventInfo, start_sweep_rec);
     event_field_offsets[9] = HOFFSET(EventInfo, end_sweep_rec);
-    event_field_offsets[10] = HOFFSET(EventInfo, start_aftershock_rec);
-    event_field_offsets[11] = HOFFSET(EventInfo, end_aftershock_rec);
 
     event_field_types[0] = H5T_NATIVE_UINT;
     event_field_types[1] = H5T_NATIVE_DOUBLE;
@@ -529,31 +510,6 @@ void HDF5Data::createH5Handles(void) {
     sweep_field_sizes[8] = sizeof(double);
     sweep_field_sizes[9] = sizeof(double);
 
-    aftershock_field_names[0] = AFTERSHOCK_EVT_NUM_HDF5;
-    aftershock_field_names[1] = AFTERSHOCK_GEN_HDF5;
-    aftershock_field_names[2] = AFTERSHOCK_MAG_HDF5;
-    aftershock_field_names[3] = AFTERSHOCK_TIME_HDF5;
-    aftershock_field_names[4] = AFTERSHOCK_X_HDF5;
-    aftershock_field_names[5] = AFTERSHOCK_Y_HDF5;
-    aftershock_field_offsets[0] = HOFFSET(AftershockInfo, event_number);
-    aftershock_field_offsets[1] = HOFFSET(AftershockInfo, gen);
-    aftershock_field_offsets[2] = HOFFSET(AftershockInfo, mag);
-    aftershock_field_offsets[3] = HOFFSET(AftershockInfo, time);
-    aftershock_field_offsets[4] = HOFFSET(AftershockInfo, x);
-    aftershock_field_offsets[5] = HOFFSET(AftershockInfo, y);
-    aftershock_field_types[0] = H5T_NATIVE_UINT;
-    aftershock_field_types[1] = H5T_NATIVE_UINT;
-    aftershock_field_types[2] = H5T_NATIVE_FLOAT;
-    aftershock_field_types[3] = H5T_NATIVE_FLOAT;
-    aftershock_field_types[4] = H5T_NATIVE_FLOAT;
-    aftershock_field_types[5] = H5T_NATIVE_FLOAT;
-    aftershock_field_sizes[0] = sizeof(unsigned int);
-    aftershock_field_sizes[1] = sizeof(unsigned int);
-    aftershock_field_sizes[2] = sizeof(float);
-    aftershock_field_sizes[3] = sizeof(float);
-    aftershock_field_sizes[4] = sizeof(float);
-    aftershock_field_sizes[5] = sizeof(float);
-
     // Create dataspace for pairs of values
     dimsf[0] = 2;
     pair_val_dataspace = H5Screate_simple(1, dimsf, NULL);
@@ -577,12 +533,10 @@ void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double
 void HDF5DataWriter::writeEvent(VCEvent &event) {
     EventSweeps::iterator       it;
     VCEventSweep::iterator      eit;
-    AftershockSet::iterator     ait;
     VCGeneralEventSet::iterator git;
     BlockIDSet                  involved_blocks;
     EventInfo                   e_info;
     EventSweepInfo              *s_info_array;
-    AftershockInfo            *a_info_array;
     herr_t                      status;
     unsigned int                i, sweep_num, rec_num, event_num;
     hsize_t                     start_fields, end_fields, start_recs, end_recs;
@@ -637,46 +591,6 @@ void HDF5DataWriter::writeEvent(VCEvent &event) {
 
     e_info.start_sweep_rec = start_recs;
     e_info.end_sweep_rec = end_recs;
-
-    // Write the aftershocks to the file
-    for (ait=event.aftershockBegin(),rec_num=0; ait!=event.aftershockEnd(); ++ait) {
-        rec_num++;
-    }
-
-    // Check the number of records before appending to the table
-    status = H5TBget_table_info(data_file, AFTERSHOCK_TABLE_HDF5, &start_fields, &start_recs);
-
-    if (status < 0) exit(-1);
-
-    if (rec_num > 0) {
-        a_info_array = new AftershockInfo[rec_num];
-
-        for (ait=event.aftershockBegin(),i=0; ait!=event.aftershockEnd(); ++ait,++i) {
-            a_info_array[i].event_number = event_num;
-            a_info_array[i].mag = ait->mag;
-            a_info_array[i].time = ait->t;
-            a_info_array[i].x = ait->x;
-            a_info_array[i].y = ait->y;
-            a_info_array[i].gen = ait->gen;
-        }
-
-        H5TBappend_records(data_file,
-                           AFTERSHOCK_TABLE_HDF5,
-                           rec_num,
-                           sizeof(AftershockInfo),
-                           aftershock_field_offsets,
-                           aftershock_field_sizes,
-                           a_info_array);
-        delete a_info_array;
-    }
-
-    // Get the number of records after appending to the table
-    status = H5TBget_table_info(data_file, AFTERSHOCK_TABLE_HDF5, &end_fields, &end_recs);
-
-    if (status < 0) exit(-1);
-
-    e_info.start_aftershock_rec = start_recs;
-    e_info.end_aftershock_rec = end_recs;
 
     event.getInvolvedBlocks(involved_blocks);
 
