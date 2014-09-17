@@ -38,7 +38,7 @@ typedef unsigned int SectionID;
 #define UNDEFINED_BLOCK_ID      UINT_MAX
 #define UNDEFINED_FAULT_ID      UINT_MAX
 #define UNDEFINED_SECTION_ID    UINT_MAX
-#define ALL_FAULTS_ID           UINT_MAX-1
+#define UNDEFINED_EVENT_ID      UINT_MAX
 
 struct StateCheckpointData {
     double      slipDeficit;

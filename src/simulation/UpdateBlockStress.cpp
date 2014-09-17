@@ -74,41 +74,79 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     // Put a stress load on all blocks and determine which block will fail first
     int                     lid;
-    BlockVal                fail_time;
+    BlockVal                next_static_fail, next_aftershock, next_event, next_event_global;
     quakelib::Conversion    convert;
+    VCEvent                 new_event;
 
     // Calculate the current rates of stress change on all blocks
     stressRecompute();
 
     // Given the rates of change, determine which block will fail next
-    fail_time.block_id = UNDEFINED_BLOCK_ID;
-    nextTimeStep(fail_time);
+    nextStaticFailure(next_static_fail);
 
+    // Get the next aftershock event time
+    nextAftershock(next_aftershock);
+    
+    // Take whichever is sooner, with ties going in favor of aftershocks
+    if (next_static_fail.val < next_aftershock.val) {
+        next_event.val = next_static_fail.val;
+        next_event.block_id = next_static_fail.block_id;
+    } else {
+        next_event.val = next_aftershock.val;
+        next_event.block_id = next_aftershock.block_id;
+    }
+    
+    // Each node now has the time before the first failure among its blocks
+    // Determine the time to first failure over all nodes
+    sim->allReduceBlockVal(next_event, next_event_global, BLOCK_VAL_MIN);
+    
+    // If we didn't find any static failures or aftershocks, abort the simulation
+    assertThrow(next_event_global.val < DBL_MAX, "System stuck, no blocks to move.");
+    
     // Increment the simulation year to the next failure time and
     // update the slip on all other blocks
-    sim->incrementYear(fail_time.val);
+    sim->incrementYear(next_event_global.val);
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         Block &local_block = sim->getBlock(sim->getGlobalBID(lid));
-        local_block.state.slipDeficit -= local_block.slip_rate()*convert.year2sec(fail_time.val)*(1.0-local_block.aseismic());
+        local_block.state.slipDeficit -= local_block.slip_rate()*convert.year2sec(next_event_global.val)*(1.0-local_block.aseismic());
     }
 
     // Recalculate the stress on all blocks with the new slip deficits
     stressRecompute();
 
+    // Record the current event
+    new_event.setEventTriggerOnThisNode(next_event_global.block_id==next_static_fail.block_id);
+    new_event.setEventTrigger(next_event_global.block_id);
+    new_event.setEventYear(sim->getYear()+next_event_global.val);
+    new_event.setEventNumber(sim->getEventCount());
+    sim->addEvent(new_event);
+    
     if (sim->getYear() > sim->getSimDuration()) return SIM_STOP_REQUIRED;
     else return SIM_CONTINUE;
+}
+
+/*!
+ Calculate the time to the next aftershock. Aftershocks are only held
+ on the root node so other nodes ignore this.
+ */
+void UpdateBlockStress::nextAftershock(BlockVal &next_aftershock) {
+    if (sim->isRootNode() && sim->numAftershocksToProcess() > 0) {
+        next_aftershock.val = sim->curTime() - sim->nextAftershockTime();
+        next_aftershock.block_id = UNDEFINED_BLOCK_ID;
+    } else {
+        next_aftershock.val = DBL_MAX;
+        next_aftershock.block_id = UNDEFINED_BLOCK_ID;
+    }
 }
 
 /*!
  Determine the next time step in the simulation when a failure occurs.
  Return the block ID of the block responsible for the failure and the timestep until the failure.
  */
-void UpdateBlockStress::nextTimeStep(BlockVal &fail_time) {
+void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     BlockList::iterator     it;
-    BlockVal                temp_block_fail;
     double                  ts;
-    VCEvent                 new_event;
     BlockID                 gid;
     int                     lid;
     quakelib::Conversion    convert;
@@ -139,8 +177,8 @@ void UpdateBlockStress::nextTimeStep(BlockVal &fail_time) {
     }
 
     // Go through the blocks and find which one will fail first
-    temp_block_fail.val = DBL_MAX;
-    temp_block_fail.block_id = UNDEFINED_BLOCK_ID;
+    next_static_fail.val = DBL_MAX;
+    next_static_fail.block_id = UNDEFINED_BLOCK_ID;
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
@@ -169,27 +207,13 @@ void UpdateBlockStress::nextTimeStep(BlockVal &fail_time) {
         // If the time to slip is less than the current shortest time, record the block
         // To ensure reproducibility with multiple processes, if multiple blocks fail
         // at the same time then we choose the block with the lowest ID over all the processes
-        if (ts < temp_block_fail.val) {
-            temp_block_fail.block_id = gid;
-            temp_block_fail.val = ts;
-        } else if (ts == temp_block_fail.val) {
-            temp_block_fail.block_id = (gid < temp_block_fail.block_id ? gid : temp_block_fail.block_id);
+        if (ts < next_static_fail.val) {
+            next_static_fail.block_id = gid;
+            next_static_fail.val = ts;
+        } else if (ts == next_static_fail.val) {
+            next_static_fail.block_id = (gid < next_static_fail.block_id ? gid : next_static_fail.block_id);
         }
     }
-
-    // Each node now has the time before the first failure among its blocks
-    // Determine the time to first failure over all nodes
-    sim->allReduceBlockVal(temp_block_fail, fail_time, BLOCK_VAL_MIN);
-
-    // If we didn't find any blocks that slipped, abort the simulation
-    assertThrow(fail_time.val < DBL_MAX, "System stuck, no blocks to move.");
-
-    // Setup the current event to have the trigger block ID and time
-    new_event.setEventTriggerOnThisNode(fail_time.block_id==temp_block_fail.block_id);
-    new_event.setEventTrigger(fail_time.block_id);
-    new_event.setEventYear(sim->getYear()+fail_time.val);
-    new_event.setEventNumber(sim->getEventCount());
-    sim->addEvent(new_event);
 }
 
 /*!

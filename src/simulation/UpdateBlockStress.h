@@ -42,7 +42,8 @@ class UpdateBlockStress : public SimPlugin {
         virtual void finish(SimFramework *_sim);
 
     private:
-        void nextTimeStep(BlockVal &fail_time);
+        void nextAftershock(BlockVal &next_aftershock);
+        void nextStaticFailure(BlockVal &next_static_fail);
         void stressRecompute(void);
 
         double          *tmpBuffer;
