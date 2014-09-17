@@ -51,14 +51,19 @@ class VCSimDataEvents {
         void addAftershock(const VCEventAftershock &new_aftershock) {
             cur_aftershocks.insert(new_aftershock);
         };
-        double nextAftershockTime(void) {
+        double nextAftershockTime(void) const {
             if (cur_aftershocks.size() > 0) {
                 return cur_aftershocks.begin()->t;
             } else {
                 return DBL_MAX;
             }
         };
-        unsigned int numAftershocksToProcess(void) {
+        VCEventAftershock popAftershock(void) {
+            VCEventAftershock next_aftershock = *(cur_aftershocks.begin());
+            cur_aftershocks.erase(cur_aftershocks.begin());
+            return next_aftershock;
+        };
+        unsigned int numAftershocksToProcess(void) const {
             return cur_aftershocks.size();
         };
 };
