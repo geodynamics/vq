@@ -429,8 +429,6 @@ void HDF5Data::createH5Handles(void) {
     event_field_names[7] = EVENT_NORMAL_FINAL_HDF5;
     event_field_names[8] = EVENT_START_SWEEP_HDF5;
     event_field_names[9] = EVENT_END_SWEEP_HDF5;
-    event_field_names[10] = EVENT_START_AS_HDF5;
-    event_field_names[11] = EVENT_END_AS_HDF5;
 
     event_field_offsets[0] = HOFFSET(EventInfo, event_number);
     event_field_offsets[1] = HOFFSET(EventInfo, event_year);
@@ -453,8 +451,6 @@ void HDF5Data::createH5Handles(void) {
     event_field_types[7] = H5T_NATIVE_DOUBLE;
     event_field_types[8] = H5T_NATIVE_UINT;
     event_field_types[9] = H5T_NATIVE_UINT;
-    event_field_types[10] = H5T_NATIVE_UINT;
-    event_field_types[11] = H5T_NATIVE_UINT;
 
     event_field_sizes[0] = sizeof(unsigned int);
     event_field_sizes[1] = sizeof(double);
@@ -466,8 +462,6 @@ void HDF5Data::createH5Handles(void) {
     event_field_sizes[7] = sizeof(double);
     event_field_sizes[8] = sizeof(unsigned int);
     event_field_sizes[9] = sizeof(unsigned int);
-    event_field_sizes[10] = sizeof(unsigned int);
-    event_field_sizes[11] = sizeof(unsigned int);
 
     sweep_field_names[0] = SWEEP_EVENT_NUM_HDF5;
     sweep_field_names[1] = SWEEP_NUM_HDF5;

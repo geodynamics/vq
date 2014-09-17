@@ -28,7 +28,6 @@ void VCEvent::clear(void) {
     event_trigger = UNDEFINED_BLOCK_ID;
     event_sweeps.clear();
     total_slip.clear();
-    aftershocks.clear();
 }
 
 void VCEvent::addSweeps(EventSweeps &sweep_list) {
