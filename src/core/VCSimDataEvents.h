@@ -29,6 +29,9 @@ class VCSimDataEvents {
         //! Current event in the simulation (older events are discarded)
         VCEvent                     cur_event;
 
+        //! Current set of aftershocks to be processed
+        AftershockSet               cur_aftershocks;
+    
         //! Current count of events
         unsigned int                event_cnt;
 
@@ -44,6 +47,19 @@ class VCSimDataEvents {
         void addEvent(const VCEvent &new_event) {
             cur_event = new_event;
             event_cnt++;
+        };
+        void addAftershock(const VCEventAftershock &new_aftershock) {
+            cur_aftershocks.insert(new_aftershock);
+        };
+        double nextAftershockTime(void) {
+            if (cur_aftershocks.size() > 0) {
+                return cur_aftershocks.begin()->t;
+            } else {
+                return DBL_MAX;
+            }
+        };
+        unsigned int numAftershocksToProcess(void) {
+            return cur_aftershocks.size();
         };
 };
 
