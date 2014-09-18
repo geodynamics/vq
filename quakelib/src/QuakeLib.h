@@ -49,9 +49,9 @@ namespace quakelib {
             double      _slip_rate;
             //! Element aseismicity factor (in [0, 1])
             double      _aseis_factor;
-            //! Lame mu parameter (units?)
+            //! Lame mu parameter (Pascals)
             double      _lame_mu;
-            //! Lame lambda parameter (units?)
+            //! Lame lambda parameter (Pascals)
             double      _lame_lambda;
             //! Static yield strength (Pascals)
             double      _static_strength;
