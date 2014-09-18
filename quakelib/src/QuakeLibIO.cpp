@@ -225,7 +225,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "lame_mu";
-    field_desc.details = "Lame's parameter describing the shear modulus of the material for this element (Units?).";
+    field_desc.details = "Lame's parameter describing the shear modulus of the material for this element (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _lame_mu);
     field_desc.type = H5T_NATIVE_FLOAT;
