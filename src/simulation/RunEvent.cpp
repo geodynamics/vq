@@ -25,7 +25,7 @@
  At the end of each sweep after we have recalculated block CFF, we determine
  which blocks will have a failure due to dynamic or static stress changes.
  */
-void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep) {
+void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault) {
     int         lid;
     BlockID     gid;
     bool        add;
@@ -352,8 +352,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         local_failed_blocks.clear(); // we are done with these blocks
 
         // Find any blocks that fail because of the new stresses
-        markBlocks2Fail(sim, trigger_fault, current_sweep);
-
+        markBlocks2Fail(sim, trigger_fault);
+        
         sim->collectEventSweep(current_sweep);
 
         // Add the recorded sweep to the list

@@ -35,7 +35,7 @@ class RunEvent : public SimPlugin {
 
         void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
         void processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep);
-        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep);
+        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(VCSimulation *sim);
 
     public:
