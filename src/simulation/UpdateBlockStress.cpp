@@ -86,7 +86,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
 
     // Get the next aftershock event time
     nextAftershock(next_aftershock);
-    
+
     // Take whichever is sooner, with ties going in favor of aftershocks
     if (next_static_fail.val < next_aftershock.val) {
         next_event.val = next_static_fail.val;
@@ -95,14 +95,14 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
         next_event.val = next_aftershock.val;
         next_event.block_id = next_aftershock.block_id;
     }
-    
+
     // Each node now has the time before the first failure among its blocks
     // Determine the time to first failure over all nodes
     sim->allReduceBlockVal(next_event, next_event_global, BLOCK_VAL_MIN);
-    
+
     // If we didn't find any static failures or aftershocks, abort the simulation
     assertThrow(next_event_global.val < DBL_MAX, "System stuck, no blocks to move.");
-    
+
     // Increment the simulation year to the next failure time and
     // update the slip on all other blocks
     sim->incrementYear(next_event_global.val);
@@ -121,7 +121,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     new_event.setEventYear(sim->getYear()+next_event_global.val);
     new_event.setEventNumber(sim->getEventCount());
     sim->addEvent(new_event);
-    
+
     if (sim->getYear() > sim->getSimDuration()) return SIM_STOP_REQUIRED;
     else return SIM_CONTINUE;
 }

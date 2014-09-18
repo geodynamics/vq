@@ -31,7 +31,7 @@ class VCSimDataEvents {
 
         //! Current set of aftershocks to be processed
         AftershockSet               cur_aftershocks;
-    
+
         //! Current count of events
         unsigned int                event_cnt;
 

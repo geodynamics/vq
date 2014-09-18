@@ -91,6 +91,7 @@ void EventOutput::init(SimFramework *_sim) {
                 std::cerr << "ERROR: Could not open output file " << sim->getEventOutfile() << std::endl;
                 exit(-1);
             }
+
             writeEventFileHeader();
             writeSweepFileHeader();
         } else {

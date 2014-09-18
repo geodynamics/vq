@@ -38,7 +38,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     // If the last event wasn't a static failure event, don't generate aftershocks
     // Otherwise we're generating aftershocks for aftershocks, which is already done by the model
     if (sim->getCurrentEvent().getEventTrigger() == UNDEFINED_BLOCK_ID) return SIM_STOP_OK;
-        
+
     // Get BASS parameters
     _Mm = sim->getBASSMinMagnitude();
     _dM = sim->getBASSAftershockStrength();
@@ -82,7 +82,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
 
     // Finally we sort the events into time order since the aftershocks in the
     // BASS model are usually not generated in ordered time sequence.
-    for (it=events_to_process.begin();it!=events_to_process.end();++it) {
+    for (it=events_to_process.begin(); it!=events_to_process.end(); ++it) {
         sim->addAftershock(*it);
     }
 

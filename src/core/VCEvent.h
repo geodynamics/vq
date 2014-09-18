@@ -142,7 +142,7 @@ class VCGeneralEvent {
         quakelib::Vec<3> loc(void) const {
             return quakelib::Vec<3>(x,y,z);
         };
-    
+
         // Comparison operator (for sorting)
         bool operator < (const VCGeneralEvent &as) const {
             return (this->t < as.t);
@@ -202,7 +202,7 @@ class VCEvent {
 
         //! Initial and final sum of shear stress on all elements involved in the event
         double shear_stress_init, shear_stress_final;
-    
+
         //! Initial and final sum of normal stress on all elements involved in the event
         double normal_stress_init, normal_stress_final;
 

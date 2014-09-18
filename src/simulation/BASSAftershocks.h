@@ -43,7 +43,7 @@ class BASSAftershocks : public SimPlugin {
 
         //! Vector of aftershocks that need to be processed
         AftershockVector    events_to_process;
-    
+
         BlockIDSet          event_blocks;
         bool                first;
 
