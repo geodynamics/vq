@@ -49,30 +49,10 @@
 // Event info related definitions
 #define EVENT_TABLE_HDF5            "event_table"
 #define EVENT_NUM_ENTRIES_HDF5      10
-#define EVENT_NUM_HDF5              "event_number"
-#define EVENT_YEAR_HDF5             "event_year"
-#define EVENT_TRIGGER_HDF5          "event_trigger"
-#define EVENT_MAGNITUDE_HDF5        "event_magnitude"
-#define EVENT_SHEAR_INIT_HDF5       "event_shear_init"
-#define EVENT_NORMAL_INIT_HDF5      "event_normal_init"
-#define EVENT_SHEAR_FINAL_HDF5      "event_shear_final"
-#define EVENT_NORMAL_FINAL_HDF5     "event_normal_final"
-#define EVENT_START_SWEEP_HDF5      "start_sweep_rec"
-#define EVENT_END_SWEEP_HDF5        "end_sweep_rec"
 
 // Event sweeps table definitions
 #define SWEEP_TABLE_HDF5            "event_sweep_table"
 #define SWEEP_NUM_ENTRIES_HDF5      10
-#define SWEEP_EVENT_NUM_HDF5        "event_number"
-#define SWEEP_NUM_HDF5              "sweep_num"
-#define SWEEP_BLOCK_ID_HDF5         "block_id"
-#define SWEEP_SLIP_HDF5             "slip"
-#define SWEEP_AREA_HDF5             "area"
-#define SWEEP_MU_HDF5               "mu"
-#define SWEEP_SHEAR_INIT_HDF5       "shear_init"
-#define SWEEP_SHEAR_FINAL_HDF5      "shear_final"
-#define SWEEP_NORMAL_INIT_HDF5      "normal_init"
-#define SWEEP_NORMAL_FINAL_HDF5     "normal_final"
 
 // State checkpoint table definitions
 #define CHECKPOINT_STATE_HDF5       "checkpoint_state"
@@ -188,18 +168,6 @@ class HDF5Data {
 
         // Handles to data space specifications
         hid_t               pair_val_dataspace;
-
-        // Names, types, offsets and sizes for event table
-        const char *event_field_names[EVENT_NUM_ENTRIES_HDF5];
-        size_t event_field_offsets[EVENT_NUM_ENTRIES_HDF5];
-        hid_t event_field_types[EVENT_NUM_ENTRIES_HDF5];
-        size_t event_field_sizes[EVENT_NUM_ENTRIES_HDF5];
-
-        // Names, types, offsets and sizes for event sweep table
-        const char *sweep_field_names[SWEEP_NUM_ENTRIES_HDF5];
-        size_t sweep_field_offsets[SWEEP_NUM_ENTRIES_HDF5];
-        hid_t sweep_field_types[SWEEP_NUM_ENTRIES_HDF5];
-        size_t sweep_field_sizes[SWEEP_NUM_ENTRIES_HDF5];
 
         // Values read from shared memory (pointers are set to within shared memory segment)
         unsigned int    num_blocks;

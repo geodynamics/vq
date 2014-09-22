@@ -30,10 +30,6 @@
 
 #define PAUSE_FILE_NAME     "pause_vc"
 
-char **event_fields = { "# Event number", "# Event year", "# Event trigger element ID", "# Event magnitude", "# Total initial shear stress of elements involved in event (Pascals)", "# Total final shear stress of elements involved in event (Pascals)", "# Total initial normal stress of elements involved in event (Pascals)", "# Total final normal stress of elements involved in event (Pascals)"};
-
-char **sweep_fields = { "# Event number corresponding to this sweep", "# Sweep number", "# Element ID", "# Slip on element in this sweep (meters)", "# Area of element (square meters)", "# Element Lame mu parameter (Pascals)", "# Shear stress of element before sweep (Pascals)", "# Shear stress of element after sweep (Pascals)", "# Normal stress of element before sweep (Pascals)", "# Normal stress of element after sweep (Pascals)" };
-
 /*!
  Manages the HDF5 format data output for VC program.
  */
