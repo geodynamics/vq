@@ -182,3 +182,5 @@ doc/*.bbl
 
 doc/*.blg
 
+
+*.pyc
