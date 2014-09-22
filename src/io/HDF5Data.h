@@ -78,7 +78,7 @@ typedef struct EventInfo EventInfo;
 
 struct EventSweepInfo {
     unsigned int    event_number;
-    unsigned int    sweep_num;
+    unsigned int    sweep_number;
     BlockID         block_id;
     double          block_slip;
     double          block_area;

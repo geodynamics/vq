@@ -656,7 +656,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event) {
         for (it=event.sweepBegin(),i=0,sweep_num=0; it!=event.sweepEnd(); ++it,++sweep_num) {
             for (eit=it->begin(); eit!=it->end(); ++eit,++i) {
                 s_info_array[i].event_number = event_num;
-                s_info_array[i].sweep_num = sweep_num;
+                s_info_array[i].sweep_number = sweep_num;
                 s_info_array[i].block_id = eit->first;
                 s_info_array[i].block_slip = eit->second.slip;
                 s_info_array[i].block_area = eit->second.area;
