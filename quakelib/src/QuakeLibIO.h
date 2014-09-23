@@ -40,10 +40,6 @@ namespace quakelib {
     static const UIndex INVALID_INDEX = std::numeric_limits<unsigned int>::max();
     static const unsigned int NAME_MAX_LEN = 256;
 
-    // Block info related definitions
-#define VERTICES_TABLE_HDF5             "vertices"
-#define ELEMENTS_TABLE_HDF5             "elements"
-
     class ModelIO {
         private:
             std::string         _comment;
