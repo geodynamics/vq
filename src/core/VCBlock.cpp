@@ -20,6 +20,7 @@
 
 #include "VCBlock.h"
 #include "QuakeLibOkada.h"
+#include "QuakeLibIO.h"
 #include <sstream>
 #include <string.h>
 #include <iomanip>
@@ -113,7 +114,7 @@ void Block::get_rake_and_normal_stress_due_to_block(double stresses[2], const do
 /*!*/
 
 std::ostream &operator<<(std::ostream &os, const BlockVal &bv) {
-    if (bv.block_id == UNDEFINED_BLOCK_ID) os << "(Undef, ";
+    if (bv.block_id == UNDEFINED_ELEMENT_ID) os << "(Undef, ";
     else os << "(B" << bv.block_id << ", ";
 
     os << bv.val << ")";
@@ -122,7 +123,7 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv) {
 
 void Block::clear(void) {
     quakelib::SimElement::clear();
-    id = UNDEFINED_BLOCK_ID;
+    id = UNDEFINED_ELEMENT_ID;
     fid = UNDEFINED_FAULT_ID;
     sid = UNDEFINED_SECTION_ID;
     self_shear = self_normal = dynamic_val = stress_drop = std::numeric_limits<float>::quiet_NaN();

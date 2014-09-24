@@ -37,7 +37,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
 
     // If the last event wasn't a static failure event, don't generate aftershocks
     // Otherwise we're generating aftershocks for aftershocks, which is already done by the model
-    if (sim->getCurrentEvent().getEventTrigger() == UNDEFINED_BLOCK_ID) return SIM_STOP_OK;
+    if (sim->getCurrentEvent().getEventTrigger() == UNDEFINED_ELEMENT_ID) return SIM_STOP_OK;
 
     // Get BASS parameters
     _Mm = sim->getBASSMinMagnitude();

@@ -133,10 +133,10 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
 void UpdateBlockStress::nextAftershock(BlockVal &next_aftershock) {
     if (sim->isRootNode() && sim->numAftershocksToProcess() > 0) {
         next_aftershock.val = sim->nextAftershockTime() - sim->getYear();
-        next_aftershock.block_id = UNDEFINED_BLOCK_ID;
+        next_aftershock.block_id = UNDEFINED_ELEMENT_ID;
     } else {
         next_aftershock.val = DBL_MAX;
-        next_aftershock.block_id = UNDEFINED_BLOCK_ID;
+        next_aftershock.block_id = UNDEFINED_ELEMENT_ID;
     }
 }
 
@@ -178,7 +178,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
 
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;
-    next_static_fail.block_id = UNDEFINED_BLOCK_ID;
+    next_static_fail.block_id = UNDEFINED_ELEMENT_ID;
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);

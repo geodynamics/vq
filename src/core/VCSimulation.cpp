@@ -726,7 +726,7 @@ void VCSimulation::partitionBlocks(void) {
                     break;
 
                 case PARTITION_DISTANCE:
-                    base_id = UNDEFINED_BLOCK_ID;
+                    base_id = UNDEFINED_ELEMENT_ID;
 
                     if (i == world_size-1) num_local_blocks = avail_ids.size();
 
@@ -734,7 +734,7 @@ void VCSimulation::partitionBlocks(void) {
 
                     while (more_to_assign) {
                         // Find a starting segment
-                        if (base_id == UNDEFINED_BLOCK_ID) {
+                        if (base_id == UNDEFINED_ELEMENT_ID) {
                             base_id = *(avail_ids.begin());
                             cur_fault = getBlock(base_id).getFaultID();
                             dist_map.clear();
@@ -758,7 +758,7 @@ void VCSimulation::partitionBlocks(void) {
                         if (cur_assigns.size() >= num_local_blocks) more_to_assign = false;
 
                         // If we're out of blocks to assign, start another fault
-                        if (dist_map.size() == 0) base_id = UNDEFINED_BLOCK_ID;
+                        if (dist_map.size() == 0) base_id = UNDEFINED_ELEMENT_ID;
                     }
 
                     break;

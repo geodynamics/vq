@@ -35,6 +35,11 @@
 #ifndef _QUAKELIB_IO_H_
 #define _QUAKELIB_IO_H_
 
+#define UNDEFINED_ELEMENT_ID    UINT_MAX
+#define UNDEFINED_FAULT_ID      UINT_MAX
+#define UNDEFINED_SECTION_ID    UINT_MAX
+#define UNDEFINED_EVENT_ID      UINT_MAX
+
 namespace quakelib {
     typedef unsigned int UIndex;
     static const UIndex INVALID_INDEX = std::numeric_limits<unsigned int>::max();
