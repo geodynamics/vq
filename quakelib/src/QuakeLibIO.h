@@ -687,7 +687,7 @@ namespace quakelib {
         /*unsigned int count(const UIndex &element_id) const {
             return element_vals.count(element_id);
         };*/
-        unsigned int size(void) {
+        unsigned int size(void) const {
             return _sweeps.size();
         };
         
@@ -761,6 +761,14 @@ namespace quakelib {
             _data._normal_stress_final = final_normal;
         }
         
+        const ModelSweeps &getSweeps(void) const {
+            return _sweeps;
+        };
+        
+        void setStartEndSweep(const unsigned int start_sweep, const unsigned int end_sweep) {
+            _data._start_sweep_rec = start_sweep;
+            _data._end_sweep_rec = end_sweep;
+        }
         double getShearStressInit(void) {
             return _data._shear_stress_init;
         };
@@ -907,15 +915,6 @@ namespace quakelib {
         
         friend std::ostream &operator<<(std::ostream &os, const ModelEvent &me);
     };
-    
-    std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms) {
-        return os;
-    }
-    
-    std::ostream &operator<<(std::ostream &os, const ModelEvent &me) {
-        os << me._data._event_number << " " << me._data._event_year;
-        return os;
-    }
 }
 
 #endif
