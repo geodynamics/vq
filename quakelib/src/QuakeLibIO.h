@@ -638,21 +638,21 @@ namespace quakelib {
         }
         
     public:
-        typedef std::map<UIndex, SweepData>::iterator       iterator;
-        typedef std::map<UIndex, SweepData>::const_iterator const_iterator;
+        typedef std::vector<SweepData>::iterator       iterator;
+        typedef std::vector<SweepData>::const_iterator const_iterator;
         
-        /*iterator begin(void) {
-            return element_vals.begin();
+        iterator begin(void) {
+            return _sweeps.begin();
         };
         iterator end(void) {
-            return element_vals.end();
+            return _sweeps.end();
         };
         const_iterator begin(void) const {
-            return element_vals.begin();
+            return _sweeps.begin();
         };
         const_iterator end(void) const {
-            return element_vals.end();
-        };*/
+            return _sweeps.end();
+        };
         
         void setSlipAndArea(const UIndex &sweep_number, const UIndex &element_id, const double &slip, const double &area, const double &mu) {
             unsigned int    pos = sweepElementPos(sweep_number, element_id);
@@ -686,10 +686,10 @@ namespace quakelib {
         };
         /*unsigned int count(const UIndex &element_id) const {
             return element_vals.count(element_id);
-        };
-        unsigned int size(void) {
-            return element_vals.size();
         };*/
+        unsigned int size(void) {
+            return _sweeps.size();
+        };
         
         static void setup_sweeps_hdf5(const hid_t &data_file);
         void append_sweeps_hdf5(const hid_t &data_file) const;
@@ -810,21 +810,20 @@ namespace quakelib {
             return _event_trigger_on_this_node;
         };
         
-        //! Add a list of event sweeps to this event.
-        /*void addSweeps(const EventSweeps &sweep_list) {
-            EventSweeps::const_iterator         lit;
-            EventElementMap::const_iterator     it;
+        //! Set the sweeps for this event to be those specified in the argument.
+        //! Also calculate relevant values related to these sweeps.
+        void setSweeps(const ModelSweeps &sweeps) {
+            ModelSweeps::const_iterator         it;
             
-            for (lit=sweep_list.begin(); lit!=sweep_list.end(); ++lit) {
-                for (it=lit->begin(); it!=lit->end(); ++it) {
-                    _total_slip[it->first]._slip += it->second._slip;
-                    _total_slip[it->first]._area = it->second._area;
-                    _total_slip[it->first]._mu = it->second._mu;
-                }
+            _sweeps = sweeps;
+            _total_slip.clear();
+            
+            for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                _total_slip[it->_element_id]._slip += it->_slip;
+                _total_slip[it->_element_id]._area = it->_area;
+                _total_slip[it->_element_id]._mu = it->_mu;
             }
-            
-            _event_sweeps.insert(_event_sweeps.end(), sweep_list.begin(), sweep_list.end());
-        }*/
+        }
         
         //! Get the total amount a given block slipped during this event
         double getEventSlip(const UIndex &element_id) const {
