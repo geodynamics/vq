@@ -123,7 +123,7 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
         void distributeUpdateField(void);
         void distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list);
-        void collectEventSweep(VCEventSweep &cur_sweep);
+        void collectEventSweep(quakelib::ModelSweeps &sweeps);
 
         std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
         void printTimers(void);
