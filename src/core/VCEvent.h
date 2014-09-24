@@ -19,6 +19,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "VCBlock.h"
+#include "QuakeLibIO.h"
 #include <map>
 #include <set>
 
@@ -41,8 +42,8 @@ typedef std::set<BlockID> BlockIDSet;
 typedef std::map<BlockID, int> BlockIDProcMapping;
 typedef std::set<FaultID> FaultIDSet;
 typedef std::set<SectionID> SectionIDSet;
-typedef std::map<FaultID, BlockIDSet> FaultBlockMapping;
-typedef std::map<SectionID, BlockIDSet> SectionBlockMapping;
+typedef std::map<FaultID, quakelib::ElementIDSet> FaultBlockMapping;
+typedef std::map<SectionID, quakelib::ElementIDSet> SectionBlockMapping;
 typedef std::vector<FaultID> FaultIDList;
 typedef std::vector<SectionID> SectionIDList;
 

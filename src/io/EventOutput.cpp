@@ -113,7 +113,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 #endif
     } else if (sim->getEventOutfileType() == "text") {
         VCEvent &event = sim->getCurrentEvent();
-        BlockIDSet                  involved_blocks;
+        ElementIDSet                involved_blocks;
         EventSweeps::iterator       it;
         VCEventSweep::iterator      eit;
         unsigned int                i, sweep_num, rec_num;
@@ -126,7 +126,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
         }
 
         // Write the event details
-        event.getInvolvedBlocks(involved_blocks);
+        event.getInvolvedElements(involved_blocks);
         event_outfile << event.getEventNumber() << " " << event.getEventYear() << " ";
         event_outfile << event.getEventTrigger() << " " << event.getMagnitude(involved_blocks) << " ";
         event_outfile << event.getShearStressInit() << " " << event.getNormalStressInit() << " ";

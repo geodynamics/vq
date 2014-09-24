@@ -42,10 +42,10 @@ class BASSAftershocks : public SimPlugin {
         float _q;       //! Decay rate of aftershocks (distance)
 
         //! Vector of aftershocks that need to be processed
-        AftershockVector    events_to_process;
+        AftershockVector        events_to_process;
 
-        BlockIDSet          event_blocks;
-        bool                first;
+        quakelib::ElementIDSet  event_blocks;
+        bool                    first;
 
         //! Work horse function
         unsigned int generateAftershocks(VCSimulation *sim, VCEventAftershock seed);

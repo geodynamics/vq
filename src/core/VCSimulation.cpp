@@ -100,8 +100,8 @@ int VCSimulation::numFaults(void) const {
 /*!
  Calculate the stress before and after an event of the blocks that failed during the event.
  */
-void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
-    BlockIDSet::const_iterator      it;
+void VCSimulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
+    quakelib::ElementIDSet::const_iterator      it;
 
     shear_init = shear_final = normal_init = normal_final = 0.0;
 
@@ -118,12 +118,12 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
     }
 }
 
-void VCSimulation::sumStresses(const BlockIDSet &block_set,
+void VCSimulation::sumStresses(const quakelib::ElementIDSet &block_set,
                                double &shear_stress,
                                double &shear_stress0,
                                double &normal_stress,
                                double &normal_stress0) const {
-    BlockIDSet::const_iterator      it;
+    quakelib::ElementIDSet::const_iterator      it;
 
     shear_stress = shear_stress0 = normal_stress = normal_stress0 = 0;
 
@@ -140,9 +140,9 @@ void VCSimulation::printTimers(void) {
 }
 
 void VCSimulation::determineBlockNeighbors(void) {
-    BlockList::iterator bit, iit;
-    BlockIDSet          all_blocks;
-    double              block_size;
+    BlockList::iterator     bit, iit;
+    quakelib::ElementIDSet  all_blocks;
+    double                  block_size;
 
     for (bit=begin(); bit!=end(); ++bit) {
         for (iit=begin(); iit!=end(); ++iit) {
@@ -158,9 +158,9 @@ void VCSimulation::determineBlockNeighbors(void) {
     }
 }
 
-std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
-    std::map<BlockID, BlockIDSet>::const_iterator       it;
-    BlockIDSet      empty_set;
+std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
+    std::map<BlockID, quakelib::ElementIDSet>::const_iterator       it;
+    quakelib::ElementIDSet      empty_set;
 
     it = neighbor_map.find(bid);
 
@@ -529,10 +529,10 @@ void VCSimulation::distributeUpdateField(void) {
 /*!
  Distributes a list of blocks among all processors. Used for determining failed blocks in a sweep.
  */
-void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
+void VCSimulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
 #ifdef MPI_C_FOUND
-    int                         i, n, p;
-    BlockIDSet::const_iterator  it;
+    int                                     i, n, p;
+    quakelib::ElementIDSet::const_iterator  it;
     int                         *proc_block_count = new int[world_size];
     int                         *proc_block_disps = new int[world_size];
     BlockID                     *local_block_ids = new BlockID[local_id_list.size()];
@@ -596,7 +596,6 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
 /*!
  Collect the individual event sweeps spread through all nodes
  on to the root node in a single sweep.
- NOTE: This does not transfer stresses, these will be zeroed in the output file
  */
 void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
 #ifdef MPI_C_FOUND

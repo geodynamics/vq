@@ -628,7 +628,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event) {
     EventSweeps::iterator       it;
     VCEventSweep::iterator      eit;
     VCGeneralEventSet::iterator git;
-    BlockIDSet                  involved_blocks;
+    quakelib::ElementIDSet      involved_blocks;
     EventInfo                   e_info;
     EventSweepInfo              *s_info_array;
     herr_t                      status;
@@ -686,7 +686,7 @@ void HDF5DataWriter::writeEvent(VCEvent &event) {
     e_info.start_sweep_rec = start_recs;
     e_info.end_sweep_rec = end_recs;
 
-    event.getInvolvedBlocks(involved_blocks);
+    event.getInvolvedElements(involved_blocks);
 
     e_info.event_number = event.getEventNumber();
     e_info.event_year = event.getEventYear();

@@ -29,9 +29,10 @@
  */
 class RunEvent : public SimPlugin {
     private:
-        BlockIDSet          local_failed_blocks;
-        BlockIDProcMapping  global_failed_blocks;
-        BlockIDSet          looseBlocks;
+        quakelib::ElementIDSet  local_failed_blocks;
+        BlockIDProcMapping      global_failed_blocks;
+        quakelib::ElementIDSet  looseBlocks;
+        unsigned int            sweep_num;
 
         void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
         void processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep);

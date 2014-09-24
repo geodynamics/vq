@@ -117,9 +117,9 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
     int             lid;
     BlockID         gid;
     unsigned int    i, n;
-    BlockIDSet                      local_id_list;
+    quakelib::ElementIDSet          local_id_list;
     BlockIDProcMapping              global_id_list;
-    BlockIDSet::const_iterator      it;
+    quakelib::ElementIDSet::const_iterator      it;
     BlockIDProcMapping::const_iterator  jt;
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
@@ -386,11 +386,11 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 }
 
 void RunEvent::recordEventStresses(VCSimulation *sim) {
-    BlockIDSet involved_blocks;
+    quakelib::ElementIDSet involved_blocks;
     double shear_init, shear_final, normal_init, normal_final;
     double total_shear_init, total_shear_final, total_normal_init, total_normal_final;
 
-    sim->getCurrentEvent().getInvolvedBlocks(involved_blocks);
+    sim->getCurrentEvent().getInvolvedElements(involved_blocks);
 
     sim->getInitialFinalStresses(involved_blocks, shear_init, shear_final, normal_init, normal_final);
 

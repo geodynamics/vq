@@ -53,7 +53,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
 
     // Generate initial seed shock based on the current event
     event_blocks.clear();
-    sim->getCurrentEvent().getInvolvedBlocks(event_blocks);
+    sim->getCurrentEvent().getInvolvedElements(event_blocks);
 
     // Select a random block in the event to be the center of the aftershocks
     initial_shock = VCEventAftershock(sim->getCurrentEvent().getMagnitude(event_blocks),
@@ -91,7 +91,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
 
 unsigned int BASSAftershocks::generateAftershocks(VCSimulation *sim, VCEventAftershock seed) {
     VCEventAftershock       aftershock;
-    BlockIDSet::iterator    it;
+    quakelib::ElementIDSet::iterator  it;
     float                   Ms, t, r, theta, seed_x, seed_y;
     int                     selected_ind;
 
