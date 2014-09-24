@@ -196,7 +196,7 @@ VCComm::VCComm(void) {
     block_lengths[2] = 1;
     displacements[0] = 0;
     displacements[1] = 5*sizeof(double);
-    displacements[1] = 5*sizeof(double)+sizeof(unsigned int);
+    displacements[2] = 5*sizeof(double)+sizeof(unsigned int);
     datatypes[0] = MPI_DOUBLE;
     datatypes[1] = MPI_UNSIGNED;
     datatypes[2] = MPI_INT;
