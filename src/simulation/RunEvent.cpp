@@ -40,11 +40,11 @@ void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault) 
         add = sim->getBlock(gid).cffFailure();
 
         // Allow dynamic failure if the block is "loose" (next to a previously failed block)
-        if (looseBlocks.count(gid) > 0) add |= sim->getBlock(gid).dynamicFailure(trigger_fault);
+        if (loose_elements.count(gid) > 0) add |= sim->getBlock(gid).dynamicFailure(trigger_fault);
 
         if (add) {
             sim->getBlock(gid).setFailed(true);
-            local_failed_blocks.insert(gid);
+            local_failed_elements.insert(gid);
         }
     }
 }
@@ -57,7 +57,7 @@ void RunEvent::processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sw
     double                  slip, stress_drop;
 
     // For each block that fails in this sweep, calculate how much it slips
-    for (fit=local_failed_blocks.begin(); fit!=local_failed_blocks.end(); ++fit) {
+    for (fit=local_failed_elements.begin(); fit!=local_failed_elements.end(); ++fit) {
         if (sim->isLocalBlockID(*fit)) {
             Block &b = sim->getBlock(*fit);
 
@@ -127,7 +127,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         Block &b = sim->getBlock(gid);
 
         // If the block has already failed (but not in this sweep) then adjust the slip
-        if (b.getFailed() && global_failed_blocks.count(gid) == 0) {
+        if (b.getFailed() && global_failed_elements.count(gid) == 0) {
             local_id_list.insert(gid);
         }
     }
@@ -245,14 +245,14 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     trigger_fault = sim->getBlock(triggerID).getFaultID();
 
     // Clear the list of "loose" (can dynamically fail) blocks
-    looseBlocks.clear();
+    loose_elements.clear();
 
     // Clear the list of failed blocks, and add the trigger block
-    local_failed_blocks.clear();
+    local_failed_elements.clear();
 
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
-        local_failed_blocks.insert(triggerID);
-        looseBlocks.insert(triggerID);
+        local_failed_elements.insert(triggerID);
+        loose_elements.insert(triggerID);
         sim->getBlock(triggerID).setFailed(true);
     }
 
@@ -260,7 +260,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // This is used to determine dynamic block failure
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).saveStresses();
 
-    more_blocks_to_fail = sim->blocksToFail(!local_failed_blocks.empty());
+    more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
 
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
@@ -269,7 +269,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
-        sim->distributeBlocks(local_failed_blocks, global_failed_blocks);
+        sim->distributeBlocks(local_failed_elements, global_failed_elements);
 
         // Process the blocks that failed
         processBlocksOrigFail(sim, current_sweep);
@@ -290,7 +290,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
                 nbr_start_end = sim->getNeighbors(gid);
 
                 for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
-                    looseBlocks.insert(*nit);
+                    loose_elements.insert(*nit);
                 }
             }
         }
@@ -341,15 +341,15 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         // Record the final stresses of blocks that failed during this sweep
         BlockIDProcMapping::iterator        fit;
 
-        for (fit=global_failed_blocks.begin(); fit!=global_failed_blocks.end(); ++fit) {
+        for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
                 Block &b = sim->getBlock(fit->first);
                 current_sweep.setFinalStresses(fit->first, b.getShearStress(), b.getNormalStress());
             }
         }
 
-        global_failed_blocks.clear(); // we are done with these blocks
-        local_failed_blocks.clear(); // we are done with these blocks
+        global_failed_elements.clear(); // we are done with these blocks
+        local_failed_elements.clear(); // we are done with these blocks
 
         // Find any blocks that fail because of the new stresses
         markBlocks2Fail(sim, trigger_fault);
@@ -362,7 +362,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         if (final_sweep) {
             final_sweep = false;
         } else {
-            more_blocks_to_fail = sim->blocksToFail(!local_failed_blocks.empty());
+            more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
 
             if (!more_blocks_to_fail) final_sweep = true;
         }
