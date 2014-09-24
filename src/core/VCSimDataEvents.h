@@ -27,7 +27,7 @@
 class VCSimDataEvents {
     private:
         //! Current event in the simulation (older events are discarded)
-        VCEvent                     cur_event;
+        quakelib::ModelEvent        cur_event;
 
         //! Current set of aftershocks to be processed
         AftershockSet               cur_aftershocks;
@@ -41,10 +41,10 @@ class VCSimDataEvents {
         int getEventCount(void) const {
             return event_cnt;
         };
-        VCEvent &getCurrentEvent(void) {
+        quakelib::ModelEvent &getCurrentEvent(void) {
             return cur_event;
         };
-        void addEvent(const VCEvent &new_event) {
+        void addEvent(const quakelib::ModelEvent &new_event) {
             cur_event = new_event;
             event_cnt++;
         };

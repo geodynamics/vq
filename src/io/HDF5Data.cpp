@@ -356,7 +356,6 @@ HDF5Data::~HDF5Data(void) {
  Initialize the HDF5 writer using the specified model dimensions.
  */
 HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name) : HDF5Data() {
-    herr_t              status;
     hid_t               plist_id;
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -381,228 +380,16 @@ HDF5DataWriter::HDF5DataWriter(const std::string &hdf5_file_name) : HDF5Data() {
     if (sim_years_set < 0) exit(-1);
 
     // Create the event table
-    status = H5TBmake_table("Event Table",
-                            data_file,
-                            EVENT_TABLE_HDF5,
-                            EVENT_NUM_ENTRIES_HDF5,
-                            0,
-                            sizeof(EventInfo),
-                            event_field_names,
-                            event_field_offsets,
-                            event_field_types,
-                            100,
-                            NULL,
-                            0,
-                            NULL);
-
-    if (status < 0) exit(-1);
+    quakelib::ModelEvent::setup_event_hdf5(data_file);
 
     // Create the event sweeps table
-    status = H5TBmake_table("Sweeps Table",
-                            data_file,
-                            SWEEP_TABLE_HDF5,
-                            SWEEP_NUM_ENTRIES_HDF5,
-                            0,
-                            sizeof(EventSweepInfo),
-                            sweep_field_names,
-                            sweep_field_offsets,
-                            sweep_field_types,
-                            1000,
-                            NULL,
-                            0,
-                            NULL);
-
-    if (status < 0) exit(-1);
+    quakelib::ModelSweeps::setup_sweeps_hdf5(data_file);
 
     H5Pclose(plist_id);
 }
 
 void HDF5Data::createH5Handles(void) {
     hsize_t     dimsf[2];
-
-    std::vector<quakelib::FieldDesc>      descs;
-    quakelib::FieldDesc       field_desc;
-    
-    field_desc.name = "event_number";
-    field_desc.details = "Event number";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, event_number);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-
-    field_desc.name = "event_year";
-    field_desc.details = "Event year";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, event_year);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_trigger";
-    field_desc.details = "Event trigger element ID";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, event_trigger);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(BlockID);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_magnitude";
-    field_desc.details = "Event magnitude";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, event_magnitude);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_shear_init";
-    field_desc.details = "Total initial shear stress of elements involved in event (Pascals)";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, init_shear);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_shear_final";
-    field_desc.details = "Total final shear stress of elements involved in event (Pascals)";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, final_shear);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_normal_init";
-    field_desc.details = "Total initial normal stress of elements involved in event (Pascals)";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, init_normal);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "event_normal_final";
-    field_desc.details = "Total final normal stress of elements involved in event (Pascals)";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, final_normal);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "start_sweep_rec";
-    field_desc.details = "Starting record number of the sweeps comprising this event.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, start_sweep_rec);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "end_sweep_rec";
-    field_desc.details = "Ending record number of the sweeps comprising this event.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventInfo, end_sweep_rec);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-    
-    // Sweep table definition
-    field_desc.name = "event_number";
-    field_desc.details = "Event number corresponding to this sweep.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, event_number);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "sweep_number";
-    field_desc.details = "Sweep number.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, sweep_number);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "block_id";
-    field_desc.details = "Element ID.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, block_id);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "block_slip";
-    field_desc.details = "Slip on element in this sweep (meters).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, block_slip);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "block_area";
-    field_desc.details = "Area of element (square meters).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, block_area);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "block_mu";
-    field_desc.details = "Element Lame mu parameter (Pascals).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, block_mu);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "shear_init";
-    field_desc.details = "Shear stress of element before sweep (Pascals).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, shear_init);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "shear_final";
-    field_desc.details = "Shear stress of element after sweep (Pascals).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, shear_final);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "normal_init";
-    field_desc.details = "Normal stress of element before sweep (Pascals).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, normal_init);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
-    
-    field_desc.name = "normal_normal";
-    field_desc.details = "Normal stress of element after sweep (Pascals).";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(EventSweepInfo, normal_final);
-    field_desc.type = H5T_NATIVE_DOUBLE;
-    field_desc.size = sizeof(double);
-#endif
-    descs.push_back(field_desc);
 
     // Create dataspace for pairs of values
     dimsf[0] = 2;
@@ -624,8 +411,7 @@ void HDF5DataWriter::setStartEndYears(const double &new_start_year, const double
 /*!
  Write the information for an event to the HDF5 file.
  */
-void HDF5DataWriter::writeEvent(VCEvent &event) {
-    EventSweeps::iterator       it;
+void HDF5DataWriter::writeEvent(void) {
     VCEventSweep::iterator      eit;
     VCGeneralEventSet::iterator git;
     quakelib::ElementIDSet      involved_blocks;

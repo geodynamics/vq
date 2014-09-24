@@ -46,14 +46,6 @@
 #define SIM_YEARS_HDF5              "sim_years"
 #define BASE_LAT_LON_HDF5           "base_lat_lon"
 
-// Event info related definitions
-#define EVENT_TABLE_HDF5            "event_table"
-#define EVENT_NUM_ENTRIES_HDF5      10
-
-// Event sweeps table definitions
-#define SWEEP_TABLE_HDF5            "event_sweep_table"
-#define SWEEP_NUM_ENTRIES_HDF5      10
-
 // State checkpoint table definitions
 #define CHECKPOINT_STATE_HDF5       "checkpoint_state"
 #define CHECKPOINT_YEAR_HDF5        "checkpoint_year"
@@ -64,30 +56,6 @@
 #define CHECKPOINT_STRESS_S_HDF5    "stressS"
 #define CHECKPOINT_STRESS_N_HDF5    "stressN"
 #define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
-
-struct EventInfo {
-    unsigned int    event_number;
-    double          event_year;
-    BlockID         event_trigger;
-    double          event_magnitude;
-    unsigned int    start_sweep_rec, end_sweep_rec;
-    double          init_shear, final_shear, init_normal, final_normal;
-};
-
-typedef struct EventInfo EventInfo;
-
-struct EventSweepInfo {
-    unsigned int    event_number;
-    unsigned int    sweep_number;
-    BlockID         block_id;
-    double          block_slip;
-    double          block_area;
-    double          block_mu;
-    double          shear_init, shear_final;
-    double          normal_init, normal_final;
-};
-
-typedef struct EventSweepInfo EventSweepInfo;
 
 #ifdef HDF5_FOUND
 
@@ -169,17 +137,11 @@ class HDF5Data {
         // Handles to data space specifications
         hid_t               pair_val_dataspace;
 
-        // Values read from shared memory (pointers are set to within shared memory segment)
-        unsigned int    num_blocks;
-
         void createH5Handles(void);
 
     public:
         HDF5Data(void) {};
         ~HDF5Data(void);
-        unsigned int modelDim(void) const {
-            return num_blocks;
-        };
 };
 
 class HDF5DataWriter : public HDF5Data {
@@ -188,7 +150,7 @@ class HDF5DataWriter : public HDF5Data {
         void setStartEndYears(const double &new_start_year, const double &new_end_year);
         void flush(void);
 
-        void writeEvent(VCEvent &event);
+        void writeEvent(void);
 };
 
 #endif

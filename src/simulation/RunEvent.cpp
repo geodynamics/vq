@@ -376,7 +376,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
     // Update the cumulative slip for this fault
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-        gid = sim->getGlobalBID(lid);
+        BlockID gid = sim->getGlobalBID(lid);
         sim->getBlock(gid).setFailed(false);
     }
 

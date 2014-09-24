@@ -2207,3 +2207,486 @@ size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {
 
     return section_vertices.size();
 }
+
+void quakelib::ModelEvent::read_ascii(std::istream &in_stream) {
+    std::stringstream   ss(next_line(in_stream));
+    
+    ss >> _data._event_number;
+    ss >> _data._event_year;
+    ss >> _data._event_trigger;
+    ss >> _data._event_magnitude;
+    ss >> _data._shear_stress_init;
+    ss >> _data._shear_stress_final;
+    ss >> _data._normal_stress_init;
+    ss >> _data._normal_stress_final;
+}
+
+void quakelib::ModelEvent::write_ascii(std::ostream &out_stream) const {
+    out_stream << _data._event_number << " ";
+    out_stream << _data._event_year << " ";
+    out_stream << _data._event_trigger << " ";
+    out_stream << _data._event_magnitude << " ";
+    out_stream << _data._shear_stress_init << " ";
+    out_stream << _data._shear_stress_final << " ";
+    out_stream << _data._normal_stress_init << " ";
+    out_stream << _data._normal_stress_final;
+    
+    next_line(out_stream);
+}
+
+void quakelib::ModelSweeps::read_ascii(std::istream &in_stream, const unsigned int num_records) {
+    for (unsigned int i=0;i<num_records;++i) {
+        std::stringstream   ss(next_line(in_stream));
+        SweepData   new_sweep;
+        ss >> new_sweep._event_number;
+        ss >> new_sweep._sweep_number;
+        ss >> new_sweep._element_id;
+        ss >> new_sweep._slip;
+        ss >> new_sweep._area;
+        ss >> new_sweep._mu;
+        ss >> new_sweep._shear_init;
+        ss >> new_sweep._shear_final;
+        ss >> new_sweep._normal_init;
+        ss >> new_sweep._normal_final;
+        // Record the sweep/element in the mapping
+        std::pair<UIndex, UIndex> sweep_elem = std::make_pair(new_sweep._sweep_number, new_sweep._element_id);
+        _rel.insert(std::make_pair(sweep_elem, _sweeps.size()));
+        // Put the sweep on the list
+        _sweeps.push_back(new_sweep);
+    }
+}
+
+void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
+    std::vector<SweepData>::const_iterator it;
+    
+    for (it=_sweeps.begin();it!=_sweeps.end();++it) {
+        out_stream << it->_event_number << " ";
+        out_stream << it->_sweep_number << " ";
+        out_stream << it->_element_id << " ";
+        out_stream << it->_slip << " ";
+        out_stream << it->_area << " ";
+        out_stream << it->_mu << " ";
+        out_stream << it->_shear_init << " ";
+        out_stream << it->_shear_final << " ";
+        out_stream << it->_normal_init << " ";
+        out_stream << it->_normal_final;
+        
+        next_line(out_stream);
+    }
+}
+
+void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &descs) {
+    FieldDesc       field_desc;
+    
+    // Sweep table definition
+    field_desc.name = "event_number";
+    field_desc.details = "Event number corresponding to this sweep.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _event_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "sweep_number";
+    field_desc.details = "Sweep number.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _sweep_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "block_id";
+    field_desc.details = "Element ID.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _element_id);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "block_slip";
+    field_desc.details = "Slip on element in this sweep (meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _slip);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "block_area";
+    field_desc.details = "Area of element (square meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _area);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "block_mu";
+    field_desc.details = "Element Lame mu parameter (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _mu);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "shear_init";
+    field_desc.details = "Shear stress of element before sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _shear_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "shear_final";
+    field_desc.details = "Shear stress of element after sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _shear_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "normal_init";
+    field_desc.details = "Normal stress of element before sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _normal_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "normal_final";
+    field_desc.details = "Normal stress of element after sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _normal_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+}
+
+#define EVENT_TABLE_HDF5            "event_table"
+#define SWEEP_TABLE_HDF5            "event_sweep_table"
+
+void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    SweepData               blank_sweep;
+    char                    **field_names, **field_details;
+    size_t                  *field_offsets;
+    hid_t                   *field_types;
+    size_t                  *field_sizes;
+    herr_t                  res;
+    
+    // Set up the section table definition
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
+    field_offsets = new size_t[num_fields];
+    field_types = new hid_t[num_fields];
+    field_sizes = new size_t[num_fields];
+    
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+    
+    // Create the sweep table
+    res = H5TBmake_table("Sweeps Table",
+                         data_file,
+                         SWEEP_TABLE_HDF5,
+                         num_fields,
+                         0,
+                         sizeof(SweepData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_sweep,
+                         0,
+                         NULL);
+    
+    if (res < 0) exit(-1);
+    
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        
+        if (res < 0) exit(-1);
+    }
+    
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+    delete field_names;
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>                  descs;
+    std::vector<SweepData>::const_iterator  it;
+    size_t                                  num_fields, num_sweeps;
+    unsigned int                i;
+    SweepData                   *sweep_data;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+    
+    // Set up the section table definition
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    num_sweeps = _sweeps.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+    
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+    
+    // Fill in the data for the sections
+    sweep_data = new SweepData[num_sweeps];
+    
+    for (i=0,it=_sweeps.begin(); it!=_sweeps.end(); ++i,++it) {
+        memcpy(&(sweep_data[i]), &(*it), sizeof(SweepData));
+    }
+    
+    // Create the section table
+    res = H5TBappend_records(data_file,
+                             SWEEP_TABLE_HDF5,
+                             num_sweeps,
+                             sizeof(SweepData),
+                             field_offsets,
+                             field_sizes,
+                             sweep_data);
+    
+    if (res < 0) exit(-1);
+    
+    // Free memory for HDF5 related data
+    delete sweep_data;
+    
+    delete field_offsets;
+    delete field_sizes;
+}
+
+void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
+    FieldDesc       field_desc;
+    
+    field_desc.name = "event_number";
+    field_desc.details = "Event number";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_year";
+    field_desc.details = "Event year";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_year);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_trigger";
+    field_desc.details = "Event trigger element ID";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_trigger);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(UIndex);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_magnitude";
+    field_desc.details = "Event magnitude";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_magnitude);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_shear_init";
+    field_desc.details = "Total initial shear stress of elements involved in event (Pascals)";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _shear_stress_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_shear_final";
+    field_desc.details = "Total final shear stress of elements involved in event (Pascals)";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _shear_stress_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_normal_init";
+    field_desc.details = "Total initial normal stress of elements involved in event (Pascals)";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _normal_stress_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "event_normal_final";
+    field_desc.details = "Total final normal stress of elements involved in event (Pascals)";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _normal_stress_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "start_sweep_rec";
+    field_desc.details = "Starting record number of the sweeps comprising this event.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _start_sweep_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "end_sweep_rec";
+    field_desc.details = "Ending record number of the sweeps comprising this event.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _end_sweep_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+}
+
+
+void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    EventData               blank_event;
+    char                    **field_names, **field_details;
+    size_t                  *field_offsets;
+    hid_t                   *field_types;
+    size_t                  *field_sizes;
+    herr_t                  res;
+    
+    // Set up the section table definition
+    descs.clear();
+    ModelEvent::get_field_descs(descs);
+    num_fields = descs.size();
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
+    field_offsets = new size_t[num_fields];
+    field_types = new hid_t[num_fields];
+    field_sizes = new size_t[num_fields];
+    
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+    
+    // Create the sweep table
+    res = H5TBmake_table("Event Table",
+                         data_file,
+                         EVENT_TABLE_HDF5,
+                         num_fields,
+                         0,
+                         sizeof(EventData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_event,
+                         0,
+                         NULL);
+    
+    if (res < 0) exit(-1);
+    
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        
+        if (res < 0) exit(-1);
+    }
+    
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+    delete field_names;
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>                  descs;
+    std::vector<EventData>::const_iterator  it;
+    size_t                                  num_fields;
+    unsigned int                i;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+    
+    // Set up the section table definition
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+    
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+    
+    // Append the event record
+    res = H5TBappend_records(data_file,
+                             EVENT_TABLE_HDF5,
+                             1,
+                             sizeof(EventData),
+                             field_offsets,
+                             field_sizes,
+                             &(_data));
+    
+    if (res < 0) exit(-1);
+    
+    // Free memory for HDF5 related data
+    delete field_offsets;
+    delete field_sizes;
+}
