@@ -34,10 +34,13 @@ class RunEvent : public SimPlugin {
         quakelib::ElementIDSet  loose_elements;
         unsigned int            sweep_num;
 
-        void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
-        void processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep);
+        void processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
+        void processBlocksSecondaryFailures(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
         virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(VCSimulation *sim);
+
+        void processStaticFailure(VCSimulation *sim);
+        void processAftershock(VCSimulation *sim);
 
     public:
         virtual std::string name() const {

@@ -76,7 +76,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     int                     lid;
     BlockVal                next_static_fail, next_aftershock, next_event, next_event_global;
     quakelib::Conversion    convert;
-    VCEvent                 new_event;
+    quakelib::ModelEvent    new_event;
 
     // Calculate the current rates of stress change on all blocks
     stressRecompute();

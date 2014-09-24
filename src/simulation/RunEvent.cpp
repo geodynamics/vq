@@ -52,9 +52,9 @@ void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault) 
 /*!
  Process the list of blocks that failed on this node using the original friction law.
  */
-void RunEvent::processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep) {
-    BlockIDSet::iterator    fit;
-    double                  slip, stress_drop;
+void RunEvent::processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &sweeps) {
+    quakelib::ElementIDSet::iterator    fit;
+    double                              slip, stress_drop;
 
     // For each block that fails in this sweep, calculate how much it slips
     for (fit=local_failed_elements.begin(); fit!=local_failed_elements.end(); ++fit) {
@@ -76,8 +76,8 @@ void RunEvent::processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sw
             if (slip > -b.state.slipDeficit) slip = -b.state.slipDeficit;
 
             // Record how much the block slipped in this sweep and initial stresses
-            current_sweep.setSlipAndArea(b.getBlockID(), slip, b.area(), b.lame_mu());
-            current_sweep.setInitStresses(b.getBlockID(), b.getShearStress(), b.getNormalStress());
+            sweeps.setSlipAndArea(b.getBlockID(), sweep_num, slip, b.area(), b.lame_mu());
+            sweeps.setInitStresses(b.getBlockID(), sweep_num, b.getShearStress(), b.getNormalStress());
 
             b.state.slipDeficit += slip;
         }
@@ -113,7 +113,7 @@ void solve_it(int n, double *x, double *A, double *b) {
     }
 }
 
-void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep) {
+void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::ModelSweeps &sweeps) {
     int             lid;
     BlockID         gid;
     unsigned int    i, n;
@@ -209,8 +209,8 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
 
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresses
-            current_sweep.setSlipAndArea(block.getBlockID(), slip, block.area(), block.lame_mu());
-            current_sweep.setInitStresses(block.getBlockID(), block.getShearStress(), block.getNormalStress());
+            sweeps.setSlipAndArea(block.getBlockID(), sweep_num, slip, block.area(), block.lame_mu());
+            sweeps.setInitStresses(block.getBlockID(), sweep_num, block.getShearStress(), block.getNormalStress());
 
             block.state.slipDeficit += slip;
         }
@@ -227,22 +227,20 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
  failure functions. A single step in the failure propagation is called a sweep
  and multiple sweeps comprise an entire event.
  */
-SimRequest RunEvent::run(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+void RunEvent::processStaticFailure(VCSimulation *sim) {
     BlockList::iterator     it;
-    VCEvent::iterator       eit;
-    VCEventSweep            current_sweep;
+    quakelib::ModelSweeps   event_sweeps;
     BlockID                 triggerID, gid;
     FaultID                 trigger_fault;
-    int                     lid, more_blocks_to_fail;
-    EventSweeps             sweep_list;
+    int                     more_blocks_to_fail;
     bool                    final_sweep = false;
-    std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> nbr_start_end;
-    BlockIDSet::const_iterator  nit;
+    std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> nbr_start_end;
+    quakelib::ElementIDSet::const_iterator  nit;
 
     // Get the event trigger block and fault
     triggerID = sim->getCurrentEvent().getEventTrigger();
     trigger_fault = sim->getBlock(triggerID).getFaultID();
+    sweep_num = 0;
 
     // Clear the list of "loose" (can dynamically fail) blocks
     loose_elements.clear();
@@ -256,23 +254,16 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         sim->getBlock(triggerID).setFailed(true);
     }
 
-    // Save stress information at the beginning of the event
-    // This is used to determine dynamic block failure
-    for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).saveStresses();
-
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
 
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
-        // Clear the current sweep event
-        current_sweep.clear();
-
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
 
         // Process the blocks that failed
-        processBlocksOrigFail(sim, current_sweep);
+        processBlocksOrigFail(sim, event_sweeps);
 
         // Recalculate CFF for all blocks where slipped blocks don't contribute
         for (it=sim->begin(); it!=sim->end(); ++it) {
@@ -286,7 +277,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-            if (current_sweep.getBlockSlip(gid) > 0) {
+            // Add block neighbors if the block has slipped
+            if (sim->getUpdateField(gid) > 0) {
                 nbr_start_end = sim->getNeighbors(gid);
 
                 for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
@@ -311,7 +303,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         sim->computeCFFs();
 
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
-        processBlocksSecondaryFailures(sim, current_sweep);
+        processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
@@ -322,7 +314,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         }
 
         sim->distributeUpdateField();
-        
+
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
@@ -344,7 +336,10 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
                 Block &b = sim->getBlock(fit->first);
-                current_sweep.setFinalStresses(fit->first, b.getShearStress(), b.getNormalStress());
+                event_sweeps.setFinalStresses(fit->first,
+                                              sweep_num,
+                                              b.getShearStress(),
+                                              b.getNormalStress());
             }
         }
 
@@ -353,11 +348,6 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
         // Find any blocks that fail because of the new stresses
         markBlocks2Fail(sim, trigger_fault);
-        
-        sim->collectEventSweep(current_sweep);
-
-        // Add the recorded sweep to the list
-        sweep_list.push_back(current_sweep);
 
         if (final_sweep) {
             final_sweep = false;
@@ -366,10 +356,97 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
             if (!more_blocks_to_fail) final_sweep = true;
         }
+        sweep_num++;
+    }
+    
+    // Set the completed list as the sweep list for the entire event
+    sim->collectEventSweep(event_sweeps);
+    sim->getCurrentEvent().setSweeps(event_sweeps);
+}
+
+/*!
+ Process the next aftershock. This involves determining a suitable rupture area from an empirical relationship, finding the nearest elements,
+ */
+void RunEvent::processAftershock(VCSimulation *sim) {
+    std::map<double, BlockID>                   as_elem_dists;
+    std::map<double, BlockID>::const_iterator   it;
+    std::map<BlockID, double>                   elem_slips;
+    VCEventAftershock                           as;
+    BlockID                                     gid;
+    quakelib::ElementIDSet                      id_set;
+    quakelib::ElementIDSet::const_iterator      bit;
+    quakelib::Conversion                        convert;
+    quakelib::ModelSweeps                       event_sweeps;
+
+    // Pop the next aftershock off the list
+    as = sim->popAftershock();
+
+    // Calculate the distance from the aftershock to all elements
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        double as_to_elem_dist = sim->getBlock(gid).center().dist(as.loc());
+        as_elem_dists.insert(std::make_pair(as_to_elem_dist, gid));
     }
 
-    // Set the completed list as the sweep list for the entire event
-    sim->getCurrentEvent().addSweeps(sweep_list);
+    // Determine the target rupture area given the aftershock magnitude
+    // TODO: make this equation user specifiable?
+    double rupture_area = pow(10, -3.49+0.91*as.mag);
+    std::cerr << "mag: " << as.mag << " ra: " << rupture_area << std::endl;
+    double selected_rupture_area = 0;
+    double selected_rupture_area_mu = 0;
+
+    // Go through the elements, closest first, until we find enough to match the rupture area
+    for (it=as_elem_dists.begin(); it!=as_elem_dists.end(); ++it) {
+        Block &b=sim->getBlock(it->second);
+        selected_rupture_area += convert.sqm2sqkm(b.area());
+        selected_rupture_area_mu += b.area()*b.lame_mu();
+        id_set.insert(it->second);
+
+        if (selected_rupture_area > rupture_area) break;
+    }
+
+    // Determine the amount of slip needed to match the aftershock magnitude
+    // The contribution of each block to moment is based on its fraction of total area*mu
+    double total_moment = pow(10, (as.mag + 10.7)*(3.0/2.0))/1e7;
+
+    for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
+        Block &b=sim->getBlock(*bit);
+
+        // Calculate the slip based on the earthquake moment
+        double element_moment = total_moment*(b.area()*b.lame_mu()/selected_rupture_area_mu);
+        double element_slip = element_moment/(b.lame_mu()*b.area());
+
+        // Adjust the slip deficit appropriately
+        //b.state.slipDeficit += element_slip;
+
+        // Create the sweep describing this aftershock
+        // Since we don't distinguish sweeps, every slip occurs in sweep 0
+        event_sweeps.setSlipAndArea(*bit, 0, element_slip, b.area(), b.lame_mu());
+        event_sweeps.setInitStresses(*bit, 0, b.getShearStress(), b.getNormalStress());
+    }
+
+    // Recalculate stresses
+
+    //current_sweep.setFinalStresses(fit->first, b.getShearStress(), b.getNormalStress());
+
+    // Add sweeps to list
+    sim->getCurrentEvent().setSweeps(event_sweeps);
+}
+
+SimRequest RunEvent::run(SimFramework *_sim) {
+    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    int                     lid;
+
+    // Save stress information at the beginning of the event
+    // This is used to determine dynamic block failure
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).saveStresses();
+
+    // If there's a specific block that triggered the event, it's a static stress failure type event
+    if (sim->getCurrentEvent().getEventTrigger() != UNDEFINED_ELEMENT_ID) {
+        processStaticFailure(sim);
+    } else {
+        // Otherwise it's an aftershock
+        processAftershock(sim);
+    }
 
     // Record the stress in the system before and after the event
     recordEventStresses(sim);
@@ -380,7 +457,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         sim->getBlock(gid).setFailed(false);
     }
 
-    assertThrow(sim->getCurrentEvent().getNumSweeps() > 0, "There was a trigger but no failed blocks.");
+    // TODO: reinstate this check
+    //assertThrow(sim->getCurrentEvent().getNumSweeps() > 0, "There was a trigger but no failed blocks.");
 
     return SIM_STOP_OK;
 }
