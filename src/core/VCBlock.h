@@ -62,8 +62,9 @@ enum BlockValOp {
 };
 
 struct BlockSweepVals {
-    double      slip, init_shear, init_normal, final_shear, final_normal;
-    BlockID     block_id;
+    double          slip, init_shear, init_normal, final_shear, final_normal;
+    unsigned int    sweep_num;
+    BlockID         element_id;
 };
 
 typedef struct BlockSweepVals BlockSweepVals;
