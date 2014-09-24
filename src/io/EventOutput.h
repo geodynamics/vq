@@ -41,6 +41,7 @@ class EventOutput : public SimPlugin {
         void                *h5_data;
 #endif
         unsigned int        next_pause_check;
+        unsigned int        sweep_count;
         std::ofstream       event_outfile, sweep_outfile;
 
         bool pauseFileExists(void);

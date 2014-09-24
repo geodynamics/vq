@@ -69,6 +69,7 @@ void EventOutput::init(SimFramework *_sim) {
     BlockList::const_iterator   it;
 
     h5_data = NULL;
+    sweep_count = 0;
     next_pause_check = sim->itersPerSecond();
 
     // Only the root node writes to the output file
@@ -112,37 +113,15 @@ SimRequest EventOutput::run(SimFramework *_sim) {
         h5_data->writeEvent(sim->getCurrentEvent());
 #endif
     } else if (sim->getEventOutfileType() == "text") {
-        VCEvent &event = sim->getCurrentEvent();
-        ElementIDSet                involved_blocks;
-        EventSweeps::iterator       it;
-        VCEventSweep::iterator      eit;
-        unsigned int                i, sweep_num, rec_num;
-
-        // Count the number of sweep records
-        for (it=event.sweepBegin(),rec_num=0; it!=event.sweepEnd(); ++it) {
-            for (eit=it->begin(); eit!=it->end(); ++eit) {
-                rec_num++;
-            }
-        }
-
+        unsigned int num_sweeps = sim->getCurrentEvent().getSweeps().size();
         // Write the event details
-        event.getInvolvedElements(involved_blocks);
-        event_outfile << event.getEventNumber() << " " << event.getEventYear() << " ";
-        event_outfile << event.getEventTrigger() << " " << event.getMagnitude(involved_blocks) << " ";
-        event_outfile << event.getShearStressInit() << " " << event.getNormalStressInit() << " ";
-        event_outfile << event.getShearStressFinal() << " " << event.getNormalStressFinal() << "\n";
+        sim->getCurrentEvent().write_ascii(event_outfile);
+        sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
+        sweep_count += num_sweeps;
         event_outfile.flush();
-
-        // Write the sweeps
-        for (it=event.sweepBegin(),i=0,sweep_num=0; it!=event.sweepEnd(); ++it,++sweep_num) {
-            for (eit=it->begin(); eit!=it->end(); ++eit,++i) {
-                sweep_outfile << event.getEventNumber() << " " << sweep_num << " " << eit->first << " " << eit->second.slip << " ";
-                sweep_outfile << eit->second.area << " " << eit->second.mu << " ";
-                sweep_outfile << eit->second.shear_init << " " << eit->second.shear_final << " ";
-                sweep_outfile << eit->second.normal_init << " " << eit->second.normal_final << "\n";
-            }
-        }
-
+        
+        // Write the sweep details
+        sim->getCurrentEvent().getSweeps().write_ascii(sweep_outfile);
         sweep_outfile.flush();
     }
 
