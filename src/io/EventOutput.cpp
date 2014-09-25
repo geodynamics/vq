@@ -119,7 +119,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
         sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
         sweep_count += num_sweeps;
         event_outfile.flush();
-        
+
         // Write the sweep details
         sim->getCurrentEvent().getSweeps().write_ascii(sweep_outfile);
         sweep_outfile.flush();

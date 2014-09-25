@@ -592,9 +592,9 @@ namespace quakelib {
             int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
     };
-    
+
     typedef std::set<UIndex> ElementIDSet;
-    
+
     // Class recording data associated with a block that slipped during an event
     // mu is static, but we retain it for use in calculating magnitude.
     struct SweepData {
@@ -605,323 +605,325 @@ namespace quakelib {
         double      _shear_init, _shear_final;
         double      _normal_init, _normal_final;
     };
-    
+
     /*!
      An event consists of one or more sweeps. Each sweep is a list of failed blocks and
      the slip they experienced. This gives the order that the failure propagated
      through the fault(s).
      */
     class ModelSweeps : public ModelIO {
-    private:
-        //! The number of this sweep and the associated event number
-        UIndex      _event_number;
-        
-        //! All the sweeps associated with a single event
-        std::vector<SweepData>      _sweeps;
-        
-        //! Map of sweep/element to the location in the _sweeps vector
-        std::map<std::pair<UIndex, UIndex>, unsigned int>    _rel;
-        
-        // Get the index into _sweeps for the given sweep/element combination
-        // If it doesn't exist, create it
-        unsigned int sweepElementPos(const UIndex &sweep, const UIndex &elem) {
-            std::pair<UIndex, UIndex>       se = std::make_pair(sweep, elem);
-            if (_rel.count(se) == 0) {
-                SweepData new_data;
-                new_data._event_number = _event_number;
-                new_data._sweep_number = sweep;
-                new_data._element_id = elem;
-                _rel.insert(std::make_pair(se, _sweeps.size()));
-                _sweeps.push_back(new_data);
+        private:
+            //! The number of this sweep and the associated event number
+            UIndex      _event_number;
+
+            //! All the sweeps associated with a single event
+            std::vector<SweepData>      _sweeps;
+
+            //! Map of sweep/element to the location in the _sweeps vector
+            std::map<std::pair<UIndex, UIndex>, unsigned int>    _rel;
+
+            // Get the index into _sweeps for the given sweep/element combination
+            // If it doesn't exist, create it
+            unsigned int sweepElementPos(const UIndex &sweep, const UIndex &elem) {
+                std::pair<UIndex, UIndex>       se = std::make_pair(sweep, elem);
+
+                if (_rel.count(se) == 0) {
+                    SweepData new_data;
+                    new_data._event_number = _event_number;
+                    new_data._sweep_number = sweep;
+                    new_data._element_id = elem;
+                    _rel.insert(std::make_pair(se, _sweeps.size()));
+                    _sweeps.push_back(new_data);
+                }
+
+                return _rel.at(se);
             }
-            return _rel.at(se);
-        }
-        
-    public:
-        typedef std::vector<SweepData>::iterator       iterator;
-        typedef std::vector<SweepData>::const_iterator const_iterator;
-        
-        iterator begin(void) {
-            return _sweeps.begin();
-        };
-        iterator end(void) {
-            return _sweeps.end();
-        };
-        const_iterator begin(void) const {
-            return _sweeps.begin();
-        };
-        const_iterator end(void) const {
-            return _sweeps.end();
-        };
-        
-        void setSlipAndArea(const UIndex &sweep_number, const UIndex &element_id, const double &slip, const double &area, const double &mu) {
-            unsigned int    pos = sweepElementPos(sweep_number, element_id);
-            _sweeps[pos]._slip = slip;
-            _sweeps[pos]._area = area;
-            _sweeps[pos]._mu = mu;
-        };
-        
-        void setInitStresses(const UIndex &sweep_number, const UIndex &element_id, const double &shear_init, const double &normal_init) {
-            unsigned int    pos = sweepElementPos(sweep_number, element_id);
-            _sweeps[pos]._shear_init = shear_init;
-            _sweeps[pos]._normal_init = normal_init;
-        }
-        
-        void setFinalStresses(const UIndex &sweep_number, const UIndex &element_id, const double &shear_final, const double &normal_final) {
-            unsigned int    pos = sweepElementPos(sweep_number, element_id);
-            _sweeps[pos]._shear_final = shear_final;
-            _sweeps[pos]._normal_final = normal_final;
-        }
-        
-        void getInvolvedElements(ElementIDSet &element_id_set) const {
-            for (std::vector<SweepData>::const_iterator it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
-                element_id_set.insert(it->_element_id);
+
+        public:
+            typedef std::vector<SweepData>::iterator       iterator;
+            typedef std::vector<SweepData>::const_iterator const_iterator;
+
+            iterator begin(void) {
+                return _sweeps.begin();
+            };
+            iterator end(void) {
+                return _sweeps.end();
+            };
+            const_iterator begin(void) const {
+                return _sweeps.begin();
+            };
+            const_iterator end(void) const {
+                return _sweeps.end();
+            };
+
+            void setSlipAndArea(const UIndex &sweep_number, const UIndex &element_id, const double &slip, const double &area, const double &mu) {
+                unsigned int    pos = sweepElementPos(sweep_number, element_id);
+                _sweeps[pos]._slip = slip;
+                _sweeps[pos]._area = area;
+                _sweeps[pos]._mu = mu;
+            };
+
+            void setInitStresses(const UIndex &sweep_number, const UIndex &element_id, const double &shear_init, const double &normal_init) {
+                unsigned int    pos = sweepElementPos(sweep_number, element_id);
+                _sweeps[pos]._shear_init = shear_init;
+                _sweeps[pos]._normal_init = normal_init;
             }
-        }
-        
-        void clear(void) {
-            _event_number = UNDEFINED_EVENT_ID;
-            _sweeps.clear();
-            _rel.clear();
-        };
-        /*unsigned int count(const UIndex &element_id) const {
-            return element_vals.count(element_id);
-        };*/
-        unsigned int size(void) const {
-            return _sweeps.size();
-        };
-        
-        static void setup_sweeps_hdf5(const hid_t &data_file);
-        void append_sweeps_hdf5(const hid_t &data_file) const;
-        static void get_field_descs(std::vector<FieldDesc> &descs);
-        
-        void read_data(const SweepData &in_data);
-        void write_data(SweepData &out_data) const;
-        
-        void read_ascii(std::istream &in_stream, const unsigned int num_records);
-        void write_ascii(std::ostream &out_stream) const;
-        
-        friend std::ostream &operator<<(std::ostream &os, const SweepData &ms);
+
+            void setFinalStresses(const UIndex &sweep_number, const UIndex &element_id, const double &shear_final, const double &normal_final) {
+                unsigned int    pos = sweepElementPos(sweep_number, element_id);
+                _sweeps[pos]._shear_final = shear_final;
+                _sweeps[pos]._normal_final = normal_final;
+            }
+
+            void getInvolvedElements(ElementIDSet &element_id_set) const {
+                for (std::vector<SweepData>::const_iterator it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                    element_id_set.insert(it->_element_id);
+                }
+            }
+
+            void clear(void) {
+                _event_number = UNDEFINED_EVENT_ID;
+                _sweeps.clear();
+                _rel.clear();
+            };
+            /*unsigned int count(const UIndex &element_id) const {
+                return element_vals.count(element_id);
+            };*/
+            unsigned int size(void) const {
+                return _sweeps.size();
+            };
+
+            static void setup_sweeps_hdf5(const hid_t &data_file);
+            void append_sweeps_hdf5(const hid_t &data_file) const;
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+
+            void read_data(const SweepData &in_data);
+            void write_data(SweepData &out_data) const;
+
+            void read_ascii(std::istream &in_stream, const unsigned int num_records);
+            void write_ascii(std::ostream &out_stream) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const SweepData &ms);
     };
-    
+
     typedef std::map<UIndex, SweepData> EventElementMap;
-    
+
     struct EventData {
         //! The event number is used as a simple unique identifier for each event
         unsigned int    _event_number;
-        
+
         //! The year the event occurred
         double          _event_year;
-        
+
         //! The magnitude of the event
         double          _event_magnitude;
-        
+
         //! Which element triggered the event through a static friction failure
         UIndex          _event_trigger;
-        
+
         //! Start and end record of the sweeps comprising this event
         unsigned int    _start_sweep_rec, _end_sweep_rec;
-        
+
         //! Initial and final sum of shear stress on all elements involved in the event
         double          _shear_stress_init, _shear_stress_final;
-        
+
         //! Initial and final sum of normal stress on all elements involved in the event
         double          _normal_stress_init, _normal_stress_final;
     };
-    
+
     /*!
      A ModelEvent is a rupture of one or more blocks on one or more faults in a VC model.
      This consists of origin information (trigger block, year) and information about
      how the event propagated through the system (event sweeps).
      */
     class ModelEvent : public ModelIO {
-    private:
-        EventData       _data;
-        
-        //! Whether the event trigger element is on this node or not (used in parallel simulation)
-        bool            _event_trigger_on_this_node;
-        
-        //! The set of event sweeps
-        ModelSweeps     _sweeps;
-        
-        //! Sum of the sweep slips, used to quickly calculate magnitude
-        EventElementMap _total_slip;
-        
-        // TODO: add a flag indicating whether this is an aftershock?
-        
-    public:
-        typedef EventElementMap::iterator iterator;
-        typedef EventElementMap::const_iterator const_iterator;
-        
-        void setEventStresses(const double &init_shear, const double &final_shear,
-                              const double &init_normal, const double &final_normal) {
-            _data._shear_stress_init = init_shear;
-            _data._shear_stress_final = final_shear;
-            _data._normal_stress_init = init_normal;
-            _data._normal_stress_final = final_normal;
-        }
-        
-        const ModelSweeps &getSweeps(void) const {
-            return _sweeps;
-        };
-        
-        void setStartEndSweep(const unsigned int start_sweep, const unsigned int end_sweep) {
-            _data._start_sweep_rec = start_sweep;
-            _data._end_sweep_rec = end_sweep;
-        }
-        double getShearStressInit(void) {
-            return _data._shear_stress_init;
-        };
-        double getShearStressFinal(void) {
-            return _data._shear_stress_final;
-        };
-        double getNormalStressInit(void) {
-            return _data._normal_stress_init;
-        };
-        double getNormalStressFinal(void) {
-            return _data._normal_stress_final;
-        };
-        
-        //! Set the unique identifier number for this event
-        void setEventNumber(const unsigned int &event_number) {
-            _data._event_number = event_number;
-        };
-        //! Get the unique identifier number for this event
-        unsigned int getEventNumber(void) const {
-            return _data._event_number;
-        };
-        
-        //! Set the year this event occurred
-        void setEventYear(const double &event_year) {
-            _data._event_year = event_year;
-        };
-        //! Get the year this event occurred
-        double getEventYear(void) const {
-            return _data._event_year;
-        };
-        
-        //! Set the block that triggered this event
-        void setEventTrigger(const UIndex &event_trigger) {
-            _data._event_trigger = event_trigger;
-        };
-        //! Get the block that triggered this event
-        UIndex getEventTrigger(void) const {
-            return _data._event_trigger;
-        };
-        
-        //! Set whether this event occurred on this node
-        void setEventTriggerOnThisNode(const bool &totn) {
-            _event_trigger_on_this_node = totn;
-        };
-        //! Get whether this event occurred on this node
-        bool getEventTriggerOnThisNode(void) const {
-            return _event_trigger_on_this_node;
-        };
-        
-        //! Set the sweeps for this event to be those specified in the argument.
-        //! Also calculate relevant values related to these sweeps.
-        void setSweeps(const ModelSweeps &sweeps) {
-            ModelSweeps::iterator   it;
-            double                  moment = 0
-            ;
-            
-            _sweeps = sweeps;
-            _total_slip.clear();
-            
-            // Sum up sweep information for total_slip records
-            // and calculate magnitude at the same time
-            for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
-                it->_event_number = _data._event_number;
-                _total_slip[it->_element_id]._slip += it->_slip;
-                _total_slip[it->_element_id]._area = it->_area;
-                _total_slip[it->_element_id]._mu = it->_mu;
-                moment += it->_slip*it->_mu*it->_area;
+        private:
+            EventData       _data;
+
+            //! Whether the event trigger element is on this node or not (used in parallel simulation)
+            bool            _event_trigger_on_this_node;
+
+            //! The set of event sweeps
+            ModelSweeps     _sweeps;
+
+            //! Sum of the sweep slips, used to quickly calculate magnitude
+            EventElementMap _total_slip;
+
+            // TODO: add a flag indicating whether this is an aftershock?
+
+        public:
+            typedef EventElementMap::iterator iterator;
+            typedef EventElementMap::const_iterator const_iterator;
+
+            void setEventStresses(const double &init_shear, const double &final_shear,
+                                  const double &init_normal, const double &final_normal) {
+                _data._shear_stress_init = init_shear;
+                _data._shear_stress_final = final_shear;
+                _data._normal_stress_init = init_normal;
+                _data._normal_stress_final = final_normal;
             }
-            
-            _data._event_magnitude = (2.0/3.0)*log10(1e7*moment) - 10.7;
-        }
-        
-        //! Get the total amount a given block slipped during this event
-        double getEventSlip(const UIndex &element_id) const {
-            return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._slip : 0);
-        }
-        
-        //! Get the area of a given block that slipped during this event
-        double getEventArea(const UIndex &element_id) const {
-            return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._area : 0);
-        }
-        
-        //! Get the value of Mu for a given block
-        double getBlockMu(const UIndex &element_id) const {
-            return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._mu : 0);
-        }
-        
-        //! Get a set of block IDs for all the blocks that failed in this event.
-        void getInvolvedElements(ElementIDSet &element_id_set) const {
-            _sweeps.getInvolvedElements(element_id_set);
-        }
-        
-        //! Get the magnitude of the earthquake in this event based on the set of specified blocks.
-        double getMagnitude(const ElementIDSet &involved_elements) const {
-            ElementIDSet::const_iterator    it;
-            double                          moment;
-            
-            for (moment=0,it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
-                moment += getBlockMu(*it)*getEventSlip(*it)*getEventArea(*it);
+
+            const ModelSweeps &getSweeps(void) const {
+                return _sweeps;
+            };
+
+            void setStartEndSweep(const unsigned int start_sweep, const unsigned int end_sweep) {
+                _data._start_sweep_rec = start_sweep;
+                _data._end_sweep_rec = end_sweep;
             }
-            
-            return (2.0/3.0)*log10(1e7*moment) - 10.7;
-        }
-        
-        //! Get the magnitude of the earthquake in this event.
-        double getMagnitude(void) const {
-            ElementIDSet  block_id_set;
-            getInvolvedElements(block_id_set);
-            return getMagnitude(block_id_set);
-        }
-        
-        //! Get the total number of blocks that failed in this event.
-        unsigned int size(void) const {
-            return _total_slip.size();
-        };
-        //! Get the number of sweeps that occurred during this event.
-        /*unsigned int getNumSweeps(void) const {
-            return _sweeps.size();
-        };*/
-        
-        void clear(void) {
-            _data._event_number = nan("");
-            _data._event_year = nan("");
-            _data._event_trigger = UNDEFINED_ELEMENT_ID;
-            _sweeps.clear();
-            _total_slip.clear();
-        }
-        
-        /*iterator begin(void) {
-            return _total_slip.begin();
-        };
-        iterator end(void) {
-            return _total_slip.end();
-        };
-        
-        EventSweeps::iterator sweepBegin(void) {
-            return _event_sweeps.begin();
-        };
-        EventSweeps::iterator sweepEnd(void) {
-            return _event_sweeps.end();
-        };*/
-        
-        static void get_field_descs(std::vector<FieldDesc> &descs);
-        static void setup_event_hdf5(const hid_t &data_file);
-        void append_event_hdf5(const hid_t &data_file) const;
-        
-        void read_data(const EventData &in_data);
-        void write_data(EventData &out_data) const;
-        
-        void read_ascii(std::istream &in_stream);
-        void write_ascii(std::ostream &out_stream) const;
-        
-        friend std::ostream &operator<<(std::ostream &os, const ModelEvent &me);
+            double getShearStressInit(void) {
+                return _data._shear_stress_init;
+            };
+            double getShearStressFinal(void) {
+                return _data._shear_stress_final;
+            };
+            double getNormalStressInit(void) {
+                return _data._normal_stress_init;
+            };
+            double getNormalStressFinal(void) {
+                return _data._normal_stress_final;
+            };
+
+            //! Set the unique identifier number for this event
+            void setEventNumber(const unsigned int &event_number) {
+                _data._event_number = event_number;
+            };
+            //! Get the unique identifier number for this event
+            unsigned int getEventNumber(void) const {
+                return _data._event_number;
+            };
+
+            //! Set the year this event occurred
+            void setEventYear(const double &event_year) {
+                _data._event_year = event_year;
+            };
+            //! Get the year this event occurred
+            double getEventYear(void) const {
+                return _data._event_year;
+            };
+
+            //! Set the block that triggered this event
+            void setEventTrigger(const UIndex &event_trigger) {
+                _data._event_trigger = event_trigger;
+            };
+            //! Get the block that triggered this event
+            UIndex getEventTrigger(void) const {
+                return _data._event_trigger;
+            };
+
+            //! Set whether this event occurred on this node
+            void setEventTriggerOnThisNode(const bool &totn) {
+                _event_trigger_on_this_node = totn;
+            };
+            //! Get whether this event occurred on this node
+            bool getEventTriggerOnThisNode(void) const {
+                return _event_trigger_on_this_node;
+            };
+
+            //! Set the sweeps for this event to be those specified in the argument.
+            //! Also calculate relevant values related to these sweeps.
+            void setSweeps(const ModelSweeps &sweeps) {
+                ModelSweeps::iterator   it;
+                double                  moment = 0
+                                                 ;
+
+                _sweeps = sweeps;
+                _total_slip.clear();
+
+                // Sum up sweep information for total_slip records
+                // and calculate magnitude at the same time
+                for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                    it->_event_number = _data._event_number;
+                    _total_slip[it->_element_id]._slip += it->_slip;
+                    _total_slip[it->_element_id]._area = it->_area;
+                    _total_slip[it->_element_id]._mu = it->_mu;
+                    moment += it->_slip*it->_mu*it->_area;
+                }
+
+                _data._event_magnitude = (2.0/3.0)*log10(1e7*moment) - 10.7;
+            }
+
+            //! Get the total amount a given block slipped during this event
+            double getEventSlip(const UIndex &element_id) const {
+                return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._slip : 0);
+            }
+
+            //! Get the area of a given block that slipped during this event
+            double getEventArea(const UIndex &element_id) const {
+                return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._area : 0);
+            }
+
+            //! Get the value of Mu for a given block
+            double getBlockMu(const UIndex &element_id) const {
+                return (_total_slip.count(element_id) > 0 ? _total_slip.at(element_id)._mu : 0);
+            }
+
+            //! Get a set of block IDs for all the blocks that failed in this event.
+            void getInvolvedElements(ElementIDSet &element_id_set) const {
+                _sweeps.getInvolvedElements(element_id_set);
+            }
+
+            //! Get the magnitude of the earthquake in this event based on the set of specified blocks.
+            double getMagnitude(const ElementIDSet &involved_elements) const {
+                ElementIDSet::const_iterator    it;
+                double                          moment;
+
+                for (moment=0,it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
+                    moment += getBlockMu(*it)*getEventSlip(*it)*getEventArea(*it);
+                }
+
+                return (2.0/3.0)*log10(1e7*moment) - 10.7;
+            }
+
+            //! Get the magnitude of the earthquake in this event.
+            double getMagnitude(void) const {
+                ElementIDSet  block_id_set;
+                getInvolvedElements(block_id_set);
+                return getMagnitude(block_id_set);
+            }
+
+            //! Get the total number of blocks that failed in this event.
+            unsigned int size(void) const {
+                return _total_slip.size();
+            };
+            //! Get the number of sweeps that occurred during this event.
+            /*unsigned int getNumSweeps(void) const {
+                return _sweeps.size();
+            };*/
+
+            void clear(void) {
+                _data._event_number = nan("");
+                _data._event_year = nan("");
+                _data._event_trigger = UNDEFINED_ELEMENT_ID;
+                _sweeps.clear();
+                _total_slip.clear();
+            }
+
+            /*iterator begin(void) {
+                return _total_slip.begin();
+            };
+            iterator end(void) {
+                return _total_slip.end();
+            };
+
+            EventSweeps::iterator sweepBegin(void) {
+                return _event_sweeps.begin();
+            };
+            EventSweeps::iterator sweepEnd(void) {
+                return _event_sweeps.end();
+            };*/
+
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+            static void setup_event_hdf5(const hid_t &data_file);
+            void append_event_hdf5(const hid_t &data_file) const;
+
+            void read_data(const EventData &in_data);
+            void write_data(EventData &out_data) const;
+
+            void read_ascii(std::istream &in_stream);
+            void write_ascii(std::ostream &out_stream) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const ModelEvent &me);
     };
 }
 

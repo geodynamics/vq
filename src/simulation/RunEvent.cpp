@@ -356,9 +356,10 @@ void RunEvent::processStaticFailure(VCSimulation *sim) {
 
             if (!more_blocks_to_fail) final_sweep = true;
         }
+
         sweep_num++;
     }
-    
+
     // Set the completed list as the sweep list for the entire event
     sim->collectEventSweep(event_sweeps);
     sim->getCurrentEvent().setSweeps(event_sweeps);
