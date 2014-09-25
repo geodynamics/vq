@@ -118,7 +118,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     // Record the current event
     new_event.setEventTriggerOnThisNode(next_event_global.block_id==next_static_fail.block_id);
     new_event.setEventTrigger(next_event_global.block_id);
-    new_event.setEventYear(sim->getYear()+next_event_global.val);
+    new_event.setEventYear(sim->getYear());
     new_event.setEventNumber(sim->getEventCount());
     sim->addEvent(new_event);
 
