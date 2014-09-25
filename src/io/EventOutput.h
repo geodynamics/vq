@@ -45,8 +45,6 @@ class EventOutput : public SimPlugin {
         std::ofstream       event_outfile, sweep_outfile;
 
         bool pauseFileExists(void);
-        void writeEventFileHeader(void);
-        void writeSweepFileHeader(void);
 
     public:
         virtual std::string name(void) const {

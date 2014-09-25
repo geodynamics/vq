@@ -40,30 +40,6 @@ void EventOutput::initDesc(const SimFramework *_sim) const {
     sim->console() << "# Writing events in format " << sim->getEventOutfileType() << " to file " << sim->getEventOutfile() << std::endl;
 }
 
-void EventOutput::writeEventFileHeader(void) {
-    event_outfile << "# Event number" << "\n";
-    event_outfile << "# Event year" << "\n";
-    event_outfile << "# Event trigger element ID" << "\n";
-    event_outfile << "# Event magnitude" << "\n";
-    event_outfile << "# Total initial shear stress of elements involved in event (Pascals)" << "\n";
-    event_outfile << "# Total final shear stress of elements involved in event (Pascals)" << "\n";
-    event_outfile << "# Total initial normal stress of elements involved in event (Pascals)" << "\n";
-    event_outfile << "# Total final normal stress of elements involved in event (Pascals)" << "\n";
-}
-
-void EventOutput::writeSweepFileHeader(void) {
-    sweep_outfile << "# Event number corresponding to this sweep" << "\n";
-    sweep_outfile << "# Sweep number" << "\n";
-    sweep_outfile << "# Element ID" << "\n";
-    sweep_outfile << "# Slip on element in this sweep (meters)" << "\n";
-    sweep_outfile << "# Area of element (square meters)" << "\n";
-    sweep_outfile << "# Element Lame mu parameter (Pascals)" << "\n";
-    sweep_outfile << "# Shear stress of element before sweep (Pascals)" << "\n";
-    sweep_outfile << "# Shear stress of element after sweep (Pascals)" << "\n";
-    sweep_outfile << "# Normal stress of element before sweep (Pascals)" << "\n";
-    sweep_outfile << "# Normal stress of element after sweep (Pascals)" << "\n";
-}
-
 void EventOutput::init(SimFramework *_sim) {
     VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
     BlockList::const_iterator   it;
@@ -93,8 +69,8 @@ void EventOutput::init(SimFramework *_sim) {
                 exit(-1);
             }
 
-            writeEventFileHeader();
-            writeSweepFileHeader();
+            quakelib::ModelEvent::write_ascii_header(event_outfile);
+            quakelib::ModelSweeps::write_ascii_header(sweep_outfile);
         } else {
             std::cerr << "ERROR: Unknown output file type " << sim->getEventOutfileType() << std::endl;
             exit(-1);

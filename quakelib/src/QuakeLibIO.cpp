@@ -2374,6 +2374,26 @@ void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &de
     descs.push_back(field_desc);
 }
 
+void quakelib::ModelSweeps::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+    
+    // Write section header
+    ModelSweeps::get_field_descs(descs);
+    
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+    
+    out_stream << "# ";
+    
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+    
+    out_stream << "\n";
+}
+
 #define EVENT_TABLE_HDF5            "event_table"
 #define SWEEP_TABLE_HDF5            "event_sweep_table"
 
@@ -2501,7 +2521,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
 
     field_desc.name = "event_number";
-    field_desc.details = "Event number";
+    field_desc.details = "Event number.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _event_number);
     field_desc.type = H5T_NATIVE_UINT;
@@ -2510,7 +2530,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_year";
-    field_desc.details = "Event year";
+    field_desc.details = "Event year.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _event_year);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2519,7 +2539,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_trigger";
-    field_desc.details = "Event trigger element ID";
+    field_desc.details = "Event trigger element ID.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _event_trigger);
     field_desc.type = H5T_NATIVE_UINT;
@@ -2528,7 +2548,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_magnitude";
-    field_desc.details = "Event magnitude";
+    field_desc.details = "Event magnitude.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _event_magnitude);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2537,7 +2557,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_shear_init";
-    field_desc.details = "Total initial shear stress of elements involved in event (Pascals)";
+    field_desc.details = "Total initial shear stress of elements involved in event (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _shear_stress_init);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2546,7 +2566,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_shear_final";
-    field_desc.details = "Total final shear stress of elements involved in event (Pascals)";
+    field_desc.details = "Total final shear stress of elements involved in event (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _shear_stress_final);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2555,7 +2575,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_normal_init";
-    field_desc.details = "Total initial normal stress of elements involved in event (Pascals)";
+    field_desc.details = "Total initial normal stress of elements involved in event (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _normal_stress_init);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2564,7 +2584,7 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "event_normal_final";
-    field_desc.details = "Total final normal stress of elements involved in event (Pascals)";
+    field_desc.details = "Total final normal stress of elements involved in event (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(EventData, _normal_stress_final);
     field_desc.type = H5T_NATIVE_DOUBLE;
@@ -2591,6 +2611,25 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 }
 
+void quakelib::ModelEvent::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+    
+    // Write section header
+    ModelEvent::get_field_descs(descs);
+    
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+    
+    out_stream << "# ";
+    
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+    
+    out_stream << "\n";
+}
 
 void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
