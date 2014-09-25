@@ -686,9 +686,6 @@ namespace quakelib {
                 _sweeps.clear();
                 _rel.clear();
             };
-            /*unsigned int count(const UIndex &element_id) const {
-                return element_vals.count(element_id);
-            };*/
             unsigned int size(void) const {
                 return _sweeps.size();
             };
@@ -892,10 +889,6 @@ namespace quakelib {
             unsigned int size(void) const {
                 return _total_slip.size();
             };
-            //! Get the number of sweeps that occurred during this event.
-            /*unsigned int getNumSweeps(void) const {
-                return _sweeps.size();
-            };*/
 
             void clear(void) {
                 _data._event_number = nan("");
