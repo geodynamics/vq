@@ -722,14 +722,14 @@ namespace quakelib {
         //! Which element triggered the event through a static friction failure
         UIndex          _event_trigger;
 
-        //! Start and end record of the sweeps comprising this event
-        unsigned int    _start_sweep_rec, _end_sweep_rec;
-
         //! Initial and final sum of shear stress on all elements involved in the event
         double          _shear_stress_init, _shear_stress_final;
 
         //! Initial and final sum of normal stress on all elements involved in the event
         double          _normal_stress_init, _normal_stress_final;
+        
+        //! Start and end record of the sweeps comprising this event
+        unsigned int    _start_sweep_rec, _end_sweep_rec;
     };
 
     /*!

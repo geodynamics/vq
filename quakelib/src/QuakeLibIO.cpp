@@ -2215,12 +2215,12 @@ void quakelib::ModelEvent::read_ascii(std::istream &in_stream) {
     ss >> _data._event_year;
     ss >> _data._event_trigger;
     ss >> _data._event_magnitude;
-    ss >> _data._start_sweep_rec;
-    ss >> _data._end_sweep_rec;
     ss >> _data._shear_stress_init;
     ss >> _data._shear_stress_final;
     ss >> _data._normal_stress_init;
     ss >> _data._normal_stress_final;
+    ss >> _data._start_sweep_rec;
+    ss >> _data._end_sweep_rec;
 }
 
 void quakelib::ModelEvent::write_ascii(std::ostream &out_stream) const {
@@ -2228,12 +2228,12 @@ void quakelib::ModelEvent::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._event_year << " ";
     out_stream << _data._event_trigger << " ";
     out_stream << _data._event_magnitude << " ";
-    out_stream << _data._start_sweep_rec << " ";
-    out_stream << _data._end_sweep_rec << " ";
     out_stream << _data._shear_stress_init << " ";
     out_stream << _data._shear_stress_final << " ";
     out_stream << _data._normal_stress_init << " ";
-    out_stream << _data._normal_stress_final;
+    out_stream << _data._normal_stress_final << " ";
+    out_stream << _data._start_sweep_rec << " ";
+    out_stream << _data._end_sweep_rec;
 
     next_line(out_stream);
 }
