@@ -821,16 +821,24 @@ namespace quakelib {
         //! Set the sweeps for this event to be those specified in the argument.
         //! Also calculate relevant values related to these sweeps.
         void setSweeps(const ModelSweeps &sweeps) {
-            ModelSweeps::const_iterator         it;
+            ModelSweeps::iterator   it;
+            double                  moment = 0
+            ;
             
             _sweeps = sweeps;
             _total_slip.clear();
             
+            // Sum up sweep information for total_slip records
+            // and calculate magnitude at the same time
             for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                it->_event_number = _data._event_number;
                 _total_slip[it->_element_id]._slip += it->_slip;
                 _total_slip[it->_element_id]._area = it->_area;
                 _total_slip[it->_element_id]._mu = it->_mu;
+                moment += it->_slip*it->_mu*it->_area;
             }
+            
+            _data._event_magnitude = (2.0/3.0)*log10(1e7*moment) - 10.7;
         }
         
         //! Get the total amount a given block slipped during this event
