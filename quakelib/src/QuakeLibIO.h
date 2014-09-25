@@ -165,8 +165,6 @@ namespace quakelib {
             static void get_field_descs(std::vector<FieldDesc> &descs);
 
             void apply_remap(const ModelRemapping &remap);
-            // Recalculate the Cartesian location of this vertex based on the new base coordinate
-            //void change_base(const LatLonDepth &new_base) { Conversion c(new_base); set_xyz(c.convert2xyz(lld())); };
 
             void read_data(const VertexData &in_data);
             void write_data(VertexData &out_data) const;
@@ -433,7 +431,6 @@ namespace quakelib {
 
                 return *this;
             };
-            //fiterator &operator++(int) { fiterator tmp(*this); ++(*this); return tmp; };
             ModelSection &operator*(void) {
                 return _it->second;
             };
@@ -482,7 +479,6 @@ namespace quakelib {
 
                 return *this;
             };
-            //eiterator &operator++(int) { eiterator tmp(*this); ++(*this); return tmp; };
             ModelElement &operator*(void) {
                 return _it->second;
             };
