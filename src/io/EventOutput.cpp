@@ -136,16 +136,16 @@ void EventOutput::init(SimFramework *_sim) {
 SimRequest EventOutput::run(SimFramework *_sim) {
     VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
 
+    unsigned int num_sweeps = sim->getCurrentEvent().getSweeps().size();
+    sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
+    sweep_count += num_sweeps;
     if (sim->getEventOutfileType() == "hdf5") {
 #ifdef HDF5_FOUND
         sim->getCurrentEvent().append_event_hdf5(data_file);
 #endif
     } else if (sim->getEventOutfileType() == "text") {
-        unsigned int num_sweeps = sim->getCurrentEvent().getSweeps().size();
         // Write the event details
         sim->getCurrentEvent().write_ascii(event_outfile);
-        sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
-        sweep_count += num_sweeps;
         event_outfile.flush();
 
         // Write the sweep details
