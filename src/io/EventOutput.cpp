@@ -40,22 +40,74 @@ void EventOutput::initDesc(const SimFramework *_sim) const {
     sim->console() << "# Writing events in format " << sim->getEventOutfileType() << " to file " << sim->getEventOutfile() << std::endl;
 }
 
+/*!
+ Initialize the HDF5 writer using the specified model dimensions.
+ */
+#ifdef HDF5_FOUND
+void EventOutput::open_hdf5_file(const std::string &hdf5_file_name, const double &start_year, const double &end_year) {
+    hid_t   plist_id;
+    herr_t  status;
+    double  tmp[2];
+    hid_t   sim_years_set;
+    hid_t   pair_val_dataspace;
+    hsize_t dimsf[2];
+    
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+    
+    if (plist_id < 0) exit(-1);
+    
+#ifdef MPI_C_FOUND
+#ifdef H5_HAVE_PARALLEL
+    //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+#endif
+#endif
+    // Create the data file, overwriting any old files
+    data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    
+    if (data_file < 0) exit(-1);
+    
+    // Create dataspace for pairs of values
+    dimsf[0] = 2;
+    pair_val_dataspace = H5Screate_simple(1, dimsf, NULL);
+    
+    // Create entries for the simulation start/stop years and base longitude/latitude
+    sim_years_set = H5Dcreate2(data_file, "sim_years", H5T_NATIVE_DOUBLE, pair_val_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    
+    if (sim_years_set < 0) exit(-1);
+    
+    // Create the event table
+    quakelib::ModelEvent::setup_event_hdf5(data_file);
+    
+    // Create the event sweeps table
+    quakelib::ModelSweeps::setup_sweeps_hdf5(data_file);
+    
+    // Record the simulation start/end years
+    tmp[0] = start_year;
+    tmp[1] = end_year;
+    status = H5Dwrite(sim_years_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
+    herr_t      res;
+    
+    // Close the handles we've used
+    res = H5Dclose(sim_years_set);
+    if (res < 0) exit(-1);
+    
+    H5Pclose(plist_id);
+}
+#endif
+
 void EventOutput::init(SimFramework *_sim) {
     VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
     BlockList::const_iterator   it;
 
-    h5_data = NULL;
     sweep_count = 0;
+    data_file = 0;
     next_pause_check = sim->itersPerSecond();
 
     // Only the root node writes to the output file
     if (sim->isRootNode()) {
         if (sim->getEventOutfileType() == "hdf5") {
 #ifdef HDF5_FOUND
-            h5_data = new HDF5DataWriter(sim->getEventOutfile());
-
-            // Set the start and end years of the simulation
-            h5_data->setStartEndYears(sim->getYear(), sim->getSimDuration());
+            open_hdf5_file(sim->getEventOutfile(), sim->getYear(), sim->getSimDuration());
 #else
             std::cerr << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
             exit(-1);
@@ -86,7 +138,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 
     if (sim->getEventOutfileType() == "hdf5") {
 #ifdef HDF5_FOUND
-        h5_data->writeEvent(sim->getCurrentEvent());
+        sim->getCurrentEvent().append_event_hdf5(data_file);
 #endif
     } else if (sim->getEventOutfileType() == "text") {
         unsigned int num_sweeps = sim->getCurrentEvent().getSweeps().size();
@@ -108,7 +160,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
         if (sim->isRootNode() && pauseFileExists()) {
             // Flush out the HDF5 data
 #ifdef HDF5_FOUND
-            h5_data->flush();
+            H5Fflush(data_file, H5F_SCOPE_GLOBAL);
 #endif
             sim->console() << "# Pausing simulation due to presence of file " << PAUSE_FILE_NAME << std::endl;
 
@@ -135,9 +187,11 @@ void EventOutput::finish(SimFramework *_sim) {
     VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
 
 #ifdef HDF5_FOUND
-
-    if (h5_data) delete h5_data;
-
+    if (data_file) {
+        herr_t      res;
+        res = H5Fclose(data_file);
+        if (res < 0) exit(-1);
+    }
 #endif
 
     if (sim->getEventOutfileType() == "text") {

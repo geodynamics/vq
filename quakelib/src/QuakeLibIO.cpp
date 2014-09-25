@@ -1257,7 +1257,7 @@ void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     // Create the section table
     res = H5TBmake_table("Fault Sections",
                          data_file,
-                         "sections",
+                         ModelSection::hdf5_table_name().c_str(),
                          num_fields,
                          num_sections,
                          sizeof(SectionData),
@@ -1275,7 +1275,10 @@ void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelSection::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -2394,9 +2397,6 @@ void quakelib::ModelSweeps::write_ascii_header(std::ostream &out_stream) {
     out_stream << "\n";
 }
 
-#define EVENT_TABLE_HDF5            "event_table"
-#define SWEEP_TABLE_HDF5            "event_sweep_table"
-
 void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
@@ -2433,7 +2433,7 @@ void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     // Create the sweep table
     res = H5TBmake_table("Sweeps Table",
                          data_file,
-                         SWEEP_TABLE_HDF5,
+                         ModelSweeps::hdf5_table_name().c_str(),
                          num_fields,
                          0,
                          sizeof(SweepData),
@@ -2451,7 +2451,7 @@ void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file, ModelSweeps::hdf5_table_name().c_str(), ss.str().c_str(), field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -2501,7 +2501,7 @@ void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
 
     // Create the section table
     res = H5TBappend_records(data_file,
-                             SWEEP_TABLE_HDF5,
+                             ModelSweeps::hdf5_table_name().c_str(),
                              num_sweeps,
                              sizeof(SweepData),
                              field_offsets,
@@ -2664,10 +2664,10 @@ void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
-    // Create the sweep table
+    // Create the event table
     res = H5TBmake_table("Event Table",
                          data_file,
-                         EVENT_TABLE_HDF5,
+                         ModelEvent::hdf5_table_name().c_str(),
                          num_fields,
                          0,
                          sizeof(EventData),
@@ -2685,7 +2685,10 @@ void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelEvent::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -2704,17 +2707,16 @@ void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
 }
 
 void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
-    std::vector<FieldDesc>                  descs;
-    std::vector<EventData>::const_iterator  it;
-    size_t                                  num_fields;
-    unsigned int                i;
-    size_t                      *field_offsets;
-    size_t                      *field_sizes;
-    herr_t                      res;
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    size_t                  *field_offsets;
+    size_t                  *field_sizes;
+    herr_t                  res;
 
     // Set up the section table definition
     descs.clear();
-    ModelSweeps::get_field_descs(descs);
+    ModelEvent::get_field_descs(descs);
     num_fields = descs.size();
     field_offsets = new size_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -2726,7 +2728,7 @@ void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
 
     // Append the event record
     res = H5TBappend_records(data_file,
-                             EVENT_TABLE_HDF5,
+                             ModelEvent::hdf5_table_name().c_str(),
                              1,
                              sizeof(EventData),
                              field_offsets,

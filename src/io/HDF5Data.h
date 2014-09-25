@@ -42,10 +42,6 @@
 #define GREEN_SHEAR_HDF5            "greens_shear"
 #define GREEN_NORMAL_HDF5           "greens_normal"
 
-// HDF5 file data definitions
-#define SIM_YEARS_HDF5              "sim_years"
-#define BASE_LAT_LON_HDF5           "base_lat_lon"
-
 // State checkpoint table definitions
 #define CHECKPOINT_STATE_HDF5       "checkpoint_state"
 #define CHECKPOINT_YEAR_HDF5        "checkpoint_year"
@@ -124,33 +120,6 @@ class HDF5GreensDataWriter : public HDF5GreensData {
     public:
         HDF5GreensDataWriter(const std::string &hdf5_file_name, const unsigned int &nblocks);
         void setGreensVals(const int &bid, const double *shear_vals, const double *norm_vals);
-};
-
-class HDF5Data {
-    protected:
-        // HDF5 handle to data file
-        hid_t               data_file;
-
-        // Handles to data in the file
-        hid_t               sim_years_set;
-
-        // Handles to data space specifications
-        hid_t               pair_val_dataspace;
-
-        void createH5Handles(void);
-
-    public:
-        HDF5Data(void) {};
-        ~HDF5Data(void);
-};
-
-class HDF5DataWriter : public HDF5Data {
-    public:
-        HDF5DataWriter(const std::string &hdf5_file_name);
-        void setStartEndYears(const double &new_start_year, const double &new_end_year);
-        void flush(void);
-
-        void writeEvent(void);
 };
 
 #endif

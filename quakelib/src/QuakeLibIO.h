@@ -693,6 +693,11 @@ namespace quakelib {
                 return _sweeps.size();
             };
 
+#ifdef HDF5_FOUND
+        static std::string hdf5_table_name(void) {
+            return "sweeps";
+        };
+#endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
             static void setup_sweeps_hdf5(const hid_t &data_file);
@@ -914,6 +919,11 @@ namespace quakelib {
                 return _event_sweeps.end();
             };*/
 
+#ifdef HDF5_FOUND
+        static std::string hdf5_table_name(void) {
+            return "events";
+        };
+#endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
             static void setup_event_hdf5(const hid_t &data_file);
