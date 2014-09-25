@@ -80,8 +80,8 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     // Remove the initial seed event (main shock)
     events_to_process.erase(events_to_process.begin());
 
-    // Finally we sort the events into time order since the aftershocks in the
-    // BASS model are usually not generated in ordered time sequence.
+    // Finally we add the aftershocks to the simulation list. This is
+    // a set so we don't need to sort the aftershocks manually.
     for (it=events_to_process.begin(); it!=events_to_process.end(); ++it) {
         sim->addAftershock(*it);
     }

@@ -390,7 +390,6 @@ void RunEvent::processAftershock(VCSimulation *sim) {
     // Determine the target rupture area given the aftershock magnitude
     // TODO: make this equation user specifiable?
     double rupture_area = pow(10, -3.49+0.91*as.mag);
-    std::cerr << "mag: " << as.mag << " ra: " << rupture_area << std::endl;
     double selected_rupture_area = 0;
     double selected_rupture_area_mu = 0;
 
@@ -458,7 +457,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     }
 
     // TODO: reinstate this check
-    //assertThrow(sim->getCurrentEvent().getNumSweeps() > 0, "There was a trigger but no failed blocks.");
+    assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
 
     return SIM_STOP_OK;
 }

@@ -86,7 +86,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
 
     // Get the next aftershock event time
     nextAftershock(next_aftershock);
-
+    
     // Take whichever is sooner, with ties going in favor of aftershocks
     if (next_static_fail.val < next_aftershock.val) {
         next_event.val = next_static_fail.val;
@@ -133,11 +133,10 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
 void UpdateBlockStress::nextAftershock(BlockVal &next_aftershock) {
     if (sim->isRootNode() && sim->numAftershocksToProcess() > 0) {
         next_aftershock.val = sim->nextAftershockTime() - sim->getYear();
-        next_aftershock.block_id = UNDEFINED_ELEMENT_ID;
     } else {
         next_aftershock.val = DBL_MAX;
-        next_aftershock.block_id = UNDEFINED_ELEMENT_ID;
     }
+    next_aftershock.block_id = UNDEFINED_ELEMENT_ID;
 }
 
 /*!
