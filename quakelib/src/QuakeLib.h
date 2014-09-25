@@ -33,8 +33,6 @@
 #ifndef _QUAKELIB_H_
 #define _QUAKELIB_H_
 
-// TODO: add default constructors to blank out objects
-
 namespace quakelib {
     //! Represents a complete triangular or rectangular element for use in a simulation.
     class SimElement {
@@ -61,6 +59,15 @@ namespace quakelib {
             double      _max_slip;
 
         public:
+            SimElement(void) {
+                _vert[0] = Vec<3>();
+                _vert[1] = Vec<3>();
+                _vert[2] = Vec<3>();
+                _is_quad = false;
+                _rake = _slip_rate = _aseis_factor = nan("");
+                _lame_mu = _lame_lambda = nan("");
+                _static_strength = _dynamic_strength = _max_slip = nan("");
+            }
             //! Calculate the stress tensor at a location with Lame parameters lambda and mu
             //! caused by this element moving unit_slip meters.
             Tensor<3,3> calc_stress_tensor(const Vec<3> &location, const double &unit_slip, const double &loc_lambda, const double &loc_mu) const throw(std::invalid_argument);

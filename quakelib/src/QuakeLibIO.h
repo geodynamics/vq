@@ -640,6 +640,8 @@ namespace quakelib {
             }
 
         public:
+            ModelSweeps(void) : _event_number(UNDEFINED_EVENT_ID) {};
+        
             typedef std::vector<SweepData>::iterator       iterator;
             typedef std::vector<SweepData>::const_iterator const_iterator;
 
@@ -755,6 +757,16 @@ namespace quakelib {
             // TODO: add a flag indicating whether this is an aftershock?
 
         public:
+            ModelEvent(void) {
+                _event_trigger_on_this_node = false;
+
+                _data._event_number = UNDEFINED_EVENT_ID;
+                _data._event_year = _data._event_magnitude = nan("");
+                _data._event_trigger = UNDEFINED_EVENT_ID;
+                _data._shear_stress_init = _data._shear_stress_final = nan("");
+                _data._normal_stress_init = _data._normal_stress_final = nan("");
+                _data._start_sweep_rec = _data._end_sweep_rec = UNDEFINED_EVENT_ID;
+            }
             typedef EventElementMap::iterator iterator;
             typedef EventElementMap::const_iterator const_iterator;
 
