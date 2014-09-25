@@ -76,8 +76,15 @@ void RunEvent::processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &s
             if (slip > -b.state.slipDeficit) slip = -b.state.slipDeficit;
 
             // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(b.getBlockID(), sweep_num, slip, b.area(), b.lame_mu());
-            sweeps.setInitStresses(b.getBlockID(), sweep_num, b.getShearStress(), b.getNormalStress());
+            sweeps.setSlipAndArea(sweep_num,
+                                  b.getBlockID(),
+                                  slip,
+                                  b.area(),
+                                  b.lame_mu());
+            sweeps.setInitStresses(sweep_num,
+                                   b.getBlockID(),
+                                   b.getShearStress(),
+                                   b.getNormalStress());
 
             b.state.slipDeficit += slip;
         }
@@ -209,8 +216,15 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::Model
 
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(block.getBlockID(), sweep_num, slip, block.area(), block.lame_mu());
-            sweeps.setInitStresses(block.getBlockID(), sweep_num, block.getShearStress(), block.getNormalStress());
+            sweeps.setSlipAndArea(sweep_num,
+                                  block.getBlockID(),
+                                  slip,
+                                  block.area(),
+                                  block.lame_mu());
+            sweeps.setInitStresses(sweep_num,
+                                   block.getBlockID(),
+                                   block.getShearStress(),
+                                   block.getNormalStress());
 
             block.state.slipDeficit += slip;
         }
@@ -336,8 +350,8 @@ void RunEvent::processStaticFailure(VCSimulation *sim) {
         for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
                 Block &b = sim->getBlock(fit->first);
-                event_sweeps.setFinalStresses(fit->first,
-                                              sweep_num,
+                event_sweeps.setFinalStresses(sweep_num,
+                                              fit->first,
                                               b.getShearStress(),
                                               b.getNormalStress());
             }
@@ -420,13 +434,17 @@ void RunEvent::processAftershock(VCSimulation *sim) {
 
         // Create the sweep describing this aftershock
         // Since we don't distinguish sweeps, every slip occurs in sweep 0
-        event_sweeps.setSlipAndArea(*bit, 0, element_slip, b.area(), b.lame_mu());
-        event_sweeps.setInitStresses(*bit, 0, b.getShearStress(), b.getNormalStress());
+        event_sweeps.setSlipAndArea(0, *bit, element_slip, b.area(), b.lame_mu());
+        event_sweeps.setInitStresses(0, *bit, b.getShearStress(), b.getNormalStress());
     }
 
     // Recalculate stresses
 
-    //current_sweep.setFinalStresses(fit->first, b.getShearStress(), b.getNormalStress());
+    // Record final stresses on each block involved in the aftershock
+    for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
+        Block &b=sim->getBlock(*bit);
+        event_sweeps.setFinalStresses(0, *bit, b.getShearStress(), b.getNormalStress());
+    }
 
     // Add sweeps to list
     sim->getCurrentEvent().setSweeps(event_sweeps);

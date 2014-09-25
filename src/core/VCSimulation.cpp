@@ -656,17 +656,17 @@ void VCSimulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
         for (i=0; i<total_sweep_count; ++i) {
             BlockID         bid = all_sweeps[i].element_id;
             unsigned int    sweep_num = all_sweeps[i].sweep_num;
-            sweeps.setSlipAndArea(bid,
-                                  sweep_num,
+            sweeps.setSlipAndArea(sweep_num,
+                                  bid,
                                   all_sweeps[i].slip,
                                   getBlock(bid).area(),
                                   getBlock(bid).lame_mu());
-            sweeps.setInitStresses(bid,
-                                   sweep_num,
+            sweeps.setInitStresses(sweep_num,
+                                   bid,
                                    all_sweeps[i].init_shear,
                                    all_sweeps[i].init_normal);
-            sweeps.setFinalStresses(bid,
-                                    sweep_num,
+            sweeps.setFinalStresses(sweep_num,
+                                    bid,
                                     all_sweeps[i].final_shear,
                                     all_sweeps[i].final_normal);
         }
