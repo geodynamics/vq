@@ -1346,7 +1346,7 @@ void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     // Create the elements table
     res = H5TBmake_table("Elements",
                          data_file,
-                         "elements",
+                         ModelElement::hdf5_table_name().c_str(),
                          num_fields,
                          num_elements,
                          sizeof(ElementData),
@@ -1364,7 +1364,10 @@ void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "elements", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelElement::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -1432,7 +1435,7 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     // Create the vertices table
     res = H5TBmake_table("Vertices",
                          data_file,
-                         "vertices",
+                         ModelVertex::hdf5_table_name().c_str(),
                          num_fields,
                          num_vertices,
                          sizeof(VertexData),
@@ -1450,7 +1453,10 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "vertices", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelVertex::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -2296,7 +2302,7 @@ void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &de
     descs.push_back(field_desc);
 
     field_desc.name = "sweep_number";
-    field_desc.details = "Sweep number.";
+    field_desc.details = "Sweep number within the event.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SweepData, _sweep_number);
     field_desc.type = H5T_NATIVE_UINT;
