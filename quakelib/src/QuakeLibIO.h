@@ -704,7 +704,7 @@ namespace quakelib {
             void read_ascii(std::istream &in_stream, const unsigned int num_records);
             void write_ascii(std::ostream &out_stream) const;
 
-            friend std::ostream &operator<<(std::ostream &os, const SweepData &ms);
+            friend std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms);
     };
 
     typedef std::map<UIndex, SweepData> EventElementMap;

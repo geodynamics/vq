@@ -2740,11 +2740,14 @@ void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
     delete field_sizes;
 }
 
-std::ostream &operator<<(std::ostream &os, const quakelib::ModelSweeps &ms) {
-    return os;
-}
+namespace quakelib {
+    std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms) {
+        os << "SWEEPS(" << ms._sweeps.size() << ")";
+        return os;
+    }
 
-std::ostream &operator<<(std::ostream &os, const quakelib::ModelEvent &me) {
-    //os << me._data._event_number << " " << me._data._event_year;
-    return os;
+    std::ostream &operator<<(std::ostream &os, const ModelEvent &me) {
+        os << me._data._event_number << " " << me._data._event_year;
+        return os;
+    }
 }
