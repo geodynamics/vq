@@ -60,9 +60,9 @@ namespace quakelib {
 
         public:
             SimElement(void) {
-                _vert[0] = Vec<3>();
-                _vert[1] = Vec<3>();
-                _vert[2] = Vec<3>();
+                _vert[0] = Vec<3>::nan_vec();
+                _vert[1] = Vec<3>::nan_vec();
+                _vert[2] = Vec<3>::nan_vec();
                 _is_quad = false;
                 _rake = _slip_rate = _aseis_factor = nan("");
                 _lame_mu = _lame_lambda = nan("");
