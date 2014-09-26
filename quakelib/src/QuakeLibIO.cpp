@@ -2748,6 +2748,36 @@ void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
     delete field_sizes;
 }
 
+int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name) {
+    std::ifstream   event_file, sweep_file;
+    ModelSweeps     file_sweeps;
+    
+    // Try to open the event file
+    event_file.open(event_file_name.c_str());
+    if (!event_file.is_open()) return -1;
+    
+    // Try to open the sweeps file
+    sweep_file.open(sweep_file_name.c_str());
+    if (!sweep_file.is_open()) return -1;
+    
+    // Keep going until we hit the end of either file
+    while (!event_file.eof() && !sweep_file.eof()) {
+        ModelEvent  new_event;
+        ModelSweeps new_sweeps;
+        new_event.read_ascii(event_file);
+        unsigned int num_rec_sweeps = new_event.getNumRecordedSweeps();
+        new_sweeps.read_ascii(sweep_file, num_rec_sweeps);
+        new_event.setSweeps(new_sweeps);
+        _events.push_back(new_event);
+    }
+    
+    // Close the files
+    event_file.close();
+    sweep_file.close();
+    
+    return 0;
+}
+
 namespace quakelib {
     std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms) {
         os << "SWEEPS(" << ms._sweeps.size() << ")";

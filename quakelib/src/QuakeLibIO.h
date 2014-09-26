@@ -782,6 +782,9 @@ namespace quakelib {
                 _data._start_sweep_rec = start_sweep;
                 _data._end_sweep_rec = end_sweep;
             }
+            unsigned int getNumRecordedSweeps(void) const {
+                return _data._end_sweep_rec - _data._start_sweep_rec;
+            };
             double getShearStressInit(void) {
                 return _data._shear_stress_init;
             };
@@ -906,24 +909,10 @@ namespace quakelib {
                 _total_slip.clear();
             }
 
-            /*iterator begin(void) {
-                return _total_slip.begin();
-            };
-            iterator end(void) {
-                return _total_slip.end();
-            };
-
-            EventSweeps::iterator sweepBegin(void) {
-                return _event_sweeps.begin();
-            };
-            EventSweeps::iterator sweepEnd(void) {
-                return _event_sweeps.end();
-            };*/
-
 #ifdef HDF5_FOUND
-        static std::string hdf5_table_name(void) {
-            return "events";
-        };
+            static std::string hdf5_table_name(void) {
+                return "events";
+            };
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -937,6 +926,24 @@ namespace quakelib {
             void write_ascii(std::ostream &out_stream) const;
 
             friend std::ostream &operator<<(std::ostream &os, const ModelEvent &me);
+    };
+    
+    class ModelEventSet {
+    private:
+        std::vector<ModelEvent>     _events;
+        
+    public:
+        typedef std::vector<ModelEvent>::iterator       iterator;
+        typedef std::vector<ModelEvent>::const_iterator const_iterator;
+        
+        iterator begin(void) {
+            return _events.begin();
+        };
+        iterator end(void) {
+            return _events.end();
+        };
+        
+        int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
     };
 }
 
