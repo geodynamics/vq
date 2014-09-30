@@ -943,6 +943,20 @@ namespace quakelib {
             return _events.end();
         };
         
+        unsigned int size(void) const {
+            return _events.size();
+        }
+        
+        ModelEvent &operator[](const unsigned int ind) throw(std::out_of_range) {
+            if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
+            return _events[ind];
+        };
+        
+        const ModelEvent &operator[](const unsigned int ind) const throw(std::out_of_range) {
+            if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
+            return _events[ind];
+        };
+        
         int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
     };
 }

@@ -53,6 +53,11 @@ using namespace quakelib;
 	void __setitem__(unsigned int i, TensorRow<3> new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
 };
 
+%extend quakelib::ModelEventSet {
+    ModelEvent __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, ModelEvent new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+};
+
 %template(RectBound2) quakelib::RectBound<2>;
 %template(RectBound3) quakelib::RectBound<3>;
 
