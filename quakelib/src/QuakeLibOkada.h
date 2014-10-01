@@ -551,6 +551,8 @@ namespace quakelib {
             double Tg_star(double xi, double eta, double _q);
             double I4g(double _R, double eta, double _q);
             double I5g(double _R, double xi, double eta, double _q);
+            double I1g(double _R, double xi, double eta, double _q);
+            double I0g(double _R, double eta, double _q);
             //
 
         
