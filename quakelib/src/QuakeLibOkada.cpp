@@ -3431,9 +3431,35 @@ double quakelib::Okada::I5g(double _R, double xi, double eta, double _q){
     }
 }
 
+double quakelib::Okada::I1g(double _R, double xi, double eta, double _q){
+	OP_MULT(1);OP_ADD(1);
+	double _Rpeta = _R+eta;
+	double xi_cos = xi*_cos_o_dip;
+    if (_cos_o_dip!=0.0) {
+        if (!singularity2(xi)){
+		    OP_MULT(2); OP_ADD(1); OP_SUB(1); OP_DIV(1);
+		    return atan((_Rpeta*(1.0+_sin_o_dip)-_q*_cos_o_dip)/xi_cos);
+	    } else {
+		    return 0.0;
+	    }
+    } else {
+        return M_PI*0.5;
+    }
+}
 
-
-
+double quakelib::Okada::I0g(double _R, double eta, double _q){
+	double _dtil = dtil(_q,eta);
+	double _Rpeta 	 = _R+eta;
+	double ret_value = -1.0*_sin_o_dip*log(_R+_dtil);
+    if (!singularity4(_Rpeta)) {
+    	OP_ADD(1); OP_LOG(1);
+    	ret_value += log(_R+eta);
+    } else {
+    	OP_SUB(2); OP_LOG(1);
+    	ret_value -= log(_R-eta);
+    }
+    return ret_value;
+}
 
 
 
