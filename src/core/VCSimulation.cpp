@@ -530,9 +530,10 @@ void VCSimulation::distributeUpdateField(void) {
  Distributes a list of blocks among all processors. Used for determining failed blocks in a sweep.
  */
 void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
+    BlockIDSet::const_iterator  it;
+    
 #ifdef MPI_C_FOUND
     int                         i, n, p;
-    BlockIDSet::const_iterator  it;
     int                         *proc_block_count = new int[world_size];
     int                         *proc_block_disps = new int[world_size];
     BlockID                     *local_block_ids = new BlockID[local_id_list.size()];
@@ -589,7 +590,11 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
     delete block_ids;
     delete proc_block_count;
     delete proc_block_disps;
-
+#else   // MPI_C_FOUND
+    // Copy the local IDs into the global list just for the single processor
+    for (it=local_id_list.begin();it!=local_id_list.end();++it) {
+        global_id_list.insert(std::make_pair(*it, 0));
+    }
 #endif
 }
 
