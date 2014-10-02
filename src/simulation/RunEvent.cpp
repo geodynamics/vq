@@ -164,8 +164,12 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         // Fill in the A matrix and b vector from the various processes
         for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
+#ifdef MPI_C_FOUND
                 MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+#else
+                assertThrow(false, "Single processor version of code, but faults mapped to multiple processors.");
+#endif
             } else {
                 memcpy(&(fullA[i*num_global_failed]), &(A[n*num_global_failed]), sizeof(double)*num_global_failed);
                 memcpy(&(fullb[i]), &(b[n]), sizeof(double));
@@ -179,7 +183,11 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         // Send back the resulting values from x to each process
         for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
+#ifdef MPI_C_FOUND
                 MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+#else
+                assertThrow(false, "Single processor version of code, but faults mapped to multiple processors.");
+#endif
             } else {
                 memcpy(&(x[n]), &(fullx[i]), sizeof(double));
                 n++;
@@ -191,6 +199,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         delete fullb;
         delete fullA;
     } else {
+#ifdef MPI_C_FOUND
         for (i=0; i<num_local_failed; ++i) {
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
@@ -199,6 +208,9 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &c
         for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
+#else
+        assertThrow(false, "Single processor version of code, but processor MPI rank is non-zero.");
+#endif
     }
 
     // Take the results of the calculation and determine how much each ruptured block slipped
