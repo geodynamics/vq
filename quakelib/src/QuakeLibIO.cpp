@@ -2288,6 +2288,22 @@ void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
     }
 }
 
+void quakelib::ModelSweeps::read_data(const SweepData &in_data) {
+    //memcpy(&_data, &in_data, sizeof(SweepData));
+}
+
+void quakelib::ModelSweeps::write_data(SweepData &out_data) const {
+    //memcpy(&out_data, &_data, sizeof(SweepData));
+}
+
+void quakelib::ModelEvent::read_data(const EventData &in_data) {
+    memcpy(&_data, &in_data, sizeof(EventData));
+}
+
+void quakelib::ModelEvent::write_data(EventData &out_data) const {
+    memcpy(&out_data, &_data, sizeof(EventData));
+}
+
 void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &descs) {
     FieldDesc       field_desc;
 
