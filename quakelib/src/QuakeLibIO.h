@@ -637,7 +637,7 @@ namespace quakelib {
 
         public:
             ModelSweeps(void) : _event_number(UNDEFINED_EVENT_ID) {};
-        
+
             typedef std::vector<SweepData>::iterator       iterator;
             typedef std::vector<SweepData>::const_iterator const_iterator;
 
@@ -689,14 +689,14 @@ namespace quakelib {
             };
 
 #ifdef HDF5_FOUND
-        static std::string hdf5_table_name(void) {
-            return "sweeps";
-        };
+            static std::string hdf5_table_name(void) {
+                return "sweeps";
+            };
+            static void setup_sweeps_hdf5(const hid_t &data_file);
+            void append_sweeps_hdf5(const hid_t &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
-            static void setup_sweeps_hdf5(const hid_t &data_file);
-            void append_sweeps_hdf5(const hid_t &data_file) const;
 
             void read_data(const SweepData &in_data);
             void write_data(SweepData &out_data) const;
@@ -727,7 +727,7 @@ namespace quakelib {
 
         //! Initial and final sum of normal stress on all elements involved in the event
         double          _normal_stress_init, _normal_stress_final;
-        
+
         //! Start and end record of the sweeps comprising this event
         unsigned int    _start_sweep_rec, _end_sweep_rec;
     };
@@ -913,11 +913,11 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "events";
             };
+            static void setup_event_hdf5(const hid_t &data_file);
+            void append_event_hdf5(const hid_t &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
-            static void setup_event_hdf5(const hid_t &data_file);
-            void append_event_hdf5(const hid_t &data_file) const;
 
             void read_data(const EventData &in_data);
             void write_data(EventData &out_data) const;
@@ -927,37 +927,39 @@ namespace quakelib {
 
             friend std::ostream &operator<<(std::ostream &os, const ModelEvent &me);
     };
-    
+
     class ModelEventSet {
-    private:
-        std::vector<ModelEvent>     _events;
-        
-    public:
-        typedef std::vector<ModelEvent>::iterator       iterator;
-        typedef std::vector<ModelEvent>::const_iterator const_iterator;
-        
-        iterator begin(void) {
-            return _events.begin();
-        };
-        iterator end(void) {
-            return _events.end();
-        };
-        
-        unsigned int size(void) const {
-            return _events.size();
-        }
-        
-        ModelEvent &operator[](const unsigned int ind) throw(std::out_of_range) {
-            if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
-            return _events[ind];
-        };
-        
-        const ModelEvent &operator[](const unsigned int ind) const throw(std::out_of_range) {
-            if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
-            return _events[ind];
-        };
-        
-        int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
+        private:
+            std::vector<ModelEvent>     _events;
+
+        public:
+            typedef std::vector<ModelEvent>::iterator       iterator;
+            typedef std::vector<ModelEvent>::const_iterator const_iterator;
+
+            iterator begin(void) {
+                return _events.begin();
+            };
+            iterator end(void) {
+                return _events.end();
+            };
+
+            unsigned int size(void) const {
+                return _events.size();
+            }
+
+            ModelEvent &operator[](const unsigned int ind) throw(std::out_of_range) {
+                if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
+
+                return _events[ind];
+            };
+
+            const ModelEvent &operator[](const unsigned int ind) const throw(std::out_of_range) {
+                if (ind >= _events.size()) throw std::out_of_range("ModelEventSet[]");
+
+                return _events[ind];
+            };
+
+            int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
     };
 }
 

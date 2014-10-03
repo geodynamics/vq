@@ -2386,23 +2386,24 @@ void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &de
 void quakelib::ModelSweeps::write_ascii_header(std::ostream &out_stream) {
     std::vector<FieldDesc>                  descs;
     std::vector<FieldDesc>::const_iterator  dit;
-    
+
     // Write section header
     ModelSweeps::get_field_descs(descs);
-    
+
     for (dit=descs.begin(); dit!=descs.end(); ++dit) {
         out_stream << "# " << dit->name << ": " << dit->details << "\n";
     }
-    
+
     out_stream << "# ";
-    
+
     for (dit=descs.begin(); dit!=descs.end(); ++dit) {
         out_stream << dit->name << " ";
     }
-    
+
     out_stream << "\n";
 }
 
+#ifdef HDF5_FOUND
 void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
@@ -2522,6 +2523,7 @@ void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
     delete field_offsets;
     delete field_sizes;
 }
+#endif
 
 void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
@@ -2620,23 +2622,24 @@ void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
 void quakelib::ModelEvent::write_ascii_header(std::ostream &out_stream) {
     std::vector<FieldDesc>                  descs;
     std::vector<FieldDesc>::const_iterator  dit;
-    
+
     // Write section header
     ModelEvent::get_field_descs(descs);
-    
+
     for (dit=descs.begin(); dit!=descs.end(); ++dit) {
         out_stream << "# " << dit->name << ": " << dit->details << "\n";
     }
-    
+
     out_stream << "# ";
-    
+
     for (dit=descs.begin(); dit!=descs.end(); ++dit) {
         out_stream << dit->name << " ";
     }
-    
+
     out_stream << "\n";
 }
 
+#ifdef HDF5_FOUND
 void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
@@ -2747,19 +2750,22 @@ void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
     delete field_offsets;
     delete field_sizes;
 }
+#endif
 
 int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name) {
     std::ifstream   event_file, sweep_file;
     ModelSweeps     file_sweeps;
-    
+
     // Try to open the event file
     event_file.open(event_file_name.c_str());
+
     if (!event_file.is_open()) return -1;
-    
+
     // Try to open the sweeps file
     sweep_file.open(sweep_file_name.c_str());
+
     if (!sweep_file.is_open()) return -1;
-    
+
     // Keep going until we hit the end of either file
     while (!event_file.eof() && !sweep_file.eof()) {
         ModelEvent  new_event;
@@ -2770,11 +2776,11 @@ int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name,
         new_event.setSweeps(new_sweeps);
         _events.push_back(new_event);
     }
-    
+
     // Close the files
     event_file.close();
     sweep_file.close();
-    
+
     return 0;
 }
 
