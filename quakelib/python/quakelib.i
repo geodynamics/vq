@@ -178,6 +178,9 @@ using namespace quakelib;
 		sprintf(tmp, "<quakelib::Tensor<3,3> at %p>", $self);
 		return tmp;
 	}
+
+    TensorRow<3> __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, TensorRow<3> new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
 };
 
 %extend quakelib::TensorRow<3> {
@@ -197,6 +200,9 @@ using namespace quakelib;
 		sprintf(tmp, "<quakelib::TensorRow<3> at %p>", $self);
 		return tmp;
 	}
+
+    double __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, double new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
 };
 
 %extend quakelib::RectBound<2> {
