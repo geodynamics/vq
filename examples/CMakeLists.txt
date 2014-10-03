@@ -67,7 +67,7 @@ FOREACH(NPROC ${NUM_PROCS})
                     COMMAND ${VC_BINARY_DIR}/vc params_${RES}.d)
             ELSE (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${MPIEXEC} -np ${NPROC} ${VC_BINARY_DIR}/vc params_${RES}.d)
+                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VC_BINARY_DIR}/vc params_${RES}.d)
             ENDIF (NPROC EQUAL 1)
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
