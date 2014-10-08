@@ -66,14 +66,10 @@ void RunEvent::processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &s
 
             if (!stress_drop) stress_drop = b.getStressDrop() - b.getCFF();
 
-            //std::cerr << stress_drop << std::endl;
-
             // Slip is in m
             slip = (stress_drop/b.getSelfStresses());
 
             if (slip < 0) slip = 0;
-
-            if (slip > -b.state.slipDeficit) slip = -b.state.slipDeficit;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
@@ -430,7 +426,7 @@ void RunEvent::processAftershock(VCSimulation *sim) {
         double element_slip = element_moment/(b.lame_mu()*b.area());
 
         // Adjust the slip deficit appropriately
-        //b.state.slipDeficit += element_slip;
+        b.state.slipDeficit += element_slip;
 
         // Create the sweep describing this aftershock
         // Since we don't distinguish sweeps, every slip occurs in sweep 0
@@ -438,7 +434,30 @@ void RunEvent::processAftershock(VCSimulation *sim) {
         event_sweeps.setInitStresses(0, *bit, b.getShearStress(), b.getNormalStress());
     }
 
-    // Recalculate stresses
+    // Set the update field to the slip of all blocks
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        Block &block=sim->getBlock(gid);
+        sim->setShearStress(gid, 0.0);
+        sim->setNormalStress(gid, block.getRhogd());
+        sim->setUpdateField(gid, block.state.slipDeficit);
+    }
+    
+    sim->distributeUpdateField();
+    
+    // Calculate the new shear stresses and CFFs given the new update field values
+    sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
+                                   sim->greenShear(),
+                                   sim->getUpdateFieldPtr(),
+                                   true);
+    
+    if (sim->doNormalStress()) {
+        sim->matrixVectorMultiplyAccum(sim->getNormalStressPtr(),
+                                       sim->greenNormal(),
+                                       sim->getUpdateFieldPtr(),
+                                       true);
+    }
+    
+    sim->computeCFFs();
 
     // Record final stresses on each block involved in the aftershock
     for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
