@@ -704,6 +704,18 @@ namespace quakelib {
             void read_ascii(std::istream &in_stream, const unsigned int num_records);
             void write_ascii(std::ostream &out_stream) const;
 
+            SweepData &operator[](const unsigned int ind) throw(std::out_of_range) {
+                if (ind >= _sweeps.size()) throw std::out_of_range("ModelSweeps[]");
+
+                return _sweeps[ind];
+            };
+
+            const SweepData &operator[](const unsigned int ind) const throw(std::out_of_range) {
+                if (ind >= _sweeps.size()) throw std::out_of_range("ModelSweeps[]");
+
+                return _sweeps[ind];
+            };
+
             friend std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms);
     };
 
@@ -838,8 +850,7 @@ namespace quakelib {
             //! Also calculate relevant values related to these sweeps.
             void setSweeps(const ModelSweeps &sweeps) {
                 ModelSweeps::iterator   it;
-                double                  moment = 0
-                                                 ;
+                double                  moment = 0;
 
                 _sweeps = sweeps;
                 _total_slip.clear();
