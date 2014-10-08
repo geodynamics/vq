@@ -495,7 +495,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     }
 
     // TODO: reinstate this check
-    assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
+    // TODO: currently fails because processors may locally have no failures
+    //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
 
     return SIM_STOP_OK;
 }
