@@ -52,8 +52,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     events_to_process.clear();
 
     // Generate initial seed shock based on the current event
-    event_blocks.clear();
-    sim->getCurrentEvent().getInvolvedElements(event_blocks);
+    event_blocks = sim->getCurrentEvent().getInvolvedElements();
 
     // Select a random block in the event to be the center of the aftershocks
     initial_shock = VCEventAftershock(sim->getCurrentEvent().getMagnitude(event_blocks),

@@ -673,10 +673,14 @@ namespace quakelib {
                 _sweeps[pos]._normal_final = normal_final;
             }
 
-            void getInvolvedElements(ElementIDSet &element_id_set) const {
+            ElementIDSet getInvolvedElements(void) const {
+                ElementIDSet element_id_set;
+
                 for (std::vector<SweepData>::const_iterator it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
                     element_id_set.insert(it->_element_id);
                 }
+
+                return element_id_set;
             }
 
             void clear(void) {
@@ -884,8 +888,8 @@ namespace quakelib {
             }
 
             //! Get a set of block IDs for all the blocks that failed in this event.
-            void getInvolvedElements(ElementIDSet &element_id_set) const {
-                _sweeps.getInvolvedElements(element_id_set);
+            ElementIDSet getInvolvedElements(void) const {
+                return _sweeps.getInvolvedElements();
             }
 
             //! Get the magnitude of the earthquake in this event based on the set of specified blocks.
@@ -902,8 +906,7 @@ namespace quakelib {
 
             //! Get the magnitude of the earthquake in this event.
             double getMagnitude(void) const {
-                ElementIDSet  block_id_set;
-                getInvolvedElements(block_id_set);
+                ElementIDSet  block_id_set = getInvolvedElements();
                 return getMagnitude(block_id_set);
             }
 

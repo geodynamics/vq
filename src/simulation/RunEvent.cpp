@@ -486,7 +486,7 @@ void RunEvent::recordEventStresses(VCSimulation *sim) {
     double shear_init, shear_final, normal_init, normal_final;
     double total_shear_init, total_shear_final, total_normal_init, total_normal_final;
 
-    sim->getCurrentEvent().getInvolvedElements(involved_blocks);
+    involved_blocks = sim->getCurrentEvent().getInvolvedElements();
 
     sim->getInitialFinalStresses(involved_blocks, shear_init, shear_final, normal_init, normal_final);
 
