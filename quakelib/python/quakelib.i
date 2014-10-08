@@ -2,6 +2,7 @@
 %include "std_string.i"
 %include "std_vector.i"
 %include "std_map.i"
+%include "std_set.i"
 %include "exception.i"
 %{
 #include "QuakeLib.h"
@@ -21,6 +22,7 @@ using namespace quakelib;
 %template(EQSimEventSummaryList) std::vector<quakelib::EQSimEventSummary>;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
+%template(ElementIDSet) std::set<unsigned int>;
 
 %include "QuakeLib.h"
 %include "QuakeLibIO.h"
