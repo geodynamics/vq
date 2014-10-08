@@ -100,6 +100,9 @@ void EventOutput::init(SimFramework *_sim) {
     VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
     BlockList::const_iterator   it;
 
+#ifdef HDF5_FOUND
+    data_file = 0;
+#endif
     sweep_count = 0;
     next_pause_check = sim->itersPerSecond();
 
@@ -190,8 +193,7 @@ void EventOutput::finish(SimFramework *_sim) {
 #ifdef HDF5_FOUND
 
     if (data_file) {
-        herr_t      res;
-        res = H5Fclose(data_file);
+        herr_t res = H5Fclose(data_file);
 
         if (res < 0) exit(-1);
     }
