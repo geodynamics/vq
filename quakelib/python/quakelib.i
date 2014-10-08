@@ -2,6 +2,7 @@
 %include "std_string.i"
 %include "std_vector.i"
 %include "std_map.i"
+%include "exception.i"
 %{
 #include "QuakeLib.h"
 #include "QuakeLibIO.h"
@@ -27,35 +28,69 @@ using namespace quakelib;
 %include "QuakeLibOkada.h"
 %include "QuakeLibEQSim.h"
 
+%exception {
+    try {
+        $action
+    } catch (std::out_of_range &e) {
+        PyErr_SetString(PyExc_IndexError, const_cast<char*>(e.what()));
+        SWIG_fail;
+    }
+}
+
 // Create aliases for 2D and 3D vector templates
 %template(Vec2) quakelib::Vec<2>;
 %template(Vec3) quakelib::Vec<3>;
 %extend quakelib::Vec<2> {
-	double __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+	double __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return 2; };
 };
 
 %extend quakelib::Vec<3> {
-	double __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+	double __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return 3; };
 };
 
 %template(TensorRow3) quakelib::TensorRow<3>;
 %template(Tensor33) quakelib::Tensor<3,3>;
 
-%extend quakelib::TensorRow<3> {
-	double __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
-};
-
-%extend quakelib::Tensor<3,3> {
-	TensorRow<3> __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, TensorRow<3> new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+%extend quakelib::ModelEvent {
+	char *__str__(void) {
+		static char			tmp[1024];
+		std::stringstream	ss;
+		std::string			res;
+		ss << (*$self);
+		res = ss.str();
+		res.resize(1023);
+		sprintf(tmp, "%s", res.c_str());
+		return tmp;
+	}
 };
 
 %extend quakelib::ModelEventSet {
-    ModelEvent __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, ModelEvent new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+    ModelEvent __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, ModelEvent new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return $self->size(); };
+};
+
+%extend quakelib::ModelSweeps {
+    SweepData __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, SweepData new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return $self->size(); };
+};
+
+%extend quakelib::SweepData {
+	char *__str__(void) {
+		static char tmp[1024];
+		sprintf(tmp, "quakelib.SweepData(%d,%d,%g)", $self->_sweep_number, $self->_element_id, $self->_slip);
+		return tmp;
+	}
+	char *__repr__(void) {
+		static char tmp[1024];
+		sprintf(tmp, "quakelib.SweepData(%d,%d,%g)", $self->_sweep_number, $self->_element_id, $self->_slip);
+		return tmp;
+	}
 };
 
 %template(RectBound2) quakelib::RectBound<2>;
@@ -179,8 +214,9 @@ using namespace quakelib;
 		return tmp;
 	}
 
-    TensorRow<3> __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, TensorRow<3> new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+    TensorRow<3> __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, TensorRow<3> new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return 3; };
 };
 
 %extend quakelib::TensorRow<3> {
@@ -201,8 +237,9 @@ using namespace quakelib;
 		return tmp;
 	}
 
-    double __getitem__(unsigned int i) throw(std::out_of_range) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) throw(std::out_of_range) { (*$self)[i] = new_val; };
+    double __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return 3; };
 };
 
 %extend quakelib::RectBound<2> {
@@ -258,6 +295,8 @@ using namespace quakelib;
 		return tmp;
 	}
 };
+
+%exception;
 
 // Map a Python sequence into any sized C double array
 %typemap(in) double[ANY](double temp[$1_dim0]) {

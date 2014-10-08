@@ -82,6 +82,19 @@ class TestVectors(unittest.TestCase):
         self.assertEqual(x, xp)
         self.assertEqual(y, yp)
 
+    # Check that get/set indices throw appropriate exceptions
+    def test_index_error(self):
+        x = quakelib.Vec3(1, 2, 3)
+        y = quakelib.Vec2(1, 2)
+        with self.assertRaises(OverflowError): x[-1]
+        with self.assertRaises(OverflowError): x[-1] = 0
+        with self.assertRaises(IndexError): x[3]
+        with self.assertRaises(IndexError): x[3] = 0
+        with self.assertRaises(OverflowError): y[-1]
+        with self.assertRaises(OverflowError): y[-1] = 0
+        with self.assertRaises(IndexError): y[2]
+        with self.assertRaises(IndexError): y[2] = 0
+
 class TestLatLonDepth(unittest.TestCase):
     # Ensure that out-of-bounds assignment and equality work correctly
     def test_assign(self):
