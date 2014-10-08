@@ -24,19 +24,23 @@
 #define _RUN_EVENT_H_
 
 /*!
- Starts with an initial failed block and propagates the failure
+ Starts with an initial failed element and propagates the failure
  throughout the system using static and dynamic failure functions.
  */
 class RunEvent : public SimPlugin {
     private:
-        BlockIDSet          local_failed_blocks;
-        BlockIDProcMapping  global_failed_blocks;
-        BlockIDSet          looseBlocks;
+        quakelib::ElementIDSet  local_failed_elements;
+        BlockIDProcMapping      global_failed_elements;
+        quakelib::ElementIDSet  loose_elements;
+        unsigned int            sweep_num;
 
-        void processBlocksOrigFail(VCSimulation *sim, VCEventSweep &current_sweep);
-        void processBlocksSecondaryFailures(VCSimulation *sim, VCEventSweep &current_sweep);
-        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault, VCEventSweep &current_sweep);
+        void processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
+        void processBlocksSecondaryFailures(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
+        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(VCSimulation *sim);
+
+        void processStaticFailure(VCSimulation *sim);
+        void processAftershock(VCSimulation *sim);
 
     public:
         virtual std::string name() const {

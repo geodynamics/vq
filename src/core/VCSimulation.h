@@ -75,9 +75,9 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         };
 
         int numFaults(void) const;
-        void getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
+        void getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
 
-        void sumStresses(const BlockIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
+        void sumStresses(const quakelib::ElementIDSet &block_set, double &shear_stress, double &shear_stress0, double &normal_stress, double &normal_stress0) const;
 
         double sumGreenShear(const BlockID &r) const {
             double sum = 0;
@@ -122,10 +122,10 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
         void distributeUpdateField(void);
-        void distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list);
-        void collectEventSweep(VCEventSweep &cur_sweep);
+        void distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list);
+        void collectEventSweep(quakelib::ModelSweeps &sweeps);
 
-        std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
+        std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> getNeighbors(const BlockID &bid) const;
         void printTimers(void);
 
         bool isLocalBlockID(const BlockID &block_id) const {
@@ -149,7 +149,7 @@ class VCSimulation : public SimFramework, public VCParams, public VCSimData, pub
         GREEN_VAL                   *decompress_buf;
 
         //! Map of which blocks have which neighbors
-        std::map<BlockID, BlockIDSet>   neighbor_map;
+        std::map<BlockID, quakelib::ElementIDSet>   neighbor_map;
 };
 
 #endif

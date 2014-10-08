@@ -225,7 +225,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "lame_mu";
-    field_desc.details = "Lame's parameter describing the shear modulus of the material for this element (Units?).";
+    field_desc.details = "Lame's parameter describing the shear modulus of the material for this element (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _lame_mu);
     field_desc.type = H5T_NATIVE_FLOAT;
@@ -334,102 +334,112 @@ void quakelib::FaultTracePoint::write_ascii(std::ostream &out_stream) const {
  representing how long along the trace a point is. The spline is a linear interpolation between successive points.
  */
 class TraceSpline {
-private:
-    //! The points comprising the spline
-    std::vector<quakelib::Vec<3> >  _pts;
-    //! Total length of the distances between successive points
-    double                          _spline_len;
-    //! Individual lengths between successive points
-    //! _point_dists[i] is the distance between _pts[i] and _pts[i+1]
-    std::vector<double>             _point_dists;
-    
-public:
-    TraceSpline(void) : _spline_len(0) {};
-    
-    // Add another point to the spline
-    void add_point(const quakelib::Vec<3> &new_pt) {
-        double add_dist = (_pts.size() > 0 ? _pts.back().dist(new_pt) : 0);
-        _spline_len += add_dist;
-        if (_pts.size() > 0) _point_dists.push_back(add_dist);
-        _pts.push_back(new_pt);
-    }
-    
-    // Return the element index and inner t corresponding to parameter t
-    void get_element(const double t, unsigned int &index, double &inner_t) {
-        double spline_dist = t * _spline_len;
-        
-        // Ensure t is in [0,1]
-        assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
-        
-        // Go through each point
-        for (unsigned int i=0;i<_pts.size()-1;++i) {
-            // If we're between the points for this t, interpolate and return
-            if (spline_dist <= _point_dists[i]) {
-                index = i;
-                if (_point_dists[i] != 0) inner_t = spline_dist / _point_dists[i];
-                else inner_t = 0;
-                return;
-            }
-            spline_dist -= _point_dists[i];
+    private:
+        //! The points comprising the spline
+        std::vector<quakelib::Vec<3> >  _pts;
+        //! Total length of the distances between successive points
+        double                          _spline_len;
+        //! Individual lengths between successive points
+        //! _point_dists[i] is the distance between _pts[i] and _pts[i+1]
+        std::vector<double>             _point_dists;
+
+    public:
+        TraceSpline(void) : _spline_len(0) {};
+
+        // Add another point to the spline
+        void add_point(const quakelib::Vec<3> &new_pt) {
+            double add_dist = (_pts.size() > 0 ? _pts.back().dist(new_pt) : 0);
+            _spline_len += add_dist;
+
+            if (_pts.size() > 0) _point_dists.push_back(add_dist);
+
+            _pts.push_back(new_pt);
         }
-        // If we reach the end, we return the final point and inner_t = 0
-        index = _pts.size()-1;
-        inner_t = 0;
-    }
-    
-    // Return the point on this spline at t
-    quakelib::Vec<3> interpolate(const double t) {
-        unsigned int    ind;
-        double          inner_t;
-        
-        assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
-        get_element(t, ind, inner_t);
-        if (ind == _pts.size() - 1) return _pts.back();
-        else return _pts.at(ind) * (1-inner_t) + _pts.at(ind+1) * inner_t;
-    }
-    
-    // Given a starting point t (in [0,1]) and an element size,
-    // returns the next t which is linear elem_size away (not distance along the spline)
-    double advance_element(const double t, const double elem_size) {
-        unsigned int    ind;
-        double          inner_t;
-        
-        // Find the starting point on the spline at t
-        quakelib::Vec<3> start_pt = interpolate(t);
-        
-        // Get the element that the starting point is associated iwth
-        get_element(t, ind, inner_t);
-        
-        // Keep going until we find a trace point which would create
-        // an element greater than our target size
-        double cur_dist = t * _spline_len;
-        while (ind+1 < _pts.size() && start_pt.dist(_pts.at(ind+1)) < elem_size) {
-            ind++;
-            if (ind < _point_dists.size()) cur_dist += (1-inner_t) * _point_dists.at(ind);
-            else cur_dist += elem_size;
+
+        // Return the element index and inner t corresponding to parameter t
+        void get_element(const double t, unsigned int &index, double &inner_t) {
+            double spline_dist = t * _spline_len;
+
+            // Ensure t is in [0,1]
+            assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
+
+            // Go through each point
+            for (unsigned int i=0; i<_pts.size()-1; ++i) {
+                // If we're between the points for this t, interpolate and return
+                if (spline_dist <= _point_dists[i]) {
+                    index = i;
+
+                    if (_point_dists[i] != 0) inner_t = spline_dist / _point_dists[i];
+                    else inner_t = 0;
+
+                    return;
+                }
+
+                spline_dist -= _point_dists[i];
+            }
+
+            // If we reach the end, we return the final point and inner_t = 0
+            index = _pts.size()-1;
             inner_t = 0;
         }
-        
-        // If we're past the end of the trace, return our best guess
-        // for t based on the size of the last segment
-        // This is needed to adjust the element size during meshing
-        if (ind+1 == _pts.size()) return cur_dist/_spline_len;
-        
-        // Now we know the points between which our element must exist (ind and ind+1)
-        double      x_0 = _pts.at(ind)[0], x_1 = _pts.at(ind+1)[0], x_s = start_pt[0];
-        double      y_0 = _pts.at(ind)[1], y_1 = _pts.at(ind+1)[1], y_s = start_pt[1], l = elem_size;
-        
-        // Calculate the inner t between these two points
-        double next_t = fabs((sqrt(pow(-2*x_0*x_0+2*x_0*x_1+2*x_0*x_s-2*x_1*x_s-2*y_0*y_0+2*y_0*y_1+2*y_0*y_s-2*y_1*y_s, 2)-
-                             4*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)*
-                             (x_0*x_0-2*x_0*x_s+x_s*x_s+y_0*y_0-2*y_0*y_s+y_s*y_s-l*l))+
-                        2*x_0*x_0-2*x_0*x_1-2*x_0*x_s+2*x_1*x_s+2*y_0*y_0-2*y_0*y_1-2*y_0*y_s+2*y_1*y_s)/
-                       (2*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)));
-        
-        // Given this point, recalculate t and return
-        cur_dist += (next_t-inner_t) * _point_dists[ind];
-        return cur_dist/_spline_len;
-    };
+
+        // Return the point on this spline at t
+        quakelib::Vec<3> interpolate(const double t) {
+            unsigned int    ind;
+            double          inner_t;
+
+            assertThrow(t >= 0 && t <= 1, std::out_of_range("TraceSpline::interpolate"));
+            get_element(t, ind, inner_t);
+
+            if (ind == _pts.size() - 1) return _pts.back();
+            else return _pts.at(ind) * (1-inner_t) + _pts.at(ind+1) * inner_t;
+        }
+
+        // Given a starting point t (in [0,1]) and an element size,
+        // returns the next t which is linear elem_size away (not distance along the spline)
+        double advance_element(const double t, const double elem_size) {
+            unsigned int    ind;
+            double          inner_t;
+
+            // Find the starting point on the spline at t
+            quakelib::Vec<3> start_pt = interpolate(t);
+
+            // Get the element that the starting point is associated iwth
+            get_element(t, ind, inner_t);
+
+            // Keep going until we find a trace point which would create
+            // an element greater than our target size
+            double cur_dist = t * _spline_len;
+
+            while (ind+1 < _pts.size() && start_pt.dist(_pts.at(ind+1)) < elem_size) {
+                ind++;
+
+                if (ind < _point_dists.size()) cur_dist += (1-inner_t) * _point_dists.at(ind);
+                else cur_dist += elem_size;
+
+                inner_t = 0;
+            }
+
+            // If we're past the end of the trace, return our best guess
+            // for t based on the size of the last segment
+            // This is needed to adjust the element size during meshing
+            if (ind+1 == _pts.size()) return cur_dist/_spline_len;
+
+            // Now we know the points between which our element must exist (ind and ind+1)
+            double      x_0 = _pts.at(ind)[0], x_1 = _pts.at(ind+1)[0], x_s = start_pt[0];
+            double      y_0 = _pts.at(ind)[1], y_1 = _pts.at(ind+1)[1], y_s = start_pt[1], l = elem_size;
+
+            // Calculate the inner t between these two points
+            double next_t = fabs((sqrt(pow(-2*x_0*x_0+2*x_0*x_1+2*x_0*x_s-2*x_1*x_s-2*y_0*y_0+2*y_0*y_1+2*y_0*y_s-2*y_1*y_s, 2)-
+                                       4*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)*
+                                       (x_0*x_0-2*x_0*x_s+x_s*x_s+y_0*y_0-2*y_0*y_s+y_s*y_s-l*l))+
+                                  2*x_0*x_0-2*x_0*x_1-2*x_0*x_s+2*x_1*x_s+2*y_0*y_0-2*y_0*y_1-2*y_0*y_s+2*y_1*y_s)/
+                                 (2*(x_0*x_0-2*x_0*x_1+x_1*x_1+y_0*y_0-2*y_0*y_1+y_1*y_1)));
+
+            // Given this point, recalculate t and return
+            cur_dist += (next_t-inner_t) * _point_dists[ind];
+            return cur_dist/_spline_len;
+        };
 };
 
 void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method) {
@@ -448,6 +458,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     if (element_size <= 0) return;
 
     num_trace_pts = trace.size();
+
     if (num_trace_pts == 0 || num_trace_pts == 1) return;
 
     ModelSection &section = new_section();
@@ -455,12 +466,12 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     section.set_fault_id(fault_id);
 
     // Create a spline with the trace points
-    for (i=0;i<num_trace_pts;++i) {
+    for (i=0; i<num_trace_pts; ++i) {
         Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
         spline.add_point(pt);
         unused_trace_pts.insert(i);
     }
-    
+
     // Initially we don't know the appropriate element size to exactly mesh
     // the trace points. This is solved by starting with the user suggested
     // element size and iteratively adjusting it until the mesh fits the
@@ -468,12 +479,15 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     double cur_elem_size_guess = element_size;
     double overshoot = DBL_MAX, undershoot = DBL_MAX, t_per_meter=1;
     unsigned int num_iters = 0;
+
     while ((fmin(overshoot, undershoot)/t_per_meter)/element_size > 1e-3 && num_iters < 10) {
         double cur_t, next_t, sum_t=0;
         elem_count = 0;
         cur_t = 0;
+
         while (cur_t < 1) {
             next_t = spline.advance_element(cur_t, cur_elem_size_guess);
+
             if (next_t < 1) {
                 sum_t += next_t-cur_t;
                 elem_count++;
@@ -482,16 +496,19 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 break;
             }
         }
+
         t_per_meter = (sum_t/elem_count)/cur_elem_size_guess;
         overshoot = fabs(1-next_t)/elem_count;
         undershoot = fabs(1-cur_t)/elem_count;
+
         // If we're undershooting by less than we're overshooting, the best solution is to increase block size
         if (undershoot < overshoot) cur_elem_size_guess += undershoot/t_per_meter;
         // Otherwise we decrease block size
         else cur_elem_size_guess -= overshoot/t_per_meter;
+
         num_iters++;
     }
-    
+
     double  horiz_elem_size = cur_elem_size_guess;
     double  vert_elem_size;
     unsigned int cur_elem_ind, next_elem_ind;
@@ -505,28 +522,28 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     cur_elem_ind = 0;
     unused_trace_pts.erase(0);
 
-    for (i=0;i<elem_count;++i) {
+    for (i=0; i<elem_count; ++i) {
         // Get the next t value along the trace by advancing the element size
         next_t = spline.advance_element(cur_t, horiz_elem_size);
-        
+
         // If we go past the end of the spline, align ourselves with the end
         if (next_t > 1) next_t = 1;
-        
+
         // And get the actual point corresponding to this t
         next_trace_point = spline.interpolate(next_t);
-        
+
         double          inner_t;
         // And the element and inner_t corresponding to it
         spline.get_element(cur_t, next_elem_ind, inner_t);
-        
+
         // Mark the element corresponding to this point as having been used
         unused_trace_pts.erase(next_elem_ind);
-        
+
         element_step_vec = next_trace_point-cur_trace_point;
 
         // Use the t value between the trace points for interpolation
         elem_depth = inner_t *trace.at(next_elem_ind).depth_along_dip()+(1.0-inner_t)*trace.at(cur_elem_ind).depth_along_dip();
-        
+
         // Change vertical element size to exactly match the required depth
         num_vert_elems = round(elem_depth/element_size);
         vert_elem_size = elem_depth / num_vert_elems;
@@ -534,12 +551,12 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
                                                << next_elem_ind << ". Element size may be too big." << std::endl;
 
-        elem_slip_rate = conv.cm_per_yr2m_per_sec(inner_t*trace.at(next_elem_ind).slip_rate()+(1.0-inner_t)*trace.at(cur_elem_ind).slip_rate());
-        elem_aseismic = inner_t*trace.at(next_elem_ind).aseismic()+(1.0-inner_t)*trace.at(cur_elem_ind).aseismic();
-        elem_dip = conv.deg2rad(inner_t*trace.at(next_elem_ind).dip()+(1.0-inner_t)*trace.at(cur_elem_ind).dip());
-        elem_rake = conv.deg2rad(inner_t*trace.at(next_elem_ind).rake()+(1.0-inner_t)*trace.at(cur_elem_ind).rake());
+        elem_slip_rate = conv.cm_per_yr2m_per_sec(inner_t *trace.at(next_elem_ind).slip_rate()+(1.0-inner_t)*trace.at(cur_elem_ind).slip_rate());
+        elem_aseismic = inner_t *trace.at(next_elem_ind).aseismic()+(1.0-inner_t)*trace.at(cur_elem_ind).aseismic();
+        elem_dip = conv.deg2rad(inner_t *trace.at(next_elem_ind).dip()+(1.0-inner_t)*trace.at(cur_elem_ind).dip());
+        elem_rake = conv.deg2rad(inner_t *trace.at(next_elem_ind).rake()+(1.0-inner_t)*trace.at(cur_elem_ind).rake());
         elem_lame_mu = inner_t *trace.at(next_elem_ind).lame_mu()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_mu();
-        elem_lame_lambda = inner_t*trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
+        elem_lame_lambda = inner_t *trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
         // Set up the vertical step to go along the dip
         vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
@@ -1240,7 +1257,7 @@ void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     // Create the section table
     res = H5TBmake_table("Fault Sections",
                          data_file,
-                         "sections",
+                         ModelSection::hdf5_table_name().c_str(),
                          num_fields,
                          num_sections,
                          sizeof(SectionData),
@@ -1258,7 +1275,10 @@ void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "sections", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelSection::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -1326,7 +1346,7 @@ void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     // Create the elements table
     res = H5TBmake_table("Elements",
                          data_file,
-                         "elements",
+                         ModelElement::hdf5_table_name().c_str(),
                          num_fields,
                          num_elements,
                          sizeof(ElementData),
@@ -1344,7 +1364,10 @@ void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "elements", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelElement::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -1412,7 +1435,7 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     // Create the vertices table
     res = H5TBmake_table("Vertices",
                          data_file,
-                         "vertices",
+                         ModelVertex::hdf5_table_name().c_str(),
                          num_fields,
                          num_vertices,
                          sizeof(VertexData),
@@ -1430,7 +1453,10 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     for (i=0; i<num_fields; ++i) {
         std::stringstream   ss;
         ss << "FIELD_" << i << "_DETAILS";
-        res = H5LTset_attribute_string(data_file, "vertices", ss.str().c_str(), field_details[i]);
+        res = H5LTset_attribute_string(data_file,
+                                       ModelVertex::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
 
         if (res < 0) exit(-1);
     }
@@ -2189,4 +2215,600 @@ size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {
     }
 
     return section_vertices.size();
+}
+
+void quakelib::ModelEvent::read_ascii(std::istream &in_stream) {
+    std::stringstream   ss(next_line(in_stream));
+
+    ss >> _data._event_number;
+    ss >> _data._event_year;
+    ss >> _data._event_trigger;
+    ss >> _data._event_magnitude;
+    ss >> _data._shear_stress_init;
+    ss >> _data._shear_stress_final;
+    ss >> _data._normal_stress_init;
+    ss >> _data._normal_stress_final;
+    ss >> _data._start_sweep_rec;
+    ss >> _data._end_sweep_rec;
+}
+
+void quakelib::ModelEvent::write_ascii(std::ostream &out_stream) const {
+    out_stream << _data._event_number << " ";
+    out_stream << _data._event_year << " ";
+    out_stream << _data._event_trigger << " ";
+    out_stream << _data._event_magnitude << " ";
+    out_stream << _data._shear_stress_init << " ";
+    out_stream << _data._shear_stress_final << " ";
+    out_stream << _data._normal_stress_init << " ";
+    out_stream << _data._normal_stress_final << " ";
+    out_stream << _data._start_sweep_rec << " ";
+    out_stream << _data._end_sweep_rec;
+
+    next_line(out_stream);
+}
+
+void quakelib::ModelSweeps::read_ascii(std::istream &in_stream, const unsigned int num_records) {
+    for (unsigned int i=0; i<num_records; ++i) {
+        std::stringstream   ss(next_line(in_stream));
+        SweepData   new_sweep;
+        ss >> new_sweep._event_number;
+        ss >> new_sweep._sweep_number;
+        ss >> new_sweep._element_id;
+        ss >> new_sweep._slip;
+        ss >> new_sweep._area;
+        ss >> new_sweep._mu;
+        ss >> new_sweep._shear_init;
+        ss >> new_sweep._shear_final;
+        ss >> new_sweep._normal_init;
+        ss >> new_sweep._normal_final;
+        // Record the sweep/element in the mapping
+        std::pair<UIndex, UIndex> sweep_elem = std::make_pair(new_sweep._sweep_number, new_sweep._element_id);
+        _rel.insert(std::make_pair(sweep_elem, _sweeps.size()));
+        // Put the sweep on the list
+        _sweeps.push_back(new_sweep);
+    }
+}
+
+void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
+    std::vector<SweepData>::const_iterator it;
+
+    for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+        out_stream << it->_event_number << " ";
+        out_stream << it->_sweep_number << " ";
+        out_stream << it->_element_id << " ";
+        out_stream << it->_slip << " ";
+        out_stream << it->_area << " ";
+        out_stream << it->_mu << " ";
+        out_stream << it->_shear_init << " ";
+        out_stream << it->_shear_final << " ";
+        out_stream << it->_normal_init << " ";
+        out_stream << it->_normal_final;
+
+        next_line(out_stream);
+    }
+}
+
+void quakelib::ModelSweeps::read_data(const SweepData &in_data) {
+    //memcpy(&_data, &in_data, sizeof(SweepData));
+}
+
+void quakelib::ModelSweeps::write_data(SweepData &out_data) const {
+    //memcpy(&out_data, &_data, sizeof(SweepData));
+}
+
+void quakelib::ModelEvent::read_data(const EventData &in_data) {
+    memcpy(&_data, &in_data, sizeof(EventData));
+}
+
+void quakelib::ModelEvent::write_data(EventData &out_data) const {
+    memcpy(&out_data, &_data, sizeof(EventData));
+}
+
+void quakelib::ModelSweeps::get_field_descs(std::vector<quakelib::FieldDesc> &descs) {
+    FieldDesc       field_desc;
+
+    // Sweep table definition
+    field_desc.name = "event_number";
+    field_desc.details = "Event number corresponding to this sweep.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _event_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "sweep_number";
+    field_desc.details = "Sweep number within the event.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _sweep_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "block_id";
+    field_desc.details = "Element ID.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _element_id);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "block_slip";
+    field_desc.details = "Slip on element in this sweep (meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _slip);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "block_area";
+    field_desc.details = "Area of element (square meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _area);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "block_mu";
+    field_desc.details = "Element Lame mu parameter (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _mu);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "shear_init";
+    field_desc.details = "Shear stress of element before sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _shear_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "shear_final";
+    field_desc.details = "Shear stress of element after sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _shear_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "normal_init";
+    field_desc.details = "Normal stress of element before sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _normal_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "normal_final";
+    field_desc.details = "Normal stress of element after sweep (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(SweepData, _normal_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+}
+
+void quakelib::ModelSweeps::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+
+    // Write section header
+    ModelSweeps::get_field_descs(descs);
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+
+    out_stream << "# ";
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+
+    out_stream << "\n";
+}
+
+#ifdef HDF5_FOUND
+void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    SweepData               blank_sweep;
+    char                    **field_names, **field_details;
+    size_t                  *field_offsets;
+    hid_t                   *field_types;
+    size_t                  *field_sizes;
+    herr_t                  res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
+    field_offsets = new size_t[num_fields];
+    field_types = new hid_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Create the sweep table
+    res = H5TBmake_table("Sweeps Table",
+                         data_file,
+                         ModelSweeps::hdf5_table_name().c_str(),
+                         num_fields,
+                         0,
+                         sizeof(SweepData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_sweep,
+                         0,
+                         NULL);
+
+    if (res < 0) exit(-1);
+
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file, ModelSweeps::hdf5_table_name().c_str(), ss.str().c_str(), field_details[i]);
+
+        if (res < 0) exit(-1);
+    }
+
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+
+    delete field_names;
+
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>                  descs;
+    std::vector<SweepData>::const_iterator  it;
+    size_t                                  num_fields, num_sweeps;
+    unsigned int                i;
+    SweepData                   *sweep_data;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    num_sweeps = _sweeps.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Fill in the data for the sections
+    sweep_data = new SweepData[num_sweeps];
+
+    for (i=0,it=_sweeps.begin(); it!=_sweeps.end(); ++i,++it) {
+        memcpy(&(sweep_data[i]), &(*it), sizeof(SweepData));
+    }
+
+    // Create the section table
+    res = H5TBappend_records(data_file,
+                             ModelSweeps::hdf5_table_name().c_str(),
+                             num_sweeps,
+                             sizeof(SweepData),
+                             field_offsets,
+                             field_sizes,
+                             sweep_data);
+
+    if (res < 0) exit(-1);
+
+    // Free memory for HDF5 related data
+    delete sweep_data;
+
+    delete field_offsets;
+    delete field_sizes;
+}
+#endif
+
+void quakelib::ModelEvent::get_field_descs(std::vector<FieldDesc> &descs) {
+    FieldDesc       field_desc;
+
+    field_desc.name = "event_number";
+    field_desc.details = "Event number.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_number);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_year";
+    field_desc.details = "Event year.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_year);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_trigger";
+    field_desc.details = "Event trigger element ID.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_trigger);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(UIndex);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_magnitude";
+    field_desc.details = "Event magnitude.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _event_magnitude);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_shear_init";
+    field_desc.details = "Total initial shear stress of elements involved in event (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _shear_stress_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_shear_final";
+    field_desc.details = "Total final shear stress of elements involved in event (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _shear_stress_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_normal_init";
+    field_desc.details = "Total initial normal stress of elements involved in event (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _normal_stress_init);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_normal_final";
+    field_desc.details = "Total final normal stress of elements involved in event (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _normal_stress_final);
+    field_desc.type = H5T_NATIVE_DOUBLE;
+    field_desc.size = sizeof(double);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "start_sweep_rec";
+    field_desc.details = "Starting record number of the sweeps comprising this event.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _start_sweep_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "end_sweep_rec";
+    field_desc.details = "Ending record number of the sweeps comprising this event.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(EventData, _end_sweep_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+}
+
+void quakelib::ModelEvent::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+
+    // Write section header
+    ModelEvent::get_field_descs(descs);
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+
+    out_stream << "# ";
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+
+    out_stream << "\n";
+}
+
+#ifdef HDF5_FOUND
+void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    EventData               blank_event;
+    char                    **field_names, **field_details;
+    size_t                  *field_offsets;
+    hid_t                   *field_types;
+    size_t                  *field_sizes;
+    herr_t                  res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelEvent::get_field_descs(descs);
+    num_fields = descs.size();
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
+    field_offsets = new size_t[num_fields];
+    field_types = new hid_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Create the event table
+    res = H5TBmake_table("Event Table",
+                         data_file,
+                         ModelEvent::hdf5_table_name().c_str(),
+                         num_fields,
+                         0,
+                         sizeof(EventData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_event,
+                         0,
+                         NULL);
+
+    if (res < 0) exit(-1);
+
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file,
+                                       ModelEvent::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
+
+        if (res < 0) exit(-1);
+    }
+
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+
+    delete field_names;
+
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    size_t                  *field_offsets;
+    size_t                  *field_sizes;
+    herr_t                  res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelEvent::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Append the event record
+    res = H5TBappend_records(data_file,
+                             ModelEvent::hdf5_table_name().c_str(),
+                             1,
+                             sizeof(EventData),
+                             field_offsets,
+                             field_sizes,
+                             &(_data));
+
+    if (res < 0) exit(-1);
+
+    // Free memory for HDF5 related data
+    delete field_offsets;
+    delete field_sizes;
+}
+#endif
+
+int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name) {
+    std::ifstream   event_file, sweep_file;
+    ModelSweeps     file_sweeps;
+
+    // Try to open the event file
+    event_file.open(event_file_name.c_str());
+
+    if (!event_file.is_open()) return -1;
+
+    // Try to open the sweeps file
+    sweep_file.open(sweep_file_name.c_str());
+
+    if (!sweep_file.is_open()) return -1;
+
+    // Keep going until we hit the end of either file
+    while (!event_file.eof() && !sweep_file.eof()) {
+        ModelEvent  new_event;
+        ModelSweeps new_sweeps;
+        new_event.read_ascii(event_file);
+        unsigned int num_rec_sweeps = new_event.getNumRecordedSweeps();
+        new_sweeps.read_ascii(sweep_file, num_rec_sweeps);
+        new_event.setSweeps(new_sweeps);
+
+        if (!event_file.eof() && !sweep_file.eof()) _events.push_back(new_event);
+    }
+
+    // Close the files
+    event_file.close();
+    sweep_file.close();
+
+    return 0;
+}
+
+namespace quakelib {
+    std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms) {
+        os << "SWEEPS(" << ms._sweeps.size() << ")";
+        return os;
+    }
+
+    std::ostream &operator<<(std::ostream &os, const ModelEvent &me) {
+        os << me._data._event_number << " " << me._data._event_year;
+        return os;
+    }
 }

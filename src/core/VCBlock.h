@@ -35,11 +35,6 @@ typedef unsigned int BlockID;
 typedef unsigned int FaultID;
 typedef unsigned int SectionID;
 
-#define UNDEFINED_BLOCK_ID      UINT_MAX
-#define UNDEFINED_FAULT_ID      UINT_MAX
-#define UNDEFINED_SECTION_ID    UINT_MAX
-#define ALL_FAULTS_ID           UINT_MAX-1
-
 struct StateCheckpointData {
     double      slipDeficit;
     double      cff;
@@ -67,8 +62,9 @@ enum BlockValOp {
 };
 
 struct BlockSweepVals {
-    double      slip, init_shear, init_normal, final_shear, final_normal;
-    BlockID     block_id;
+    double          slip, init_shear, init_normal, final_shear, final_normal;
+    unsigned int    sweep_num;
+    BlockID         element_id;
 };
 
 typedef struct BlockSweepVals BlockSweepVals;

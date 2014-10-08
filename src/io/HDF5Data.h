@@ -42,50 +42,6 @@
 #define GREEN_SHEAR_HDF5            "greens_shear"
 #define GREEN_NORMAL_HDF5           "greens_normal"
 
-// HDF5 file data definitions
-#define SIM_YEARS_HDF5              "sim_years"
-#define BASE_LAT_LON_HDF5           "base_lat_lon"
-
-// Event info related definitions
-#define EVENT_TABLE_HDF5            "event_table"
-#define EVENT_NUM_ENTRIES_HDF5      12
-#define EVENT_NUM_HDF5              "event_number"
-#define EVENT_YEAR_HDF5             "event_year"
-#define EVENT_TRIGGER_HDF5          "event_trigger"
-#define EVENT_MAGNITUDE_HDF5        "event_magnitude"
-#define EVENT_SHEAR_INIT_HDF5       "event_shear_init"
-#define EVENT_NORMAL_INIT_HDF5      "event_normal_init"
-#define EVENT_SHEAR_FINAL_HDF5      "event_shear_final"
-#define EVENT_NORMAL_FINAL_HDF5     "event_normal_final"
-#define EVENT_START_SWEEP_HDF5      "start_sweep_rec"
-#define EVENT_END_SWEEP_HDF5        "end_sweep_rec"
-#define EVENT_START_AS_HDF5         "start_aftershock_rec"
-#define EVENT_END_AS_HDF5           "end_aftershock_rec"
-
-// Event sweeps table definitions
-#define SWEEP_TABLE_HDF5            "event_sweep_table"
-#define SWEEP_NUM_ENTRIES_HDF5      10
-#define SWEEP_EVENT_NUM_HDF5        "event_number"
-#define SWEEP_NUM_HDF5              "sweep_num"
-#define SWEEP_BLOCK_ID_HDF5         "block_id"
-#define SWEEP_SLIP_HDF5             "slip"
-#define SWEEP_AREA_HDF5             "area"
-#define SWEEP_MU_HDF5               "mu"
-#define SWEEP_SHEAR_INIT_HDF5       "shear_init"
-#define SWEEP_SHEAR_FINAL_HDF5      "shear_final"
-#define SWEEP_NORMAL_INIT_HDF5      "normal_init"
-#define SWEEP_NORMAL_FINAL_HDF5     "normal_final"
-
-// Aftershock/background table definitions
-#define AFTERSHOCK_TABLE_HDF5       "aftershock_table"
-#define AFTERSHOCK_NUM_ENTRIES_HDF5 6
-#define AFTERSHOCK_EVT_NUM_HDF5     "event_number"
-#define AFTERSHOCK_GEN_HDF5         "generation"
-#define AFTERSHOCK_MAG_HDF5         "magnitude"
-#define AFTERSHOCK_TIME_HDF5        "time"
-#define AFTERSHOCK_X_HDF5           "x"
-#define AFTERSHOCK_Y_HDF5           "y"
-
 // State checkpoint table definitions
 #define CHECKPOINT_STATE_HDF5       "checkpoint_state"
 #define CHECKPOINT_YEAR_HDF5        "checkpoint_year"
@@ -96,42 +52,6 @@
 #define CHECKPOINT_STRESS_S_HDF5    "stressS"
 #define CHECKPOINT_STRESS_N_HDF5    "stressN"
 #define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
-
-struct EventInfo {
-    unsigned int    event_number;
-    double          event_year;
-    BlockID         event_trigger;
-    double          event_magnitude;
-    unsigned int    start_sweep_rec, end_sweep_rec;
-    unsigned int    start_aftershock_rec, end_aftershock_rec;
-    double          init_shear, final_shear, init_normal, final_normal;
-};
-
-typedef struct EventInfo EventInfo;
-
-struct EventSweepInfo {
-    unsigned int    event_number;
-    unsigned int    sweep_num;
-    BlockID         block_id;
-    double          block_slip;
-    double          block_area;
-    double          block_mu;
-    double          shear_init, shear_final;
-    double          normal_init, normal_final;
-};
-
-typedef struct EventSweepInfo EventSweepInfo;
-
-struct AftershockInfo {
-    unsigned int    event_number;
-    unsigned int    gen;
-    float           mag;
-    float           time;
-    float           x;
-    float           y;
-};
-
-typedef struct AftershockInfo AftershockInfo;
 
 #ifdef HDF5_FOUND
 
@@ -200,57 +120,6 @@ class HDF5GreensDataWriter : public HDF5GreensData {
     public:
         HDF5GreensDataWriter(const std::string &hdf5_file_name, const unsigned int &nblocks);
         void setGreensVals(const int &bid, const double *shear_vals, const double *norm_vals);
-};
-
-class HDF5Data {
-    protected:
-        // HDF5 handle to data file
-        hid_t               data_file;
-
-        // Handles to data in the file
-        hid_t               sim_years_set;
-
-        // Handles to data space specifications
-        hid_t               pair_val_dataspace;
-
-        // Names, types, offsets and sizes for event table
-        const char *event_field_names[EVENT_NUM_ENTRIES_HDF5];
-        size_t event_field_offsets[EVENT_NUM_ENTRIES_HDF5];
-        hid_t event_field_types[EVENT_NUM_ENTRIES_HDF5];
-        size_t event_field_sizes[EVENT_NUM_ENTRIES_HDF5];
-
-        // Names, types, offsets and sizes for event sweep table
-        const char *sweep_field_names[SWEEP_NUM_ENTRIES_HDF5];
-        size_t sweep_field_offsets[SWEEP_NUM_ENTRIES_HDF5];
-        hid_t sweep_field_types[SWEEP_NUM_ENTRIES_HDF5];
-        size_t sweep_field_sizes[SWEEP_NUM_ENTRIES_HDF5];
-
-        // Names, types, offsets and sizes for aftershock/background event table
-        const char *aftershock_field_names[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        size_t aftershock_field_offsets[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        hid_t aftershock_field_types[AFTERSHOCK_NUM_ENTRIES_HDF5];
-        size_t aftershock_field_sizes[AFTERSHOCK_NUM_ENTRIES_HDF5];
-
-        // Values read from shared memory (pointers are set to within shared memory segment)
-        unsigned int    num_blocks;
-
-        void createH5Handles(void);
-
-    public:
-        HDF5Data(void) {};
-        ~HDF5Data(void);
-        unsigned int modelDim(void) const {
-            return num_blocks;
-        };
-};
-
-class HDF5DataWriter : public HDF5Data {
-    public:
-        HDF5DataWriter(const std::string &hdf5_file_name);
-        void setStartEndYears(const double &new_start_year, const double &new_end_year);
-        void flush(void);
-
-        void writeEvent(VCEvent &event);
 };
 
 #endif

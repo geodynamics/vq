@@ -71,7 +71,7 @@ void ProgressMonitor::getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, 
     min_val.val = DBL_MAX;
     max_val.val = -DBL_MAX;
     sum_val.val = 0;
-    min_val.block_id = max_val.block_id = sum_val.block_id = UNDEFINED_BLOCK_ID;
+    min_val.block_id = max_val.block_id = sum_val.block_id = UNDEFINED_ELEMENT_ID;
 
     // Get the minimum, maximum and sum CFF values on this node
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {

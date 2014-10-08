@@ -100,8 +100,8 @@ int VCSimulation::numFaults(void) const {
 /*!
  Calculate the stress before and after an event of the blocks that failed during the event.
  */
-void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
-    BlockIDSet::const_iterator      it;
+void VCSimulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
+    quakelib::ElementIDSet::const_iterator      it;
 
     shear_init = shear_final = normal_init = normal_final = 0.0;
 
@@ -118,12 +118,12 @@ void VCSimulation::getInitialFinalStresses(const BlockIDSet &block_set, double &
     }
 }
 
-void VCSimulation::sumStresses(const BlockIDSet &block_set,
+void VCSimulation::sumStresses(const quakelib::ElementIDSet &block_set,
                                double &shear_stress,
                                double &shear_stress0,
                                double &normal_stress,
                                double &normal_stress0) const {
-    BlockIDSet::const_iterator      it;
+    quakelib::ElementIDSet::const_iterator      it;
 
     shear_stress = shear_stress0 = normal_stress = normal_stress0 = 0;
 
@@ -140,9 +140,9 @@ void VCSimulation::printTimers(void) {
 }
 
 void VCSimulation::determineBlockNeighbors(void) {
-    BlockList::iterator bit, iit;
-    BlockIDSet          all_blocks;
-    double              block_size;
+    BlockList::iterator     bit, iit;
+    quakelib::ElementIDSet  all_sweeps;
+    double                  block_size;
 
     for (bit=begin(); bit!=end(); ++bit) {
         for (iit=begin(); iit!=end(); ++iit) {
@@ -158,9 +158,9 @@ void VCSimulation::determineBlockNeighbors(void) {
     }
 }
 
-std::pair<BlockIDSet::const_iterator, BlockIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
-    std::map<BlockID, BlockIDSet>::const_iterator       it;
-    BlockIDSet      empty_set;
+std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
+    std::map<BlockID, quakelib::ElementIDSet>::const_iterator       it;
+    quakelib::ElementIDSet      empty_set;
 
     it = neighbor_map.find(bid);
 
@@ -529,11 +529,10 @@ void VCSimulation::distributeUpdateField(void) {
 /*!
  Distributes a list of blocks among all processors. Used for determining failed blocks in a sweep.
  */
-void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
-    BlockIDSet::const_iterator  it;
-    
+void VCSimulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
 #ifdef MPI_C_FOUND
-    int                         i, n, p;
+    int                                     i, n, p;
+    quakelib::ElementIDSet::const_iterator  it;
     int                         *proc_block_count = new int[world_size];
     int                         *proc_block_disps = new int[world_size];
     BlockID                     *local_block_ids = new BlockID[local_id_list.size()];
@@ -601,83 +600,87 @@ void VCSimulation::distributeBlocks(const BlockIDSet &local_id_list, BlockIDProc
 /*!
  Collect the individual event sweeps spread through all nodes
  on to the root node in a single sweep.
- NOTE: This does not transfer stresses, these will be zeroed in the output file
  */
-void VCSimulation::collectEventSweep(VCEventSweep &cur_sweep) {
+void VCSimulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 #ifdef MPI_C_FOUND
-    int                             *block_counts, *block_offsets;
-    int                             num_blocks, i, total_block_count;
-    VCEventSweep::const_iterator    it;
-    BlockSweepVals                  *sweep_blocks, *all_blocks;
+    int                             *sweep_counts, *sweep_offsets;
+    int                             num_local_sweeps, i, total_sweep_count;
+    BlockSweepVals                  *sweep_vals, *all_sweeps;
+    quakelib::ModelSweeps::const_iterator    it;
 
 #ifdef DEBUG
     startTimer(sweep_comm_timer);
 #endif
 
-    // Gather the number of blocks per node at the root
-    num_blocks = cur_sweep.size();
+    // Gather the number of sweeps per node at the root
+    num_local_sweeps = sweeps.size();
 
     if (isRootNode()) {
-        block_counts = new int[world_size];
-        block_offsets = new int[world_size];
+        sweep_counts = new int[world_size];
+        sweep_offsets = new int[world_size];
     } else {
-        block_counts = block_offsets = NULL;
+        sweep_counts = sweep_offsets = NULL;
     }
 
-    MPI_Gather(&num_blocks, 1, MPI_INT, block_counts, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
+    MPI_Gather(&num_local_sweeps, 1, MPI_INT, sweep_counts, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
 
     // Record the number of blocks the root will receive from each node
     if (isRootNode()) {
-        total_block_count = 0;
+        total_sweep_count = 0;
 
         for (i=0; i<world_size; ++i) {
-            block_offsets[i] = total_block_count;
-            total_block_count += block_counts[i];
+            sweep_offsets[i] = total_sweep_count;
+            total_sweep_count += sweep_counts[i];
         }
     }
 
+    // TODO: Change BlockSweepVals to use the Quakelib data structure
     // Record the values of each block in this sweep
-    sweep_blocks = new BlockSweepVals[num_blocks];
+    sweep_vals = new BlockSweepVals[num_local_sweeps];
 
-    if (isRootNode()) all_blocks = new BlockSweepVals[total_block_count];
+    if (isRootNode()) all_sweeps = new BlockSweepVals[total_sweep_count];
 
-    for (i=0,it=cur_sweep.begin(); it!=cur_sweep.end(); ++it,++i) {
-        sweep_blocks[i].block_id = it->first;
-        sweep_blocks[i].slip = it->second.slip;
-        sweep_blocks[i].init_shear = it->second.shear_init;
-        sweep_blocks[i].init_normal = it->second.normal_init;
-        sweep_blocks[i].final_shear = it->second.shear_final;
-        sweep_blocks[i].final_normal = it->second.normal_final;
+    for (i=0,it=sweeps.begin(); it!=sweeps.end(); ++it,++i) {
+        sweep_vals[i].element_id = it->_element_id;
+        sweep_vals[i].sweep_num = it->_sweep_number;
+        sweep_vals[i].slip = it->_slip;
+        sweep_vals[i].init_shear = it->_shear_init;
+        sweep_vals[i].init_normal = it->_normal_init;
+        sweep_vals[i].final_shear = it->_shear_final;
+        sweep_vals[i].final_normal = it->_normal_final;
     }
 
     // Gather the sweep info at the root node
-    MPI_Gatherv(sweep_blocks, num_blocks, block_sweep_type,
-                all_blocks, block_counts, block_offsets, block_sweep_type,
+    MPI_Gatherv(sweep_vals, num_local_sweeps, element_sweep_type,
+                all_sweeps, sweep_counts, sweep_offsets, element_sweep_type,
                 ROOT_NODE_RANK, MPI_COMM_WORLD);
 
     // Record the received blocks into the current sweep on the root node
     if (isRootNode()) {
-        for (i=0; i<total_block_count; ++i) {
-            BlockID     bid;
-            bid = all_blocks[i].block_id;
-            cur_sweep.setSlipAndArea(bid,
-                                     all_blocks[i].slip,
-                                     getBlock(bid).get_area(),
-                                     getBlock(bid).lame_mu());
-            cur_sweep.setInitStresses(bid,
-                                      all_blocks[i].init_shear,
-                                      all_blocks[i].init_normal);
-            cur_sweep.setFinalStresses(bid,
-                                       all_blocks[i].final_shear,
-                                       all_blocks[i].final_normal);
+        for (i=0; i<total_sweep_count; ++i) {
+            BlockID         bid = all_sweeps[i].element_id;
+            unsigned int    sweep_num = all_sweeps[i].sweep_num;
+            sweeps.setSlipAndArea(sweep_num,
+                                  bid,
+                                  all_sweeps[i].slip,
+                                  getBlock(bid).area(),
+                                  getBlock(bid).lame_mu());
+            sweeps.setInitStresses(sweep_num,
+                                   bid,
+                                   all_sweeps[i].init_shear,
+                                   all_sweeps[i].init_normal);
+            sweeps.setFinalStresses(sweep_num,
+                                    bid,
+                                    all_sweeps[i].final_shear,
+                                    all_sweeps[i].final_normal);
         }
 
-        delete block_counts;
-        delete block_offsets;
-        delete all_blocks;
+        delete sweep_counts;
+        delete sweep_offsets;
+        delete all_sweeps;
     }
 
-    delete sweep_blocks;
+    delete sweep_vals;
 
 #ifdef DEBUG
     stopTimer(sweep_comm_timer);
@@ -731,7 +734,7 @@ void VCSimulation::partitionBlocks(void) {
                     break;
 
                 case PARTITION_DISTANCE:
-                    base_id = UNDEFINED_BLOCK_ID;
+                    base_id = UNDEFINED_ELEMENT_ID;
 
                     if (i == world_size-1) num_local_blocks = avail_ids.size();
 
@@ -739,7 +742,7 @@ void VCSimulation::partitionBlocks(void) {
 
                     while (more_to_assign) {
                         // Find a starting segment
-                        if (base_id == UNDEFINED_BLOCK_ID) {
+                        if (base_id == UNDEFINED_ELEMENT_ID) {
                             base_id = *(avail_ids.begin());
                             cur_fault = getBlock(base_id).getFaultID();
                             dist_map.clear();
@@ -763,7 +766,7 @@ void VCSimulation::partitionBlocks(void) {
                         if (cur_assigns.size() >= num_local_blocks) more_to_assign = false;
 
                         // If we're out of blocks to assign, start another fault
-                        if (dist_map.size() == 0) base_id = UNDEFINED_BLOCK_ID;
+                        if (dist_map.size() == 0) base_id = UNDEFINED_ELEMENT_ID;
                     }
 
                     break;
