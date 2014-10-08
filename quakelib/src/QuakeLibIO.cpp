@@ -2790,7 +2790,7 @@ int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name,
         unsigned int num_rec_sweeps = new_event.getNumRecordedSweeps();
         new_sweeps.read_ascii(sweep_file, num_rec_sweeps);
         new_event.setSweeps(new_sweeps);
-        _events.push_back(new_event);
+        if (!event_file.eof() && !sweep_file.eof()) _events.push_back(new_event);
     }
 
     // Close the files
