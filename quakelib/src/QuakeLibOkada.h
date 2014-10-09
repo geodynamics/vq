@@ -138,6 +138,7 @@ namespace quakelib {
 
             double calc_dg(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
             double calc_dV(Vec<3> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+            double calc_dg_dilat(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
 
         private:
             //
@@ -536,6 +537,28 @@ namespace quakelib {
             double Tg(double xi, double eta, double _q);
             double Cg(double xi, double eta, double _q);
             double I2g(double _R, double xi, double eta, double _q);
+        
+        
+            // dilatational dg components
+            //
+            double dSg_star(double x, double _p, double _q, double L, double W);
+            double dDg_star(double x, double _p, double _q, double L, double W);
+            double dTg_star(double x, double _p, double _q, double L, double W);
+            //
+            // dilatational dg globals
+            double Sg_star(double xi, double eta, double _q);
+            double Dg_star(double xi, double eta, double _q);
+            double Tg_star(double xi, double eta, double _q);
+            double I4g(double _R, double eta, double _q);
+            double I5g(double _R, double xi, double eta, double _q);
+            double I1g(double _R, double xi, double eta, double _q);
+            double I0g(double _R, double eta, double _q);
+            //
+
+        
+        
+        
+        
             //
             //Added by KWS, below is for change in gravitational potential
             //

@@ -3328,3 +3328,141 @@ double quakelib::Okada::I1v(double _R, double xi, double eta, double _q) {
     }
 }
 
+
+//
+// ----  Now gravity changes arising only from compression, as seen by satellite, dilatational gravity changes
+//
+// gravity change on the free surface (z=0)
+double quakelib::Okada::calc_dg_dilat(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu) {
+    OP_CMP(3); OP_MULT(3); OP_ADD(3); OP_SUB(1);
+    // Evaluating delta_g* at free surface so z=0
+    // From Okubo '92, delta_g* is the dilatational component of gravity changes
+    
+    if (mu <= 0) throw std::invalid_argument("Mu must be greater than zero.");
+    
+	precalc(dip, lambda, mu);
+    
+    // Everything is in M-K-S units
+    double G   = 0.000000000066738; //Big G gravitation constant
+    double RHO = 2670.0;   //mean crustal density (rough estimate)
+    
+	double _p = p(location[1],0.0,c);
+	double _q = q(location[1],0.0,c);
+    double dgS_star= 0.0; //contribution from Strike
+    double dgD_star= 0.0; //Dip
+    double dgT_star= 0.0; //Tensile
+    double dgC_star= 0.0; //Cavitation, currently disabled.
+    //To enable, uncomment and specify DENSITY_DIFF
+    
+    if (US != 0.0) {
+        OP_MULT(1);
+        dgS_star = US*dSg_star(location[0],_p,_q,L,W);
+    }
+    if (UD != 0.0) {
+        OP_MULT(1);
+        dgD_star = UD*dDg_star(location[0],_p,_q,L,W);
+    }
+    if (UT != 0.0) {
+        OP_MULT(2);
+        dgT_star = UT*dTg_star(location[0],_p,_q,L,W);
+        //dgC_star = DENSITY_DIFF*G*UT*dCg(location[0],_p,_q,L,W);
+        //In Okubo, Cg and Cg* are the same
+    }
+    
+    return RHO*G*(dgS_star + dgD_star + dgT_star) + dgC_star;
+}
+//
+// double bar evaluation (chinnery) for dilatational gravity
+//
+double quakelib::Okada::dSg_star(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Sg_star(x,_p,_q) - Sg_star(x,_p-W,_q) - Sg_star(x-L,_p,_q) + Sg_star(x-L,_p-W,_q);
+}
+double quakelib::Okada::dDg_star(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Dg_star(x,_p,_q) - Dg_star(x,_p-W,_q) - Dg_star(x-L,_p,_q) + Dg_star(x-L,_p-W,_q);
+}
+double quakelib::Okada::dTg_star(double x, double _p, double _q, double L, double W) {
+    OP_ADD(1); OP_SUB(6);
+    return Tg_star(x,_p,_q) - Tg_star(x,_p-W,_q) - Tg_star(x-L,_p,_q) + Tg_star(x-L,_p-W,_q);
+}
+//
+// dilatational gravity globals
+//
+double quakelib::Okada::Sg_star(double xi, double eta, double _q){
+	double _R = R(xi,eta,_q);
+    return _sin_o_dip*I4g(_R,eta,_q);
+}
+double quakelib::Okada::Dg_star(double xi, double eta, double _q){
+	double _R = R(xi,eta,_q);
+    return -1.0*_sin_o_dip*_cos_o_dip*I5g(_R,xi,eta,_q);
+}
+double quakelib::Okada::Tg_star(double xi, double eta, double _q){
+    OP_ADD(2); OP_MULT(2);
+	double _R = R(xi,eta,_q);
+    return _sin_o_2_dip*I5g(_R,xi,eta,_q);
+}
+double quakelib::Okada::I4g(double _R, double eta, double _q){
+	double _dtil = dtil(_q,eta);
+	double _Rpeta 	 = _R+eta;
+    double _Rpdtil   = _R+_dtil;
+    
+    if (_cos_o_dip!=0.0){
+        double ret_value = _one_minus_two_nu*log(_Rpdtil)/_cos_o_dip;
+        if (!singularity4(_Rpeta)) {
+            OP_SUB(1); OP_LOG(1); OP_MULT(2); OP_DIV(1);
+            ret_value -= _one_minus_two_nu*log(_Rpeta)*_sin_o_dip/_cos_o_dip;
+        } else {
+            OP_SUB(2); OP_LOG(1);
+            ret_value += _one_minus_two_nu*log(_R-eta)*_sin_o_dip/_cos_o_dip;
+        }
+        return ret_value;
+    } else{
+        return -1.0*_one_minus_two_nu*_q/_Rpdtil;
+    }
+}
+double quakelib::Okada::I5g(double _R, double xi, double eta, double _q){
+	double _dtil = dtil(_q,eta);
+    double _Rpdtil   = _R+_dtil;
+    if (_cos_o_dip!=0.0){
+        return 2.0*_one_minus_two_nu*I1g(_R,xi,eta,_q);
+    } else{
+        return -1.0*_one_minus_two_nu*xi*_sin_o_dip/_Rpdtil;
+    }
+}
+
+double quakelib::Okada::I1g(double _R, double xi, double eta, double _q){
+	OP_MULT(1);OP_ADD(1);
+	double _Rpeta = _R+eta;
+	double xi_cos = xi*_cos_o_dip;
+    if (_cos_o_dip!=0.0) {
+        if (!singularity2(xi)){
+		    OP_MULT(2); OP_ADD(1); OP_SUB(1); OP_DIV(1);
+		    return atan((_Rpeta*(1.0+_sin_o_dip)-_q*_cos_o_dip)/xi_cos);
+	    } else {
+		    return 0.0;
+	    }
+    } else {
+        return M_PI*0.5;
+    }
+}
+
+double quakelib::Okada::I0g(double _R, double eta, double _q){
+	double _dtil = dtil(_q,eta);
+	double _Rpeta 	 = _R+eta;
+	double ret_value = -1.0*_sin_o_dip*log(_R+_dtil);
+    if (!singularity4(_Rpeta)) {
+    	OP_ADD(1); OP_LOG(1);
+    	ret_value += log(_R+eta);
+    } else {
+    	OP_SUB(2); OP_LOG(1);
+    	ret_value -= log(_R-eta);
+    }
+    return ret_value;
+}
+
+
+
+
+
+
