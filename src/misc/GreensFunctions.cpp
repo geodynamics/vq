@@ -253,8 +253,8 @@ void GreensFuncCalc::symmetrizeMatrix(VCSimulation *sim, GreensValsSparseMatrix 
         for (n=0; n<num_elems; ++n) {
             ic = (full_row ? n : sim->getGlobalBID(n));
             double ir_area, ic_area;
-            ir_area = sim->getBlock(ir).get_area();
-            ic_area = sim->getBlock(ic).get_area();
+            ir_area = sim->getBlock(ir).area();
+            ic_area = sim->getBlock(ic).area();
             assertThrow(ir_area > 0 && ic_area > 0, "Blocks cannot have negative area.");
 
             int local_ir = (sim->isLocalBlockID(ic) ? ir : sim->getLocalInd(ir));
@@ -357,7 +357,7 @@ void GreensFuncCalcBarnesHut::bhInnerCalc(VCSimulation *sim, quakelib::Octree<3>
             mean_center += target_block.center();
             rake_vec += target_block.rake_vector();
             mean_rake += target_block.rake();
-            mean_area += target_block.get_area();
+            mean_area += target_block.area();
             mean_normal += target_block.normal();
             mean_lambda += target_block.lame_lambda();
             mean_mu += target_block.lame_mu();

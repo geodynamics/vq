@@ -1,6 +1,7 @@
 # Set the example directory path
 SET(VC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/)
 SET(VC_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/)
+SET(QUAKELIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/../quakelib/)
 
 # Copy the fault traces to the build directory for use in the tests
 FILE(COPY ${VC_EXAMPLE_DIR}/fault_traces DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
@@ -67,27 +68,34 @@ FOREACH(NPROC ${NUM_PROCS})
                     COMMAND ${VC_BINARY_DIR}/vc params_${RES}.d)
             ELSE (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${MPIEXEC} -np ${NPROC} ${VC_BINARY_DIR}/vc params_${RES}.d)
+                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VC_BINARY_DIR}/vc params_${RES}.d)
             ENDIF (NPROC EQUAL 1)
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
             # Check that the results are internally self consistent
             ADD_TEST(NAME test_consistent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
-            SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS run_P${NPROC}_${TAPER}_${RES})
+                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
+            SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
+                DEPENDS run_P${NPROC}_${TAPER}_${RES}
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
 
             # Check that the mean slip is near our expectations
             IF (NOT ${MEANSLIP} EQUAL 0)
                 ADD_TEST(NAME test_slip_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
-                SET_TESTS_PROPERTIES (test_slip_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS run_P${NPROC}_${TAPER}_${RES})
+                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
+                SET_TESTS_PROPERTIES (test_slip_P${NPROC}_${TAPER}_${RES} PROPERTIES
+                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
             ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
             # Check that the mean interevent time is near our expectations
             IF (NOT ${INTEREVENT} EQUAL 0)
+
                 ADD_TEST(NAME test_interevent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
-                SET_TESTS_PROPERTIES (test_interevent_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS run_P${NPROC}_${TAPER}_${RES})
+                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
+                SET_TESTS_PROPERTIES (test_interevent_P${NPROC}_${TAPER}_${RES} PROPERTIES
+                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
             ENDIF(NOT ${INTEREVENT} EQUAL 0) 
         ENDFOREACH(RES ${RESOLUTIONS})
     ENDFOREACH(TAPER_IND RANGE ${NUM_TAPER})
@@ -140,24 +148,30 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
 
         # Check that the results are internally self consistent
         ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
-        SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
+            COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
+        SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES
+            DEPENDS run_two_${TAPER}_${RES}
+            ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
 
         # Check that the mean slip is near our expectations
         #    These two faults have same slip rate as single fault, so using
         #       same mean slip values
         IF (NOT ${MEANSLIP} EQUAL 0)
             ADD_TEST(NAME test_two_slip_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_slip ${MEANSLIP})
-            SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
+                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_slip ${MEANSLIP})
+            SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES
+                DEPENDS run_two_${TAPER}_${RES}
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
         ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
         # Check that the mean interevent time is near our expectations
         # TODO: These tests fail, Kasey needs to figure out why
         #IF (NOT ${INTEREVENT} EQUAL 0)
         #    ADD_TEST(NAME test_two_interevent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-        #        COMMAND ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_interevent ${INTEREVENT})
-        #    SET_TESTS_PROPERTIES (test_two_interevent_${TAPER}_${RES} PROPERTIES DEPENDS run_two_${TAPER}_${RES})
+        #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_interevent ${INTEREVENT})
+        #    SET_TESTS_PROPERTIES (test_two_interevent_${TAPER}_${RES} PROPERTIES
+        #       DEPENDS run_two_${TAPER}_${RES}
+        #       ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
         #ENDIF(NOT ${INTEREVENT} EQUAL 0)             
     ENDFOREACH(RES ${RESOLUTIONS_TWO})
 ENDFOREACH(TAPER_IND RANGE ${NUM_TAPER})

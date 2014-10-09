@@ -5,6 +5,7 @@ from __future__ import print_function
 import math
 import sys
 import argparse
+import quakelib
 
 scipy_available = True
 try:
@@ -12,136 +13,57 @@ try:
 except ImportError:
     scipy_available = False
 
-class EventSweep:
-    def __init__(self):
-        self.sweep_num = -1
-        self.block_id = self.slip = self.area = self.mu = -1
-        self.shear_init = self.shear_final = -1
-        self.normal_init = self.normal_final = -1
-
-class Event:
-    def __init__(self):
-        self.event_num = self.year = self.trigger = self.magnitude = -1
-        self.stress_init = self.normal_init = -1
-        self.stress_final = self.normal_final = -1
-        self.sweeps = []
-
-    def get_blocks(self):
-        block_set = set()
-        for sweep in self.sweeps:
-            block_set.add(sweep.block_id)
-        return block_set
-
-    def get_sweeps(self):
-        return self.sweeps
-
-    def get_total_slips(self, block_set):
-        total_slips = {}
-        for bid in block_set: total_slips[bid] = 0
-        for sweep in self.sweeps:
-            bid = sweep.block_id
-            if bid in total_slips: total_slips[bid] += sweep.slip
-        return total_slips
-
-    def __str__(self):
-        return str(self.year)+":M"+str(self.magnitude)
-
-class EventFile:
-    def __init__(self, event_file_name, sweep_file_name):
-        event_file = open(event_file_name)
-        self.event_list = {}
-        while 1:
-            line = event_file.readline()
-            if not line: break
-            data = line.split()
-            new_event = Event()
-            new_event.event_num = int(data[0])
-            new_event.year = float(data[1])
-            new_event.trigger = int(data[2])
-            new_event.magnitude = float(data[3])
-            new_event.stress_init = float(data[4])
-            new_event.normal_init = float(data[5])
-            new_event.stress_final = float(data[6])
-            new_event.normal_final = float(data[7])
-            self.event_list[new_event.event_num] = new_event
-
-        event_file.close()
-
-        sweep_file = open(sweep_file_name)
-        while 1:
-            line = sweep_file.readline()
-            if not line: break
-            sweep_data = line.split()
-            new_sweep = EventSweep()
-            event_num = int(sweep_data[0])
-            new_sweep.sweep_num = int(sweep_data[1])
-            new_sweep.block_id = int(sweep_data[2])
-            new_sweep.slip = float(sweep_data[3])
-            new_sweep.area = float(sweep_data[4])
-            new_sweep.mu = float(sweep_data[5])
-            new_sweep.shear_init = float(sweep_data[6])
-            new_sweep.shear_final = float(sweep_data[7])
-            new_sweep.normal_init = float(sweep_data[8])
-            new_sweep.normal_final = float(sweep_data[9])
-            self.event_list[event_num].sweeps.append(new_sweep)
-
-        sweep_file.close()
-
 def check_self_consistent(events):
     error = False
-    for event_num in events.event_list:
-        event = events.event_list[event_num]
-        blocks = event.get_blocks()
-        block_sweep_slip_sums = {}
-        for block in blocks: block_sweep_slip_sums[block] = 0
+    for event in events:
+        elements = event.getInvolvedElements()
+        element_sweep_slip_sums = {}
+        for elem_id in elements: element_sweep_slip_sums[elem_id] = 0
         summed_moment = 0
-        sweep_list = event.get_sweeps()
-        for sweep in sweep_list:
-            block_sweep_slip_sums[sweep.block_id] += sweep.slip
-            summed_moment += sweep.slip*sweep.area*sweep.mu
+        for sweep in event.getSweeps():
+            element_sweep_slip_sums[sweep._element_id] += sweep._slip
+            summed_moment += sweep._slip*sweep._area*sweep._mu
 
-        total_slips = event.get_total_slips(blocks)
+        total_slips = {}
+        for elem_num in elements:
+            total_slips[elem_num] = event.getEventSlip(elem_num)
 
         # Confirm that the sum of sweep slips is equal to the total slip
-        for bnum in total_slips:
-            if total_slips[bnum] != block_sweep_slip_sums[bnum]:
-                print("ERROR: Total slip not equal to summed sweep slip for event", event.event_num, "block", bnum)
+        for elem_num in total_slips:
+            if total_slips[elem_num] != element_sweep_slip_sums[elem_num]:
+                print("ERROR: Total slip not equal to summed sweep slip for event", event.event_num, "element", elem_num)
                 error = True
 
+        # Confirm that the event magnitude is equal to the value determined from the sweeps
         summed_mag = (2.0/3.0)*math.log10(1e7*summed_moment) - 10.7
-        if abs(event.magnitude-summed_mag) > 1e-5:
+        if abs(event.getMagnitude()-summed_mag) > 1e-5:
             print("ERROR: Recorded magnitude and summed sweep magnitude is not equal for event", event.event_num)
             error = True
 
     return error
 
 def calc_mean_slip(events):
-    block_total_slips = {}
-    for event_num in events.event_list:
-        event = events.event_list[event_num]
-        blocks = event.get_blocks()
-        block_sweep_slip_sums = {}
-        for block in blocks: block_sweep_slip_sums[block] = 0
-        sweep_list = event.get_sweeps()
-        for sweep in sweep_list:
-            block_sweep_slip_sums[sweep.block_id] += sweep.slip
-            if not block_total_slips.has_key(sweep.block_id): block_total_slips[sweep.block_id] = 0.0
-            block_total_slips[sweep.block_id] += sweep.slip
-
-        total_slips = event.get_total_slips(blocks)
+    element_total_slips = {}
+    for event in events:
+        elements = event.getInvolvedElements()
+        element_sweep_slip_sums = {}
+        for elem in elements: element_sweep_slip_sums[elem] = 0
+        for sweep in event.getSweeps():
+            element_sweep_slip_sums[sweep._element_id] += sweep._slip
+            if not element_total_slips.has_key(sweep._element_id): element_total_slips[sweep._element_id] = 0.0
+            element_total_slips[sweep._element_id] += sweep._slip
 
     mean_total_slip = 0.0
-    total_slips = [block_total_slips[bid] for bid in block_total_slips.keys()]
+    total_slips = [element_total_slips[elem_id] for elem_id in element_total_slips.keys()]
 
     return sum(total_slips)/float(len(total_slips))
 
 def calc_mean_interevent(events):
     interevent_times = []
     last_year = -1
-    for event_num in events.event_list:
-        event = events.event_list[event_num]
-        if last_year > 0: interevent_times.append(event.year - last_year)
-        last_year = event.year
+    for event in events:
+        if last_year > 0: interevent_times.append(event.getEventYear() - last_year)
+        last_year = event.getEventYear()
 
     return sum(interevent_times)/float(len(interevent_times))
 
@@ -160,14 +82,12 @@ def calc_b_val(events):
 def rupture_area_vs_mag(events):
     log_ra = []
     mag = []
-    for event_num in events.event_list:
-        event = events.event_list[event_num]
+    for event in events:
         rupture_area = 0
-        sweep_list = event.get_sweeps()
-        block_areas = {}
-        for sweep in sweep_list:
-            block_areas[sweep.block_id] = sweep.area
-        rupture_area = sum([block_areas[bnum] for bnum in block_areas])
+        element_areas = {}
+        for sweep in event.getSweeps():
+            element_areas[sweep._element_id] = sweep._area
+        rupture_area = sum([element_areas[bnum] for elem_num in element_areas])
 
         if not math.isnan(event.magnitude):
             log_ra.append(math.log10(rupture_area/1e6))
@@ -209,8 +129,10 @@ if __name__ == "__main__":
         print("ERROR: mean interevent must be greater than 0")
         exit(1)
 
+    events = quakelib.ModelEventSet()
+    events.read_file_ascii(event_file, sweep_file)
+
     err = False
-    events = EventFile(event_file, sweep_file)
     if args.check_consistent and check_self_consistent(events): err = True
 
     if args.mean_slip:

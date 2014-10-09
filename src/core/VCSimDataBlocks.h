@@ -47,6 +47,7 @@ class VCSimDataBlocks {
 
         BlockID addBlock(const Block &new_block);
         Block &getBlock(const BlockID &block_num) {
+            assertThrow(block_num<blocks.size(), VCException("Invalid block number"));
             return blocks[block_num];
         };
         const Block &getBlock(const BlockID &block_num) const {

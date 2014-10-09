@@ -201,7 +201,7 @@ int main (int argc, char **argv) {
             case 'd':
                 delete_unused = true;
                 break;
-                
+
             case 'm':
                 merge_duplicate_vertices = true;
                 break;

@@ -53,7 +53,7 @@ class VCComm : virtual public SimTimer {
         MPI_Op                      bv_min_op, bv_max_op, bv_sum_op;
 
         //! Registered MPI datatype for the block-sweep data structure
-        MPI_Datatype                block_sweep_type;
+        MPI_Datatype                element_sweep_type;
 #endif
 
     public:

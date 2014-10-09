@@ -166,9 +166,9 @@ int VCComm::broadcastValue(const int &bval) {
  */
 VCComm::VCComm(void) {
 #ifdef MPI_C_FOUND
-    int             block_lengths[2];
-    MPI_Aint        displacements[2];
-    MPI_Datatype    datatypes[2];
+    int             block_lengths[3];
+    MPI_Aint        displacements[3];
+    MPI_Datatype    datatypes[3];
 
     updateFieldCounts = updateFieldDisps = NULL;
     updateFieldSendBuf = updateFieldRecvBuf = NULL;
@@ -193,13 +193,16 @@ VCComm::VCComm(void) {
     // Register BlockSweepVals datatype
     block_lengths[0] = 5;
     block_lengths[1] = 1;
+    block_lengths[2] = 1;
     displacements[0] = 0;
     displacements[1] = 5*sizeof(double);
+    displacements[2] = 5*sizeof(double)+sizeof(unsigned int);
     datatypes[0] = MPI_DOUBLE;
-    datatypes[1] = MPI_INT;
+    datatypes[1] = MPI_UNSIGNED;
+    datatypes[2] = MPI_INT;
 
-    MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_sweep_type);
-    MPI_Type_commit(&block_sweep_type);
+    MPI_Type_struct(3, block_lengths, displacements, datatypes, &element_sweep_type);
+    MPI_Type_commit(&element_sweep_type);
 #endif
 }
 
@@ -230,6 +233,6 @@ VCComm::~VCComm(void) {
     MPI_Op_free(&bv_min_op);
     MPI_Op_free(&bv_max_op);
     MPI_Op_free(&bv_sum_op);
-    MPI_Type_free(&block_sweep_type);
+    MPI_Type_free(&element_sweep_type);
 #endif
 }
