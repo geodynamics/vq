@@ -203,6 +203,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::Model
         delete fullA;
     } else {
 #ifdef MPI_C_FOUND
+
         for (i=0; i<num_local_failed; ++i) {
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
@@ -211,6 +212,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::Model
         for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
+
 #else
         assertThrow(false, "Single processor version of code, but processor MPI rank is non-zero.");
 #endif
@@ -453,22 +455,22 @@ void RunEvent::processAftershock(VCSimulation *sim) {
         sim->setNormalStress(gid, block.getRhogd());
         sim->setUpdateField(gid, block.state.slipDeficit);
     }
-    
+
     sim->distributeUpdateField();
-    
+
     // Calculate the new shear stresses and CFFs given the new update field values
     sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                    sim->greenShear(),
                                    sim->getUpdateFieldPtr(),
                                    true);
-    
+
     if (sim->doNormalStress()) {
         sim->matrixVectorMultiplyAccum(sim->getNormalStressPtr(),
                                        sim->greenNormal(),
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
-    
+
     sim->computeCFFs();
 
     // Record final stresses on each block involved in the aftershock

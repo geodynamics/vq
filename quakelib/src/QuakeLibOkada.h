@@ -537,8 +537,8 @@ namespace quakelib {
             double Tg(double xi, double eta, double _q);
             double Cg(double xi, double eta, double _q);
             double I2g(double _R, double xi, double eta, double _q);
-        
-        
+
+
             // dilatational dg components
             //
             double dSg_star(double x, double _p, double _q, double L, double W);
@@ -555,10 +555,10 @@ namespace quakelib {
             double I0g(double _R, double eta, double _q);
             //
 
-        
-        
-        
-        
+
+
+
+
             //
             //Added by KWS, below is for change in gravitational potential
             //

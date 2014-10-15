@@ -590,10 +590,12 @@ void VCSimulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list,
     delete proc_block_count;
     delete proc_block_disps;
 #else   // MPI_C_FOUND
+
     // Copy the local IDs into the global list just for the single processor
-    for (it=local_id_list.begin();it!=local_id_list.end();++it) {
+    for (it=local_id_list.begin(); it!=local_id_list.end(); ++it) {
         global_id_list.insert(std::make_pair(*it, 0));
     }
+
 #endif
 }
 
