@@ -1634,33 +1634,23 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             
             // Compute area of the current element, add it to the total for this section
             fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
-            
-            std::cout << "Computed 1 Area " << std::endl;
         
         
         }
         
-        // Pseudocode:
-        // For each element
-        //      find area of element fault
-        //      assign element max slip based on area
-        //      eqsim_world.element(elem_id).set_max_slip();
-        // ********************** KWS 
-        // Go through the created elements and assign maximum slip based on the fault area for
-        // each element's section
-                
+        // Go through the created elements and assign maximum slip based on fault section area
         for (eit=eqsim_world.begin_element();eit!=eqsim_world.end_element();++eit) {
         
             // From Table 2A in Wells Coppersmith 1994
-            double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->get_section_id]));
-             
-            double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->get_section_id]);
+            double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
             
+            // Need to document where this scaling law comes from 
+            double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
+            
+            // Set the max slip for the current element
             eit->set_max_slip(max_slip);
-            std::cout << "Max slip: " << max_slip << std::endl;
             
             }
-        // ********************** KWS 
         
         
     }
