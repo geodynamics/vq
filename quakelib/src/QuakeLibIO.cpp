@@ -1574,7 +1574,9 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
     bool                            read_cond_file;
     quakelib::EQSimGeomSectionMap::const_iterator   sit;
     quakelib::EQSimGeomRectangleMap::const_iterator it;
+    quakelib::eiterator eit;
     quakelib::LatLonDepth           base;
+    std::map<UIndex, double> fault_areas;
 
     // Clear the world first to avoid incorrectly mixing indices
     clear();
@@ -1599,6 +1601,9 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
     // Take the conversion base as the middle of the section map
     base = quakelib::LatLonDepth(geometry_data.lat_lo(), geometry_data.lon_lo());
+    
+    // Initiate converter
+    Conversion          conv(base);
 
     // Triangle elements are currently not supported
     if (geometry_data.num_triangles() > 0) {
@@ -1611,8 +1616,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
         // Assuming aligned rectangular elements
         for (it=sit->second.rectangles.begin(); it!=sit->second.rectangles.end(); ++it) {
-            quakelib::ModelElement  new_element;
-            unsigned int            i;
+            quakelib::ModelElement   new_element;
+            unsigned int             i;
 
             new_element = it->second.create_model_element();
             new_element.set_section_id(sit->second.sid());
@@ -1623,9 +1628,31 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             new_element.set_lame_mu(friction_data.get_lame_mu());
             //new_element.set_static_strength(friction_data.get_static_strength(it->first));
             //new_element.set_dynamic_strength(friction_data.get_dynamic_strength(it->first));
-
+            
+            // Insert partially finished element into the eqsim_world
             eqsim_world.insert(new_element);
+            
+            // Compute area of the current element, add it to the total for this section
+            fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
+        
+        
         }
+        
+        // Go through the created elements and assign maximum slip based on fault section area
+        for (eit=eqsim_world.begin_element();eit!=eqsim_world.end_element();++eit) {
+        
+            // From Table 2A in Wells Coppersmith 1994
+            double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+            
+            // Need to document where this scaling law comes from 
+            double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
+            
+            // Set the max slip for the current element
+            eit->set_max_slip(max_slip);
+            
+            }
+        
+        
     }
 
     insert(eqsim_world);
