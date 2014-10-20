@@ -143,18 +143,20 @@ SimRequest EventOutput::run(SimFramework *_sim) {
     sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
     sweep_count += num_sweeps;
 
-    if (sim->getEventOutfileType() == "hdf5") {
+    if (sim->isRootNode()) {
+        if (sim->getEventOutfileType() == "hdf5") {
 #ifdef HDF5_FOUND
-        sim->getCurrentEvent().append_event_hdf5(data_file);
+            sim->getCurrentEvent().append_event_hdf5(data_file);
 #endif
-    } else if (sim->getEventOutfileType() == "text") {
-        // Write the event details
-        sim->getCurrentEvent().write_ascii(event_outfile);
-        event_outfile.flush();
-
-        // Write the sweep details
-        sim->getCurrentEvent().getSweeps().write_ascii(sweep_outfile);
-        sweep_outfile.flush();
+        } else if (sim->getEventOutfileType() == "text") {
+            // Write the event details
+            sim->getCurrentEvent().write_ascii(event_outfile);
+            event_outfile.flush();
+            
+            // Write the sweep details
+            sim->getCurrentEvent().getSweeps().write_ascii(sweep_outfile);
+            sweep_outfile.flush();
+        }
     }
 
     // Check if the pause file exists each second
