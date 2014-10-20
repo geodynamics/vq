@@ -54,13 +54,13 @@ void ReadModelFile::init(SimFramework *_sim) {
     } else if (file_type == "hdf5") {
         err = world.read_file_hdf5(file_name);
     } else {
-        std::cerr << "ERROR: unknown file type " << file_type << std::endl;
+        sim->errConsole() << "ERROR: unknown file type " << file_type << std::endl;
         return;
     }
 
     // If there was an error then exit
     if (err) {
-        std::cerr << "ERROR: could not read file " << file_name << std::endl;
+        sim->errConsole() << "ERROR: could not read file " << file_name << std::endl;
         return;
     }
 

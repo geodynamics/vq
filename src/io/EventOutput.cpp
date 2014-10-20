@@ -112,7 +112,7 @@ void EventOutput::init(SimFramework *_sim) {
 #ifdef HDF5_FOUND
             open_hdf5_file(sim->getEventOutfile(), sim->getYear(), sim->getSimDuration());
 #else
-            std::cerr << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
+            sim->errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
             exit(-1);
 #endif
         } else if (sim->getEventOutfileType() == "text") {
@@ -120,14 +120,14 @@ void EventOutput::init(SimFramework *_sim) {
             sweep_outfile.open(sim->getSweepOutfile().c_str());
 
             if (!event_outfile.good() || !sweep_outfile.good()) {
-                std::cerr << "ERROR: Could not open output file " << sim->getEventOutfile() << std::endl;
+                sim->errConsole() << "ERROR: Could not open output file " << sim->getEventOutfile() << std::endl;
                 exit(-1);
             }
 
             quakelib::ModelEvent::write_ascii_header(event_outfile);
             quakelib::ModelSweeps::write_ascii_header(sweep_outfile);
         } else {
-            std::cerr << "ERROR: Unknown output file type " << sim->getEventOutfileType() << std::endl;
+            sim->errConsole() << "ERROR: Unknown output file type " << sim->getEventOutfileType() << std::endl;
             exit(-1);
         }
     }
