@@ -51,6 +51,7 @@ class ConfigFile {
         // Search for key and read value or optional default value
         template<class T> T read( const string &key ) const;  // call as read<T>
         template<class T> T read( const string &key, const T &value ) const;
+        template<class T> T readSet( const string &key, const T &value );
         template<class T> bool readInto( T &var, const string &key ) const;
         template<class T>
         bool readInto( T &var, const string &key, const T &value ) const;
@@ -179,6 +180,20 @@ T ConfigFile::read( const string &key, const T &value ) const {
     mapci p = myContents.find(key);
 
     if ( p == myContents.end() ) return value;
+
+    return string_as_T<T>( p->second );
+}
+
+template<class T>
+T ConfigFile::readSet( const string &key, const T &value ) {
+    // Return the value corresponding to key or given default value
+    // if key is not found. If key is not found, stores the default value
+    mapci p = myContents.find(key);
+
+    if ( p == myContents.end() ) {
+        add<T>(key, value);
+        return value;
+    }
 
     return string_as_T<T>( p->second );
 }
