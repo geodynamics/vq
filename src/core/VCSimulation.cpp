@@ -22,10 +22,17 @@
 #include "SimFramework.h"
 #include "SimError.h"
 
+#ifdef VC_HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+
+#ifdef VC_HAVE_STRING_H
 #include <string.h>
+#endif
+
 #include <list>
 #include <vector>
+#include <sstream>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -52,6 +59,14 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
                 "sim.start_year: Start year must be before end year.");
     assertThrow(getGreensCalcMethod() != GREENS_CALC_UNDEFINED,
                 "Greens calculation method must be either standard, Barnes Hut or file based.");
+
+    // Now that we have the parameters, write them out to a file
+    // on the root node for record keeping purposes
+    if (isRootNode()) {
+        std::stringstream    param_file_name;
+        param_file_name << "vc_params_" << getPID() << ".prm";
+        this->write_params(param_file_name.str());
+    }
 }
 
 /*!
