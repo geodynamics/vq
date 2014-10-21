@@ -18,20 +18,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 #include "HDF5Data.h"
 
-#ifdef VC_HAVE_UNISTD_H
+#ifdef VQ_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
 #ifndef _HDF5_DATA_SHARE_H_
 #define _HDF5_DATA_SHARE_H_
 
-#define PAUSE_FILE_NAME     "pause_vc"
+#define PAUSE_FILE_NAME     "pause_vq"
 
 /*!
- Manages the HDF5 format data output for VC program.
+ Manages the HDF5 format data output for VQ program.
  */
 class EventOutput : public SimPlugin {
     private:

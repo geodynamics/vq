@@ -23,7 +23,7 @@
 #include <numeric>
 
 void ProgressMonitor::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Displaying simulation progress every ";
 
@@ -35,7 +35,7 @@ void ProgressMonitor::initDesc(const SimFramework *_sim) const {
  Print initial information about the simulation environment and model.
  */
 void ProgressMonitor::init(SimFramework *_sim) {
-    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+    Simulation    *sim = static_cast<Simulation *>(_sim);
     BlockVal        min, avr, max;
     int             width = 30;
 
@@ -62,7 +62,7 @@ void ProgressMonitor::init(SimFramework *_sim) {
 /*!
  Gather statistics over all computing nodes about the CFF values.
  */
-void ProgressMonitor::getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max) {
+void ProgressMonitor::getStats(Simulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max) {
     int         lid;
     BlockID     gid;
     BlockVal    min_val, max_val, sum_val;
@@ -103,7 +103,7 @@ void ProgressMonitor::getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, 
  This includes the number of events and current stress values for the system.
  */
 SimRequest ProgressMonitor::run(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     BlockVal                min, avg, max;
     int                     max_bid_width;
     std::ios_base::fmtflags fmt_flags;

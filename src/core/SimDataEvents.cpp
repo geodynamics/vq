@@ -18,24 +18,5 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include <exception>
-#include <string>
+#include "SimDataEvents.h"
 
-#ifndef _SIM_ERROR_H_
-#define _SIM_ERROR_H_
-
-class VCException : public std::exception {
-    private:
-        std::string     err_msg;
-
-    public:
-        VCException(std::string _err_msg) : err_msg(_err_msg) {}
-        ~VCException(void) throw() {};
-
-        virtual const char *what() const throw() {
-            return err_msg.c_str();
-        }
-};
-
-
-#endif

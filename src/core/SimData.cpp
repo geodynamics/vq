@@ -18,8 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimData.h"
-#include "SimError.h"
+#include "SimData.h"
 #include <stdlib.h>
 
 /*!

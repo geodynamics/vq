@@ -25,7 +25,7 @@
 
 #include "config.h"
 
-#ifdef VC_HAVE_MATH_H
+#ifdef VQ_HAVE_MATH_H
 #include <math.h>
 #endif
 

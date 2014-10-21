@@ -18,10 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCBlock.h"
+#include "Block.h"
 
-#ifndef _VC_COMM_PARTITION_H_
-#define _VC_COMM_PARTITION_H_
+#ifndef __COMM_PARTITION_H_
+#define __COMM_PARTITION_H_
 
 class VCCommPartition {
     protected:

@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifndef _RUN_EVENT_H_
 #define _RUN_EVENT_H_
@@ -34,13 +34,13 @@ class RunEvent : public SimPlugin {
         quakelib::ElementIDSet  loose_elements;
         unsigned int            sweep_num;
 
-        void processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
-        void processBlocksSecondaryFailures(VCSimulation *sim, quakelib::ModelSweeps &sweeps);
-        virtual void markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault);
-        void recordEventStresses(VCSimulation *sim);
+        void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
+        void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
+        virtual void markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault);
+        void recordEventStresses(Simulation *sim);
 
-        void processStaticFailure(VCSimulation *sim);
-        void processAftershock(VCSimulation *sim);
+        void processStaticFailure(Simulation *sim);
+        void processAftershock(Simulation *sim);
 
     public:
         virtual std::string name() const {

@@ -1,11 +1,11 @@
 # Set the example directory path
-SET(VC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/)
-SET(VC_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/)
+SET(VQ_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/)
+SET(VQ_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/)
 SET(QUAKELIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/../quakelib/)
 
 # Copy the fault traces to the build directory for use in the tests
-FILE(COPY ${VC_EXAMPLE_DIR}/fault_traces DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
-FILE(COPY ${VC_EXAMPLE_DIR}/ca_model DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
+FILE(COPY ${VQ_EXAMPLE_DIR}/fault_traces DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
+FILE(COPY ${VQ_EXAMPLE_DIR}/ca_model DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
 
 SET(TAPER_METHODS none taper taper_renorm)
 SET(METHOD_MEANSLIP 100.4 0 0)
@@ -18,8 +18,8 @@ ELSE(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
     SET(NUM_PROCS 1)
 ENDIF(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
 
-SET(SETUP_PARAMS_SCRIPT ${VC_EXAMPLE_DIR}/setup_params.sh)
-SET(CHECK_SCRIPT ${VC_EXAMPLE_DIR}/check_results.py)
+SET(SETUP_PARAMS_SCRIPT ${VQ_EXAMPLE_DIR}/setup_params.sh)
+SET(CHECK_SCRIPT ${VQ_EXAMPLE_DIR}/check_results.py)
 SET(ENV{PATH} $ENV{PATH}:${CMAKE_CURRENT_BINARY_DIR}/../src/)
 
 LIST(LENGTH TAPER_METHODS N)
@@ -27,7 +27,7 @@ MATH(EXPR NUM_TAPER "${N}-1")
  
 # --------------  Single Fault Section Tests ----------------------------
 FOREACH(NPROC ${NUM_PROCS})
-    # Don't use 12k meshing (i.e. single element) if more than 1 proc (otherwise VC will fail)
+    # Don't use 12k meshing (i.e. single element) if more than 1 proc (otherwise VQ will fail)
     IF (NPROC EQUAL 1)
         SET(RESOLUTIONS     12000 6000 4000 3000 2000)
     ELSE (NPROC EQUAL 1)
@@ -59,16 +59,16 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VC_EXAMPLE_DIR}/example_params.d)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.d)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
             IF (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${VC_BINARY_DIR}/vc params_${RES}.d)
+                    COMMAND ${VQ_BINARY_DIR}/vq params_${RES}.d)
             ELSE (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VC_BINARY_DIR}/vc params_${RES}.d)
+                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.d)
             ENDIF (NPROC EQUAL 1)
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
@@ -138,12 +138,12 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
  
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VC_EXAMPLE_DIR}/example_params.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.d)
         SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND vc params_${RES}.d)
+            COMMAND vq params_${RES}.d)
         SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
         # Check that the results are internally self consistent

@@ -19,13 +19,12 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "RunEvent.h"
-#include "SimError.h"
 
 /*!
  At the end of each sweep after we have recalculated block CFF, we determine
  which blocks will have a failure due to dynamic or static stress changes.
  */
-void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault) {
+void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
     int         lid;
     BlockID     gid;
     bool        add;
@@ -52,7 +51,7 @@ void RunEvent::markBlocks2Fail(VCSimulation *sim, const FaultID &trigger_fault) 
 /*!
  Process the list of blocks that failed on this node using the original friction law.
  */
-void RunEvent::processBlocksOrigFail(VCSimulation *sim, quakelib::ModelSweeps &sweeps) {
+void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     quakelib::ElementIDSet::iterator    fit;
     double                              slip, stress_drop;
 
@@ -116,7 +115,7 @@ void solve_it(int n, double *x, double *A, double *b) {
     }
 }
 
-void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::ModelSweeps &sweeps) {
+void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     int             lid;
     BlockID         gid;
     unsigned int    i, n;
@@ -251,7 +250,7 @@ void RunEvent::processBlocksSecondaryFailures(VCSimulation *sim, quakelib::Model
  failure functions. A single step in the failure propagation is called a sweep
  and multiple sweeps comprise an entire event.
  */
-void RunEvent::processStaticFailure(VCSimulation *sim) {
+void RunEvent::processStaticFailure(Simulation *sim) {
     BlockList::iterator     it;
     quakelib::ModelSweeps   event_sweeps;
     BlockID                 triggerID, gid;
@@ -392,11 +391,11 @@ void RunEvent::processStaticFailure(VCSimulation *sim) {
 /*!
  Process the next aftershock. This involves determining a suitable rupture area from an empirical relationship, finding the nearest elements,
  */
-void RunEvent::processAftershock(VCSimulation *sim) {
+void RunEvent::processAftershock(Simulation *sim) {
     std::map<double, BlockID>                   as_elem_dists;
     std::map<double, BlockID>::const_iterator   it;
     std::map<BlockID, double>                   elem_slips;
-    VCEventAftershock                           as;
+    EventAftershock                           as;
     BlockID                                     gid;
     quakelib::ElementIDSet                      id_set;
     quakelib::ElementIDSet::const_iterator      bit;
@@ -484,7 +483,7 @@ void RunEvent::processAftershock(VCSimulation *sim) {
 }
 
 SimRequest RunEvent::run(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     int                     lid;
 
     // Save stress information at the beginning of the event
@@ -515,7 +514,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     return SIM_STOP_OK;
 }
 
-void RunEvent::recordEventStresses(VCSimulation *sim) {
+void RunEvent::recordEventStresses(Simulation *sim) {
     quakelib::ElementIDSet involved_blocks;
     double shear_init, shear_final, normal_init, normal_final;
     double total_shear_init, total_shear_final, total_normal_init, total_normal_final;

@@ -29,8 +29,8 @@
 #include "hdf5_hl.h"
 #endif
 
-#include "VCBlock.h"
-#include "VCEvent.h"
+#include "Block.h"
+#include "Event.h"
 #include <map>
 #include <set>
 #include <fstream>

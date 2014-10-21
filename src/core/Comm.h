@@ -19,7 +19,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "SimTimer.h"
-#include "VCBlock.h"
+#include "Block.h"
 
 #include "config.h"
 
@@ -27,8 +27,8 @@
 #include "mpi.h"
 #endif
 
-#ifndef _VC_COMM_H_
-#define _VC_COMM_H_
+#ifndef __COMM_H_
+#define __COMM_H_
 
 class VCComm : virtual public SimTimer {
     protected:

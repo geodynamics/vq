@@ -18,5 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimDataEvents.h"
+#include "Event.h"
+#include <limits.h>
+#include <iomanip>
 
+std::ostream &operator<<(std::ostream &os, const EventAftershock &e) {
+    os << "M" << std::setprecision(2) << e.mag;
+    os << " T" << e.t;
+    os << " (" << std::setprecision(1) << e.x << "," << std::setprecision(1) << e.y << ")";
+    return os;
+}

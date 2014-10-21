@@ -18,11 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimDataBlocks.h"
-#include "VCSimDataEvents.h"
+#include "SimDataBlocks.h"
+#include "SimDataEvents.h"
 
-#ifndef _VCSIM_DATA_H_
-#define _VCSIM_DATA_H_
+#ifndef _SIM_DATA_H_
+#define _SIM_DATA_H_
 
 /*!
  VCSimData stores shared simulation data in a commonly accessible structure.

@@ -18,13 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCBlock.h"
+#include "Block.h"
 #include "QuakeLibIO.h"
 #include <map>
 #include <set>
 
-#ifndef _VCEVENT_H_
-#define _VCEVENT_H_
+#ifndef _EVENT_H_
+#define _EVENT_H_
 
 typedef std::map<BlockID, int> BlockIDProcMapping;
 typedef std::set<FaultID> FaultIDSet;
@@ -38,7 +38,7 @@ typedef std::vector<SectionID> SectionIDList;
  Generalized events are similar to aftershocks but don't have a generation.
  These represent background events in the simulation off of main faults.
  We use floats to save space and improve speed since there can be on the
- order of 1e6 or more general events per VCEvent.
+ order of 1e6 or more general events per Event.
  */
 class VCGeneralEvent {
     public:
@@ -75,22 +75,22 @@ typedef std::vector<VCGeneralEvent> VCGeneralEventSet;
  Aftershocks are events caused by a rupture. Aftershocks have a generation to indicate
  how far removed they are from the original event (aftershocks caused by aftershocks and so on).
  */
-class VCEventAftershock : public VCGeneralEvent {
+class EventAftershock : public VCGeneralEvent {
     public:
         unsigned int gen;  // Generation number of earthquake (0=mainshock, N=aftershock generation N)
 
         // Constructor
-        VCEventAftershock(float _m=0.0, float _t=0.0, float _x=0.0, float _y=0.0, unsigned int _g=0)
+        EventAftershock(float _m=0.0, float _t=0.0, float _x=0.0, float _y=0.0, unsigned int _g=0)
             : VCGeneralEvent(_m, _t, _x, _y), gen(_g) { };
 
         void clear(void) {
             VCGeneralEvent::clear();
             gen = 0;
         };
-        friend std::ostream &operator<<(std::ostream &os, const VCEventAftershock &e);
+        friend std::ostream &operator<<(std::ostream &os, const EventAftershock &e);
 };
 
-typedef std::vector<VCEventAftershock> AftershockVector;
-typedef std::set<VCEventAftershock> AftershockSet;
+typedef std::vector<EventAftershock> AftershockVector;
+typedef std::set<EventAftershock> AftershockSet;
 
 #endif

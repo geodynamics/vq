@@ -18,13 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-#ifdef VC_HAVE_STDLIB_H
+#ifdef VQ_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
@@ -108,29 +108,29 @@ class GreensFuncCalc {
     public:
         GreensFuncCalc(void) : last_update(0.0), outcnt(0) {};
 
-        void progressBar(VCSimulation *sim, const int &thread_num, const int &num_done_blocks);
+        void progressBar(Simulation *sim, const int &thread_num, const int &num_done_blocks);
 
-        virtual void CalculateGreens(VCSimulation *sim) = 0;
+        virtual void CalculateGreens(Simulation *sim) = 0;
 
-        void symmetrizeMatrix(VCSimulation *sim,
+        void symmetrizeMatrix(Simulation *sim,
                               GreensValsSparseMatrix &ssh);
 };
 
 class GreensFuncFileParse : public GreensFuncCalc {
     public:
-        void CalculateGreens(VCSimulation *sim);
+        void CalculateGreens(Simulation *sim);
 };
 
 class GreensFuncCalcBarnesHut : public GreensFuncCalc {
     public:
-        void CalculateGreens(VCSimulation *sim);
-        void bhInnerCalc(VCSimulation *sim, quakelib::Octree<3> *tree, const BlockID &bid);
+        void CalculateGreens(Simulation *sim);
+        void bhInnerCalc(Simulation *sim, quakelib::Octree<3> *tree, const BlockID &bid);
 };
 
 class GreensFuncCalcStandard : public GreensFuncCalc {
     public:
-        void CalculateGreens(VCSimulation *sim);
-        void InnerCalcStandard(VCSimulation *sim,
+        void CalculateGreens(Simulation *sim);
+        void InnerCalcStandard(Simulation *sim,
                                const BlockID &bnum,
                                GreensValsSparseMatrix &ssh,
                                GreensValsSparseMatrix &snorm);

@@ -18,18 +18,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCBlock.h"
+#include "Block.h"
 
-#ifndef _VCSIM_DATA_BLOCKS_H_
-#define _VCSIM_DATA_BLOCKS_H_
+#ifndef _SIM_DATA_BLOCKS_H_
+#define _SIM_DATA_BLOCKS_H_
 
 class VCSimDataBlocks {
     private:
         //! Set of simulation model blocks
         BlockList                   blocks;
-
-        //! Temporarily store recurrence intervals during Greens function calculation
-        std::map<BlockID, double>   recurrences;
 
     public:
         BlockList::iterator begin(void) {
@@ -47,18 +44,11 @@ class VCSimDataBlocks {
 
         BlockID addBlock(const Block &new_block);
         Block &getBlock(const BlockID &block_num) {
-            assertThrow(block_num<blocks.size(), VCException("Invalid block number"));
+            assertThrow(block_num<blocks.size(), std::domain_error("Invalid block number"));
             return blocks[block_num];
         };
         const Block &getBlock(const BlockID &block_num) const {
             return blocks[block_num];
-        };
-
-        void setRecurrence(const BlockID &bid, const double &rec) {
-            recurrences[bid] = rec;
-        };
-        double getRecurrence(const BlockID &bid) {
-            return recurrences[bid];
         };
 
         unsigned int numGlobalBlocks(void) const {

@@ -18,13 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifndef _BASS_AFTERSHOCKS_H_
 #define _BASS_AFTERSHOCKS_H_
 
 /*!
- This plugin creates VCAftershockEvent objects associated with the
+ This plugin creates AftershockEvent objects associated with the
  current event using the BASS model and the user supplied parameters.
  The first generation aftershocks can occur anywhere near the ruptured
  blocks on the fault, later generation locations are based on the previous
@@ -48,7 +48,7 @@ class BASSAftershocks : public SimPlugin {
         bool                    first;
 
         //! Work horse function
-        unsigned int generateAftershocks(VCSimulation *sim, VCEventAftershock seed);
+        unsigned int generateAftershocks(Simulation *sim, EventAftershock seed);
 
     public:
         virtual std::string name(void) const {

@@ -40,8 +40,8 @@
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
-\title{Virtual California User Manual}
-\author{Eric M. Heien\\Michael K. Sachs\\Kasey W. Schultz\\Donald L. Turcotte\\John B. Rundle\\\\© University of California, Davis\\
+\title{Virtual Quake User Manual}
+\author{Eric M. Heien\\Michael K. Sachs\\Kasey W. Schultz\\Donald L. Turcotte\\John B. Rundle\\\\ \copyright University of California, Davis\\
 Version 1.1.0}
 %\date{\noindent \today}
 
@@ -83,17 +83,17 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: name of the code
 % You may want to add \hspace to both sides of the codename to better center it, such as:
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
-\hspace{0.02in}Virtual California\hspace{0.0in}
+\hspace{0.02in}Virtual Quake\hspace{0.0in}
 }}}
 \end{center}
 
 %MAIN PICTURE%
-\begin{textblock*}{0in}(0.6in,-0.05in)
+\begin{textblock*}{0in}(0.8in,-0.05in)
 % FILL: image height
 % e.g. height=6.5in
 \begin{center}
 \vspace{.5in}
-\includegraphics[height=5.3in]
+\includegraphics[height=5.0in]
 % FILL: image file name
 % e.g. cover_image.png
 {graphics/overlay_fields_109382.png}
@@ -105,7 +105,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.0}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.1}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -133,7 +133,7 @@ Eric M. Heien~~~Michael K. Sachs~~~Kasey W. Schultz\\Donald L. Turcotte~~~John B
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Begin VC manual from Lyx code
+%%%%%%%%%%%%%%%%%%%%%%%%%%% Begin VQ manual from Lyx code
 
 \maketitle
 \tableofcontents{}
@@ -151,7 +151,7 @@ Eric M. Heien~~~Michael K. Sachs~~~Kasey W. Schultz\\Donald L. Turcotte~~~John B
 
 This document is organized into three parts. Part I consists of traditional
 book front matter, including this preface. Part II begins with an
-introduction to Virtual California, the QuakeLib library, and their
+introduction to Virtual Quake, the QuakeLib library, and their
 capabilities then proceeds to the details of implementation. Part
 III provides appendices and references for input and output files
 and parameters.
@@ -170,8 +170,8 @@ those who modify the source code. Users who modify the source are
 likely to have familiarity with scripting, software installation,
 and programming, but are not necessarily professional programmers.
 
-The manual was written for the usage of Virtual California on a variety
-of different platforms. Virtual California has run on shared memory
+The manual was written for the usage of Virtual Quake on a variety
+of different platforms. Virtual Quake has run on shared memory
 computers (Sun, Hewlett-Packard, SGI, and IBM), commercial distributed
 memory machines (Intel and Cray/SGI), clusters (including machines
 on NSF XSEDE), Linux PCs and Mac OS X desktops. 
@@ -186,12 +186,12 @@ The underlying C++ code for the Greens function calculations, stress
 evolution, simulation framework, and the QuakeLib library and associated
 Python bindings and testing framework were donated to CIG in July
 of 2014. A number of individuals have contributed a significant portion
-of their careers toward the development of Virtual California. It
+of their careers toward the development of Virtual Quake. It
 is essential that you recognize these individuals in the normal scientific
 practice by citing the appropriate peer reviewed papers and making
 appropriate acknowledgements. 
 
-The Virtual California development team asks that you cite both of
+The Virtual Quake development team asks that you cite both of
 the following:
 \begin{itemize}
 \item Eric M. Heien, Michael Sachs, "Understanding Long-Term Earthquake Behavior through Simulation," Computing in Science and Engineering, vol. 14, no. 5, pp. 10-20, Sept.-Oct. 2012, \href{http://dx.doi.org/10.1109/MCSE.2012.39}{doi:10.1109/MCSE.2012.39}
@@ -233,22 +233,22 @@ in its place.
 
 \chapter{Introductions}
 
-Virtual California is a boundary element code designed to investigate
+Virtual Quake is a boundary element code designed to investigate
 long term fault system behavior and interactions between faults through
 stress transfer. It is released under the MIT Public License (see
 Appendix \ref{chap:License}). The core code is written in C++ and
 can be run on a variety of parallel processing computers, including
 shared and distributed memory platforms. To allow increased functionality
 including development of other simulators, analysis scripts, and visualization
-tools, some key components of Virtual California have been placed
+tools, some key components of Virtual Quake have been placed
 in the QuakeLib library which can be called from C/C++ programs or
 Python scripts.  The QuakeLib library uses the SWIG framework
 and can therefore be extended to a wide variety of other languages as well.
 
 
-\section{About Virtual California}
+\section{About Virtual Quake}
 
-Virtual California is a boundary element code that performs simulations
+Virtual Quake is a boundary element code that performs simulations
 of fault systems based on stress interactions between fault elements
 to understand long term statistical behavior. It performs these simulations
 using a model of faults embedded in a homogeneous elastic half space
@@ -267,7 +267,8 @@ in Section \ref{sec:Governing-Equations}.
 
 \section{History}
 
-Virtual California (abbreviated VC) started as a limited simulation
+Virtual Quake (abbreviated VQ) was originally named Virtual California (VC) until release 1.1 in November 2014.
+It started as a limited simulation
 model for distributed seismicity on the San Andreas and adjacent faults
 in southern California, developed by Rundle \cite{Rundle:1988bj}
 in Fortran. This model included stress accumulation, release and interactions
@@ -298,12 +299,13 @@ tools. Improvements to simulation performance were also developed,
 including speculative execution for rupture propagation and a Barnes-Hut
 style approximation scheme for the Green's functions.
 
+To reflect the fact that it supports a flexible fault model, Virtual California was renamed Virtual Quake (abbreviated VQ) on release 1.1 in November 2014.
 
 \section{About QuakeLib\label{sec:About_quakelib}}
 
 QuakeLib is a C++ library containing key mathematics, geophysics and
 I/O functionality related to earthquake simulation and result analysis.
-QuakeLib is currently distributed with and is used by Virtual California,
+QuakeLib is currently distributed with and is used by Virtual Quake,
 though it can be compiled and installed by itself on a machine. More
 specifically, QuakeLib contains 1) functions to read, write and validate
 fault models and earthquake catalogs in the EqSim format, 2) C++ classes
@@ -328,16 +330,13 @@ that computations on different platforms yield the same results within
 a specified tolerance.
 
 
-\chapter{VC Components and Governing Equations\label{sec:Governing-Equations}}
+\chapter{VQ Components and Governing Equations\label{sec:Governing-Equations}}
 
-There are three major components that make up Virtual California:
+There are three major components that make up Virtual Quake:
 a fault model, a set of quasi-static interactions (Green\textquoteright{}s
-functions), and an event model. In spite of the name, the only component
-of Virtual California that is specific to California is the fault
-model. This model can be changed to any physically realistic model
-and still correctly work with the simulation physics and event model. 
+functions), and an event model. 
 
-The first three sections cover the main components of a VC simulation,
+The first three sections cover the main components of a VQ simulation,
 the fourth section describes the simulation flow, and the last section
 gives a visual tour of the QuakeLib module's functionality.
 
@@ -347,7 +346,7 @@ gives a visual tour of the QuakeLib module's functionality.
 The basic components of the fault model are the fault elements and
 their parameters. Any fault system, specified by a trace file listing
 the latitude and longitude of each vertex along the traces, is split
-up into the functional members of a Virtual California simulation,
+up into the functional members of a Virtual Quake simulation,
 the fault elements. The resolution of the fault system will determine
 the total number of elements, and each element's parameters determine
 the local fault geometry and motion.
@@ -383,7 +382,7 @@ and shown above ground.\label{fig:UCERF2_google_earth}}
 
 \subsection{Model Parameters and Initial Conditions}
 
-Virtual California currently requires that the user specify the fault
+Virtual Quake currently requires that the user specify the fault
 geometry and the stress parameters on each element then run the simulation
 based on this. These parameters are briefly described in the following
 section, and explicit example fault models are constructed in chapter
@@ -392,8 +391,8 @@ section, and explicit example fault models are constructed in chapter
 
 \subsection{Setting Fault Parameters and Building a Fault Model\label{sec:define_mesh_faults}}
 
-VC treats a system of faults as multiple planar elements embedded
-in a flat homogeneous halfspace. To run Virtual California the first
+VQ treats a system of faults as multiple planar elements embedded
+in a flat homogeneous halfspace. To run Virtual Quake the first
 step is to define a fault system using a set of traces. Each trace
 describes the points along a given fault closest to the surface as
 well as fault characteristics at each trace point, such as long term
@@ -444,7 +443,7 @@ of the fault interface.
 Given this fault definition we can create a mesh which fits within
 the fault dimensions. Each fault is meshed by specifying the fault
 trace file in the format described above, and a fault element size.
-Currently all fault elements in Virtual California are square though
+Currently all fault elements in Virtual Quake are square though
 future versions will allow triangular elements. Furthermore, all
 elements of a single fault are meshed at the same resolution. This
 means that if the meshing resolution is not a perfect multiple of
@@ -522,8 +521,8 @@ in the traces to help visualize the simulation results.
 \section{Element Stress Interactions}
 
 Unlike actual fault systems where the fault geometry is dynamic over
-long time periods, Virtual California simplifies calculations assuming
-a geometrically static fault system. In this way Virtual California
+long time periods, Virtual Quake simplifies calculations assuming
+a geometrically static fault system. In this way Virtual Quake
 is intended to explore seismicity in fault systems as they appear
 today rather than attempting to model their long term evolution. Back
 slip is used to model the effects of stress buildup and release along
@@ -547,7 +546,7 @@ a location $x$ due to movement of all elements is given by \cite{Rundle2006vc}:
 
 where $s_{l}(x',t)$ is the three-dimensional slip density of element
 $l$, $T_{ij}^{kl}(x-x')$ is the Green's function tensor, and $l$
-goes over all elements. In Virtual California this field is evaluated
+goes over all elements. In Virtual Quake this field is evaluated
 only at the center of elements and slip is assumed to be uniform across
 the surface of an element and along the element rake angle defined
 in the model. Under these conditions equation \ref{eq:stress_field}
@@ -558,11 +557,11 @@ simplifies to:
 \end{equation}
 
 
-where B runs over all elements. Finally, since Virtual California
+where B runs over all elements. Finally, since Virtual Quake
 only uses the shear stress along the element rake vector and normal
 stress perpendicular to the element, the tensor $T_{ij}^{AB}$ reduces
 to $T_{s}$ for shear stresses and $T_{n}$ for normal stresses. This
-means the shear and normal stresses on an element in Virtual California
+means the shear and normal stresses on an element in Virtual Quake
 are calculated as:
 
 \begin{equation}
@@ -575,7 +574,7 @@ are calculated as:
 \end{equation}
 
 
-Thus, for a fault model with $N$ elements Virtual California requires
+Thus, for a fault model with $N$ elements Virtual Quake requires
 two $N\times N$ element matrices to represent all interactions. These
 are also referred to as the Green's function matrices. The actual
 values for the matrix entries are calculated using Okada's half-space
@@ -585,7 +584,7 @@ shows the stress field for a single vertical strike-slip fault element.
 
 \subsection{Event Transition Time}
 
-Virtual California uses a combined static-dynamic friction law to
+Virtual Quake uses a combined static-dynamic friction law to
 calculate element failures. This law is based on the Coulomb failure
 function (CFF):
 
@@ -625,7 +624,7 @@ when the next element will fail.
 
 \section{Rupture Event Model\label{sec:Event_Model}}
 
-A rupture event in VC is comprised of multiple sweeps.  During each sweep one or more elements fail and one or more elements slip.  The sweeps continue as long as there are elements that fail - once no more elements fail the event is complete.
+A rupture event in VQ is comprised of multiple sweeps.  During each sweep one or more elements fail and one or more elements slip.  The sweeps continue as long as there are elements that fail - once no more elements fail the event is complete.
 
 Rupture propagation consists of two internal phases - rupture/slip caused by static or dynamic failure and slip caused by the stress influence of other elements.  The first phase involves elements rupturing and slipping due to static stress failure (CFF = 0) or dynamic failure (Equation \ref{eq:dynamic_trigger}).  The second phase involves ruptured elements continuing to slip due to the changing stress influence of other elements.  Each of these phases are described below.
 
@@ -696,10 +695,10 @@ failing.
 \section{Simulation Flow}
 
 \begin{figure}[th]
-\includegraphics[width=0.99\textwidth]{graphics/VCFlow}\caption{Simulation flow of Virtual California.\label{fig:simulation_flow}}
+\includegraphics[width=0.99\textwidth]{graphics/VQFlow}\caption{Simulation flow of Virtual Quake.\label{fig:simulation_flow}}
 \end{figure}
 Figure \ref{fig:simulation_flow} shows the flow of simulation in
-Virtual California. The simulation begins by reading in a set of faults
+Virtual Quake. The simulation begins by reading in a set of faults
 and converting them to the internal data structures. When running
 a parallel simulation, these are partitioned over multiple processes
 to ensure that each process is responsible for roughly an equal number
@@ -718,7 +717,7 @@ In parallel simulations this time is calculated locally on each process
 then reduced to a global time to failure.
 
 The second phase is the rupture propagation phase, shown in purple
-in Figure \ref{fig:simulation_flow}. Virtual California uses a cellular
+in Figure \ref{fig:simulation_flow}. Virtual Quake uses a cellular
 automata style approach to modeling rupture propagation. The rupture
 phase does not involve time domain solutions to differential equations,
 but rather iterative calculations of stress and element failure to
@@ -729,9 +728,9 @@ approximate a rupture propagating through the fault system.
 
 As mentioned in Section \ref{sec:About_quakelib}, the QuakeLib library
 provides tools and a Python interface to develop earthquake simulations,
-read/write EqSim or VC format files for geometry, friction, initial conditions
+read/write EqSim or VQ format files for geometry, friction, initial conditions
 and events, and calculate Okada's functions for arbitrary fault geometries. 
-QuakeLib can be compiled and used independently from Virtual California.
+QuakeLib can be compiled and used independently from Virtual Quake.
 To only compile QuakeLib, follow the install instructions in section
 \ref{sec:Install} but from the quakelib subdirectory.
 
@@ -911,7 +910,7 @@ colorbar units are $\mu gal$.\label{fig:single_element_gravity_changes}}
 \subsection{Topologically Realistic Examples}
 
 The true power of QuakeLib lies in its ability to serve as the analytical
-backbone for visualizing the results of Virtual California's simulated
+backbone for visualizing the results of Virtual Quake's simulated
 seismic histories. The following example plots illustrate this point
 by showing QuakeLib's tools applied over many fault elements involved
 in a single simulated earthquake. The earthquakes visualized
@@ -953,12 +952,12 @@ the same simulated earthquake as in Figure \ref{fig:Displacement_field}. }
 
 \section{Introduction}
 
-Virtual California and QuakeLib have been tested on Linux, Mac OS
-X and several other UNIX based platforms. Virtual California has also
+Virtual Quake and QuakeLib have been tested on Linux, Mac OS
+X and several other UNIX based platforms. Virtual Quake has also
 been successfully run in parallel on several XSEDE systems and commodity
 cluster systems. You should have no problems compiling, installing,
-and running Virtual California on most Unix-like systems. Virtual
-California is currently only available as a source package that users
+and running Virtual Quake on most Unix-like systems. Virtual
+Quake is currently only available as a source package that users
 must compile on their own. The following sections will lead you through
 the installation process.
 
@@ -968,12 +967,12 @@ the installation process.
 For help, send e-mail to the Short Term Crustal Dynamics Mailing List \url{cig-short@geodynamics.org}.
 You can subscribe to the Mailing List and view archived discussion
 at the Geodynamics Mail Lists web page \url{http://geodynamics.org/cig/about/mailing-lists/}.
-For bugs found in the manual or source code, or to make feature requests please use the Github issue tracker at \url{https://github.com/geodynamics/vc/issues}.
+For bugs found in the manual or source code, or to make feature requests please use the Github issue tracker at \url{https://github.com/geodynamics/vq/issues}.
 
 
 \section{System Requirements}
 
-Installation of Virtual California requires a C++ compiler.  Optional requirements are the
+Installation of Virtual Quake requires a C++ compiler.  Optional requirements are the
 headers and development libraries for
 \begin{itemize}
 \item MPI
@@ -987,51 +986,51 @@ You must also have Python 2.7 or greater installed.
 
 \section{Obtaining Source}
 
-To obtain the latest official release of Virtual California, go to the Geodynamics software package
-web page \url{http://geodynamics.org/cig/software/vc}, download the source
+To obtain the latest official release of Virtual Quake, go to the Geodynamics software package
+web page \url{http://geodynamics.org/cig/software/vq}, download the source
 archive and unpack it using the \texttt{tar} command:
 \begin{verbatim}
-$ tar xzf vc-1.1.0.tar.gz
+$ tar xzf vq-1.1.0.tar.gz
 \end{verbatim}
 
-To get the latest development version of Virtual California, use git to make a copy of the repository:
+To get the latest development version of Virtual Quake, use git to make a copy of the repository:
 \begin{verbatim}
-$ git clone --recursive https://github.com/geodynamics/vc
+$ git clone --recursive https://github.com/geodynamics/vq
 \end{verbatim}
 
 \section{\label{sec:Install}Installation Procedure}
 
 After unpacking the source, use the following procedure to install
-the Virtual California executable as well as the QuakeLib library
+the Virtual Quake executable as well as the QuakeLib library
 and the mesher program:
 \begin{enumerate}
 \item Navigate to the directory containing the Virtual
-California source\texttt{.}~\\
+Quake source\texttt{.}~\\
 \texttt{}~\\
-\texttt{\$ cd vc}
+\texttt{\$ cd vq}
 \item Make the build directory and navigate to it.\\
 \texttt{}~\\
 \texttt{\$ mkdir build}~\\
 \texttt{\$ cd build}
-\item Use CMake to configure before compiling VC.\texttt{}~\\
+\item Use CMake to configure before compiling VQ.\texttt{}~\\
 \texttt{}~\\
 \texttt{\$ cmake ..}
-\item Use make to build QuakeLib and the VC binaries.\texttt{}~\\
+\item Use make to build QuakeLib and the VQ binaries.\texttt{}~\\
 \texttt{}~\\
 \texttt{\$ make}
 \end{enumerate}
-If you are content to run Virtual California from the build directory,
+If you are content to run Virtual Quake from the build directory,
 then you are done. Upon successful completion, the \texttt{make} command
-creates two executables ``mesher'' and ``vc'' in the
-\texttt{/build/src/} subdirectory. ``vc'' is the binary you will use to
-run a Virtual California simulation, and the mesher program can create
+creates two executables ``mesher'' and ``vq'' in the
+\texttt{/build/src/} subdirectory. ``vq'' is the binary you will use to
+run a Virtual Quake simulation, and the mesher program can create
 fault models as described in Section \ref{sec:building_faults}.
 
 
 \subsection{Mac OS X}
 
 If you have a third party installation of python (e.g. from Homebrew
-or MacPorts) Virtual California will build and install, but the Python
+or MacPorts) Virtual Quake will build and install, but the Python
 QuakeLib module may not work (failure will generally manifest itself as a segmentation fault). This is because CMake may build against
 a different installation of Python than it runs Python scripts with. To fix this you can specify the Python installation to use when compiling QuakeLib with:
 \begin{verbatim}
@@ -1047,20 +1046,20 @@ Be sure to change the paths to whatever is appropriate on your system.
 QuakeLib libraries will be installed in standard library directories
 based on your system configuration. CMake will generate a file named
 \texttt{install\_manifest.txt} in the build directory detailing
-the locations of installed files. The Virtual California binary is at
-\texttt{build/src/vc}.
+the locations of installed files. The Virtual Quake binary is at
+\texttt{build/src/vq}.
 
 
 \subsection{Selecting a Compiler --- Multiprocessing\label{sec:Selecting-a-Compiler-Multiproc}}
 
-Depending on the machine used to run VC, you may need to change which
-compiler CMake uses to compile VC. For example, if the user wants
-to compile VC with gcc 3.3, execute cmake as shown below.
+Depending on the machine used to run VQ, you may need to change which
+compiler CMake uses to compile VQ. For example, if the user wants
+to compile VQ with gcc 3.3, execute cmake as shown below.
 \begin{verbatim}
 $ CC=gcc-3.3 CXX=g++-3.3 cmake ..
 $ make
 \end{verbatim}
-To compile Virtual California and deploy it across multiple processors using MPI, execute cmake instead as:
+To compile Virtual Quake and deploy it across multiple processors using MPI, execute cmake instead as:
 \begin{verbatim}
 $ CC=mpicc CXX=mpicxx cmake ..
 $ make
@@ -1069,8 +1068,8 @@ $ make
 \subsection{Additional Tools}
 
 While the following software is not necessary for the normal operation
-of Virtual California, you may find it useful for accessing Virtual
-California data in HDF5 files.
+of Virtual Quake, you may find it useful for accessing Virtual
+Quake data in HDF5 files.
 
 %
 %\subsubsection{NumPy}
@@ -1105,34 +1104,34 @@ HDFView is a visual tool written in Java for browsing and editing
 HDF5 files. You may download it from the HDFView home page \url{hdf.ncsa.uiuc.edu/hdf-java-html/hdfview}.
 
 
-\chapter{Running VC\label{cha:Running_VC}}
+\chapter{Running VQ\label{cha:Running_VQ}}
 
 
 \section{Introduction}
 
 Now that installation and testing is finished, we will get into the
-specifics of building a fault model, compiling Virtual California,
+specifics of building a fault model, compiling Virtual Quake,
 and finally running a custom simulation. The following chapter serves
-to illustrate the main features of a Virtual California simulation,
-and will prepare the user for the examples in Chapter \ref{cha:Running_VC}. 
+to illustrate the main features of a Virtual Quake simulation,
+and will prepare the user for the examples in Chapter \ref{cha:Running_VQ}. 
 
 
 \section{Basic Usage and Tests}
 
-The main procedure for running a VC simulation is to create
+The main procedure for running a VQ simulation is to create
 the fault model (see Sections
 \ref{sec:Tutorial_single} and \ref{sec:Tutorial_multiple} for examples),
-compile Virtual California following Section \ref{sec:Install} to
+compile Virtual Quake following Section \ref{sec:Install} to
 generate the executable, place the executable in the same folder as
 the parameter files, and finally execute the program. 
 
 
 \subsection{CMake Tests}
 
-If you installed Virtual California according to Section \ref{sec:Install},
-then you successfully compiled the QuakeLib library and the VC and
+If you installed Virtual Quake according to Section \ref{sec:Install},
+then you successfully compiled the QuakeLib library and the VQ and
 mesher executables. CMake is used to configure the simulation program,
-and also provides a test framework to ensure all parts of VC are working as expected. To run the suite of tests use the following commands.
+and also provides a test framework to ensure all parts of VQ are working as expected. To run the suite of tests use the following commands.
 \begin{verbatim}
 $ cd build/
 $ make test
@@ -1190,10 +1189,10 @@ then you should consult the tutorial in Section \ref{sec:Tutorial_single}.
 \section{Advanced Usage}
 
 Since the simulation physics and event model will work with any arbitrarily
-complex fault model, advanced users can make Virtual California generate
+complex fault model, advanced users can make Virtual Quake generate
 simulated seismic histories for any fault system. The only requirement
-for using VC to simulate dynamics on an arbitrary fault network is
-to prepare the input files. Chapter \ref{cha:Running_VC} contains
+for using VQ to simulate dynamics on an arbitrary fault network is
+to prepare the input files. Chapter \ref{cha:Running_VQ} contains
 examples that illustrate this procedure of defining fault geometry
 and properties.
 
@@ -1201,13 +1200,13 @@ and properties.
 \subsection{Tuning Parameters\label{sec:tuning_parameters}}
 
 Fault simulations must initially be tuned to correctly simulate actual
-earthquakes. The primary tuning parameter in Virtual California is
+earthquakes. The primary tuning parameter in Virtual Quake is
 the dynamic triggering factor $\eta$,
 defined in Section \ref{sec:Event_Model}. The dynamic triggering
 factor is used to encourage rupture propagation during a simulated
 earthquake. This parameter acts to tune the rupture and
 slipping properties of faults without requiring field measurements
-of each fault's physical properties, a result of VC's abstraction
+of each fault's physical properties, a result of VQ's abstraction
 and generality. Currently, this parameter is set globally for the
 fault model.
 %Figure \ref{fig:tuning_parameters} shows a comparison
@@ -1252,7 +1251,7 @@ fault model.
 %\par\end{center}%
 %\end{minipage}
 %
-%\caption{The output from several VC simulations over a range of dynamic triggering
+%\caption{The output from several VQ simulations over a range of dynamic triggering
 %and slip-scaling threshold parameter values: (a) frequency-magnitude
 %varying$\eta$; (b) frequency-magnitude varying $S_t$; (c) average
 %slip-surface rupture length varying $\eta$; and (d) average slip-surface
@@ -1268,8 +1267,8 @@ fault model.
 
 \subsection{Simulation Performance and Scaling\label{sec:element_size_discussion}}
 
-Virtual California is designed to support parallel computing with OpenMP or MPI
-and this section gives some quantitative results of deploying VC in
+Virtual Quake is designed to support parallel computing with OpenMP or MPI
+and this section gives some quantitative results of deploying VQ in
 multiprocessing environments. The key factors
 determining the scope of the output and the simulation performance
 are the number and size of the fault elements in the fault model.
@@ -1296,7 +1295,7 @@ size, and the interaction with other elements in the system, but will
 generally range from approximately 0.1 to 1.0 meters. For example,
 for the 12km x 12km fault described in Section \ref{sec:define_mesh_faults}
 the minimum slip distance is 0.3 meters. Figure \ref{fig:min_magnitude_elem_size}
-shows the relationship in VC between element size and minimum earthquake
+shows the relationship in VQ between element size and minimum earthquake
 magnitude.
 
 \begin{figure}
@@ -1317,7 +1316,7 @@ simulated earthquake magnitude range.}
 %\subsection{Element Size and Required Memory}
 
 The number of elements in a model will also affect the required memory.
-%Since VC uses a Barnes-Hut style approximation algorithm for fault
+%Since VQ uses a Barnes-Hut style approximation algorithm for fault
 %interaction the actual memory required will depend on the accuracy
 %of the approximation.
 For non-approximated fault interaction in a
@@ -1386,9 +1385,9 @@ requirements with approximations.]{\includegraphics[width=0.48\textwidth]{graphi
 \section{Overview}
 
 These tutorials are meant to serve as a guide to some of the types
-of simulations VC can perform. These cookbook examples are distributed
+of simulations VQ can perform. These cookbook examples are distributed
 with the package under the \texttt{examples} directory. Each tutorial is a self-contained lesson in how to
-use Virtual California. The tutorials increase in degree of complexity
+use Virtual Quake. The tutorials increase in degree of complexity
 from one to the next. In the last section, we demonstrate how to construct
 the entire California fault system for large scale simulations.
 
@@ -1396,21 +1395,21 @@ the entire California fault system for large scale simulations.
 \subsection{Prerequisites}
 
 Before you begin any of the tutorials, you will need to install Virtual
-California following the instructions in Chapter \vref{cha:Installation}.
+Quake following the instructions in Chapter \vref{cha:Installation}.
 If you do not wish to create your own mesh, the meshes
 are also provided as part of the tutorial. 
 
 
 \section{Building a Fault Model\label{sec:building_faults}}
 
-VC uses a mesher program for fault model file manipulation.
+VQ uses a mesher program for fault model file manipulation.
 The mesher imports one or more trace files, manipulates
 them based on user arguments and exports one or more files to be used
-as input files for a VC simulation. After following install
+as input files for a VQ simulation. After following install
 instructions in Section \ref{sec:Install}, the mesher program is
 compiled to an executable located at \texttt{build/src/mesher}.
 This program is called by the shell scripts in the examples below
-to generate a fault model for VC. See Section \vref{cha:Appendix-C:Mesher_Parameters}
+to generate a fault model for VQ. See Section \vref{cha:Appendix-C:Mesher_Parameters}
 for more information on the options for the mesher program.
 
 The next sections give examples
@@ -1455,7 +1454,7 @@ trace files for all of California's major fault sections in the subfolder
 
 \subsection{Friction Parameters}
 
-Virtual California uses established scaling laws to determine certain
+Virtual Quake uses established scaling laws to determine certain
 model parameters and initial conditions. Past simulations required
 that the user specify the stress parameters on each element then run
 the simulation based on this. However, the parameters that produce
@@ -1463,7 +1462,7 @@ realistic results depend strongly on the model fault geometry, size
 of fault elements and friction properties. Furthermore these parameters
 can be easily modified to produce arbitrary fault behavior. Rather
 than require the user to specify these parameters, they are internally
-calculated by VC to match established physical laws and empirical
+calculated by VQ to match established physical laws and empirical
 observations.
 
 \subsection{Simulation Parameter File}
@@ -1535,7 +1534,7 @@ Edit the parameter file so the simulation parameters are set correctly for the c
 
 \subsection{Overview}
 
-This tutorial is the simplest possible implementation of Virtual California.
+This tutorial is the simplest possible implementation of Virtual Quake.
 In this tutorial we will build the trace file for a single vertical
 strike-slip fault element, then use this to build a fault model with
 the mesher program and run this simulation for 10,000 years. 
@@ -1623,12 +1622,12 @@ sim.file.output_sweep             = sweeps_3000.txt
 sim.file.output_event_type        = text
 \end{verbatim}
 
-\subsection{Running VC}
+\subsection{Running VQ}
 
 With the generated fault mesh and and parameter file we can run the simulation.
-To do so, call the vc executable (single processor) and pass the parameter file as a command line argument:
+To do so, call the vq executable (single processor) and pass the parameter file as a command line argument:
 \begin{verbatim}
-$ ../../build/src/vc ./params.d
+$ ../../build/src/vq ./params.d
 \end{verbatim}
 
 You should see output similar to:
@@ -1636,13 +1635,13 @@ You should see output similar to:
 \begin{verbatim}
 # *** MPI CPU count           : 1
 # Initializing blocks.
-# To gracefully quit, create the file quit_vc in the run directory.
+# To gracefully quit, create the file quit_vq in the run directory.
 # Calculating Greens function with the standard Okada class.
 # Greens function took 0.00187707 seconds.
 # Greens shear matrix takes 128 bytes.
 # Greens normal matrix takes 128 bytes.
 # To access the event output file during the simulation, pause 
-# by creating the file pause_vc.  Delete the file to resume.
+# by creating the file pause_vq.  Delete the file to resume.
 # Writing events in format text to file events_3000.txt
 # Plugin requested simulation end: Block stress calculation
  #                   Timer Name  AvgCounts        Min        Max       Mean     StdDev 
@@ -1658,9 +1657,9 @@ You should see output similar to:
 
 The output data will be in \texttt{events\_3000.txt} and \texttt{sweeps\_3000.txt}.
 For more details about the file contents, see Appendix
-\ref{chap:Virtual-California-Output}. The results are not very exciting,
+\ref{chap:Virtual-Quake-Output}. The results are not very exciting,
 there is one earthquake that occurs regularly due to constant backslip.
-But this illustrates setting up a Virtual California simulation start
+But this illustrates setting up a Virtual Quake simulation start
 to finish.
 
 
@@ -1724,24 +1723,24 @@ elements. This plot was generated by Google Earth from the mesher output KML fil
 \end{figure}
 
 
-\subsection{Running VC}
+\subsection{Running VQ}
 
-Again we run the simulation by calling the vc executable:
+Again we run the simulation by calling the vq executable:
 \begin{verbatim}
-$ ../../build/src/vc ./params_multiple.d
+$ ../../build/src/vq ./params_multiple.d
 \end{verbatim}
 
 Output should be similar to the previous simulation:
 \begin{verbatim}
 # *** MPI CPU count           : 1
 # Initializing blocks.
-# To gracefully quit, create the file quit_vc in the run directory.
+# To gracefully quit, create the file quit_vq in the run directory.
 # Calculating Greens function with the standard Okada class.
 # Greens function took 0.00388789 seconds.
 # Greens shear matrix takes 1.125 kilobytes.
 # Greens normal matrix takes 1.125 kilobytes.
 # To access the event output file during the simulation, pause 
-# by creating the file pause_vc.  Delete the file to resume.
+# by creating the file pause_vq.  Delete the file to resume.
 # Writing events in format text to file events_1000.txt
 # Plugin requested simulation end: Block stress calculation
  #                   Timer Name  AvgCounts        Min        Max       Mean     StdDev 
@@ -1758,14 +1757,14 @@ Note the Greens shear and normal matrices now require 1.125 KB of memory instead
 \subsection{Results}
 
 The output data is stored in \texttt{events\_1000.txt} and \texttt{sweeps\_1000.txt}. For more details about the file contents, see Appendix
-\ref{chap:Virtual-California-Output}.
+\ref{chap:Virtual-Quake-Output}.
 
 \section{Multiple Fault Sections}
 
 
 \subsection{Overview}
 
-This tutorial explores a VC simulation involving
+This tutorial explores a VQ simulation involving
 two neighboring fault sections --- each 15km long and 12km deep meshed
 into 3km by 3km elements. We will also use larger fault elements than
 the previous example, which raises the lower bound for magnitudes
@@ -1776,7 +1775,7 @@ detailed discussion).
 
 \subsection{Input Files}
 
-We will use another trace file that is provided with the VC package.
+We will use another trace file that is provided with the VQ package.
 This trace file specifies two neighboring vertical strike slip faults 
 that intersect at the Earth and Physical Sciences building
 on campus at the University of California, Davis, shown in Figure
@@ -1826,26 +1825,26 @@ campus. The fault sections are 15km x 12km and meshed into 3km x 3km
 elements. This plot was generated by Google Earth from the mesher output KML file.}
 \end{figure}
 
-\subsection{Running VC}
+\subsection{Running VQ}
 
 Again we run the simulation on a single processor by simply executing
-the vc executable:
+the vq executable:
 \begin{verbatim}
-$ ../../build/src/vc ./params.d
+$ ../../build/src/vq ./params.d
 \end{verbatim}
-To instead run VC in parallel on 2 or more processors/cores with MPI, use:
+To instead run VQ in parallel on 2 or more processors/cores with MPI, use:
 \begin{verbatim}
-$ mpirun -np 2 ../../build/src/vc ./params.d
+$ mpirun -np 2 ../../build/src/vq ./params.d
 \end{verbatim}
 The output from an MPI simulation should be identical that from a single processor simulation.
 
 \subsection{Results}
 
 The output data is stored in \texttt{events\_3000.txt} and \texttt{sweeps\_3000.txt}. For more details about the file contents, see Appendix
-\ref{chap:Virtual-California-Output}.
+\ref{chap:Virtual-Quake-Output}.
 
 
-\section{Building the California Fault Model}
+\section{Building the Quake Fault Model}
 \subsection{Overview}
 
 In the examples folder we also provide all the major fault traces in California and an executable script that can use them to build a full fault model. To build the full California fault model, execute the following commands to mesh the model into 3km elements:
@@ -1855,20 +1854,20 @@ $ cd examples/ca_model/
 $ ./gen_ca_model.sh 3000
 \end{verbatim}
 
-Next, create an appropriate parameter file and run VC as shown in the previous sections.  Note that the full CA simulation requires a fair amount of memory and may take several hours to finish.  Progress will be reported during the simulation if the \texttt{sim.system.progress\_period} parameter is set to a nonzero value.
+Next, create an appropriate parameter file and run VQ as shown in the previous sections.  Note that the full CA simulation requires a fair amount of memory and may take several hours to finish.  Progress will be reported during the simulation if the \texttt{sim.system.progress\_period} parameter is set to a nonzero value.
 
 %-------------------------------- End tutorials, begin appendices
 \part{Appendices}
 
 \appendix
 
-\chapter{\label{cha:Appendix-A:-Input}Input Parameters for Virtual California}
+\chapter{\label{cha:Appendix-A:-Input}Input Parameters for Virtual Quake}
 
 
 \section{Input Parameters Grouped by Functionality}
 
 This section explains the meaning of the input parameters for Virtual
-California. These parameters are grouped by their functionality. Parameters
+Quake. These parameters are grouped by their functionality. Parameters
 are given with their default values.
 
 
@@ -2055,16 +2054,16 @@ q: distance decay rate\tabularnewline
 %\end{tabular}
 %
 
-\chapter{Virtual California Input Model Format}
+\chapter{Virtual Quake Input Model Format}
 
 
 
 \section{\label{sec:Trace-File-Format}Trace File Format}
 
-The initial fault geometry for VC runs is defined by the trace file.
+The initial fault geometry for VQ runs is defined by the trace file.
 Each trace file describes a single fault by the location of points
 along the fault trace and associated fault characteristics at each
-of the points. A single VC model for a simulation can be generated
+of the points. A single VQ model for a simulation can be generated
 by combining multiple fault traces using the mesher program (see Section
 \ref{sec:Tutorial_multiple} for an example).
 
@@ -2131,7 +2130,7 @@ be greater than 0).\tabularnewline
 \section{Mesher Options Grouped by Functionality}
 
 This section explains the meaning of the options used by the mesher
-program for Virtual California model file manipulation. These options
+program for Virtual Quake model file manipulation. These options
 are grouped by their functionality. 
 
 
@@ -2195,19 +2194,19 @@ export\_file.\tabularnewline
 \end{tabular}
 
 
-\chapter{\label{chap:Virtual-California-Output}Virtual California Output
+\chapter{\label{chap:Virtual-Quake-Output}Virtual Quake Output
 File Format}
 
 
 \section{Introduction}
 
-The format of the output files of Virtual California is described
+The format of the output files of Virtual Quake is described
 here. All outputs are in non-dimensional units unless otherwise specified.
 
 
 \section{HDF5 Output}
 
-If Virtual California is compiled with the HDF5 library it is possible
+If Virtual Quake is compiled with the HDF5 library it is possible
 to output simulation results in this format. The output file is composed of several tables
 and datasets describing the input and output to a simulation. Depending
 on user options some of these tables may be empty but they will always
@@ -2470,7 +2469,7 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
 BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
 ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\bibliographystyle{plain}
-\bibliography{vc}
+\bibliography{vq}
 
 \end{document}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END VC manual from Lyx code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END VQ manual from Lyx code

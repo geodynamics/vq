@@ -18,11 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCBlock.h"
-#include "VCEvent.h"
+#include "Block.h"
+#include "Event.h"
 
-#ifndef _VCSIM_DATA_EVENTS_H_
-#define _VCSIM_DATA_EVENTS_H_
+#ifndef _SIM_DATA_EVENTS_H_
+#define _SIM_DATA_EVENTS_H_
 
 class VCSimDataEvents {
     private:
@@ -48,7 +48,7 @@ class VCSimDataEvents {
             cur_event = new_event;
             event_cnt++;
         };
-        void addAftershock(const VCEventAftershock &new_aftershock) {
+        void addAftershock(const EventAftershock &new_aftershock) {
             cur_aftershocks.insert(new_aftershock);
         };
         double nextAftershockTime(void) const {
@@ -58,8 +58,8 @@ class VCSimDataEvents {
                 return DBL_MAX;
             }
         };
-        VCEventAftershock popAftershock(void) {
-            VCEventAftershock next_aftershock = *(cur_aftershocks.begin());
+        EventAftershock popAftershock(void) {
+            EventAftershock next_aftershock = *(cur_aftershocks.begin());
             cur_aftershocks.erase(cur_aftershocks.begin());
             return next_aftershock;
         };

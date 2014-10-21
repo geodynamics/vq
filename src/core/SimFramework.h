@@ -24,16 +24,20 @@
 #include <mpi.h>
 #endif
 
-#ifdef VC_HAVE_MATH_H
+#ifdef VQ_HAVE_MATH_H
 #include <math.h>
 #endif
 
-#ifdef VC_HAVE_STRING_H
+#ifdef VQ_HAVE_STRING_H
 #include <string.h>
 #endif
 
-#ifdef VC_HAVE_STDLIB_H
+#ifdef VQ_HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+
+#ifdef VQ_HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #include <map>
@@ -202,6 +206,11 @@ class SimFramework : public virtual SimTimer {
         // Loop timing functions
         unsigned int itersPerSecond(void) const {
             return (unsigned int)iters_per_sec;
+        };
+
+        // Other functions
+        unsigned int getPID(void) const {
+            return getpid();
         };
 };
 

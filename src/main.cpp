@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 // Plugin #includes
 #include "EventOutput.h"
@@ -38,7 +38,7 @@
 #include "RunEvent.h"
 #include "SanityCheck.h"
 #include "UpdateBlockStress.h"
-#include "VCInitBlocks.h"
+#include "InitBlocks.h"
 
 int main (int argc, char **argv) {
     PluginID        read_model_file, init_blocks;
@@ -46,9 +46,9 @@ int main (int argc, char **argv) {
     PluginID        greens_kill, update_block_stress, run_event;
     PluginID        sanity_checking, bass_model_aftershocks, display_progress, state_output_file;
     PluginID        event_output, graceful_quit;
-    VCSimulation    *vc_sim;
+    Simulation    *vc_sim;
 
-    vc_sim = new VCSimulation(argc, argv);
+    vc_sim = new Simulation(argc, argv);
 
     // ************************************************************
     // ** Define plugins and whether they are active

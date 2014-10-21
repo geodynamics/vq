@@ -19,14 +19,13 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "SimTimer.h"
-#include "SimError.h"
 #include "QuakeLibUtil.h"
 
 #include <iomanip>
 #include <stdexcept>
 #include <valarray>
 
-#ifdef VC_HAVE_SYS_TIME_H
+#ifdef VQ_HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 

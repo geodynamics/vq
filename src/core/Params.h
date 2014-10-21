@@ -22,9 +22,10 @@
 
 #include <string>
 #include "QuakeLibUtil.h"
+#include "ConfigFile.h"
 
-#ifndef _VCPARAMS_H_
-#define _VCPARAMS_H_
+#ifndef _PARAMS_H_
+#define _PARAMS_H_
 
 enum GreensCalcMethod {
     GREENS_CALC_UNDEFINED,      // undefined Greens function behavior
@@ -40,153 +41,121 @@ enum GreensCalcMethod {
  */
 class VCParams {
     private:
-        bool                valid;
-
-        std::string         version;
-
-        double              year;
-        double              sim_end_year;
-
-        int                 checkpoint_period;  // in terms of # of events between state saves
-        std::string         checkpoint_save_prefix;
-
-        unsigned int        progress_period;
-
-        double              dynamic;
-
-        double              greens_kill_distance;
-        double              greens_sample_distance;
-        GreensCalcMethod    greens_calc_method;
-        double              barnes_hut_theta;       // controls how much smoothing occurs in Barnes-Hutt approximation
-        std::string         greens_infile;
-
-        unsigned int        bass_max_generations;
-        double              bass_min_magnitude_mm;
-        double              bass_aftershock_strength_dm;
-        double              bass_frequency_scale_b;
-        double              bass_aftershock_start_c;
-        double              bass_time_decay_p;
-        double              bass_distance_d;
-        double              bass_distance_decay_q;
-
-        bool                sanity_check;
-        bool                do_normal_stress;
-        bool                use_transpose_matrix;
-
-        std::string         input_model_file;
-        std::string         input_model_file_type;
-
-        std::string         greens_outfile;
-
-        std::string         event_outfile, sweep_outfile;
-        std::string         event_outfile_type;
+        ConfigFile          params;
 
     public:
-        VCParams(void) : valid(false) {};
+        VCParams(void) {};
         void read_params(const std::string &param_file_name);
+        void write_params(const std::string &param_file_name);
 
         std::string getVersion(void) const {
-            return version;
+            return params.read<string>("sim.version");
         };
 
         double getSimStart(void) const {
-            return year;
+            return params.read<double>("sim.time.start_year");
         };
         double getSimDuration(void) const {
-            return sim_end_year;
+            return params.read<double>("sim.time.end_year");
         };
 
+        // in terms of # of events between state saves
         int getCheckpointPeriod(void) const {
-            return checkpoint_period;
+            return params.read<int>("sim.system.checkpoint_period");
         };
         std::string getCheckpointPrefix(void) const {
-            return checkpoint_save_prefix;
+            return params.read<string>("sim.system.checkpoint_prefix");
         };
 
         unsigned int getProgressPeriod(void) const {
-            return progress_period;
+            return params.read<unsigned int>("sim.system.progress_period");
         };
 
         double getDynamic(void) const {
-            return dynamic;
+            return params.read<double>("sim.friction.dynamic");
         };
 
         double getGreensKillDistance(void) const {
-            return greens_kill_distance;
+            return params.read<double>("sim.greens.kill_distance");
         };
         double getGreensSampleDistance(void) const {
-            return greens_sample_distance;
+            return params.read<double>("sim.greens.sample_distance");
         };
         GreensCalcMethod getGreensCalcMethod(void) const {
-            return greens_calc_method;
+            std::string greens_method = params.read<string>("sim.greens.method");
+
+            // Parse the Greens calculation method string
+            if (!greens_method.compare("file")) return GREENS_FILE_PARSE;
+
+            if (!greens_method.compare("bh")) return GREENS_CALC_BARNES_HUT;
+
+            if (!greens_method.compare("standard")) return GREENS_CALC_STANDARD;
+
+            return GREENS_CALC_UNDEFINED;
         };
+        // controls how much smoothing occurs in Barnes-Hut approximation
         double getBarnesHutTheta(void) const {
-            return barnes_hut_theta;
+            return params.read<double>("sim.greens.bh_theta");
         };
         std::string getGreensInputfile(void) const {
-            return greens_infile;
+            return params.read<string>("sim.greens.input");
         };
 
         unsigned int getBASSMaxGenerations(void) const {
-            return bass_max_generations;
+            return params.read<unsigned int>("sim.bass.max_generations");
         };
         double getBASSMinMagnitude(void) const {
-            return bass_min_magnitude_mm;
+            return params.read<double>("sim.bass.mm");
         };
         double getBASSAftershockStrength(void) const {
-            return bass_aftershock_strength_dm;
+            return params.read<double>("sim.bass.dm");
         };
         double getBASSFrequencyScale(void) const {
-            return bass_frequency_scale_b;
+            return params.read<double>("sim.bass.b");
         };
         double getBASSAftershockStart(void) const {
-            return bass_aftershock_start_c;
+            return params.read<double>("sim.bass.c");
         };
         double getBASSTimeDecay(void) const {
-            return bass_time_decay_p;
+            return params.read<double>("sim.bass.p");
         };
         double getBASSDistance(void) const {
-            return bass_distance_d;
+            return params.read<double>("sim.bass.d");
         };
         double getBASSDistanceDecay(void) const {
-            return bass_distance_decay_q;
+            return params.read<double>("sim.bass.q");
         };
 
         bool doSanityCheck(void) const {
-            return sanity_check;
+            return params.read<bool>("sim.system.sanity_check");
         };
         bool doNormalStress(void) const {
-            return do_normal_stress;
+            return params.read<bool>("sim.greens.use_normal");
         };
         bool useTransposedMatrix(void) const {
-            return use_transpose_matrix;
+            return params.read<bool>("sim.system.transpose_matrix");
         };
 
         std::string getModelFile(void) const {
-            return input_model_file;
+            return params.read<string>("sim.file.input");
         };
         std::string getModelFileType(void) const {
-            return input_model_file_type;
+            return params.read<string>("sim.file.input_type");
         };
 
         std::string getGreensOutfile(void) const {
-            return greens_outfile;
+            return params.read<string>("sim.greens.output");
         };
 
         std::string getEventOutfile(void) const {
-            return event_outfile;
+            return params.read<string>("sim.file.output_event");
         };
         std::string getSweepOutfile(void) const {
-            return sweep_outfile;
+            return params.read<string>("sim.file.output_sweep");
         };
         std::string getEventOutfileType(void) const {
-            return event_outfile_type;
+            return params.read<string>("sim.file.output_event_type");
         };
-
-        friend std::ostream &operator<<(std::ostream &os, const VCParams &params);
 };
-
-std::ostream &operator<<(std::ostream &os, const VCParams &params);
-std::ostream &operator<<(std::ostream &os, const GreensCalcMethod &calc_method);
 
 #endif

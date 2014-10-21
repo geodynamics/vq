@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 #include <cmath>
 
 #ifndef _SANITY_CHECK_H_
@@ -43,8 +43,8 @@ class SanityCheck : public SimPlugin {
     private:
         std::vector<std::pair<BlockID, double> >    failed_cffs, failed_update_fields;
 
-        bool assertCFFValueCorrectness(VCSimulation *sim);
-        bool assertUpdateFieldCorrectness(VCSimulation *sim);
+        bool assertCFFValueCorrectness(Simulation *sim);
+        bool assertUpdateFieldCorrectness(Simulation *sim);
 };
 
 #endif

@@ -22,7 +22,10 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+
+#ifdef VQ_HAVE_STRING_H
 #include <string.h>
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
