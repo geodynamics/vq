@@ -7,7 +7,7 @@ geologically-observed rates until stress values exceed the frictional parameters
 At this point the segment will break and transfer stress to the rest of the
 system via the quasi-static interactions described above. Under the correct
 conditions, transferred stress results in propagating ruptures throughout the
-system, i.e. a simulated earthquake. The design of Virtual California allows
+system, i.e. a simulated earthquake. The design of Virtual Quake allows
 for fast execution so many thousands of events can be generated over very 
 long simulated time periods. The result is a rich dataset from which to study
 the statistical properties of the rupturing fault system.
