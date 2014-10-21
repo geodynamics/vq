@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCParams.h"
+#include "Params.h"
 
 /*!
  Parse a configuration file for each of the possible parameters, assigning default values

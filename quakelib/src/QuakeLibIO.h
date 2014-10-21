@@ -749,7 +749,7 @@ namespace quakelib {
     };
 
     /*!
-     A ModelEvent is a rupture of one or more blocks on one or more faults in a VC model.
+     A ModelEvent is a rupture of one or more blocks on one or more faults in a model.
      This consists of origin information (trigger block, year) and information about
      how the event propagated through the system (event sweeps).
      */

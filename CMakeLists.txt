@@ -1,24 +1,24 @@
-# The name of our project is "VC". CMakeLists files in this project can 
-# refer to the root source directory of the project as ${VC_SOURCE_DIR} and 
-# to the root binary directory of the project as ${VC_BINARY_DIR}. 
+# The name of our project is "VQ". CMakeLists files in this project can
+# refer to the root source directory of the project as ${VQ_SOURCE_DIR} and 
+# to the root binary directory of the project as ${VQ_BINARY_DIR}. 
 cmake_minimum_required (VERSION 2.6) 
-project (VC) 
+project (VQ)
 
 # Enable testing
 INCLUDE (CTest)
 
 # Check for common include files
 INCLUDE (CheckIncludeFiles)
-CHECK_INCLUDE_FILES ("sys/time.h" VC_HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILES ("math.h" VC_HAVE_MATH_H)
-CHECK_INCLUDE_FILES ("stdlib.h" VC_HAVE_STDLIB_H)
-CHECK_INCLUDE_FILES ("unistd.h" VC_HAVE_UNISTD_H)
-CHECK_INCLUDE_FILES ("string.h" VC_HAVE_STRING_H)
+CHECK_INCLUDE_FILES ("sys/time.h" VQ_HAVE_SYS_TIME_H)
+CHECK_INCLUDE_FILES ("math.h" VQ_HAVE_MATH_H)
+CHECK_INCLUDE_FILES ("stdlib.h" VQ_HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES ("unistd.h" VQ_HAVE_UNISTD_H)
+CHECK_INCLUDE_FILES ("string.h" VQ_HAVE_STRING_H)
 
 # Check for functions
 INCLUDE (CheckFunctionExists)
-CHECK_FUNCTION_EXISTS (sleep VC_HAVE_SLEEP_FUNC)
-CHECK_FUNCTION_EXISTS (usleep VC_HAVE_USLEEP_FUNC)
+CHECK_FUNCTION_EXISTS (sleep VQ_HAVE_SLEEP_FUNC)
+CHECK_FUNCTION_EXISTS (usleep VQ_HAVE_USLEEP_FUNC)
 
 SET( ENV{CMAKE_OSX_ARCHITECTURES} x86_64 )
 
@@ -44,7 +44,7 @@ IF(DEFINED HDF5_FOUND)
 ENDIF(DEFINED HDF5_FOUND)
 
 # Create the config.h file and make sure everyone can find it
-CONFIGURE_FILE(${VC_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+CONFIGURE_FILE(${VQ_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 # Add common directories to the include search path
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})

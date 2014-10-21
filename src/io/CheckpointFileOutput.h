@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 #include "HDF5Data.h"
 
 #ifndef _CHECKPOINT_FILE_OUTPUT_H_
@@ -31,7 +31,7 @@ class CheckpointFileOutput : public SimPlugin {
     private:
         unsigned int        checkpoint_num;
 
-        void writeCheckpoint(const std::string &ckpt_file_name, const VCSimulation *sim);
+        void writeCheckpoint(const std::string &ckpt_file_name, const Simulation *sim);
 
     public:
         virtual std::string name(void) const {

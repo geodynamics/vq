@@ -23,7 +23,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#ifdef VC_HAVE_STRING_H
+#ifdef VQ_HAVE_STRING_H
 #include <string.h>
 #endif
 

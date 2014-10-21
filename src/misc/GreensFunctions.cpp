@@ -20,12 +20,11 @@
 
 #include "GreensFunctions.h"
 #include "HDF5Data.h"
-#include "SimError.h"
 #include <iomanip>
 #include <set>
 #include <cmath>
 
-void GreensFuncCalc::progressBar(VCSimulation *sim, const int &thread_num, const int &num_done_blocks) {
+void GreensFuncCalc::progressBar(Simulation *sim, const int &thread_num, const int &num_done_blocks) {
     if (thread_num == 0 && sim->curTime() > last_update+1) {
         outcnt++;
         last_update = sim->curTime();
@@ -43,7 +42,7 @@ void GreensFuncCalc::progressBar(VCSimulation *sim, const int &thread_num, const
 // **************************************************************************
 // *** Standard Okada code
 // **************************************************************************
-void GreensFuncCalcStandard::CalculateGreens(VCSimulation *sim) {
+void GreensFuncCalcStandard::CalculateGreens(Simulation *sim) {
     std::vector<int>        row_sizes;
     int                     num_blocks, t_num, n;
 
@@ -90,7 +89,7 @@ void GreensFuncCalcStandard::CalculateGreens(VCSimulation *sim) {
     }
 }
 
-void GreensFuncCalcStandard::InnerCalcStandard(VCSimulation *sim,
+void GreensFuncCalcStandard::InnerCalcStandard(Simulation *sim,
                                                const BlockID &bnum,
                                                GreensValsSparseMatrix &ssh,
                                                GreensValsSparseMatrix &snorm) {
@@ -130,7 +129,7 @@ std::ostream &operator<<(std::ostream &os, const GreensValsSparseMatrix &m) {
 }
 
 // Read the Greens function values in from a specified file
-void GreensFuncFileParse::CalculateGreens(VCSimulation *sim) {
+void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
 #ifdef HDF5_FOUND
     HDF5GreensDataReader    *greens_file_reader;
     BlockID                 gid;
@@ -166,7 +165,7 @@ void GreensFuncFileParse::CalculateGreens(VCSimulation *sim) {
 #endif
 }
 
-void GreensFuncCalc::symmetrizeMatrix(VCSimulation *sim, GreensValsSparseMatrix &ssh) {
+void GreensFuncCalc::symmetrizeMatrix(Simulation *sim, GreensValsSparseMatrix &ssh) {
     double      sxrl, sxru;
     int         ir, ic, n;
 
@@ -267,7 +266,7 @@ void GreensFuncCalc::symmetrizeMatrix(VCSimulation *sim, GreensValsSparseMatrix 
     }
 }
 
-void GreensFuncCalcBarnesHut::CalculateGreens(VCSimulation *sim) {
+void GreensFuncCalcBarnesHut::CalculateGreens(Simulation *sim) {
     BlockList::iterator     bit;
     quakelib::Octree<3>     *tree;
     quakelib::RectBound<3>  total_bound;
@@ -305,7 +304,7 @@ void GreensFuncCalcBarnesHut::CalculateGreens(VCSimulation *sim) {
     // TODO: symmetrize Greens matrix
 }
 
-void GreensFuncCalcBarnesHut::bhInnerCalc(VCSimulation *sim, quakelib::Octree<3> *tree, const BlockID &bid) {
+void GreensFuncCalcBarnesHut::bhInnerCalc(Simulation *sim, quakelib::Octree<3> *tree, const BlockID &bid) {
     Block                               &source_block = sim->getBlock(bid);
     BlockIDList                         target_blocks;
     BlockIDList::const_iterator         bit;

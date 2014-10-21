@@ -18,12 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifndef _GRACEFUL_QUIT_H_
 #define _GRACEFUL_QUIT_H_
 
-#define GRACEFUL_QUIT_FILE_NAME     "quit_vc"
+#define GRACEFUL_QUIT_FILE_NAME     "quit_vq"
 
 /*!
  Allows user to gracefully quit the simulation and ensure

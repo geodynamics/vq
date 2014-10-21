@@ -19,24 +19,24 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "SimFramework.h"
-#include "VCParams.h"
-#include "VCBlock.h"
-#include "VCEvent.h"
-#include "VCSimData.h"
-#include "VCComm.h"
-#include "VCCommPartition.h"
+#include "Params.h"
+#include "Block.h"
+#include "Event.h"
+#include "SimData.h"
+#include "Comm.h"
+#include "CommPartition.h"
 #include "HDF5Data.h"
 
-#ifdef VC_HAVE_LIMITS_H
+#ifdef VQ_HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
-#ifdef VC_HAVE_FLOAT_H
+#ifdef VQ_HAVE_FLOAT_H
 #include <float.h>
 #endif
 
-#ifndef _VCSIMULATION_H_
-#define _VCSIMULATION_H_
+#ifndef _Simulation_H_
+#define _Simulation_H_
 
 #include <string>
 
@@ -53,14 +53,14 @@ enum PartitionMethod {
 };
 
 /*!
- VCSimulation is an instantiation of a Virtual California simulation using the SimFramework.
+ Simulation is an instantiation of a Virtual California simulation using the SimFramework.
  It contains functions related to the simulation, parameter retrieval functions and basic
  functions for earthquake analysis.
  */
-class VCSimulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCComm {
+class Simulation : public SimFramework, public VCParams, public VCSimData, public VCCommPartition, public VCComm {
     public:
-        VCSimulation(int argc, char **argv);
-        ~VCSimulation(void);
+        Simulation(int argc, char **argv);
+        ~Simulation(void);
 
         void init(void);
 

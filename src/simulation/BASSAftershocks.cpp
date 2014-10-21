@@ -22,16 +22,16 @@
 #include <algorithm>
 
 void BASSAftershocks::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Creating BASS model aftershocks (max "
                    << sim->getBASSMaxGenerations() << " generations)." << std::endl;
 }
 
 SimRequest BASSAftershocks::run(SimFramework *_sim) {
-    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    Simulation                *sim = static_cast<Simulation *>(_sim);
     unsigned int                genNum = 0, start, stop, count = 0;
-    VCEventAftershock           initial_shock;
+    EventAftershock           initial_shock;
     AftershockVector::iterator  it;
     quakelib::Conversion        convert;
 
@@ -55,11 +55,11 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     event_blocks = sim->getCurrentEvent().getInvolvedElements();
 
     // Select a random block in the event to be the center of the aftershocks
-    initial_shock = VCEventAftershock(sim->getCurrentEvent().getMagnitude(event_blocks),
-                                      sim->getCurrentEvent().getEventYear(),
-                                      0,        // No need to set x,y coords since they will be selected from entire fault
-                                      0,
-                                      0);
+    initial_shock = EventAftershock(sim->getCurrentEvent().getMagnitude(event_blocks),
+                                    sim->getCurrentEvent().getEventYear(),
+                                    0,        // No need to set x,y coords since they will be selected from entire fault
+                                    0,
+                                    0);
     events_to_process.push_back(initial_shock);
 
     start = 0;
@@ -88,8 +88,8 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     return SIM_STOP_OK;
 }
 
-unsigned int BASSAftershocks::generateAftershocks(VCSimulation *sim, VCEventAftershock seed) {
-    VCEventAftershock       aftershock;
+unsigned int BASSAftershocks::generateAftershocks(Simulation *sim, EventAftershock seed) {
+    EventAftershock       aftershock;
     quakelib::ElementIDSet::iterator  it;
     float                   Ms, t, r, theta, seed_x, seed_y;
     int                     selected_ind;

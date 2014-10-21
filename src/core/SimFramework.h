@@ -24,19 +24,19 @@
 #include <mpi.h>
 #endif
 
-#ifdef VC_HAVE_MATH_H
+#ifdef VQ_HAVE_MATH_H
 #include <math.h>
 #endif
 
-#ifdef VC_HAVE_STRING_H
+#ifdef VQ_HAVE_STRING_H
 #include <string.h>
 #endif
 
-#ifdef VC_HAVE_STDLIB_H
+#ifdef VQ_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-#ifdef VC_HAVE_UNISTD_H
+#ifdef VQ_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

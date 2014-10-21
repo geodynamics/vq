@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifndef _GREENS_FILE_OUTPUT_H_
 #define _GREENS_FILE_OUTPUT_H_

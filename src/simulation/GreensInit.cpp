@@ -26,7 +26,7 @@
  given the number of blocks and number of nodes.
  */
 void GreensInit::dryRun(SimFramework *_sim) {
-    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+    Simulation        *sim = static_cast<Simulation *>(_sim);
     double              init_memory, running_memory, init_memory_per_node, running_memory_per_node;
     std::stringstream   rm_ss, rmpn_ss, im_ss, impn_ss;
     int                 rm_ind, rmpn_ind, im_ind, impn_ind, nblocks, num_nodes;
@@ -77,7 +77,7 @@ void GreensInit::dryRun(SimFramework *_sim) {
  Calculates Greens functions for given parameters and type of calculation.
  */
 void GreensInit::init(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     GreensFuncCalcBarnesHut bh_calc;
     GreensFuncCalcStandard  gstandard_calc;
     GreensFuncFileParse     file_parse;

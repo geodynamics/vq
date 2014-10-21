@@ -18,15 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 #include "SimFramework.h"
-#include "SimError.h"
 
-#ifdef VC_HAVE_STDLIB_H
+#ifdef VQ_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-#ifdef VC_HAVE_STRING_H
+#ifdef VQ_HAVE_STRING_H
 #include <string.h>
 #endif
 
@@ -41,7 +40,7 @@
 /*!
  Initialize the simulation by reading the parameter file and checking the validity of parameters.
  */
-VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
+Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     srand(time(0));
 
     // Ensure we are given the parameter file name
@@ -72,7 +71,7 @@ VCSimulation::VCSimulation(int argc, char **argv) : SimFramework(argc, argv) {
 /*!
  Finish the simulation by deallocating memory and freeing MPI related structures.
  */
-VCSimulation::~VCSimulation(void) {
+Simulation::~Simulation(void) {
 #ifdef DEBUG
     console() << "Number matrix multiplies: " << num_mults << std::endl;
 #endif
@@ -87,7 +86,7 @@ VCSimulation::~VCSimulation(void) {
 /*!
  Initialize the VC specific part of the simulation by creating communication timers.
  */
-void VCSimulation::init(void) {
+void Simulation::init(void) {
 #ifdef DEBUG
     reduce_comm_timer = initTimer("Reduce Comm", false, false);
     fail_comm_timer = initTimer("Fail Synch Comm", false, false);
@@ -103,7 +102,7 @@ void VCSimulation::init(void) {
  Calculate the number of faults in the simulation based on
  the number of unique block fault IDs.
  */
-int VCSimulation::numFaults(void) const {
+int Simulation::numFaults(void) const {
     BlockList::const_iterator   it;
     FaultIDSet                  fault_set;
 
@@ -115,7 +114,7 @@ int VCSimulation::numFaults(void) const {
 /*!
  Calculate the stress before and after an event of the blocks that failed during the event.
  */
-void VCSimulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
+void Simulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const {
     quakelib::ElementIDSet::const_iterator      it;
 
     shear_init = shear_final = normal_init = normal_final = 0.0;
@@ -133,11 +132,11 @@ void VCSimulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_s
     }
 }
 
-void VCSimulation::sumStresses(const quakelib::ElementIDSet &block_set,
-                               double &shear_stress,
-                               double &shear_stress0,
-                               double &normal_stress,
-                               double &normal_stress0) const {
+void Simulation::sumStresses(const quakelib::ElementIDSet &block_set,
+                             double &shear_stress,
+                             double &shear_stress0,
+                             double &normal_stress,
+                             double &normal_stress0) const {
     quakelib::ElementIDSet::const_iterator      it;
 
     shear_stress = shear_stress0 = normal_stress = normal_stress0 = 0;
@@ -150,11 +149,11 @@ void VCSimulation::sumStresses(const quakelib::ElementIDSet &block_set,
     }
 }
 
-void VCSimulation::printTimers(void) {
+void Simulation::printTimers(void) {
     if (!dry_run) printAllTimers(console(), world_size, node_rank, ROOT_NODE_RANK);
 }
 
-void VCSimulation::determineBlockNeighbors(void) {
+void Simulation::determineBlockNeighbors(void) {
     BlockList::iterator     bit, iit;
     quakelib::ElementIDSet  all_sweeps;
     double                  block_size;
@@ -173,7 +172,7 @@ void VCSimulation::determineBlockNeighbors(void) {
     }
 }
 
-std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> VCSimulation::getNeighbors(const BlockID &bid) const {
+std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> Simulation::getNeighbors(const BlockID &bid) const {
     std::map<BlockID, quakelib::ElementIDSet>::const_iterator       it;
     quakelib::ElementIDSet      empty_set;
 
@@ -189,7 +188,7 @@ std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_
 /*!
  Computes CFF values for all blocks on this node.
  */
-void VCSimulation::computeCFFs(void) {
+void Simulation::computeCFFs(void) {
     int         i;
 
     for (i=0; i<numLocalBlocks(); ++i) {
@@ -210,7 +209,7 @@ void VCSimulation::computeCFFs(void) {
 // and will only slow things down, generally used for testing purposes
 //#define PERFORM_SPARSE_MULTIPLIES
 
-void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatrix<GREEN_VAL> *a, const double *b, const bool dense) {
+void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatrix<GREEN_VAL> *a, const double *b, const bool dense) {
     int         x, y, l, width, height, array_dim;
     double      val;
 #ifdef DEBUG
@@ -343,7 +342,7 @@ void VCSimulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMat
 #ifdef USE_SSE  // SSE version
 #include <xmmintrin.h>
 
-void VCSimulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense) {
+void Simulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense) {
     __m128d     aval, bval, cval, tmpval;
     double      tmp[2];
 #if SSE_LOOP_UNROLL != 16 && SSE_LOOP_UNROLL != 8 && SSE_LOOP_UNROLL != 6 && SSE_LOOP_UNROLL != 4 && SSE_LOOP_UNROLL != 2
@@ -391,7 +390,7 @@ void VCSimulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a
 
 #else   // Non-SSE version
 
-void VCSimulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense) {
+void Simulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense) {
     double val = 0;
 
     if (dense) {
@@ -419,7 +418,7 @@ void VCSimulation::multiplySumRow(double *c, const double *b, const GREEN_VAL *a
  Using this function is faster than leaving the code in matrixVectorMultiplyAccum.
  */
 #ifdef USE_SSE
-void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n) {
+void Simulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n) {
     __m128d     aval, bval, cval, tmpval;
 #if SSE_LOOP_UNROLL != 16 && SSE_LOOP_UNROLL != 8 && SSE_LOOP_UNROLL != 6 && SSE_LOOP_UNROLL != 4 && SSE_LOOP_UNROLL != 2
 #error "Invalid value of SSE_LOOP_UNROLL"
@@ -497,7 +496,7 @@ void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, c
     }
 }
 #else
-void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n) {
+void Simulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n) {
     for (int x=0; x<n; ++x) c[x] += b[0]*a[x];
 }
 #endif
@@ -506,7 +505,7 @@ void VCSimulation::multiplyRow(double *c, const double *b, const GREEN_VAL *a, c
  Distributes the local part of the update field to other nodes and
  receives their local update fields.
  */
-void VCSimulation::distributeUpdateField(void) {
+void Simulation::distributeUpdateField(void) {
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
     startTimer(dist_comm_timer);
@@ -544,7 +543,7 @@ void VCSimulation::distributeUpdateField(void) {
 /*!
  Distributes a list of blocks among all processors. Used for determining failed blocks in a sweep.
  */
-void VCSimulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
+void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list) {
 #ifdef MPI_C_FOUND
     int                                     i, n, p;
     quakelib::ElementIDSet::const_iterator  it;
@@ -618,7 +617,7 @@ void VCSimulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list,
  Collect the individual event sweeps spread through all nodes
  on to the root node in a single sweep.
  */
-void VCSimulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
+void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 #ifdef MPI_C_FOUND
     int                             *sweep_counts, *sweep_offsets;
     int                             num_local_sweeps, i, total_sweep_count;
@@ -708,7 +707,7 @@ void VCSimulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 /*!
  Partition the blocks over different nodes using a simple blocked partition scheme.
  */
-void VCSimulation::partitionBlocks(void) {
+void Simulation::partitionBlocks(void) {
     int                     i;
 #ifdef MPI_C_FOUND
     PartitionMethod                 part_method = PARTITION_DISTANCE;
@@ -789,7 +788,7 @@ void VCSimulation::partitionBlocks(void) {
                     break;
 
                 default:
-                    throw VCException("Unknown partitioning method.");
+                    throw std::logic_error("Unknown partitioning method.");
                     break;
             }
         }

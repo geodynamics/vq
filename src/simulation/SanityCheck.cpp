@@ -21,12 +21,12 @@
 #include "SanityCheck.h"
 
 void SanityCheck::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Performing sanity checks." << std::endl;
 }
 
-bool SanityCheck::assertCFFValueCorrectness(VCSimulation *sim) {
+bool SanityCheck::assertCFFValueCorrectness(Simulation *sim) {
     BlockID     gid;
     int         lid;
     bool        failed = false;
@@ -44,7 +44,7 @@ bool SanityCheck::assertCFFValueCorrectness(VCSimulation *sim) {
     return failed;
 }
 
-bool SanityCheck::assertUpdateFieldCorrectness(VCSimulation *sim) {
+bool SanityCheck::assertUpdateFieldCorrectness(Simulation *sim) {
     BlockID     gid;
     int         lid;
     bool        failed = false;
@@ -67,7 +67,7 @@ bool SanityCheck::assertUpdateFieldCorrectness(VCSimulation *sim) {
  If any values are unusual they are recorded and the simulation is halted.
  */
 SimRequest SanityCheck::run(SimFramework *_sim) {
-    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+    Simulation        *sim = static_cast<Simulation *>(_sim);
 
     if (assertCFFValueCorrectness(sim) || assertUpdateFieldCorrectness(sim)) return SIM_STOP_REQUIRED;
     else return SIM_STOP_OK;

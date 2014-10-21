@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
 #ifndef _PROGRESS_MONITOR_H_
 #define _PROGRESS_MONITOR_H_
@@ -41,7 +41,7 @@ class ProgressMonitor : public SimPlugin {
         int             next_event_count;
         bool            first;
 
-        void getStats(VCSimulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max);
+        void getStats(Simulation *sim, BlockVal &min, BlockVal &avg, BlockVal &max);
 };
 
 #endif

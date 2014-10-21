@@ -21,7 +21,7 @@
 #include "GreensKillInteraction.h"
 
 void GreensKillInteraction::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Greens kill distance: " << sim->getGreensKillDistance() << " km." << std::endl;
 }
@@ -30,7 +30,7 @@ void GreensKillInteraction::initDesc(const SimFramework *_sim) const {
  Test how many Greens values will be killed for the dry run.
  */
 void GreensKillInteraction::dryRun(SimFramework *_sim) {
-    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    Simulation                *sim = static_cast<Simulation *>(_sim);
 
     sim->console() << "# Total number of Greens values: " << sim->numLocalBlocks()*double(sim->numGlobalBlocks()) << std::endl;
     sim->console() << "# Number of Greens values killed: " << killInteraction(_sim, true) << std::endl;
@@ -49,7 +49,7 @@ void GreensKillInteraction::init(SimFramework *_sim) {
  over a specified distance from each other.
  */
 double GreensKillInteraction::killInteraction(SimFramework *_sim, const bool &dry_run) {
-    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    Simulation                *sim = static_cast<Simulation *>(_sim);
     double                      num_kill;
     BlockList::const_iterator   it, jit;
     int                         lid;

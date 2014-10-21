@@ -18,11 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCInitBlocks.h"
-#include "SimError.h"
+#include "InitBlocks.h"
 
 void VCInitBlocks::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Initializing blocks." << std::endl;
 }
@@ -32,7 +31,7 @@ void VCInitBlocks::initDesc(const SimFramework *_sim) const {
  the blocks and creating MPI related data types.
  */
 void VCInitBlocks::dryRun(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     sim->partitionBlocks();
 }
 
@@ -41,7 +40,7 @@ void VCInitBlocks::dryRun(SimFramework *_sim) {
  setting value pointers and creating the needed MPI data types.
  */
 void VCInitBlocks::init(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     int                     i;
     BlockList::iterator     bit;
 

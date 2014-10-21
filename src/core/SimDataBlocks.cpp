@@ -18,13 +18,26 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCEvent.h"
-#include <limits.h>
-#include <iomanip>
+#include "SimDataBlocks.h"
 
-std::ostream &operator<<(std::ostream &os, const VCEventAftershock &e) {
-    os << "M" << std::setprecision(2) << e.mag;
-    os << " T" << e.t;
-    os << " (" << std::setprecision(1) << e.x << "," << std::setprecision(1) << e.y << ")";
-    return os;
+/*!
+ Add a block to the block list and perform some simple correctness checks on it.
+ Returns the simulation assigned ID of the added block.
+ */
+BlockID VCSimDataBlocks::addBlock(const Block &new_block) {
+    BlockID     new_block_id;
+
+    // Perform block sanity checks
+    // Blocks may not have a negative slip rate (instead, use rake)
+    //assertThrow(new_block.dip()>=0&&new_block.dip()<=M_PI/2.0, "Block dip must be between 0 and 90 degrees.");
+    assertThrow(new_block.getFaultID()>=0, "Block fault ID must be non-negative.");
+    assertThrow(new_block.min_depth()>new_block.max_depth(), "Block top must be higher than block bottom.");
+    assertThrow(new_block.slip_rate()>=0, "Blocks may not have a negative slip rate (use rake to specify direction instead).");
+    assertThrow(new_block.getRhogd()>0, "Blocks must have a positive rhogd.");
+
+    new_block_id = blocks.size();
+    blocks.push_back(new_block);
+    blocks.back().setBlockID(new_block_id);
+
+    return new_block_id;
 }

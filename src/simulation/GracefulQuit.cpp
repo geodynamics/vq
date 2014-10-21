@@ -33,13 +33,13 @@ bool GracefulQuit::quitFileExists(void) {
 }
 
 void GracefulQuit::initDesc(const SimFramework *_sim) const {
-    const VCSimulation  *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation  *sim = static_cast<const Simulation *>(_sim);
     sim->console() << "# To gracefully quit, create the file "
                    << GRACEFUL_QUIT_FILE_NAME << " in the run directory." << std::endl;
 }
 
 void GracefulQuit::init(SimFramework *_sim) {
-    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+    Simulation    *sim = static_cast<Simulation *>(_sim);
 
     next_check_event = sim->itersPerSecond();
 
@@ -59,7 +59,7 @@ void GracefulQuit::init(SimFramework *_sim) {
  not seeing it.
  */
 SimRequest GracefulQuit::run(SimFramework *_sim) {
-    VCSimulation    *sim = static_cast<VCSimulation *>(_sim);
+    Simulation    *sim = static_cast<Simulation *>(_sim);
     int             quit_sim = 0, all_quit;
     unsigned int    cur_event;
 

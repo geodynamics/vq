@@ -33,7 +33,7 @@ bool EventOutput::pauseFileExists(void) {
 }
 
 void EventOutput::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# To access the event output file during the simulation, pause " << std::endl;
     sim->console() << "# by creating the file " << PAUSE_FILE_NAME ".  Delete the file to resume." << std::endl;
@@ -97,7 +97,7 @@ void EventOutput::open_hdf5_file(const std::string &hdf5_file_name, const double
 #endif
 
 void EventOutput::init(SimFramework *_sim) {
-    VCSimulation                *sim = static_cast<VCSimulation *>(_sim);
+    Simulation                *sim = static_cast<Simulation *>(_sim);
     BlockList::const_iterator   it;
 
 #ifdef HDF5_FOUND
@@ -137,7 +137,7 @@ void EventOutput::init(SimFramework *_sim) {
  During the simulation, this framework writes events to either an HDF5 or text file.
  */
 SimRequest EventOutput::run(SimFramework *_sim) {
-    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+    Simulation        *sim = static_cast<Simulation *>(_sim);
 
     unsigned int num_sweeps = sim->getCurrentEvent().getSweeps().size();
     sim->getCurrentEvent().setStartEndSweep(sweep_count, sweep_count+num_sweeps);
@@ -171,9 +171,9 @@ SimRequest EventOutput::run(SimFramework *_sim) {
             sim->console() << "# Pausing simulation due to presence of file " << PAUSE_FILE_NAME << std::endl;
 
             while (pauseFileExists()) {
-#ifdef VC_HAVE_USLEEP_FUNC
+#ifdef VQ_HAVE_USLEEP_FUNC
                 usleep(1000000);
-#elif defined VC_HAVE_SLEEP_FUNC
+#elif defined VQ_HAVE_SLEEP_FUNC
                 sleep(1);
 #endif
             }
@@ -190,7 +190,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
  Finish by unattaching from the shared memory structure.
  */
 void EventOutput::finish(SimFramework *_sim) {
-    VCSimulation        *sim = static_cast<VCSimulation *>(_sim);
+    Simulation        *sim = static_cast<Simulation *>(_sim);
 
 #ifdef HDF5_FOUND
 

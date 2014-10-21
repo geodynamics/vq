@@ -18,10 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include "VCSimulation.h"
+#include "Simulation.h"
 
-#ifndef _VC_INIT_BLOCKS_H_
-#define _VC_INIT_BLOCKS_H_
+#ifndef __INIT_BLOCKS_H_
+#define __INIT_BLOCKS_H_
 
 /*!
  Allocates and initializes block related simulation data structures.

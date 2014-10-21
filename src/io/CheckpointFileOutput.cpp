@@ -22,12 +22,12 @@
 #include <sstream>
 
 void CheckpointFileOutput::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
     sim->console() << "# Saving checkpoint every " << sim->getCheckpointPeriod() << " events." << std::endl;
 }
 
-void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, const VCSimulation *sim) {
+void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, const Simulation *sim) {
     CheckpointSet           checkpoint_set;
     int                     i;
     BlockID                 bid;
@@ -48,7 +48,7 @@ void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, co
 }
 
 SimRequest CheckpointFileOutput::run(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     std::stringstream       ss;
 
     // Periodically checkpoint simulation state to a file
@@ -62,7 +62,7 @@ SimRequest CheckpointFileOutput::run(SimFramework *_sim) {
 }
 
 void CheckpointFileOutput::finish(SimFramework *_sim) {
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     std::stringstream       ss;
 
     ss << sim->getCheckpointPrefix() << "final" << ".h5";

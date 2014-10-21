@@ -19,11 +19,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "GreensFileOutput.h"
-#include "SimError.h"
 #include <fstream>
 
 void GreensFileOutput::initDesc(const SimFramework *_sim) const {
-    const VCSimulation          *sim = static_cast<const VCSimulation *>(_sim);
+    const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
 #ifdef HDF5_FOUND
     sim->console() << "# Greens output file: " << sim->getGreensOutfile() << std::endl;
@@ -39,7 +38,7 @@ void GreensFileOutput::initDesc(const SimFramework *_sim) const {
  */
 void GreensFileOutput::init(SimFramework *_sim) {
 #ifdef HDF5_FOUND
-    VCSimulation            *sim = static_cast<VCSimulation *>(_sim);
+    Simulation            *sim = static_cast<Simulation *>(_sim);
     std::string             file_name = sim->getGreensOutfile();
     unsigned int            green_dim;
     BlockID                 row, col, global_row;

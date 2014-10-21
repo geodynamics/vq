@@ -24,8 +24,8 @@
 #include "QuakeLibUtil.h"
 #include "ConfigFile.h"
 
-#ifndef _VCPARAMS_H_
-#define _VCPARAMS_H_
+#ifndef _PARAMS_H_
+#define _PARAMS_H_
 
 enum GreensCalcMethod {
     GREENS_CALC_UNDEFINED,      // undefined Greens function behavior

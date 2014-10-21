@@ -19,7 +19,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "UpdateBlockStress.h"
-#include "SimError.h"
 
 /*!
  Initialize the stress calculation by setting initial block slip and stresses
@@ -31,7 +30,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     int                 lid;
     double              stress_drop, norm_velocity;
 
-    sim = static_cast<VCSimulation *>(_sim);
+    sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
