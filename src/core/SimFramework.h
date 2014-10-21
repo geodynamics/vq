@@ -207,11 +207,11 @@ class SimFramework : public virtual SimTimer {
         unsigned int itersPerSecond(void) const {
             return (unsigned int)iters_per_sec;
         };
-    
-    // Other functions
-    unsigned int getPID(void) const {
-        return getpid();
-    };
+
+        // Other functions
+        unsigned int getPID(void) const {
+            return getpid();
+        };
 };
 
 #endif

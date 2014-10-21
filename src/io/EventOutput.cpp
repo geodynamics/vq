@@ -152,7 +152,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
             // Write the event details
             sim->getCurrentEvent().write_ascii(event_outfile);
             event_outfile.flush();
-            
+
             // Write the sweep details
             sim->getCurrentEvent().getSweeps().write_ascii(sweep_outfile);
             sweep_outfile.flush();
