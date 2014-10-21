@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #endif
 
+#ifdef VC_HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <map>
 
 #include "SimTimer.h"
@@ -203,6 +207,11 @@ class SimFramework : public virtual SimTimer {
         unsigned int itersPerSecond(void) const {
             return (unsigned int)iters_per_sec;
         };
+    
+    // Other functions
+    unsigned int getPID(void) const {
+        return getpid();
+    };
 };
 
 #endif
