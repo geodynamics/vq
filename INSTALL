@@ -7,7 +7,7 @@
 
 == Windows ==
 
- Virtual California currently does not support Windows.
+ Virtual Quake currently does not support Windows.
 
 == Mac OS X ==
 
@@ -19,7 +19,7 @@
  make
 
  If you have a third party installation of python (ie. from Homebrew or
- MacPorts) Virtual California will build and install, but the Python QuakeLib
+ MacPorts) Virtual Quake will build and install, but the Python QuakeLib
  module may not work. This is because CMake builds against the system Python.
  You can explicitly specify the Python installation to use with the following
  flags and example paths:
