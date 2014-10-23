@@ -18,14 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-#include <iostream>
-#include <string>
-
 #include "config.h"
 
 #ifdef MPI_C_FOUND
 #include <mpi.h>
 #endif
+
+#include <iostream>
+#include <string>
 
 #ifndef _MPI_DEBUG_OUTPUT_STREAM_H_
 #define _MPI_DEBUG_OUTPUT_STREAM_H_

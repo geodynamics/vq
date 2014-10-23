@@ -18,19 +18,19 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#include "config.h"
+
+#ifdef MPI_C_FOUND
+#include <mpi.h>
+#endif
+
 #include <vector>
 #include <string>
 #include <stack>
 #include <iostream>
 
-#include "config.h"
-
 #ifdef VQ_HAVE_MATH_H
 #include <math.h>
-#endif
-
-#ifdef MPI_C_FOUND
-#include <mpi.h>
 #endif
 
 #ifndef _SIM_TIMER_H_

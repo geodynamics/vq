@@ -916,7 +916,7 @@ namespace quakelib {
             };
 
             void clear(void) {
-                _data._event_number = nan("");
+                _data._event_number = UNDEFINED_EVENT_ID;
                 _data._event_year = nan("");
                 _data._event_trigger = UNDEFINED_ELEMENT_ID;
                 _sweeps.clear();
