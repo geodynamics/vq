@@ -297,6 +297,9 @@ void SimFramework::init(void) {
     console() << "# *******************************" << std::endl;
     console() << "# *** Virtual Quake ***" << std::endl;
     console() << "# *** Version " << VQ_VERSION_STR << " ***" << std::endl;
+#ifdef VQ_GIT_SHA1
+    console() << "# *** Git revision ID " << VQ_GIT_SHA1 << " ***" << std::endl;
+#endif
     console() << "# *** " << quakelib::quakelib_info() << " ***" << std::endl;;
 #ifdef MPI_C_FOUND
     console() << std::setw(width) << std::left << "# *** MPI process count" << ": " << getWorldSize() << " ***" << std::endl;

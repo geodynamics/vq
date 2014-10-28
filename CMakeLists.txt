@@ -1,14 +1,23 @@
 # The name of our project is "VQ". CMakeLists files in this project can
 # refer to the root source directory of the project as ${VQ_SOURCE_DIR} and 
 # to the root binary directory of the project as ${VQ_BINARY_DIR}. 
-cmake_minimum_required (VERSION 2.6) 
-project (VQ)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.6) 
+PROJECT (VQ)
+
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/quakelib/cmake/)
 
 # Set the version number
 SET(VQ_VERSION_MAJOR 1)
 SET(VQ_VERSION_MINOR 2)
 SET(VQ_VERSION_SUBMINOR 0)
 SET(VQ_VERSION_STR "${VQ_VERSION_MAJOR}.${VQ_VERSION_MINOR}.${VQ_VERSION_SUBMINOR}")
+
+# Find a Git installation and the source Git revision if available
+FIND_PACKAGE(Git)
+IF(GIT_FOUND)
+    INCLUDE(GetGitRevisionDescription)
+    GET_GIT_HEAD_REVISION(VQ_GIT_REFSPEC VQ_GIT_SHA1)
+ENDIF(GIT_FOUND)
 
 # Enable testing
 INCLUDE (CTest)

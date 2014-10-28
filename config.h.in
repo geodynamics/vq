@@ -12,6 +12,7 @@
 #cmakedefine HDF5_FOUND
 #cmakedefine MPI_C_FOUND
 #cmakedefine VQ_VERSION_STR "@VQ_VERSION_STR@"
+#cmakedefine VQ_GIT_SHA1 "@VQ_GIT_SHA1@"
 #endif
 
 
