@@ -38,6 +38,9 @@ namespace quakelib {
     static std::string quakelib_info(void) {
         std::stringstream ss;
         ss << "QuakeLib " << QUAKELIB_VERSION_STR;
+#ifdef QUAKELIB_GIT_SHA1
+        ss << " Git revision " << QUAKELIB_GIT_SHA1;
+#endif
         return ss.str();
     };
     
