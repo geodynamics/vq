@@ -293,8 +293,10 @@ void SimFramework::init(void) {
 
     // Output multiprocessor information
     width = 30;
+    console() << "# *** Virtual Quake ***" << std::endl;
+    console() << "# *** Version " << VQ_VERSION_STR << " ***" << std::endl;
 #ifdef MPI_C_FOUND
-    console() << std::setw(width) << std::left << "# *** MPI CPU count" << ": " << getWorldSize() << std::endl;
+    console() << std::setw(width) << std::left << "# *** MPI process count" << ": " << getWorldSize() << std::endl;
 #endif
 #ifdef _OPENMP
     console() << std::setw(width) << std::left << "# *** OpenMP Threads" << ": " << omp_get_max_threads() << std::endl;

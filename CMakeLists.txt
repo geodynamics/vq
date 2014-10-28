@@ -4,6 +4,12 @@
 cmake_minimum_required (VERSION 2.6) 
 project (VQ)
 
+# Set the version number
+SET(VQ_VERSION_MAJOR 1)
+SET(VQ_VERSION_MINOR 2)
+SET(VQ_VERSION_SUBMINOR 0)
+SET(VQ_VERSION_STR "${VQ_VERSION_MAJOR}.${VQ_VERSION_MINOR}.${VQ_VERSION_SUBMINOR}")
+
 # Enable testing
 INCLUDE (CTest)
 

@@ -10,6 +10,7 @@
 #cmakedefine VQ_HAVE_USLEEP_FUNC
 #cmakedefine HDF5_FOUND
 #cmakedefine MPI_C_FOUND
+#cmakedefine VQ_VERSION_STR "@VQ_VERSION_STR@"
 #endif
 
 
