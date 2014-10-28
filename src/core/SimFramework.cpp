@@ -297,9 +297,13 @@ void SimFramework::init(void) {
     console() << "# *** Version " << VQ_VERSION_STR << " ***" << std::endl;
 #ifdef MPI_C_FOUND
     console() << std::setw(width) << std::left << "# *** MPI process count" << ": " << getWorldSize() << std::endl;
+#else
+    console() << std::setw(width) << std::left << "# *** MPI not enabled" << std::endl;
 #endif
 #ifdef _OPENMP
     console() << std::setw(width) << std::left << "# *** OpenMP Threads" << ": " << omp_get_max_threads() << std::endl;
+#else
+    console() << std::setw(width) << std::left << "# *** OpenMP not enabled" << std::endl;
 #endif
 
     // Do the dry run or normal initialization
