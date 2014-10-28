@@ -32,6 +32,7 @@
 class GracefulQuit : public SimPlugin {
     private:
         unsigned int    next_check_event;
+        bool            signal_quit;
 
         bool quitFileExists(void);
 
@@ -43,6 +44,8 @@ class GracefulQuit : public SimPlugin {
 
         virtual void init(SimFramework *_sim);
         virtual SimRequest run(SimFramework *_sim);
+    
+        void mark_signal_quit(void) { if (signal_quit) exit(1); else signal_quit = true; };
 };
 
 #endif
