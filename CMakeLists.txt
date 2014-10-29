@@ -1,3 +1,18 @@
+############################################################
+# USAGE
+# cmake
+#   generate Makefiles to compile/test VQ and QuakeLib
+# cmake -G Xcode
+#   generate XCode project to compile/test VQ and QuakeLib
+# make -j <#>
+#   compile VQ and QuakeLib with # processors
+# make test OR ctest
+#   run all possible tests to ensure correct functionality
+# ctest -R <regex>
+#   run tests that match <regex> expression
+# make package_source
+#   create source package for distribution
+############################################################
 # The name of our project is "VQ". CMakeLists files in this project can
 # refer to the root source directory of the project as ${VQ_SOURCE_DIR} and 
 # to the root binary directory of the project as ${VQ_BINARY_DIR}. 
@@ -11,6 +26,21 @@ SET(VQ_VERSION_MAJOR 1)
 SET(VQ_VERSION_MINOR 2)
 SET(VQ_VERSION_SUBMINOR 0)
 SET(VQ_VERSION_STR "${VQ_VERSION_MAJOR}.${VQ_VERSION_MINOR}.${VQ_VERSION_SUBMINOR}")
+
+# Enable CPack functionality
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Virtual Quake")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+SET(CPACK_PACKAGE_VERSION_MAJOR ${VQ_VERSION_MAJOR})
+SET(CPACK_PACKAGE_VERSION_MINOR ${VQ_VERSION_MINOR})
+SET(CPACK_PACKAGE_VERSION_PATCH ${VQ_VERSION_SUBMINOR})
+SET(CPACK_SOURCE_INSTALLED_DIRECTORIES
+    "${CMAKE_SOURCE_DIR}/src;./src"
+    "${CMAKE_SOURCE_DIR}/examples;./examples"
+    "${CMAKE_SOURCE_DIR}/quakelib;./quakelib"
+    "${CMAKE_SOURCE_DIR}/doc;./doc")
+SET(CPACK_SOURCE_GENERATOR TGZ)
+INCLUDE (CPack)
 
 # Find a Git installation and the source Git revision if available
 FIND_PACKAGE(Git)
