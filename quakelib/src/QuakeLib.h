@@ -43,7 +43,7 @@ namespace quakelib {
 #endif
         return ss.str();
     };
-    
+
     //! Represents a complete triangular or rectangular element for use in a simulation.
     class SimElement {
         protected:

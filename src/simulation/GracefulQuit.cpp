@@ -67,6 +67,7 @@ void GracefulQuit::init(SimFramework *_sim) {
                               " already exists. Delete this file and run again." << std::endl;
             exit(-1);
         }
+
 #ifdef VQ_HAVE_SIGNAL_H
         gq_obj = this;
         signal(SIGINT, catch_quit_signal);
