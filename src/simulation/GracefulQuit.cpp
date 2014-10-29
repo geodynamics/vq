@@ -19,7 +19,20 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "GracefulQuit.h"
+
+#ifdef VQ_HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+
+#ifdef VQ_HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
+GracefulQuit *gq_obj;
+
+void catch_quit_signal(int) {
+    gq_obj->mark_signal_quit();
+}
 
 bool GracefulQuit::quitFileExists(void) {
     FILE            *fp;
@@ -35,13 +48,18 @@ bool GracefulQuit::quitFileExists(void) {
 void GracefulQuit::initDesc(const SimFramework *_sim) const {
     const Simulation  *sim = static_cast<const Simulation *>(_sim);
     sim->console() << "# To gracefully quit, create the file "
-                   << GRACEFUL_QUIT_FILE_NAME << " in the run directory." << std::endl;
+                   << GRACEFUL_QUIT_FILE_NAME << " in the run directory";
+#ifdef VQ_HAVE_SIGNAL_H
+    sim->console() << " or use a SIGINT (Control-C)";
+#endif
+    sim->console() << "." << std::endl;
 }
 
 void GracefulQuit::init(SimFramework *_sim) {
     Simulation    *sim = static_cast<Simulation *>(_sim);
 
     next_check_event = sim->itersPerSecond();
+    signal_quit = false;
 
     if (sim->isRootNode()) {
         if (quitFileExists()) {
@@ -49,6 +67,11 @@ void GracefulQuit::init(SimFramework *_sim) {
                               " already exists. Delete this file and run again." << std::endl;
             exit(-1);
         }
+
+#ifdef VQ_HAVE_SIGNAL_H
+        gq_obj = this;
+        signal(SIGINT, catch_quit_signal);
+#endif
     }
 }
 
@@ -69,7 +92,7 @@ SimRequest GracefulQuit::run(SimFramework *_sim) {
         next_check_event = cur_event + sim->itersPerSecond();
 
         if (sim->isRootNode()) {
-            quit_sim = (quitFileExists() ? 1 : 0);
+            quit_sim = (quitFileExists() || signal_quit ? 1 : 0);
         }
 
         all_quit = sim->broadcastValue(quit_sim);

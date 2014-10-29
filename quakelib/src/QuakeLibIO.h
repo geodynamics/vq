@@ -915,6 +915,29 @@ namespace quakelib {
                 return _total_slip.size();
             };
 
+            //! Calculate the total slipped area in the event
+            double calcEventRuptureArea(void) const {
+                EventElementMap::const_iterator     it;
+                double                              rupture_area = 0;
+
+                for (it=_total_slip.begin(); it!=_total_slip.end(); ++it) rupture_area += it->second._area;
+
+                return rupture_area;
+            }
+
+            //! Calculate mean slip weighted by rupture area
+            double calcMeanSlip(void) const {
+                EventElementMap::const_iterator     it;
+                double                              sum_slip_area = 0, sum_area = 0;
+
+                for (it=_total_slip.begin(); it!=_total_slip.end(); ++it) {
+                    sum_slip_area += it->second._area*it->second._slip;
+                    sum_area += it->second._area;
+                }
+
+                return sum_slip_area/sum_area;
+            }
+
             void clear(void) {
                 _data._event_number = UNDEFINED_EVENT_ID;
                 _data._event_year = nan("");

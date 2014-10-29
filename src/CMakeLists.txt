@@ -88,8 +88,8 @@ SET(VQ_CORE
     )
 
 # Add executable called "vq" that is built from the source files
-ADD_EXECUTABLE (vq main.cpp ${VQ_MISC} ${VQ_SIMULATION} ${VQ_IO} ${VQ_CORE})
-ADD_EXECUTABLE (mesher mesher.cpp)
+ADD_EXECUTABLE (vq main.cpp ${VQ_BINARY_DIR}/config.h ${VQ_MISC} ${VQ_SIMULATION} ${VQ_IO} ${VQ_CORE})
+ADD_EXECUTABLE (mesher ${VQ_BINARY_DIR}/config.h mesher.cpp)
 
 # Link the executables to the quakelib library.
 TARGET_LINK_LIBRARIES (vq quakelib)

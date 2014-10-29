@@ -43,29 +43,11 @@ def check_self_consistent(events):
     return error
 
 def calc_mean_slip(events):
-    element_total_slips = {}
-    for event in events:
-        elements = event.getInvolvedElements()
-        element_sweep_slip_sums = {}
-        for elem in elements: element_sweep_slip_sums[elem] = 0
-        for sweep in event.getSweeps():
-            element_sweep_slip_sums[sweep._element_id] += sweep._slip
-            if not element_total_slips.has_key(sweep._element_id): element_total_slips[sweep._element_id] = 0.0
-            element_total_slips[sweep._element_id] += sweep._slip
-
-    mean_total_slip = 0.0
-    total_slips = [element_total_slips[elem_id] for elem_id in element_total_slips.keys()]
-
-    return sum(total_slips)/float(len(total_slips))
+    return sum([event.calcMeanSlip() for event in events])
 
 def calc_mean_interevent(events):
-    interevent_times = []
-    last_year = -1
-    for event in events:
-        if last_year > 0: interevent_times.append(event.getEventYear() - last_year)
-        last_year = event.getEventYear()
-
-    return sum(interevent_times)/float(len(interevent_times))
+    event_years = [event.getEventYear() for event in events]
+    return sum([event_years[i+1] - event_years[i] for i in range(len(event_years)-1)])/(len(event_years)-1)
 
 def calc_b_val(events):
     mags = [events.event_list[enum].magnitude for enum in events.event_list if events.event_list[enum].magnitude < 10 and events.event_list[enum].magnitude > 0]
@@ -83,11 +65,7 @@ def rupture_area_vs_mag(events):
     log_ra = []
     mag = []
     for event in events:
-        rupture_area = 0
-        element_areas = {}
-        for sweep in event.getSweeps():
-            element_areas[sweep._element_id] = sweep._area
-        rupture_area = sum([element_areas[bnum] for elem_num in element_areas])
+        rupture_area = event.calcEventRuptureArea()
 
         if not math.isnan(event.magnitude):
             log_ra.append(math.log10(rupture_area/1e6))

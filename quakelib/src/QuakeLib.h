@@ -34,6 +34,16 @@
 #define _QUAKELIB_H_
 
 namespace quakelib {
+    // Function to obtain the version/git information for the compiled quakelib
+    static std::string quakelib_info(void) {
+        std::stringstream ss;
+        ss << "QuakeLib " << QUAKELIB_VERSION_STR;
+#ifdef QUAKELIB_GIT_SHA1
+        ss << " Git revision " << QUAKELIB_GIT_SHA1;
+#endif
+        return ss.str();
+    };
+
     //! Represents a complete triangular or rectangular element for use in a simulation.
     class SimElement {
         protected:
