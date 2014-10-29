@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-// Plugin #includes
+#include "config.h"
 #include "QuakeLibIO.h"
 #include "QuakeLibEQSim.h"
 
@@ -320,6 +320,12 @@ int main (int argc, char **argv) {
     }
 
     // Print an informational summary for the user
+    std::cout << "# *** VQ Mesher Version " << VQ_VERSION_STR << " ***" << std::endl;
+#ifdef VQ_GIT_SHA1
+    std::cout << "# *** Git revision ID " << VQ_GIT_SHA1 << " ***" << std::endl;
+#endif
+    std::cout << "# *** " << quakelib::quakelib_info() << " ***" << std::endl;;
+
     std::cout << "*** Summary of edits ***" << std::endl;
 
     // *** INPUT SECTION ***
