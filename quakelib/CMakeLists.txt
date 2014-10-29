@@ -127,6 +127,7 @@ SET(QUAKELIB_HEADERS
     ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.h
     ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.h
+    ${CMAKE_CURRENT_BINARY_DIR}/quakelib_config.h
     )
 
 # Build the QuakeLib library
