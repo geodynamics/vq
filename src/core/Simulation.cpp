@@ -63,7 +63,7 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     // on the root node for record keeping purposes
     if (isRootNode()) {
         std::stringstream    param_file_name;
-        param_file_name << "vc_params_" << getPID() << ".prm";
+        param_file_name << "vq_params_" << getPID() << ".prm";
         this->write_params(param_file_name.str());
     }
 }
