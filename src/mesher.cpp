@@ -59,7 +59,8 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     quakelib::eiterator     eit;
     std::vector<double>     rake_vals, slip_rate_vals;
     std::ofstream           out_file;
-    int                     section_field_width, elem_field_width, vert_field_width, val_field_width;
+    int                     section_field_width, section_name_width;
+    int                     elem_field_width, vert_field_width, val_field_width;
     double                  mem_req;
     quakelib::Conversion    c;
 
@@ -74,10 +75,12 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     out_file << "Expected memory requirement: " << mem_string(mem_req) << "\n";
 
     section_field_width = fmax(5, log10(world.num_sections())+1);
+    section_name_width = 10;
     elem_field_width = fmax(5, log10(world.num_elements())+1);
     vert_field_width = fmax(5, log10(world.num_vertices())+1);
     val_field_width = 5;
     out_file << std::setw(section_field_width) << "Section\t";
+    out_file << std::setw(section_name_width) << "Name\t";
     out_file << std::setw(elem_field_width) << "Elems\t";
     out_file << std::setw(vert_field_width) << "Verts\t";
     out_file << std::setw(val_field_width) << "\t";
@@ -89,6 +92,7 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     out_file << "\n";
 
     out_file << std::setw(section_field_width) << "\t";
+    out_file << std::setw(section_name_width) << "\t";
     out_file << std::setw(elem_field_width) << "\t";
     out_file << std::setw(vert_field_width) << "\t";
     out_file << std::setw(val_field_width) << "Min\t";
@@ -120,6 +124,7 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
         std::sort(slip_rate_vals.begin(), slip_rate_vals.end());
 
         out_file << std::setw(section_field_width) << sit->id() << "\t";
+        out_file << std::setw(section_name_width) << sit->name().substr(0, section_name_width-1) << "\t";
         out_file << std::setw(elem_field_width) << num_elements << "\t";
         out_file << std::setw(vert_field_width) << num_vertices << "\t";
 
