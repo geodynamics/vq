@@ -55,7 +55,7 @@ std::string mem_string(const double &num_bytes) {
 void print_statistics(quakelib::ModelWorld &world, const std::string &file_name) {
     size_t                  num_elements, num_vertices;
     quakelib::UIndex        fid;
-    quakelib::fiterator     fit;
+    quakelib::siterator     fit;
     quakelib::eiterator     eit;
     std::vector<double>     rake_vals, slip_rate_vals;
     std::ofstream           out_file;

@@ -407,26 +407,26 @@ namespace quakelib {
             void write_ascii(std::ostream &out_stream) const;
     };
 
-    class fiterator {
+    class siterator {
         private:
             std::map<UIndex, ModelSection>              *_map;
             std::map<UIndex, ModelSection>::iterator    _it;
 
         public:
-            fiterator(void) : _map(NULL) {};
-            fiterator(std::map<UIndex, ModelSection> *map, std::map<UIndex, ModelSection>::iterator start) : _map(map), _it(start) {};
-            fiterator &operator=(const fiterator &other) {
+            siterator(void) : _map(NULL) {};
+            siterator(std::map<UIndex, ModelSection> *map, std::map<UIndex, ModelSection>::iterator start) : _map(map), _it(start) {};
+            siterator &operator=(const siterator &other) {
                 _map = other._map;
                 _it = other._it;
                 return *this;
             };
-            bool operator==(const fiterator &other) {
+            bool operator==(const siterator &other) {
                 return (_map == other._map && _it == other._it);
             };
-            bool operator!=(const fiterator &other) {
+            bool operator!=(const siterator &other) {
                 return (_map != other._map || _it != other._it);
             };
-            fiterator &operator++(void) {
+            siterator &operator++(void) {
                 if (_map && _it != _map->end()) _it++;
 
                 return *this;
@@ -435,7 +435,7 @@ namespace quakelib {
                 return _it->second;
             };
             ModelSection *operator->(void) {
-                return (&*(fiterator)*this);
+                return (&*(siterator)*this);
             };
     };
 
@@ -512,11 +512,11 @@ namespace quakelib {
             ModelElement &element(const UIndex &ind) throw(std::domain_error);
             ModelVertex &vertex(const UIndex &ind) throw(std::domain_error);
 
-            fiterator begin_section(void) {
-                return fiterator(&_sections, _sections.begin());
+            siterator begin_section(void) {
+                return siterator(&_sections, _sections.begin());
             };
-            fiterator end_section(void) {
-                return fiterator(&_sections, _sections.end());
+            siterator end_section(void) {
+                return siterator(&_sections, _sections.end());
             };
 
             eiterator begin_element(const UIndex &fid=INVALID_INDEX) {

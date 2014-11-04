@@ -855,7 +855,7 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
 int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, const float &depth_along_dip) {
     std::ofstream       out_file;
     eiterator           eit, last_element;
-    fiterator           fit;
+    siterator           sit;
     UIndex              sid;
     unsigned int        i;
     double              max_alt;
@@ -865,11 +865,11 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, 
     out_file.open(file_name.c_str());
 
     // Write traces by section
-    for (fit=begin_section(); fit!=end_section(); ++fit) {
+    for (sit=begin_section(); sit!=end_section(); ++sit) {
         std::vector<FaultTracePoint>    trace_pts;
 
         trace_pts.clear();
-        sid = fit->id();
+        sid = sit->id();
 
         // Start by going through all elements
         max_alt = -DBL_MAX;
@@ -925,7 +925,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, 
         out_file << "# section_name: Name of the section\n";
 
         // Write out the recorded trace for this fault
-        out_file << fit->fault_id() << " " << trace_pts.size() << " " << fit->name() << "\n";
+        out_file << sit->fault_id() << " " << trace_pts.size() << " " << sit->name() << "\n";
 
         // Write out the trace point header
         out_file << "# latitude: Latitude of trace point\n";
@@ -1664,8 +1664,8 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
     EQSimGeometryWriter     geometry_data;
     EQSimFrictionWriter     friction_data;
     eiterator               eit;
-    fiterator               fit;
-    UIndex                  fid;
+    siterator               sit;
+    UIndex                  sid;
     UIndex                  vind, eind;
     LatLonDepth             base = min_bound();
     Conversion              c(base);
@@ -1673,16 +1673,16 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
     vind = eind = 1;
     friction_data.set_lame_lambda_mu(3.2e10, 3.0e10);
 
-    for (fit=begin_section(); fit!=end_section(); ++fit) {
+    for (sit=begin_section(); sit!=end_section(); ++sit) {
         EQSimGeometrySection &section = geometry_data.new_section();
 
         // Set section properties
-        section.set_name(fit->name());
-        section.set_fid(fit->fault_id());
+        section.set_name(sit->name());
+        section.set_fid(sit->fault_id());
 
-        fid = fit->id();
+        sid = sit->id();
 
-        for (eit=begin_element(fid); eit!=end_element(fid); ++eit) {
+        for (eit=begin_element(sid); eit!=end_element(sid); ++eit) {
             // Create SimElement to allow dip calculation
             SimElement      sim_elem = create_sim_element(eit->id());
 
