@@ -54,12 +54,13 @@ std::string mem_string(const double &num_bytes) {
 
 void print_statistics(quakelib::ModelWorld &world, const std::string &file_name) {
     size_t                  num_elements, num_vertices;
-    quakelib::UIndex        fid;
-    quakelib::fiterator     fit;
+    quakelib::UIndex        sid;
+    quakelib::siterator     sit;
     quakelib::eiterator     eit;
     std::vector<double>     rake_vals, slip_rate_vals;
     std::ofstream           out_file;
-    int                     section_field_width, elem_field_width, vert_field_width, val_field_width;
+    int                     section_field_width, section_name_width;
+    int                     elem_field_width, vert_field_width, val_field_width;
     double                  mem_req;
     quakelib::Conversion    c;
 
@@ -74,10 +75,12 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     out_file << "Expected memory requirement: " << mem_string(mem_req) << "\n";
 
     section_field_width = fmax(5, log10(world.num_sections())+1);
+    section_name_width = 10;
     elem_field_width = fmax(5, log10(world.num_elements())+1);
     vert_field_width = fmax(5, log10(world.num_vertices())+1);
     val_field_width = 5;
     out_file << std::setw(section_field_width) << "Section\t";
+    out_file << std::setw(section_name_width) << "Name\t";
     out_file << std::setw(elem_field_width) << "Elems\t";
     out_file << std::setw(vert_field_width) << "Verts\t";
     out_file << std::setw(val_field_width) << "\t";
@@ -89,6 +92,7 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     out_file << "\n";
 
     out_file << std::setw(section_field_width) << "\t";
+    out_file << std::setw(section_name_width) << "\t";
     out_file << std::setw(elem_field_width) << "\t";
     out_file << std::setw(vert_field_width) << "\t";
     out_file << std::setw(val_field_width) << "Min\t";
@@ -99,14 +103,14 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
     out_file << std::setw(val_field_width) << "Max\t";
     out_file << "\n";
 
-    for (fit=world.begin_section(); fit!=world.end_section(); ++fit) {
+    for (sit=world.begin_section(); sit!=world.end_section(); ++sit) {
         rake_vals.clear();
         slip_rate_vals.clear();
-        fid = fit->id();
-        num_elements = world.num_elements(fid);
-        num_vertices = world.num_vertices(fid);
+        sid = sit->id();
+        num_elements = world.num_elements(sid);
+        num_vertices = world.num_vertices(sid);
 
-        for (eit=world.begin_element(fid); eit!=world.end_element(fid); ++eit) {
+        for (eit=world.begin_element(sid); eit!=world.end_element(sid); ++eit) {
             rake_vals.push_back(c.rad2deg(eit->rake()));
             slip_rate_vals.push_back(c.m_per_sec2cm_per_yr(eit->slip_rate()));
         }
@@ -119,7 +123,8 @@ void print_statistics(quakelib::ModelWorld &world, const std::string &file_name)
         std::sort(rake_vals.begin(), rake_vals.end());
         std::sort(slip_rate_vals.begin(), slip_rate_vals.end());
 
-        out_file << std::setw(section_field_width) << fit->id() << "\t";
+        out_file << std::setw(section_field_width) << sit->id() << "\t";
+        out_file << std::setw(section_name_width) << sit->name().substr(0, section_name_width-1) << "\t";
         out_file << std::setw(elem_field_width) << num_elements << "\t";
         out_file << std::setw(vert_field_width) << num_vertices << "\t";
 

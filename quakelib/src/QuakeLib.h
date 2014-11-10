@@ -28,6 +28,10 @@
 #include <string.h>
 #endif
 
+#ifdef QUAKELIB_HAVE_MATH_H
+#include <math.h>
+#endif
+
 #include "QuakeLibOkada.h"
 
 #ifndef _QUAKELIB_H_
@@ -123,7 +127,8 @@ namespace quakelib {
             };
 
             //! Set the slip rate in m/s for this block.
-            void set_slip_rate(const double &new_slip_rate) {
+            void set_slip_rate(const double &new_slip_rate) throw(std::invalid_argument) {
+                if (isnan(new_slip_rate)) throw std::invalid_argument("quakelib::Element::set_slip_rate");
                 _slip_rate = new_slip_rate;
             };
             //! Get the slip rate in cm/year for this block.
@@ -132,7 +137,8 @@ namespace quakelib {
             };
 
             //! Set the rake angle of this block in radians.
-            void set_rake(const double &new_rake) {
+            void set_rake(const double &new_rake) throw(std::invalid_argument) {
+                if (isnan(new_rake)) throw std::invalid_argument("quakelib::Element::set_rake");
                 _rake = new_rake;
             };
             //! Get the rake angle of this block in radians.
@@ -144,9 +150,9 @@ namespace quakelib {
             double aseismic(void) const {
                 return _aseis_factor;
             };
-            //! Set the fraction of slip    which is aseismic for this element.
+            //! Set the fraction of slip which is aseismic for this element.
             void set_aseismic(const double &new_aseismic) throw(std::invalid_argument) {
-                if (new_aseismic < 0 || new_aseismic > 1) throw std::invalid_argument("quakelib::Element::set_aseismic");
+                if (new_aseismic < 0 || new_aseismic > 1 || isnan(new_aseismic)) throw std::invalid_argument("quakelib::Element::set_aseismic");
 
                 _aseis_factor = new_aseismic;
             };
@@ -157,7 +163,7 @@ namespace quakelib {
             };
             //! Set the Lame mu parameter for this element
             void set_lame_mu(const double &new_lame_mu) throw(std::invalid_argument) {
-                if (new_lame_mu < 0) throw std::invalid_argument("quakelib::Element::set_lame_mu");
+                if (new_lame_mu < 0 || isnan(new_lame_mu)) throw std::invalid_argument("quakelib::Element::set_lame_mu");
 
                 _lame_mu = new_lame_mu;
             };
@@ -168,7 +174,7 @@ namespace quakelib {
             };
             //! Set the Lame lambda parameter for this element
             void set_lame_lambda(const double &new_lame_lambda) throw(std::invalid_argument) {
-                if (new_lame_lambda < 0) throw std::invalid_argument("quakelib::Element::set_lame_lambda");
+                if (new_lame_lambda < 0 || isnan(new_lame_lambda)) throw std::invalid_argument("quakelib::Element::set_lame_lambda");
 
                 _lame_lambda = new_lame_lambda;
             };
@@ -179,7 +185,7 @@ namespace quakelib {
             }
             //! Set the maximum slip distance for this element
             void set_max_slip(const double &new_max_slip) throw(std::invalid_argument) {
-                if (new_max_slip < 0) throw std::invalid_argument("quakelib::Element::set_max_slip");
+                if (new_max_slip < 0 || isnan(new_max_slip)) throw std::invalid_argument("quakelib::Element::set_max_slip");
 
                 _max_slip = new_max_slip;
             }

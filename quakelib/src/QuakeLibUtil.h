@@ -485,7 +485,7 @@ namespace quakelib {
 
             //! Convert seconds to years.
             static double sec2year(const double &seconds) {
-                return seconds*(1.0/60.0)*(1.0/60.0)*(1.0/24.0)*(1.0/365.25);
+                return seconds/(60.0*60.0*24.0*365.25);
             };
 
             //! Convert meters per second into centimeters per year.

@@ -37,10 +37,10 @@ void ReadModelFile::dryRun(SimFramework *_sim) {
  Parse the geometry file and optionally the condition and friction files.
  */
 void ReadModelFile::init(SimFramework *_sim) {
-    Simulation                *sim = static_cast<Simulation *>(_sim);
+    Simulation                  *sim = static_cast<Simulation *>(_sim);
     std::string                 file_name, file_type;
     quakelib::ModelWorld        world;
-    quakelib::fiterator         fit;
+    quakelib::siterator         sit;
     quakelib::eiterator         eit;
     int                         err;
     quakelib::Conversion        c;
