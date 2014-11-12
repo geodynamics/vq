@@ -42,7 +42,7 @@ def check_self_consistent(events):
 
     return error
 
-def calc_mean_slip(events):
+def calc_mean_slip_sum(events):
     return sum([event.calcMeanSlip() for event in events])
 
 def calc_mean_interevent(events):
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     if args.mean_slip:
         expected_mean_slip = args.mean_slip[0]
-        mean_slip = calc_mean_slip(events)
+        mean_slip = calc_mean_slip_sum(events)
 
         reldiff = abs(mean_slip-expected_mean_slip)/expected_mean_slip
         if reldiff > 0.01: err = True
