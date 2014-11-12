@@ -121,7 +121,7 @@ class TestConversion(unittest.TestCase):
     def test_unit_conversion(self):
         c = quakelib.Conversion()
         self.assertEqual(c.deg2rad(c.rad2deg(1)), 1)
-        self.assertEqual(c.year2sec(c.sec2year(1)), 1)
+        self.assertAlmostEqual(c.year2sec(c.sec2year(1)), 1) # changed to almostEqual since 32-bit floating point can't maintain enough precision
         self.assertEqual(c.m2km(c.km2m(1)), 1)
         self.assertEqual(c.sqkm2sqm(c.sqm2sqkm(1)), 1)
         self.assertEqual(c.pascal2bar(c.bar2pascal(1)), 1)
