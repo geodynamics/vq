@@ -81,12 +81,9 @@ void GreensInit::init(SimFramework *_sim) {
     GreensFuncCalcBarnesHut bh_calc;
     GreensFuncCalcStandard  gstandard_calc;
     GreensFuncFileParse     file_parse;
-    double                  start_time;
-    double                  shear_bytes, normal_bytes;
-    int                     shear_ind, norm_ind;
     std::string             space_vals[] = {"bytes", "kilobytes", "megabytes", "gigabytes", "terabytes", "petabytes"};
 
-    start_time = sim->curTime();
+    double start_time = sim->curTime();
 
     switch (sim->getGreensCalcMethod()) {
         case GREENS_FILE_PARSE:
@@ -113,21 +110,27 @@ void GreensInit::init(SimFramework *_sim) {
     sim->console() << std::endl << "# Greens function took " << sim->curTime() - start_time << " seconds." << std::endl;
 
     // Determine Green's function matrix memory usage
-    // TODO: global reduction for parallel simulations
-    shear_bytes = sim->greenShear()->mem_bytes();
-    normal_bytes = sim->greenNormal()->mem_bytes();
-    shear_ind = norm_ind = 0;
+    double shear_bytes = sim->greenShear()->mem_bytes();
+    double normal_bytes = sim->greenNormal()->mem_bytes();
+    int shear_ind = (log(shear_bytes)/log(2))/10;
+    int norm_ind = (log(shear_bytes)/log(2))/10;
+    double abbr_shear_bytes = shear_bytes/pow(2,shear_ind*10);
+    double abbr_normal_bytes = normal_bytes/pow(2,norm_ind*10);
 
-    while (shear_bytes > 1024.0) {
-        shear_bytes /= 1024.0;
-        shear_ind++;
+    sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
+    sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
+    
+#ifdef MPI_C_FOUND
+    if (sim->getWorldSize() > 1) {
+        double global_shear_bytes, global_normal_bytes;
+        MPI_Reduce(&shear_bytes, &global_shear_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&normal_bytes, &global_normal_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        int global_shear_ind = (log(global_shear_bytes)/log(2))/10;
+        int global_norm_ind = (log(global_normal_bytes)/log(2))/10;
+        double abbr_global_shear_bytes = global_shear_bytes/pow(2,global_shear_ind*10);
+        double abbr_global_normal_bytes = global_normal_bytes/pow(2,global_norm_ind*10);
+        sim->console() << "# Global Greens shear matrix takes " << abbr_global_shear_bytes << " " << space_vals[global_shear_ind] << "." << std::endl;
+        sim->console() << "# Global Greens normal matrix takes " << abbr_global_normal_bytes << " " << space_vals[global_norm_ind] << "." << std::endl;
     }
-
-    while (normal_bytes > 1024.0) {
-        normal_bytes /= 1024.0;
-        norm_ind++;
-    }
-
-    sim->console() << "# Greens shear matrix takes " << shear_bytes << " " << space_vals[shear_ind] << "." << std::endl;
-    sim->console() << "# Greens normal matrix takes " << normal_bytes << " " << space_vals[norm_ind] << "." << std::endl;
+#endif
 }
