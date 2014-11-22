@@ -38,8 +38,8 @@ typedef unsigned int SectionID;
 struct StateCheckpointData {
     double      slipDeficit;
     double      cff;
-    double      stressS;
-    double      stressN;
+    double      shear_stress;
+    double      normal_stress;
     double      updateField;
 };
 
@@ -77,7 +77,7 @@ std::ostream &operator<<(std::ostream &os, const BlockVal &bv);
  */
 class State {
     public:
-        State(void) : slipDeficit(0), cff(0), cff0(0), stressS0(0), stressN0(0), stressS(NULL), stressN(NULL), updateField(NULL) {};
+        State(void) : slipDeficit(0), cff(0), cff0(0), stressS0(0), stressN0(0), shear_stress(NULL), normal_stress(NULL), updateField(NULL) {};
         //! slip - Vt
         double slipDeficit;
         //! coulomb failure function
@@ -88,12 +88,10 @@ class State {
         double stressS0;
         //! normal stress before an event
         double stressN0;
-        //! slip deficit before an event
-        double slipDeficit0;
         //! ptr to shear stress in simulation
-        double *stressS;
+        double *shear_stress;
         //! ptr to normal stress in simulation
-        double *stressN;
+        double *normal_stress;
         //! ptr to update_field in simulation
         double *updateField;
 
@@ -169,21 +167,19 @@ class Block : public quakelib::SimElement {
         };
         //! Returns the slip deficit of this block.
         double getShearStress(void) const {
-            return state.stressS[0];
+            return state.shear_stress[0];
         };
         //! Returns the slip deficit of this block.
         double getNormalStress(void) const {
-            return state.stressN[0];
+            return state.normal_stress[0];
         };
         //! Calculates and stores the CFF of this block.
         void calcCFF(void);
         //! Record the current stresses and CFF.
         void saveStresses(void) {
-            state.stressS0 = state.stressS[0];
-            state.stressN0 = state.stressN[0];
+            state.stressS0 = state.shear_stress[0];
+            state.stressN0 = state.normal_stress[0];
             state.cff0 = state.cff;
-            state.slipDeficit0 = state.slipDeficit;
-        };
         };
         //! Get the recorded shear stress.
         double getStressS0(void) const {
@@ -198,7 +194,7 @@ class Block : public quakelib::SimElement {
             return state.cff0;
         };
         //! Set pointers into arrays for the stress values of this block
-        void setStatePtrs(double *stressS, double *stressN, double *update_field);
+        void setStatePtrs(double *shear_stress, double *normal_stress, double *update_field);
 
         // Functions for manipulation of block parameters
         //! Set the block ID of this block.
@@ -288,7 +284,7 @@ class Block : public quakelib::SimElement {
 
         //! Get the string header for state files.
         static std::string getStateHeader(void) {
-            return "       cff updateField   stressS   stressN";
+            return "       cff updateField   shear_stress   normal_stress";
         };
 };
 

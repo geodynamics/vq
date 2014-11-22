@@ -146,12 +146,12 @@ bool Block::dynamicFailure(const FaultID &event_fault) const {
 }
 
 void Block::calcCFF(void) {
-    state.cff = fabs(state.stressS[0]) - fabs(friction()*state.stressN[0]);
+    state.cff = fabs(state.shear_stress[0]) - fabs(friction()*state.normal_stress[0]);
 }
 
-void Block::setStatePtrs(double *stressS, double *stressN, double *update_field) {
-    state.stressS = stressS;
-    state.stressN = stressN;
+void Block::setStatePtrs(double *shear_stress, double *normal_stress, double *update_field) {
+    state.shear_stress = shear_stress;
+    state.normal_stress = normal_stress;
     state.updateField = update_field;
 }
 
@@ -160,8 +160,8 @@ StateCheckpointData State::readCheckpointData(void) const {
 
     ckpt_data.slipDeficit = slipDeficit;
     ckpt_data.cff = cff;
-    ckpt_data.stressS = *stressS;
-    ckpt_data.stressN = *stressN;
+    ckpt_data.shear_stress = *shear_stress;
+    ckpt_data.normal_stress = *normal_stress;
     ckpt_data.updateField = *updateField;
 
     return ckpt_data;
@@ -170,16 +170,16 @@ StateCheckpointData State::readCheckpointData(void) const {
 void State::storeCheckpointData(const StateCheckpointData &ckpt_data) {
     slipDeficit = ckpt_data.slipDeficit;
     cff = ckpt_data.cff;
-    *stressS = ckpt_data.stressS;
-    *stressN = ckpt_data.stressN;
+    *shear_stress = ckpt_data.shear_stress;
+    *normal_stress = ckpt_data.normal_stress;
     *updateField = ckpt_data.updateField;
 }
 
 std::ostream &operator<<(std::ostream &os, const State &s) {
     os << std::setw(10) << s.cff
        << std::setw(12) << s.updateField[0]
-       << std::setw(10) << s.stressS[0]
-       << std::setw(10) << s.stressN[0];
+       << std::setw(10) << s.shear_stress[0]
+       << std::setw(10) << s.normal_stress[0];
 
     return os;
 }
