@@ -184,12 +184,6 @@ class Block : public quakelib::SimElement {
             state.cff0 = state.cff;
             state.slipDeficit0 = state.slipDeficit;
         };
-        //! Restore the saved stresses and CFF.
-        void restoreStresses(void) {
-            *(state.stressS) = state.stressS0;
-            *(state.stressN) = state.stressN0;
-            state.cff = state.cff0;
-            state.slipDeficit = state.slipDeficit0;
         };
         //! Get the recorded shear stress.
         double getStressS0(void) const {
