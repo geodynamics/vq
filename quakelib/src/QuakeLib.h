@@ -129,6 +129,7 @@ namespace quakelib {
             //! Set the slip rate in m/s for this block.
             void set_slip_rate(const double &new_slip_rate) throw(std::invalid_argument) {
                 if (isnan(new_slip_rate)) throw std::invalid_argument("quakelib::Element::set_slip_rate");
+
                 _slip_rate = new_slip_rate;
             };
             //! Get the slip rate in cm/year for this block.
@@ -139,6 +140,7 @@ namespace quakelib {
             //! Set the rake angle of this block in radians.
             void set_rake(const double &new_rake) throw(std::invalid_argument) {
                 if (isnan(new_rake)) throw std::invalid_argument("quakelib::Element::set_rake");
+
                 _rake = new_rake;
             };
             //! Get the rake angle of this block in radians.

@@ -124,28 +124,28 @@ void Simulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set
         // Add the before/after stresses if it is on this node
         // Non-local blocks will have incorrect stress data
         if (isLocalToNode(*it)) {
-            shear_init += getBlock(*it).getStressS0();
-            shear_final += getBlock(*it).getShearStress();
-            normal_init += getBlock(*it).getStressN0();
-            normal_final += getBlock(*it).getNormalStress();
+            shear_init += shear_stress0[*it];
+            shear_final += getShearStress(*it);
+            normal_init += normal_stress0[*it];
+            normal_final += getNormalStress(*it);
         }
     }
 }
 
 void Simulation::sumStresses(const quakelib::ElementIDSet &block_set,
-                             double &shear_stress,
-                             double &shear_stress0,
-                             double &normal_stress,
-                             double &normal_stress0) const {
+                             double &shear_stress_sum,
+                             double &shear_stress0_sum,
+                             double &normal_stress_sum,
+                             double &normal_stress0_sum) const {
     quakelib::ElementIDSet::const_iterator      it;
 
-    shear_stress = shear_stress0 = normal_stress = normal_stress0 = 0;
+    shear_stress_sum = shear_stress0_sum = normal_stress_sum = normal_stress0_sum = 0;
 
     for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        shear_stress += getShearStress(*it);
-        shear_stress0 += getBlock(*it).getStressS0();
-        normal_stress += getNormalStress(*it);
-        normal_stress0 += getBlock(*it).getStressN0();
+        shear_stress_sum += getShearStress(*it);
+        shear_stress0_sum += shear_stress0[*it];
+        normal_stress_sum += getNormalStress(*it);
+        normal_stress0_sum += normal_stress0[*it];
     }
 }
 
@@ -192,8 +192,14 @@ void Simulation::computeCFFs(void) {
     int         i;
 
     for (i=0; i<numLocalBlocks(); ++i) {
-        getBlock(getGlobalBID(i)).calcCFF();
+        BlockID gid = getGlobalBID(i);
+        calcCFF(gid);
     }
+}
+
+//! Calculates and stores the CFF of this block.
+void Simulation::calcCFF(const BlockID gid) {
+    cff[gid] = fabs(shear_stress[gid]) - fabs(friction[gid]*normal_stress[gid]);
 }
 
 /*!

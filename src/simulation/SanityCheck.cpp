@@ -33,7 +33,7 @@ bool SanityCheck::assertCFFValueCorrectness(Simulation *sim) {
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        double val = sim->getBlock(gid).getCFF();
+        double val = sim->getCFF(gid);
 
         if (std::isnan(val) || fabs(val) > 1e20) {
             failed_cffs.push_back(std::make_pair(gid, val));
