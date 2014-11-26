@@ -2828,6 +2828,425 @@ int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name,
     return 0;
 }
 
+// ********************************************************************************************
+
+void quakelib::ModelStress::read_ascii(std::istream &in_stream, const unsigned int num_records) {
+    for (unsigned int i=0; i<num_records; ++i) {
+        std::stringstream   ss(next_line(in_stream));
+        StressData     new_stress_rec;
+        ss >> new_stress_rec._element_id;
+        ss >> new_stress_rec._shear_stress;
+        ss >> new_stress_rec._normal_stress;
+        // Put the stress record on the list
+        _data.push_back(new_stress_rec);
+    }
+}
+
+void quakelib::ModelStress::write_ascii(std::ostream &out_stream) const {
+    std::vector<StressData>::const_iterator it;
+
+    for (it=_data.begin(); it!=_data.end(); ++it) {
+        out_stream << it->_element_id << " ";
+        out_stream << it->_shear_stress << " ";
+        out_stream << it->_normal_stress;
+
+        next_line(out_stream);
+    }
+}
+
+#ifdef HDF5_FOUND
+void quakelib::ModelStress::setup_stress_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    size_t                  num_fields;
+    unsigned int            i;
+    StressData              blank_data;
+    herr_t                  res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelStress::get_field_descs(descs);
+    num_fields = descs.size();
+    char **field_names = new char *[num_fields];
+    char **field_details = new char *[num_fields];
+    size_t *field_offsets = new size_t[num_fields];
+    hid_t *field_types = new hid_t[num_fields];
+    size_t *field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Create the sweep table
+    res = H5TBmake_table("Stress Table",
+                         data_file,
+                         ModelStress::hdf5_table_name().c_str(),
+                         num_fields,
+                         0,
+                         sizeof(StressData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_data,
+                         0,
+                         NULL);
+
+    if (res < 0) exit(-1);
+
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file, ModelStress::hdf5_table_name().c_str(), ss.str().c_str(), field_details[i]);
+
+        if (res < 0) exit(-1);
+    }
+
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+
+    delete field_names;
+
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelStress::append_stress_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>                  descs;
+    std::vector<StressData>::const_iterator it;
+    herr_t                      res;
+    unsigned int                i;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelStress::get_field_descs(descs);
+    size_t num_fields = descs.size();
+    size_t num_stress_recs = _data.size();
+    size_t *field_offsets = new size_t[num_fields];
+    size_t *field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Fill in the data for the sections
+    StressData *stress_data = new StressData[num_stress_recs];
+
+    for (i=0,it=_data.begin(); it!=_data.end(); ++i,++it) {
+        memcpy(&(stress_data[i]), &(*it), sizeof(StressData));
+    }
+
+    // Create the section table
+    res = H5TBappend_records(data_file,
+                             ModelStress::hdf5_table_name().c_str(),
+                             num_stress_recs,
+                             sizeof(StressData),
+                             field_offsets,
+                             field_sizes,
+                             stress_data);
+
+    if (res < 0) exit(-1);
+
+    // Free memory for HDF5 related data
+    delete stress_data;
+
+    delete field_offsets;
+    delete field_sizes;
+}
+#endif
+
+void quakelib::ModelStress::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+
+    // Write section header
+    ModelStress::get_field_descs(descs);
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+
+    out_stream << "# ";
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+
+    out_stream << "\n";
+}
+
+void quakelib::ModelStress::get_field_descs(std::vector<quakelib::FieldDesc> &descs) {
+    FieldDesc       field_desc;
+
+    // Stress state table definition
+    field_desc.name = "element_id";
+    field_desc.details = "ID number of the element corresponding to the stress values.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressData, _element_id);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "shear_stress";
+    field_desc.details = "Shear stress on the element (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressData, _shear_stress);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "normal_stress";
+    field_desc.details = "Normal stress on the element (Pascals).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressData, _normal_stress);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+}
+
+// ********************************************************************************************
+
+void quakelib::ModelStressState::write_ascii_header(std::ostream &out_stream) {
+    std::vector<FieldDesc>                  descs;
+    std::vector<FieldDesc>::const_iterator  dit;
+
+    // Write section header
+    ModelStressState::get_field_descs(descs);
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << "# " << dit->name << ": " << dit->details << "\n";
+    }
+
+    out_stream << "# ";
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_stream << dit->name << " ";
+    }
+
+    out_stream << "\n";
+}
+
+#ifdef HDF5_FOUND
+void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file) {
+    std::vector<FieldDesc>  descs;
+    unsigned int            i;
+    StressDataTime          blank_data;
+    herr_t                  res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelStressState::get_field_descs(descs);
+    size_t num_fields = descs.size();
+    char **field_names = new char *[num_fields];
+    char **field_details = new char *[num_fields];
+    size_t *field_offsets = new size_t[num_fields];
+    hid_t *field_types = new hid_t[num_fields];
+    size_t *field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Create the sweep table
+    res = H5TBmake_table("Stress State Table",
+                         data_file,
+                         ModelStressState::hdf5_table_name().c_str(),
+                         num_fields,
+                         0,
+                         sizeof(StressDataTime),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         100,
+                         &blank_data,
+                         0,
+                         NULL);
+
+    if (res < 0) exit(-1);
+
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file, ModelStressState::hdf5_table_name().c_str(), ss.str().c_str(), field_details[i]);
+
+        if (res < 0) exit(-1);
+    }
+
+    // Free memory for HDF5 related data
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+
+    delete field_names;
+
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
+void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file) const {
+    std::vector<FieldDesc>                  descs;
+    std::vector<StressData>::const_iterator it;
+    herr_t                      res;
+    unsigned int                i;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelStressState::get_field_descs(descs);
+    size_t num_fields = descs.size();
+    size_t *field_offsets = new size_t[num_fields];
+    size_t *field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // Add to the stress state table
+    res = H5TBappend_records(data_file,
+                             ModelStressState::hdf5_table_name().c_str(),
+                             1,
+                             sizeof(StressDataTime),
+                             field_offsets,
+                             field_sizes,
+                             &_times);
+
+    if (res < 0) exit(-1);
+
+    // Free memory for HDF5 related data
+    delete field_offsets;
+    delete field_sizes;
+}
+#endif
+
+void quakelib::ModelStressState::read_ascii(std::istream &in_stream) {
+    std::stringstream   ss(next_line(in_stream));
+    ss >> _times._year;
+    ss >> _times._event_num;
+    ss >> _times._sweep_num;
+    ss >> _times._start_rec;
+    ss >> _times._end_rec;
+}
+
+void quakelib::ModelStressState::write_ascii(std::ostream &out_stream) const {
+    out_stream << _times._year << " ";
+    out_stream << _times._event_num << " ";
+    out_stream << _times._sweep_num << " ";
+    out_stream << _times._start_rec << " ";
+    out_stream << _times._end_rec;
+
+    next_line(out_stream);
+}
+
+void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc> &descs) {
+    FieldDesc       field_desc;
+
+    // Stress state table definition
+    field_desc.name = "year";
+    field_desc.details = "Simulation time this stress state was recorded (years).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressDataTime, _year);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "event_num";
+    field_desc.details = "Event number this stress state corresponds to.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressDataTime, _event_num);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "sweep_num";
+    field_desc.details = "Sweep number this stress state corresponds to.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "start_rec";
+    field_desc.details = "Starting record of stress values for this time.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressDataTime, _start_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "end_rec";
+    field_desc.details = "Ending record of stress values for this time.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressDataTime, _end_rec);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+}
+
+int quakelib::ModelStressSet::read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name) {
+    std::ifstream   stress_ind_file, stress_file;
+    ModelSweeps     file_sweeps;
+
+    // Try to open the stress index file
+    stress_ind_file.open(stress_index_file_name.c_str());
+
+    if (!stress_ind_file.is_open()) return -1;
+
+    // Try to open the stress file
+    stress_file.open(stress_file_name.c_str());
+
+    if (!stress_file.is_open()) return -1;
+
+    // Keep going until we hit the end of either file
+    while (!stress_ind_file.eof() && !stress_file.eof()) {
+        ModelStressState    new_stress_state;
+        ModelStress         new_stresses;
+        new_stress_state.read_ascii(stress_ind_file);
+        unsigned int num_recs = new_stress_state.getNumStressRecords();
+        new_stresses.read_ascii(stress_file, num_recs);
+        new_stress_state.setStresses(new_stresses);
+
+        if (!stress_ind_file.eof() && !stress_file.eof()) _states.push_back(new_stress_state);
+    }
+
+    // Close the files
+    stress_ind_file.close();
+    stress_file.close();
+
+    return 0;
+}
+
 namespace quakelib {
     std::ostream &operator<<(std::ostream &os, const ModelSweeps &ms) {
         os << "SWEEPS(" << ms._sweeps.size() << ")";

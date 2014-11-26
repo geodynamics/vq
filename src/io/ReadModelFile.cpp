@@ -93,6 +93,6 @@ void ReadModelFile::init(SimFramework *_sim) {
         new_block.setInitNormalStress(0);
         new_block.setDynamicVal(sim->getDynamic());
 
-        BlockID new_id = sim->addBlock(new_block);
+        sim->addBlock(new_block);
     }
 }

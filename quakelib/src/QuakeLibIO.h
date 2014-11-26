@@ -998,6 +998,148 @@ namespace quakelib {
 
             int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
     };
+
+    /*!
+     The stress state of an element in the model at a specified time in the simulation.
+     32-bit floats are used to save space since there may be vast amounts of stress
+     data output and high precision is not needed for analysis.
+     */
+    struct StressData {
+        //! The ID of the element
+        UIndex          _element_id;
+
+        //! Shear and normal stress on the element at this time
+        float          _shear_stress, _normal_stress;
+    };
+
+    /*!
+     ModelStress is the stress state of the model at a specified point in time.
+     */
+    class ModelStress : public ModelIO {
+        private:
+            std::vector<StressData>     _data;
+
+        public:
+            ModelStress(void) {
+                _data.clear();
+            }
+
+            //! Get the total number of blocks that failed in this event.
+            unsigned int size(void) const {
+                return _data.size();
+            };
+
+            void clear(void) {
+                _data.clear();
+            }
+
+#ifdef HDF5_FOUND
+            static std::string hdf5_table_name(void) {
+                return "stresses";
+            };
+            static void setup_stress_hdf5(const hid_t &data_file);
+            void append_stress_hdf5(const hid_t &data_file) const;
+#endif
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+            static void write_ascii_header(std::ostream &out_stream);
+
+            void read_ascii(std::istream &in_stream, const unsigned int num_records);
+            void write_ascii(std::ostream &out_stream) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const ModelStress &ms);
+    };
+
+    struct StressDataTime {
+        //! The year of the stress data
+        float           _year;
+
+        //! The event and sweep of the stress data (if applicable)
+        UIndex          _event_num, _sweep_num;
+
+        //! Starting and ending index of the actual stress entries
+        UIndex          _start_rec, _end_rec;
+    };
+
+    /*!
+     ModelStressState is the stress state of the model at a specified point in time, including information specifying the time.
+     */
+    class ModelStressState : public ModelIO {
+        private:
+            ModelStress         _stress;
+
+            StressDataTime      _times;
+
+        public:
+            ModelStressState(void) {
+                clear();
+            }
+
+            void clear(void) {
+                _stress.clear();
+                _times._year = nan("");
+                _times._event_num = UNDEFINED_EVENT_ID;
+                _times._sweep_num = UNDEFINED_EVENT_ID;
+                _times._start_rec = UNDEFINED_EVENT_ID;
+                _times._end_rec = UNDEFINED_EVENT_ID;
+            }
+
+#ifdef HDF5_FOUND
+            static std::string hdf5_table_name(void) {
+                return "stress_state";
+            };
+            static void setup_stress_state_hdf5(const hid_t &data_file);
+            void append_stress_state_hdf5(const hid_t &data_file) const;
+#endif
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+            static void write_ascii_header(std::ostream &out_stream);
+
+            void setStresses(const ModelStress &new_stresses) {
+                _stress = new_stresses;
+            };
+
+            unsigned int getNumStressRecords(void) const {
+                return _times._end_rec - _times._start_rec;
+            };
+
+            void read_ascii(std::istream &in_stream);
+            void write_ascii(std::ostream &out_stream) const;
+
+            friend std::ostream &operator<<(std::ostream &os, const ModelStressState &mss);
+    };
+
+    class ModelStressSet {
+        private:
+            std::vector<ModelStressState>   _states;
+
+        public:
+            typedef std::vector<ModelStressState>::iterator         iterator;
+            typedef std::vector<ModelStressState>::const_iterator   const_iterator;
+
+            iterator begin(void) {
+                return _states.begin();
+            };
+            iterator end(void) {
+                return _states.end();
+            };
+
+            unsigned int size(void) const {
+                return _states.size();
+            }
+
+            ModelStressState &operator[](const unsigned int ind) throw(std::out_of_range) {
+                if (ind >= _states.size()) throw std::out_of_range("ModelStressSet[]");
+
+                return _states[ind];
+            };
+
+            const ModelStressState &operator[](const unsigned int ind) const throw(std::out_of_range) {
+                if (ind >= _states.size()) throw std::out_of_range("ModelStressSet[]");
+
+                return _states[ind];
+            };
+
+            int read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name);
+    };
 }
 
 #endif
