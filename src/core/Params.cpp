@@ -79,6 +79,9 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_sweep", "");
     params.readSet<string>("sim.file.output_event_type", "");
 
+    params.readSet<string>("sim.file.output_stress", "");
+    params.readSet<string>("sim.file.output_stress_index", "");
+    params.readSet<string>("sim.file.output_stress_type", "");
 }
 
 void VCParams::write_params(const std::string &param_file_name) {

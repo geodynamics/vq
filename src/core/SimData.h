@@ -40,13 +40,26 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         unsigned int            global_size, local_size;
         quakelib::DenseMatrix<GREEN_VAL>    *green_shear, *green_normal;
 
+    protected:
         double                  *shear_stress;
         double                  *normal_stress;
         double                  *update_field;
+        double                  *slip_deficit;
+        double                  *rhogd;
+        double                  *stress_drop;
+        double                  *cff;
+        double                  *friction;
+        double                  *cff0;
+        double                  *self_shear;
+        double                  *self_normal;
+        double                  *shear_stress0;
+        double                  *normal_stress0;
 
     public:
         VCSimData(void) : global_size(0), local_size(0), green_shear(NULL), green_normal(NULL),
-            shear_stress(NULL), normal_stress(NULL), update_field(NULL) {};
+            shear_stress(NULL), normal_stress(NULL), update_field(NULL), slip_deficit(NULL),
+            rhogd(NULL), stress_drop(NULL), cff(NULL), friction(NULL), cff0(NULL),
+            self_shear(NULL), self_normal(NULL), shear_stress0(NULL), normal_stress0(NULL) {};
 
         void setupArrays(const unsigned int &global_sys_size,
                          const unsigned int &local_sys_size,
@@ -67,41 +80,14 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         quakelib::DenseMatrix<GREEN_VAL> *greenNormal(void) const {
             return green_normal;
         };
-        double *getUpdateFieldPtr(const unsigned int &elem=0) const {
-            return &(update_field[elem]);
+        double *getUpdateFieldPtr(void) const {
+            return update_field;
         };
-        double *getShearStressPtr(const unsigned int &elem=0) const {
-            return &(shear_stress[elem]);
+        double *getShearStressPtr(void) const {
+            return shear_stress;
         };
-        double *getNormalStressPtr(const unsigned int &elem=0) const {
-            return &(normal_stress[elem]);
-        };
-
-        double getUpdateField(const BlockID &b) const {
-            return update_field[b];
-        };
-        void setUpdateField(const BlockID &b, const double &new_val) {
-            update_field[b] = new_val;
-        };
-
-        double getNormalStress(const BlockID &b) const {
-            return normal_stress[b];
-        };
-        void setNormalStress(const BlockID &b, const double &new_val) {
-            normal_stress[b] = new_val;
-        };
-        void addToNormalStress(const BlockID &b, const double &add_val) {
-            normal_stress[b] += add_val;
-        };
-
-        double getShearStress(const BlockID &b) const {
-            return shear_stress[b];
-        };
-        void setShearStress(const BlockID &b, const double &new_val) {
-            shear_stress[b] = new_val;
-        };
-        void addToShearStress(const BlockID &b, const double &add_val) {
-            shear_stress[b] += add_val;
+        double *getNormalStressPtr(void) const {
+            return normal_stress;
         };
 };
 

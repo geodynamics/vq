@@ -156,6 +156,16 @@ class VCParams {
         std::string getEventOutfileType(void) const {
             return params.read<string>("sim.file.output_event_type");
         };
+
+        std::string getStressOutfile(void) const {
+            return params.read<string>("sim.file.output_stress");
+        };
+        std::string getStressIndexOutfile(void) const {
+            return params.read<string>("sim.file.output_stress_index");
+        };
+        std::string getStressOutfileType(void) const {
+            return params.read<string>("sim.file.output_stress_type");
+        };
 };
 
 #endif

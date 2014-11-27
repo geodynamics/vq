@@ -68,6 +68,41 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     }
 }
 
+void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num) {
+    quakelib::ModelStress       stress;
+    quakelib::ModelStressState  stress_state;
+
+    if (getStressOutfileType() == "") return;
+    
+    stress_state.setYear(getYear());
+    stress_state.setEventNum(event_num);
+    stress_state.setSweepNum(sweep_num);
+    stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
+
+    // Store stress values
+    for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
+        stress.add_stress_entry(i, shear_stress[i], normal_stress[i]);
+    }
+
+    num_stress_recs += numGlobalBlocks();
+
+    if (getStressOutfileType() == "text") {
+        // Write the stress state details
+        stress_state.write_ascii(stress_index_outfile);
+        stress_index_outfile.flush();
+
+        // Write the stress details
+        stress.write_ascii(stress_outfile);
+        stress_outfile.flush();
+    } else if (getStressOutfileType() == "hdf5") {
+        // Write the stress state details
+        stress_state.append_stress_state_hdf5(stress_data_file);
+
+        // Write the stress details
+        stress.append_stress_hdf5(stress_data_file);
+    }
+}
+
 /*!
  Finish the simulation by deallocating memory and freeing MPI related structures.
  */
@@ -96,7 +131,70 @@ void Simulation::init(void) {
     num_mults = 0;
 #endif
     SimFramework::init();
+
+    if (getStressOutfileType() == "text") {
+        if (getStressOutfile() == "" || getStressIndexOutfile() == "") {
+            errConsole() << "ERROR: Stress file names cannot be blank." << std::endl;
+            exit(-1);
+        }
+
+        stress_index_outfile.open(getStressIndexOutfile());
+        stress_outfile.open(getStressOutfile());
+
+        if (!stress_index_outfile.good()) {
+            errConsole() << "ERROR: Could not open output file " << getStressIndexOutfile() << std::endl;
+            exit(-1);
+        }
+
+        if (!stress_outfile.good()) {
+            errConsole() << "ERROR: Could not open output file " << getStressOutfile() << std::endl;
+            exit(-1);
+        }
+
+        quakelib::ModelStressState::write_ascii_header(stress_index_outfile);
+        quakelib::ModelStress::write_ascii_header(stress_outfile);
+    } else if (getStressOutfileType() == "hdf5") {
+#ifdef HDF5_FOUND
+        open_stress_hdf5_file(getStressOutfile());
+#else
+        sim->errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
+        exit(-1);
+#endif
+    } else if (!(getStressOutfileType() == "")) {
+        errConsole() << "ERROR: Unknown stress output file type " << getStressOutfileType() << std::endl;
+        exit(-1);
+    }
+
+    num_stress_recs = 0;
 }
+
+#ifdef HDF5_FOUND
+void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
+    hid_t   plist_id;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+#ifdef MPI_C_FOUND
+#ifdef H5_HAVE_PARALLEL
+    //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+#endif
+#endif
+    // Create the data file, overwriting any old files
+    stress_data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+
+    if (stress_data_file < 0) exit(-1);
+
+    // Create the stress index table
+    quakelib::ModelStressState::setup_stress_state_hdf5(stress_data_file);
+
+    // Create the stress table
+    quakelib::ModelStress::setup_stress_hdf5(stress_data_file);
+
+    H5Pclose(plist_id);
+}
+#endif
 
 /*!
  Calculate the number of faults in the simulation based on
@@ -124,28 +222,28 @@ void Simulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set
         // Add the before/after stresses if it is on this node
         // Non-local blocks will have incorrect stress data
         if (isLocalToNode(*it)) {
-            shear_init += getBlock(*it).getStressS0();
-            shear_final += getBlock(*it).getShearStress();
-            normal_init += getBlock(*it).getStressN0();
-            normal_final += getBlock(*it).getNormalStress();
+            shear_init += shear_stress0[*it];
+            shear_final += getShearStress(*it);
+            normal_init += normal_stress0[*it];
+            normal_final += getNormalStress(*it);
         }
     }
 }
 
 void Simulation::sumStresses(const quakelib::ElementIDSet &block_set,
-                             double &shear_stress,
-                             double &shear_stress0,
-                             double &normal_stress,
-                             double &normal_stress0) const {
+                             double &shear_stress_sum,
+                             double &shear_stress0_sum,
+                             double &normal_stress_sum,
+                             double &normal_stress0_sum) const {
     quakelib::ElementIDSet::const_iterator      it;
 
-    shear_stress = shear_stress0 = normal_stress = normal_stress0 = 0;
+    shear_stress_sum = shear_stress0_sum = normal_stress_sum = normal_stress0_sum = 0;
 
     for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        shear_stress += getShearStress(*it);
-        shear_stress0 += getBlock(*it).getStressS0();
-        normal_stress += getNormalStress(*it);
-        normal_stress0 += getBlock(*it).getStressN0();
+        shear_stress_sum += getShearStress(*it);
+        shear_stress0_sum += shear_stress0[*it];
+        normal_stress_sum += getNormalStress(*it);
+        normal_stress0_sum += normal_stress0[*it];
     }
 }
 
@@ -192,8 +290,14 @@ void Simulation::computeCFFs(void) {
     int         i;
 
     for (i=0; i<numLocalBlocks(); ++i) {
-        getBlock(getGlobalBID(i)).calcCFF();
+        BlockID gid = getGlobalBID(i);
+        calcCFF(gid);
     }
+}
+
+//! Calculates and stores the CFF of this block.
+void Simulation::calcCFF(const BlockID gid) {
+    cff[gid] = fabs(shear_stress[gid]) - fabs(friction[gid]*normal_stress[gid]);
 }
 
 /*!

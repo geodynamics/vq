@@ -41,7 +41,6 @@ void VCInitBlocks::dryRun(SimFramework *_sim) {
  */
 void VCInitBlocks::init(SimFramework *_sim) {
     Simulation            *sim = static_cast<Simulation *>(_sim);
-    int                     i;
     BlockList::iterator     bit;
 
     assertThrow(sim->numGlobalBlocks() > 0, "Simulation must include at least 1 block.");
@@ -55,12 +54,6 @@ void VCInitBlocks::init(SimFramework *_sim) {
                      sim->getGreensCalcMethod()==GREENS_CALC_BARNES_HUT,
                      // transposed array for faster sweep calculations
                      sim->useTransposedMatrix());
-
-    // Set the block pointers to the storage arrays
-    for (i=0,bit=sim->begin(); bit!=sim->end(); ++bit,++i)
-        bit->setStatePtrs(sim->getShearStressPtr(i),
-                          sim->getNormalStressPtr(i),
-                          sim->getUpdateFieldPtr(i));
 
     // Set the starting year of the simulation
     sim->setYear(sim->getSimStart());

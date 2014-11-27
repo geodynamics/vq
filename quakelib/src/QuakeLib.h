@@ -74,13 +74,7 @@ namespace quakelib {
 
         public:
             SimElement(void) {
-                _vert[0] = Vec<3>::nan_vec();
-                _vert[1] = Vec<3>::nan_vec();
-                _vert[2] = Vec<3>::nan_vec();
-                _is_quad = false;
-                _rake = _slip_rate = _aseis_factor = nan("");
-                _lame_mu = _lame_lambda = nan("");
-                _static_strength = _dynamic_strength = _max_slip = nan("");
+                clear();
             }
             //! Calculate the stress tensor at a location with Lame parameters lambda and mu
             //! caused by this element moving unit_slip meters.
@@ -129,6 +123,7 @@ namespace quakelib {
             //! Set the slip rate in m/s for this block.
             void set_slip_rate(const double &new_slip_rate) throw(std::invalid_argument) {
                 if (isnan(new_slip_rate)) throw std::invalid_argument("quakelib::Element::set_slip_rate");
+
                 _slip_rate = new_slip_rate;
             };
             //! Get the slip rate in cm/year for this block.
@@ -139,6 +134,7 @@ namespace quakelib {
             //! Set the rake angle of this block in radians.
             void set_rake(const double &new_rake) throw(std::invalid_argument) {
                 if (isnan(new_rake)) throw std::invalid_argument("quakelib::Element::set_rake");
+
                 _rake = new_rake;
             };
             //! Get the rake angle of this block in radians.
@@ -192,12 +188,13 @@ namespace quakelib {
 
             //! Clear all variables for this element.
             void clear(void) {
-                for (unsigned int i=0; i<3; ++i) {
-                    _vert[i] = Vec<3>();
-                }
-
-                _rake = _slip_rate = _aseis_factor = _lame_mu = _lame_lambda = nan("");
-                _static_strength = _dynamic_strength = _max_slip = nan("");
+                _vert[0] = Vec<3>::nan_vec();
+                _vert[1] = Vec<3>::nan_vec();
+                _vert[2] = Vec<3>::nan_vec();
+                _is_quad = false;
+                _rake = _slip_rate = _aseis_factor = std::numeric_limits<double>::quiet_NaN();
+                _lame_mu = _lame_lambda = std::numeric_limits<double>::quiet_NaN();
+                _static_strength = _dynamic_strength = _max_slip = std::numeric_limits<double>::quiet_NaN();
             };
 
             //! Returns a unit vector along the direction of fault dip.

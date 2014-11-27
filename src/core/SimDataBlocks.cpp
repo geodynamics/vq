@@ -29,12 +29,10 @@ BlockID VCSimDataBlocks::addBlock(const Block &new_block) {
 
     // Perform block sanity checks
     // Blocks may not have a negative slip rate (instead, use rake)
-    //assertThrow(new_block.dip()>=0&&new_block.dip()<=M_PI/2.0, "Block dip must be between 0 and 90 degrees.");
     assertThrow(new_block.getFaultID()>=0, "Block fault ID must be non-negative.");
     assertThrow(new_block.min_depth()>new_block.max_depth(), "Block top must be higher than block bottom.");
     assertThrow(new_block.slip_rate()>=0, "Blocks may not have a negative slip rate (use rake to specify direction instead).");
     assertThrow(new_block.area()>0, "Blocks must have a positive non-zero area.");
-    assertThrow(new_block.getRhogd()>0, "Blocks must have a positive rhogd.");
 
     new_block_id = blocks.size();
     blocks.push_back(new_block);

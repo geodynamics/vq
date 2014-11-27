@@ -89,11 +89,6 @@ void ReadModelFile::init(SimFramework *_sim) {
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
         new_block.setFailed(false);
 
-        double rho = 5.515e3;      // density of rock in kg m^-3
-        double g = 9.81;           // force of gravity in m s^-2
-        double depth = -new_block.center()[2];  // depth of block center in m
-
-        new_block.setRhogd(rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
         new_block.setInitShearStress(0);
         new_block.setInitNormalStress(0);
         new_block.setDynamicVal(sim->getDynamic());
