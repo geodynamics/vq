@@ -1422,7 +1422,6 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
         field_sizes[i] = descs[i].size;
     }
 
-    // TODO: factor this out?
     blank_vertex = ModelVertex().data();
 
     // Fill in the data for the vertices
@@ -2480,6 +2479,12 @@ void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
+    blank_sweep._event_number = blank_sweep._sweep_number = UNDEFINED_EVENT_ID;
+    blank_sweep._element_id = UNDEFINED_ELEMENT_ID;
+    blank_sweep._slip = blank_sweep._area = blank_sweep._mu = std::numeric_limits<float>::quiet_NaN();
+    blank_sweep._shear_init = blank_sweep._shear_final = std::numeric_limits<float>::quiet_NaN();
+    blank_sweep._normal_init = blank_sweep._normal_final = std::numeric_limits<float>::quiet_NaN();
+
     // Create the sweep table
     res = H5TBmake_table("Sweeps Table",
                          data_file,
@@ -2716,6 +2721,14 @@ void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
+    blank_event._event_number = UNDEFINED_EVENT_ID;
+    blank_event._event_year = std::numeric_limits<float>::quiet_NaN();
+    blank_event._event_magnitude = std::numeric_limits<float>::quiet_NaN();
+    blank_event._event_trigger = UNDEFINED_ELEMENT_ID;
+    blank_event._shear_stress_init = blank_event._shear_stress_final = std::numeric_limits<float>::quiet_NaN();
+    blank_event._normal_stress_init = blank_event._normal_stress_final = std::numeric_limits<float>::quiet_NaN();
+    blank_event._start_sweep_rec = blank_event._end_sweep_rec = UNDEFINED_EVENT_ID;
+
     // Create the event table
     res = H5TBmake_table("Event Table",
                          data_file,
@@ -2885,7 +2898,7 @@ void quakelib::ModelStress::setup_stress_hdf5(const hid_t &data_file) {
     }
 
     blank_data._element_id = UNDEFINED_ELEMENT_ID;
-    blank_data._shear_stress = blank_data._normal_stress = nan("");
+    blank_data._shear_stress = blank_data._normal_stress = std::numeric_limits<float>::quiet_NaN();
 
     // Create the sweep table
     res = H5TBmake_table("Stress Table",
@@ -3074,7 +3087,7 @@ void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file)
         field_sizes[i] = descs[i].size;
     }
 
-    blank_data._year = nan("");
+    blank_data._year = std::numeric_limits<float>::quiet_NaN();
     blank_data._event_num = UNDEFINED_EVENT_ID;
     blank_data._sweep_num = UNDEFINED_EVENT_ID;
     blank_data._end_rec = UNDEFINED_ELEMENT_ID;

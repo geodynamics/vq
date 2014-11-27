@@ -770,14 +770,7 @@ namespace quakelib {
 
         public:
             ModelEvent(void) {
-                _event_trigger_on_this_node = false;
-
-                _data._event_number = UNDEFINED_EVENT_ID;
-                _data._event_year = _data._event_magnitude = nan("");
-                _data._event_trigger = UNDEFINED_EVENT_ID;
-                _data._shear_stress_init = _data._shear_stress_final = nan("");
-                _data._normal_stress_init = _data._normal_stress_final = nan("");
-                _data._start_sweep_rec = _data._end_sweep_rec = UNDEFINED_EVENT_ID;
+                clear();
             }
             typedef EventElementMap::iterator iterator;
             typedef EventElementMap::const_iterator const_iterator;
@@ -939,9 +932,15 @@ namespace quakelib {
             }
 
             void clear(void) {
+                _event_trigger_on_this_node = false;
+
                 _data._event_number = UNDEFINED_EVENT_ID;
-                _data._event_year = nan("");
+                _data._event_year = _data._event_magnitude = std::numeric_limits<double>::quiet_NaN();
                 _data._event_trigger = UNDEFINED_ELEMENT_ID;
+                _data._shear_stress_init = _data._shear_stress_final = std::numeric_limits<double>::quiet_NaN();
+                _data._normal_stress_init = _data._normal_stress_final = std::numeric_limits<double>::quiet_NaN();
+                _data._start_sweep_rec = _data._end_sweep_rec = UNDEFINED_EVENT_ID;
+
                 _sweeps.clear();
                 _total_slip.clear();
             }
@@ -1083,7 +1082,7 @@ namespace quakelib {
 
             void clear(void) {
                 _stress.clear();
-                _times._year = nan("");
+                _times._year = std::numeric_limits<float>::quiet_NaN();
                 _times._event_num = UNDEFINED_EVENT_ID;
                 _times._sweep_num = UNDEFINED_EVENT_ID;
                 _times._start_rec = UNDEFINED_EVENT_ID;

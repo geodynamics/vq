@@ -132,7 +132,7 @@ namespace quakelib {
             static Vec<dim> nan_vec(void) {
                 Vec<dim> new_vec;
 
-                for (unsigned int i=0; i<dim; ++i) new_vec[i] = nan("");
+                for (unsigned int i=0; i<dim; ++i) new_vec[i] = std::numeric_limits<double>::quiet_NaN();
 
                 return new_vec;
             };
