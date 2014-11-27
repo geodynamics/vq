@@ -59,7 +59,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
                                            const double &cur_year,
                                            const unsigned int &cur_event,
                                            const CheckpointSet &checkpoints) : HDF5Checkpoint() {
-    hsize_t                         dims[2] = {nblocks, CHECKPOINT_NUM_ENTRIES_HDF5};
+    /*hsize_t                         dims[2] = {nblocks, CHECKPOINT_NUM_ENTRIES_HDF5};
     hsize_t                         single_val[1] = {1};
     herr_t                          status;
     CheckpointSet::const_iterator   it;
@@ -74,11 +74,11 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
     if (plist_id < 0) exit(-1);
 
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
+    #ifdef MPI_C_FOUND
+    #ifdef H5_HAVE_PARALLEL
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
-#endif
+    #endif
+    #endif
 
     // Create the data file, overwriting any old files
     data_file = H5Fcreate(ckpt_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
@@ -138,11 +138,11 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
     // Write all block state data in parallel
     xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
+    #ifdef MPI_C_FOUND
+    #ifdef H5_HAVE_PARALLEL
     H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
-#endif
-#endif
+    #endif
+    #endif
     status = H5Dwrite(state_dataset, H5T_NATIVE_DOUBLE, mem_select, file_select, xfer_plist_id, mem_state);
 
     res = H5Sclose(file_select);
@@ -159,7 +159,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
     res = H5Fclose(data_file);
 
-    delete mem_state;
+    delete mem_state;*/
 }
 
 /*!

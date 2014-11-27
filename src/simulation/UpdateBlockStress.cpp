@@ -36,6 +36,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
 
+        double rho = 5.515e3;      // density of rock in kg m^-3
+        double g = 9.81;           // force of gravity in m s^-2
+        double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
+
+        sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
+
         // Set stresses to their specified initial values
         sim->setShearStress(gid, sim->getBlock(gid).getInitShearStress());
         sim->setNormalStress(gid, sim->getBlock(gid).getInitNormalStress());
@@ -48,10 +54,10 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
         }
 
-        sim->getBlock(gid).setStressDrop(sim->getBlock(gid).max_slip()*stress_drop);
+        sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);
 
         // noise in the range [1-a, 1+a)
-        sim->getBlock(gid).state.slipDeficit = 0;
+        sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);
@@ -107,8 +113,10 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     sim->incrementYear(next_event_global.val);
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-        Block &local_block = sim->getBlock(sim->getGlobalBID(lid));
-        local_block.state.slipDeficit -= local_block.slip_rate()*convert.year2sec(next_event_global.val)*(1.0-local_block.aseismic());
+        BlockID gid = sim->getGlobalBID(lid);
+        Block &local_block = sim->getBlock(gid);
+        double cur_slip_deficit = sim->getSlipDeficit(gid);
+        sim->setSlipDeficit(gid, cur_slip_deficit-local_block.slip_rate()*convert.year2sec(next_event_global.val)*(1.0-local_block.aseismic()));
     }
 
     // Recalculate the stress on all blocks with the new slip deficits
@@ -166,7 +174,8 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
 
     if (sim->doNormalStress()) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
-            sim->setUpdateField(it->getBlockID(), -it->friction()*it->slip_rate());
+            BlockID gid = it->getBlockID();
+            sim->setUpdateField(gid, -sim->getFriction(gid)*it->slip_rate());
         }
 
         sim->matrixVectorMultiplyAccum(tmpBuffer,
@@ -189,11 +198,11 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
         if (block.aseismic() > 0) {
             double      A, B, K;
             A = -tmpBuffer[gid];
-            B = -block.aseismic()*block.getSelfStresses()/block.getRecurrence();
-            K = -log(A+B*block.getCFF())/B;
+            B = -block.aseismic()*sim->getSelfStresses(gid)/sim->getRecurrence(gid);
+            K = -log(A+B*sim->getCFF(gid))/B;
             ts = K + log(A)/B;
         } else {
-            ts = convert.sec2year(block.getCFF()/tmpBuffer[gid]);
+            ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
         }
 
         // Blocks with negative timesteps are skipped. These effectively mean the block
@@ -223,9 +232,10 @@ void UpdateBlockStress::stressRecompute(void) {
 
     // Reset the shear and normal stress, and set the update field to be the slip deficit
     for (it=sim->begin(); it!=sim->end(); ++it) {
-        sim->setShearStress(it->getBlockID(), 0.0);
-        sim->setNormalStress(it->getBlockID(), it->getRhogd());
-        sim->setUpdateField(it->getBlockID(), it->state.slipDeficit);
+        BlockID gid = it->getBlockID();
+        sim->setShearStress(gid, 0.0);
+        sim->setNormalStress(gid, sim->getRhogd(gid));
+        sim->setUpdateField(gid, sim->getSlipDeficit(gid));
     }
 
     // Distribute the new update field over all nodes

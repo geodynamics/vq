@@ -119,8 +119,9 @@ void GreensInit::init(SimFramework *_sim) {
 
     sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
-    
+
 #ifdef MPI_C_FOUND
+
     if (sim->getWorldSize() > 1) {
         double global_shear_bytes, global_normal_bytes;
         MPI_Reduce(&shear_bytes, &global_shear_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -132,5 +133,6 @@ void GreensInit::init(SimFramework *_sim) {
         sim->console() << "# Global Greens shear matrix takes " << abbr_global_shear_bytes << " " << space_vals[global_shear_ind] << "." << std::endl;
         sim->console() << "# Global Greens normal matrix takes " << abbr_global_normal_bytes << " " << space_vals[global_norm_ind] << "." << std::endl;
     }
+
 #endif
 }

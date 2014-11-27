@@ -30,8 +30,6 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
                             const unsigned int &local_sys_size,
                             const bool &compressed,
                             const bool &transposed) {
-    int             i;
-
     deallocateArrays();
 
     global_size = global_sys_size;
@@ -62,10 +60,33 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
     assertThrow(normal_stress, "Not enough memory to allocate normal stress array.");
     update_field = (double *)malloc(sizeof(double)*global_size);
     assertThrow(update_field, "Not enough memory to allocate update field array.");
+    slip_deficit = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(slip_deficit, "Not enough memory to allocate slip deficit array.");
+    rhogd = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(rhogd, "Not enough memory to allocate rhogd array.");
+    stress_drop = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(stress_drop, "Not enough memory to allocate stress drop array.");
+    cff = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(cff, "Not enough memory to allocate cff array.");
+    friction = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(friction, "Not enough memory to allocate friction array.");
+    cff0 = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(cff0, "Not enough memory to allocate cff0 array.");
+    self_shear = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(self_shear, "Not enough memory to allocate self_shear array.");
+    self_normal = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(self_normal, "Not enough memory to allocate self_normal array.");
+    shear_stress0 = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(shear_stress0, "Not enough memory to allocate shear_stress0 array.");
+    normal_stress0 = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(normal_stress0, "Not enough memory to allocate normal_stress0 array.");
 
-    for (i=0; i<global_size; ++i) {
-        shear_stress[i] = normal_stress[i] = 0;
-        update_field[i] = 0;
+    for (BlockID i=0; i<global_size; ++i) {
+        shear_stress[i] = normal_stress[i] = std::numeric_limits<float>::quiet_NaN();
+        update_field[i] = slip_deficit[i] = std::numeric_limits<float>::quiet_NaN();
+        rhogd[i] = stress_drop[i] = cff[i] = std::numeric_limits<float>::quiet_NaN();
+        friction[i] = cff0[i] = self_shear[i] = self_normal[i] = std::numeric_limits<float>::quiet_NaN();
+        shear_stress0[i] = normal_stress0[i] = std::numeric_limits<float>::quiet_NaN();
     }
 }
 
@@ -97,6 +118,28 @@ void VCSimData::deallocateArrays(void) {
 
     if (update_field) free(update_field);
 
+    if (slip_deficit) free(slip_deficit);
+
+    if (rhogd) free(rhogd);
+
+    if (stress_drop) free(stress_drop);
+
+    if (cff) free(cff);
+
+    if (friction) free(friction);
+
+    if (cff0) free(cff0);
+
+    if (self_shear) free(self_shear);
+
+    if (self_normal) free(self_normal);
+
+    if (shear_stress0) free(shear_stress0);
+
+    if (normal_stress0) free(normal_stress0);
+
     green_shear = green_normal = NULL;
     shear_stress = normal_stress = update_field = NULL;
+    slip_deficit = rhogd = stress_drop = cff = friction = NULL;
+    cff0 = self_shear = self_normal = shear_stress0 = normal_stress0 = NULL;
 }

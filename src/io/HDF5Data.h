@@ -42,17 +42,6 @@
 #define GREEN_SHEAR_HDF5            "greens_shear"
 #define GREEN_NORMAL_HDF5           "greens_normal"
 
-// State checkpoint table definitions
-#define CHECKPOINT_STATE_HDF5       "checkpoint_state"
-#define CHECKPOINT_YEAR_HDF5        "checkpoint_year"
-#define CHECKPOINT_EVENT_HDF5       "checkpoint_event"
-#define CHECKPOINT_NUM_ENTRIES_HDF5 6
-#define CHECKPOINT_SLIP_DFCT_HDF5   "slipDeficit"
-#define CHECKPOINT_CFF_HDF5         "cff"
-#define CHECKPOINT_STRESS_S_HDF5    "stressS"
-#define CHECKPOINT_STRESS_N_HDF5    "stressN"
-#define CHECKPOINT_UPDATE_FLD_HDF5  "updateField"
-
 #ifdef HDF5_FOUND
 
 // Classes representing a file containing checkpoint data
