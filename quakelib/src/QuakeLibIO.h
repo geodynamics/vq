@@ -1033,6 +1033,13 @@ namespace quakelib {
                 _data.clear();
             }
 
+            void add_stress_entry(UIndex element_id, float shear_stress, float normal_stress) {
+                StressData new_entry;
+                new_entry._element_id = element_id;
+                new_entry._shear_stress = shear_stress;
+                new_entry._normal_stress = normal_stress;
+                _data.push_back(new_entry);
+            }
 #ifdef HDF5_FOUND
             static std::string hdf5_table_name(void) {
                 return "stresses";
@@ -1097,6 +1104,28 @@ namespace quakelib {
                 _stress = new_stresses;
             };
 
+            void setYear(const double year) {
+                _times._year = year;
+            }
+            float getYear(void) const {
+                return _times._year;
+            }
+            void setEventNum(const UIndex event_num) {
+                _times._event_num = event_num;
+            }
+            UIndex getEventNum(void) const {
+                return _times._event_num;
+            }
+            void setSweepNum(const UIndex sweep_num) {
+                _times._sweep_num = sweep_num;
+            }
+            UIndex getSweepNum(void) const {
+                return _times._sweep_num;
+            }
+            void setStartEndRecNums(const unsigned int start_rec, const unsigned int end_rec) {
+                _times._start_rec = start_rec;
+                _times._end_rec = end_rec;
+            }
             unsigned int getNumStressRecords(void) const {
                 return _times._end_rec - _times._start_rec;
             };
