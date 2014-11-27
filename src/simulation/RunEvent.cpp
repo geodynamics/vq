@@ -280,6 +280,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
+        sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
@@ -381,6 +383,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sweep_num++;
     }
+
+    sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
 
     // Set the completed list as the sweep list for the entire event
     sim->collectEventSweep(event_sweeps);
