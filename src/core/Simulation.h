@@ -238,6 +238,8 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
 
         void partitionBlocks(void);
 
+        void output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num);
+
     private:
 #ifdef DEBUG
         int                         mult_timer;
@@ -251,6 +253,12 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! Temporary buffer used to speed up calculations
         double                      *mult_buffer;
         GREEN_VAL                   *decompress_buf;
+
+        //! Files to write stress records to
+        std::ofstream       stress_state_outfile, stress_outfile;
+
+        //! Number of stress records written to files, used for keeping track of indices
+        unsigned int        num_stress_recs;
 
         //! Map of which blocks have which neighbors
         std::map<BlockID, quakelib::ElementIDSet>   neighbor_map;

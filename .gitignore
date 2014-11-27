@@ -183,4 +183,6 @@ doc/*.bbl
 doc/*.blg
 
 
+*.h5
+
 *.pyc

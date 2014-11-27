@@ -68,6 +68,31 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     }
 }
 
+void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num) {
+    quakelib::ModelStress       stress;
+    quakelib::ModelStressState  stress_state;
+
+    stress_state.setYear(getYear());
+    stress_state.setEventNum(event_num);
+    stress_state.setSweepNum(sweep_num);
+    stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
+
+    // Store stress values
+    for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
+        stress.add_stress_entry(i, shear_stress[i], normal_stress[i]);
+    }
+
+    num_stress_recs += numGlobalBlocks();
+
+    // Write the stress state details
+    stress_state.write_ascii(stress_state_outfile);
+    stress_state_outfile.flush();
+
+    // Write the stress details
+    stress.write_ascii(stress_outfile);
+    stress_outfile.flush();
+}
+
 /*!
  Finish the simulation by deallocating memory and freeing MPI related structures.
  */
@@ -96,6 +121,18 @@ void Simulation::init(void) {
     num_mults = 0;
 #endif
     SimFramework::init();
+
+    stress_state_outfile.open("stress_state_outfile.txt");
+    stress_outfile.open("stress.txt");
+
+    if (!stress_state_outfile.good() || !stress_outfile.good()) {
+        errConsole() << "ERROR: Could not open output file " << std::endl;
+        exit(-1);
+    }
+
+    quakelib::ModelStressState::write_ascii_header(stress_state_outfile);
+    quakelib::ModelStress::write_ascii_header(stress_outfile);
+    num_stress_recs = 0;
 }
 
 /*!
