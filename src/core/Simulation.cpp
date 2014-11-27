@@ -84,13 +84,21 @@ void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex swee
 
     num_stress_recs += numGlobalBlocks();
 
-    // Write the stress state details
-    stress_state.write_ascii(stress_index_outfile);
-    stress_index_outfile.flush();
+    if (getStressOutfileType() == "text") {
+        // Write the stress state details
+        stress_state.write_ascii(stress_index_outfile);
+        stress_index_outfile.flush();
 
-    // Write the stress details
-    stress.write_ascii(stress_outfile);
-    stress_outfile.flush();
+        // Write the stress details
+        stress.write_ascii(stress_outfile);
+        stress_outfile.flush();
+    } else if (getStressOutfileType() == "hdf5") {
+        // Write the stress state details
+        stress_state.append_stress_state_hdf5(stress_data_file);
+
+        // Write the stress details
+        stress.append_stress_hdf5(stress_data_file);
+    }
 }
 
 /*!
@@ -127,29 +135,64 @@ void Simulation::init(void) {
             errConsole() << "ERROR: Stress file names cannot be blank." << std::endl;
             exit(-1);
         }
+
         stress_index_outfile.open(getStressIndexOutfile());
         stress_outfile.open(getStressOutfile());
-        
+
         if (!stress_index_outfile.good()) {
             errConsole() << "ERROR: Could not open output file " << getStressIndexOutfile() << std::endl;
             exit(-1);
         }
-        
+
         if (!stress_outfile.good()) {
             errConsole() << "ERROR: Could not open output file " << getStressOutfile() << std::endl;
             exit(-1);
         }
-        
+
         quakelib::ModelStressState::write_ascii_header(stress_index_outfile);
         quakelib::ModelStress::write_ascii_header(stress_outfile);
     } else if (getStressOutfileType() == "hdf5") {
-        
+#ifdef HDF5_FOUND
+        open_stress_hdf5_file(getStressOutfile());
+#else
+        sim->errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
+        exit(-1);
+#endif
     } else if (!(getStressOutfileType() == "")) {
         errConsole() << "ERROR: Unknown stress output file type " << getStressOutfileType() << std::endl;
         exit(-1);
     }
+
     num_stress_recs = 0;
 }
+
+#ifdef HDF5_FOUND
+void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
+    hid_t   plist_id;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+#ifdef MPI_C_FOUND
+#ifdef H5_HAVE_PARALLEL
+    //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+#endif
+#endif
+    // Create the data file, overwriting any old files
+    stress_data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+
+    if (stress_data_file < 0) exit(-1);
+
+    // Create the stress index table
+    quakelib::ModelStressState::setup_stress_state_hdf5(stress_data_file);
+
+    // Create the stress table
+    quakelib::ModelStress::setup_stress_hdf5(stress_data_file);
+
+    H5Pclose(plist_id);
+}
+#endif
 
 /*!
  Calculate the number of faults in the simulation based on

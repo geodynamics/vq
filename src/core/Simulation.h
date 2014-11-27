@@ -257,6 +257,12 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! Files to write stress records to
         std::ofstream       stress_index_outfile, stress_outfile;
 
+#ifdef HDF5_FOUND
+        // HDF5 handle to stress data file
+        hid_t               stress_data_file;
+        void open_stress_hdf5_file(const std::string &hdf5_file_name);
+#endif
+
         //! Number of stress records written to files, used for keeping track of indices
         unsigned int        num_stress_recs;
 

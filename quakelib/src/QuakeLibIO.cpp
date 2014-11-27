@@ -2884,6 +2884,9 @@ void quakelib::ModelStress::setup_stress_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
+    blank_data._element_id = UNDEFINED_ELEMENT_ID;
+    blank_data._shear_stress = blank_data._normal_stress = nan("");
+
     // Create the sweep table
     res = H5TBmake_table("Stress Table",
                          data_file,
@@ -3070,6 +3073,12 @@ void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file)
         field_types[i] = descs[i].type;
         field_sizes[i] = descs[i].size;
     }
+
+    blank_data._year = nan("");
+    blank_data._event_num = UNDEFINED_EVENT_ID;
+    blank_data._sweep_num = UNDEFINED_EVENT_ID;
+    blank_data._end_rec = UNDEFINED_ELEMENT_ID;
+    blank_data._start_rec = UNDEFINED_ELEMENT_ID;
 
     // Create the sweep table
     res = H5TBmake_table("Stress State Table",
