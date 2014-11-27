@@ -255,7 +255,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         GREEN_VAL                   *decompress_buf;
 
         //! Files to write stress records to
-        std::ofstream       stress_state_outfile, stress_outfile;
+        std::ofstream       stress_index_outfile, stress_outfile;
 
         //! Number of stress records written to files, used for keeping track of indices
         unsigned int        num_stress_recs;
