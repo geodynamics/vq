@@ -173,6 +173,10 @@ if __name__ == "__main__":
             help="Name of sweep file to analyze.")
     parser.add_argument('--model_file', required=False,
             help="Name of model (geometry) file to use in analysis.")
+    parser.add_argument('--stress_index_file', required=False,
+            help="Name of stress index file to use in analysis.")
+    parser.add_argument('--stress_file', required=False,
+            help="Name of stress file to use in analysis.")
 
     # Event filtering arguments
     parser.add_argument('--min_magnitude', type=float, required=False,
@@ -190,9 +194,13 @@ if __name__ == "__main__":
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified).")
 
-    # Plotting arguments
+    # Event plotting arguments
     parser.add_argument('--plot_freq_mag', type=float, required=False,
             help="Generate frequency magnitude plot.")
+
+    # Stress plotting arguments
+    parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
+            help="List of elements to plot stress history for.")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', type=float, required=False,
@@ -211,6 +219,13 @@ if __name__ == "__main__":
         model.read_file_ascii(args.model_file)
     else:
         model = None
+
+    # Read the stress files if specified
+    if args.stress_index_file and args.stress_file:
+        stress_set = quakelib.ModelStressSet()
+        stress_set.read_file_ascii(args.stress_index_file, args.stress_file)
+    else:
+        stress_set = None
 
     # Set up filters
     event_filters = []
