@@ -1020,13 +1020,8 @@ namespace quakelib {
 
         public:
             ModelStress(void) {
-                _data.clear();
+                clear();
             }
-
-            //! Get the total number of blocks that failed in this event.
-            unsigned int size(void) const {
-                return _data.size();
-            };
 
             void clear(void) {
                 _data.clear();
@@ -1052,6 +1047,22 @@ namespace quakelib {
             void read_ascii(std::istream &in_stream, const unsigned int num_records);
             void write_ascii(std::ostream &out_stream) const;
 
+            unsigned int size(void) const {
+                return _data.size();
+            }
+            
+            StressData &operator[](const unsigned int ind) throw(std::out_of_range) {
+                if (ind >= _data.size()) throw std::out_of_range("ModelStress[]");
+                    
+                    return _data[ind];
+            };
+            
+            const StressData &operator[](const unsigned int ind) const throw(std::out_of_range) {
+                if (ind >= _data.size()) throw std::out_of_range("ModelStress[]");
+                    
+                    return _data[ind];
+            };
+            
             friend std::ostream &operator<<(std::ostream &os, const ModelStress &ms);
     };
 
