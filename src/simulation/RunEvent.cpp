@@ -33,7 +33,7 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         gid = sim->getGlobalBID(lid);
 
         // Blocks can only fail once per event, after that they slide freely
-        if (sim->getBlock(gid).getFailed()) continue;
+        if (sim->getFailed(gid)) continue;
 
         // Add this block if it has a static CFF failure
         add = sim->cffFailure(gid);
@@ -42,7 +42,7 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
         if (add) {
-            sim->getBlock(gid).setFailed(true);
+            sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
         }
     }
@@ -127,10 +127,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        Block &b = sim->getBlock(gid);
 
         // If the block has already failed (but not in this sweep) then adjust the slip
-        if (b.getFailed() && global_failed_elements.count(gid) == 0) {
+        if (sim->getFailed(gid) && global_failed_elements.count(gid) == 0) {
             local_id_list.insert(gid);
         }
     }
@@ -273,7 +272,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         loose_elements.insert(triggerID);
-        sim->getBlock(triggerID).setFailed(true);
+        sim->setFailed(triggerID, true);
     }
 
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
@@ -294,7 +293,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            sim->setUpdateField(gid, (it->getFailed() ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
         }
 
         // Distribute the update field values to other processors
@@ -332,10 +331,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Set the update field to the slip of all blocks
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-            Block &block=sim->getBlock(gid);
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            sim->setUpdateField(gid, (block.getFailed() ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
         }
 
         sim->distributeUpdateField();
@@ -505,7 +503,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Update the cumulative slip for this fault
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         BlockID gid = sim->getGlobalBID(lid);
-        sim->getBlock(gid).setFailed(false);
+        sim->setFailed(gid, false);
     }
 
     // TODO: reinstate this check

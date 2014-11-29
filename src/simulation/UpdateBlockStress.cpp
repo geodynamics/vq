@@ -42,6 +42,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
         sim->setDynamicVal(gid, sim->getDynamic());
+        sim->setFailed(gid, false);
 
         // Set stresses to their specified initial values
         sim->setShearStress(gid, sim->getInitShearStress(gid));

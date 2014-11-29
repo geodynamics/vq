@@ -80,21 +80,12 @@ class Block : public quakelib::SimElement {
         FaultID         fid;                // fault id
         SectionID       sid;                // section id
 
-        bool            failed;
-
     public:
 
         void get_rake_and_normal_stress_due_to_block(double stresses[2], const double &sample_dist, const Block &source_block) const;
 
         //! Resets the values of this block.
         void clear(void);
-
-        bool getFailed(void) const {
-            return failed;
-        };
-        void setFailed(bool in_failed) {
-            failed = in_failed;
-        };
 
         // Functions for manipulation of block parameters
         //! Set the block ID of this block.

@@ -1050,19 +1050,19 @@ namespace quakelib {
             unsigned int size(void) const {
                 return _data.size();
             }
-            
+
             StressData &operator[](const unsigned int ind) throw(std::out_of_range) {
                 if (ind >= _data.size()) throw std::out_of_range("ModelStress[]");
-                    
-                    return _data[ind];
+
+                return _data[ind];
             };
-            
+
             const StressData &operator[](const unsigned int ind) const throw(std::out_of_range) {
                 if (ind >= _data.size()) throw std::out_of_range("ModelStress[]");
-                    
-                    return _data[ind];
+
+                return _data[ind];
             };
-            
+
             friend std::ostream &operator<<(std::ostream &os, const ModelStress &ms);
     };
 

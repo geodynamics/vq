@@ -55,6 +55,7 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         double                  *shear_stress0;
         double                  *normal_stress0;
         double                  *dynamic_val;
+        bool                    *failed;
         std::map<BlockID, double>   init_shear_stress;
         std::map<BlockID, double>   init_normal_stress;
 
@@ -63,7 +64,7 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
             shear_stress(NULL), normal_stress(NULL), update_field(NULL), slip_deficit(NULL),
             rhogd(NULL), stress_drop(NULL), cff(NULL), friction(NULL), cff0(NULL),
             self_shear(NULL), self_normal(NULL), shear_stress0(NULL), normal_stress0(NULL),
-            dynamic_val(NULL) {};
+            dynamic_val(NULL), failed(NULL) {};
 
         void setupArrays(const unsigned int &global_sys_size,
                          const unsigned int &local_sys_size,
