@@ -55,6 +55,8 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         double                  *shear_stress0;
         double                  *normal_stress0;
         double                  *dynamic_val;
+        std::map<BlockID, double>   init_shear_stress;
+        std::map<BlockID, double>   init_normal_stress;
 
     public:
         VCSimData(void) : global_size(0), local_size(0), green_shear(NULL), green_normal(NULL),

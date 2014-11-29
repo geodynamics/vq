@@ -213,6 +213,20 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             dynamic_val[gid] = new_dynamic_val;
         };
     
+        void setInitShearNormalStress(const BlockID gid, const double new_init_shear, const double new_init_normal) {
+            init_shear_stress[gid] = new_init_shear;
+            init_normal_stress[gid] = new_init_normal;
+        };
+    
+        double getInitShearStress(const BlockID gid) const {
+            if (init_shear_stress.count(gid)) return init_shear_stress.find(gid)->second;
+            return std::numeric_limits<double>::quiet_NaN();
+        };
+        double getInitNormalStress(const BlockID gid) const {
+            if (init_normal_stress.count(gid)) return init_normal_stress.find(gid)->second;
+            return std::numeric_limits<double>::quiet_NaN();
+        };
+    
         double getUpdateField(const BlockID &b) const {
             return update_field[b];
         };

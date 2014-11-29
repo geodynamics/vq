@@ -44,8 +44,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setDynamicVal(gid, sim->getDynamic());
 
         // Set stresses to their specified initial values
-        sim->setShearStress(gid, sim->getBlock(gid).getInitShearStress());
-        sim->setNormalStress(gid, sim->getBlock(gid).getInitNormalStress());
+        sim->setShearStress(gid, sim->getInitShearStress(gid));
+        sim->setNormalStress(gid, sim->getInitNormalStress(gid));
 
         // Set the stress drop based on the Greens function calculations
         stress_drop = 0;

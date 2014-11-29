@@ -80,9 +80,6 @@ class Block : public quakelib::SimElement {
         FaultID         fid;                // fault id
         SectionID       sid;                // section id
 
-        double          init_shear_stress;  // initial shear stress
-        double          init_normal_stress; // initial normal stress
-
         bool            failed;
 
     public:
@@ -125,23 +122,6 @@ class Block : public quakelib::SimElement {
         //! Return the section ID of this block.
         SectionID getSectionID(void) const {
             return sid;
-        };
-
-        //! Set the initial shear stress of this block in bars.
-        void setInitShearStress(const double &new_stress) {
-            init_shear_stress = new_stress;
-        };
-        //! Get the initial shear stress of this block in bars.
-        double getInitShearStress(void) const {
-            return init_shear_stress;
-        };
-        //! Set the initial normal stress of this block in bars.
-        void setInitNormalStress(const double &new_stress) {
-            init_normal_stress = new_stress;
-        };
-        //! Get the initial normal stress of this block in bars.
-        double getInitNormalStress(void) const {
-            return init_normal_stress;
         };
 };
 

@@ -126,5 +126,4 @@ void Block::clear(void) {
     id = UNDEFINED_ELEMENT_ID;
     fid = UNDEFINED_FAULT_ID;
     sid = UNDEFINED_SECTION_ID;
-    dynamic_val = init_shear_stress = init_normal_stress = std::numeric_limits<float>::quiet_NaN();
 }
