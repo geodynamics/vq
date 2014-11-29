@@ -91,7 +91,6 @@ void ReadModelFile::init(SimFramework *_sim) {
 
         new_block.setInitShearStress(0);
         new_block.setInitNormalStress(0);
-        new_block.setDynamicVal(sim->getDynamic());
 
         sim->addBlock(new_block);
     }

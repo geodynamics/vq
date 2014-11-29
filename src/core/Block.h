@@ -80,9 +80,6 @@ class Block : public quakelib::SimElement {
         FaultID         fid;                // fault id
         SectionID       sid;                // section id
 
-        // constants during simulation
-        double          dynamic_val;        // dynamic failure value for this block
-
         double          init_shear_stress;  // initial shear stress
         double          init_normal_stress; // initial normal stress
 
@@ -128,15 +125,6 @@ class Block : public quakelib::SimElement {
         //! Return the section ID of this block.
         SectionID getSectionID(void) const {
             return sid;
-        };
-
-        //! Get the dynamic triggering value for this block.
-        double getDynamicVal(void) const {
-            return dynamic_val;
-        };
-        //! Set the dynamic triggering value for this block.
-        void setDynamicVal(const double &new_dyn_val) {
-            dynamic_val = new_dyn_val;
         };
 
         //! Set the initial shear stress of this block in bars.

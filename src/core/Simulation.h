@@ -172,7 +172,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return (getBlock(gid).getFaultID() == event_fault &&
                     cff[gid] > cff0[gid] &&
                     //state.cff > getStressDrop() &&
-                    fabs((cff0[gid]-cff[gid])/cff0[gid]) > getBlock(gid).getDynamicVal());
+                    fabs((cff0[gid]-cff[gid])/cff0[gid]) > dynamic_val[gid]);
         }
 
         //! Calculate the expected recurrence of this block in years.
@@ -209,6 +209,10 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             calcFriction(gid);
         };
 
+        void setDynamicVal(const BlockID gid, const double new_dynamic_val) {
+            dynamic_val[gid] = new_dynamic_val;
+        };
+    
         double getUpdateField(const BlockID &b) const {
             return update_field[b];
         };
