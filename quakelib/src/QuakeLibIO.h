@@ -1113,6 +1113,12 @@ namespace quakelib {
             void setStresses(const ModelStress &new_stresses) {
                 _stress = new_stresses;
             };
+            const ModelStress &stresses(void) const {
+                return _stress;
+            }
+            ModelStress &stresses(void) {
+                return _stress;
+            }
 
             void setYear(const double year) {
                 _times._year = year;
