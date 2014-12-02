@@ -36,10 +36,10 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         if (sim->getBlock(gid).getFailed()) continue;
 
         // Add this block if it has a static CFF failure
-        add = sim->getBlock(gid).cffFailure();
+        add = sim->cffFailure(gid);
 
         // Allow dynamic failure if the block is "loose" (next to a previously failed block)
-        if (loose_elements.count(gid) > 0) add |= sim->getBlock(gid).dynamicFailure(trigger_fault);
+        if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
         if (add) {
             sim->getBlock(gid).setFailed(true);
@@ -58,15 +58,16 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
     // For each block that fails in this sweep, calculate how much it slips
     for (fit=local_failed_elements.begin(); fit!=local_failed_elements.end(); ++fit) {
         if (sim->isLocalBlockID(*fit)) {
+            BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
 
             // calculate the drop in stress from the failure
-            stress_drop = b.getCFF0() - b.getCFF();
+            stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
 
-            if (!stress_drop) stress_drop = b.getStressDrop() - b.getCFF();
+            if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
             // Slip is in m
-            slip = (stress_drop/b.getSelfStresses());
+            slip = (stress_drop/sim->getSelfStresses(gid));
 
             if (slip < 0) slip = 0;
 
@@ -78,10 +79,10 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
                                   b.lame_mu());
             sweeps.setInitStresses(sweep_num,
                                    b.getBlockID(),
-                                   b.getShearStress(),
-                                   b.getNormalStress());
+                                   sim->getShearStress(gid),
+                                   sim->getNormalStress(gid));
 
-            b.state.slipDeficit += slip;
+            sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
         }
     }
 }
@@ -145,17 +146,15 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     double *x = new double[num_local_failed];
 
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
-        Block &blk = sim->getBlock(*it);
-
         for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
             A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
 
             if (sim->doNormalStress()) {
-                A[i*num_global_failed+n] -= blk.friction()*sim->getGreenNormal(*it, jt->first);
+                A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
             }
         }
 
-        b[i] = blk.getCFF()+blk.friction()*blk.getRhogd();
+        b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
     }
 
     if (sim->isRootNode()) {
@@ -221,21 +220,21 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
         Block &block = sim->getBlock(*it);
 
-        double slip = x[i] - block.getSlipDeficit();
+        double slip = x[i] - sim->getSlipDeficit(*it);;
 
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
-                                  block.getBlockID(),
+                                  *it,
                                   slip,
                                   block.area(),
                                   block.lame_mu());
             sweeps.setInitStresses(sweep_num,
-                                   block.getBlockID(),
-                                   block.getShearStress(),
-                                   block.getNormalStress());
+                                   *it,
+                                   sim->getShearStress(*it),
+                                   sim->getNormalStress(*it));
 
-            block.state.slipDeficit += slip;
+            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
         }
     }
 
@@ -281,6 +280,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
+        sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
@@ -290,9 +291,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Recalculate CFF for all blocks where slipped blocks don't contribute
         for (it=sim->begin(); it!=sim->end(); ++it) {
-            sim->setShearStress(it->getBlockID(), 0.0);
-            sim->setNormalStress(it->getBlockID(), it->getRhogd());
-            sim->setUpdateField(it->getBlockID(), (it->getFailed() ? 0 : it->state.slipDeficit));
+            BlockID gid = it->getBlockID();
+            sim->setShearStress(gid, 0.0);
+            sim->setNormalStress(gid, sim->getRhogd(gid));
+            sim->setUpdateField(gid, (it->getFailed() ? 0 : sim->getSlipDeficit(gid)));
         }
 
         // Distribute the update field values to other processors
@@ -332,8 +334,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             Block &block=sim->getBlock(gid);
             sim->setShearStress(gid, 0.0);
-            sim->setNormalStress(gid, block.getRhogd());
-            sim->setUpdateField(gid, (block.getFailed() ? 0 : block.state.slipDeficit));
+            sim->setNormalStress(gid, sim->getRhogd(gid));
+            sim->setUpdateField(gid, (block.getFailed() ? 0 : sim->getSlipDeficit(gid)));
         }
 
         sim->distributeUpdateField();
@@ -358,11 +360,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
-                Block &b = sim->getBlock(fit->first);
                 event_sweeps.setFinalStresses(sweep_num,
                                               fit->first,
-                                              b.getShearStress(),
-                                              b.getNormalStress());
+                                              sim->getShearStress(fit->first),
+                                              sim->getNormalStress(fit->first));
             }
         }
 
@@ -382,6 +383,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sweep_num++;
     }
+
+    sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
 
     // Set the completed list as the sweep list for the entire event
     sim->collectEventSweep(event_sweeps);
@@ -439,20 +442,19 @@ void RunEvent::processAftershock(Simulation *sim) {
         double element_slip = element_moment/(b.lame_mu()*b.area());
 
         // Adjust the slip deficit appropriately
-        b.state.slipDeficit += element_slip;
+        sim->setSlipDeficit(*bit, sim->getSlipDeficit(*bit)+element_slip);
 
         // Create the sweep describing this aftershock
         // Since we don't distinguish sweeps, every slip occurs in sweep 0
         event_sweeps.setSlipAndArea(0, *bit, element_slip, b.area(), b.lame_mu());
-        event_sweeps.setInitStresses(0, *bit, b.getShearStress(), b.getNormalStress());
+        event_sweeps.setInitStresses(0, *bit, sim->getShearStress(*bit), sim->getNormalStress(*bit));
     }
 
     // Set the update field to the slip of all blocks
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        Block &block=sim->getBlock(gid);
         sim->setShearStress(gid, 0.0);
-        sim->setNormalStress(gid, block.getRhogd());
-        sim->setUpdateField(gid, block.state.slipDeficit);
+        sim->setNormalStress(gid, sim->getRhogd(gid));
+        sim->setUpdateField(gid, sim->getSlipDeficit(gid));
     }
 
     sim->distributeUpdateField();
@@ -474,8 +476,7 @@ void RunEvent::processAftershock(Simulation *sim) {
 
     // Record final stresses on each block involved in the aftershock
     for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
-        Block &b=sim->getBlock(*bit);
-        event_sweeps.setFinalStresses(0, *bit, b.getShearStress(), b.getNormalStress());
+        event_sweeps.setFinalStresses(0, *bit, sim->getShearStress(*bit), sim->getNormalStress(*bit));
     }
 
     // Add sweeps to list
@@ -488,7 +489,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
     // Save stress information at the beginning of the event
     // This is used to determine dynamic block failure
-    for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->getBlock(sim->getGlobalBID(lid)).saveStresses();
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->saveStresses(sim->getGlobalBID(lid));
 
     // If there's a specific block that triggered the event, it's a static stress failure type event
     if (sim->getCurrentEvent().getEventTrigger() != UNDEFINED_ELEMENT_ID) {

@@ -76,7 +76,7 @@ void ProgressMonitor::getStats(Simulation *sim, BlockVal &min, BlockVal &avg, Bl
     // Get the minimum, maximum and sum CFF values on this node
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        cur_cff = sim->getBlock(gid).getCFF();
+        cur_cff = sim->getCFF(gid);
 
         if (cur_cff < min_val.val) {
             min_val.val = cur_cff;

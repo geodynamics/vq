@@ -35,7 +35,7 @@ void CheckpointFileOutput::writeCheckpoint(const std::string &ckpt_file_name, co
     // Get current state for local blocks
     for (i=0; i<sim->numLocalBlocks(); ++i) {
         bid = sim->getGlobalBID(i);
-        checkpoint_set[bid] = sim->getBlock(bid).state.readCheckpointData();
+        //checkpoint_set[bid] = sim->getBlock(bid).state.readCheckpointData();
     }
 
 #ifdef HDF5_FOUND
