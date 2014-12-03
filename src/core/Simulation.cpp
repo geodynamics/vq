@@ -138,8 +138,8 @@ void Simulation::init(void) {
             exit(-1);
         }
 
-        stress_index_outfile.open(getStressIndexOutfile());
-        stress_outfile.open(getStressOutfile());
+        stress_index_outfile.open(getStressIndexOutfile().c_str());
+        stress_outfile.open(getStressOutfile().c_str());
 
         if (!stress_index_outfile.good()) {
             errConsole() << "ERROR: Could not open output file " << getStressIndexOutfile() << std::endl;
