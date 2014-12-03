@@ -147,6 +147,7 @@ SimRequest EventOutput::run(SimFramework *_sim) {
         if (sim->getEventOutfileType() == "hdf5") {
 #ifdef HDF5_FOUND
             sim->getCurrentEvent().append_event_hdf5(data_file);
+            sim->getCurrentEvent().getSweeps().append_sweeps_hdf5(data_file);
 #endif
         } else if (sim->getEventOutfileType() == "text") {
             // Write the event details
