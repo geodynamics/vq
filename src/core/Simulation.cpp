@@ -176,10 +176,8 @@ void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
 
     if (plist_id < 0) exit(-1);
 
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
-    //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
+#ifdef HDF5_IS_PARALLEL
+    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
     // Create the data file, overwriting any old files
     stress_data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
