@@ -60,7 +60,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.d)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.d params_${RES}.d)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
@@ -139,7 +139,7 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
  
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.d params_${RES}.d)
         SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
@@ -198,15 +198,15 @@ IF (HDF5_FOUND)
             --export_file_type=text
             )
         ADD_TEST(NAME param_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_generate.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_generate.d params_gen_${RES}.d)
         SET_TESTS_PROPERTIES (param_gen_${TEST_SUFFIX} PROPERTIES DEPENDS mesh_${TEST_SUFFIX})
 
         ADD_TEST(NAME param_run_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_input.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_input.d params_run_${RES}.d)
         SET_TESTS_PROPERTIES (param_run_${TEST_SUFFIX} PROPERTIES DEPENDS param_gen_${TEST_SUFFIX})
 
         ADD_TEST(NAME run_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.d)
+            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_gen_${RES}.d)
         SET_TESTS_PROPERTIES (run_gen_${TEST_SUFFIX} PROPERTIES DEPENDS param_run_${TEST_SUFFIX})
 
         ADD_TEST(NAME check_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
@@ -215,7 +215,7 @@ IF (HDF5_FOUND)
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_full_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.d)
+            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_run_${RES}.d)
         SET_TESTS_PROPERTIES (run_full_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
 
         # Check that the results are internally self consistent
