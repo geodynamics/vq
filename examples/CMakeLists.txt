@@ -60,16 +60,16 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.d params_${RES}.d)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
             IF (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${VQ_BINARY_DIR}/vq params_${RES}.d)
+                    COMMAND ${VQ_BINARY_DIR}/vq params_${RES}.prm)
             ELSE (NPROC EQUAL 1)
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.d)
+                    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.prm)
             ENDIF (NPROC EQUAL 1)
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
@@ -139,12 +139,12 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             )
  
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.d params_${RES}.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
         SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND vq params_${RES}.d)
+            COMMAND vq params_${RES}.prm)
         SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
         # Check that the results are internally self consistent
@@ -198,15 +198,15 @@ IF (HDF5_FOUND)
             --export_file_type=text
             )
         ADD_TEST(NAME param_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_generate.d params_gen_${RES}.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_generate.prm params_gen_${RES}.prm)
         SET_TESTS_PROPERTIES (param_gen_${TEST_SUFFIX} PROPERTIES DEPENDS mesh_${TEST_SUFFIX})
 
         ADD_TEST(NAME param_run_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_input.d params_run_${RES}.d)
+            COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_input.prm params_run_${RES}.prm)
         SET_TESTS_PROPERTIES (param_run_${TEST_SUFFIX} PROPERTIES DEPENDS param_gen_${TEST_SUFFIX})
 
         ADD_TEST(NAME run_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_gen_${RES}.d)
+            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_gen_${RES}.prm)
         SET_TESTS_PROPERTIES (run_gen_${TEST_SUFFIX} PROPERTIES DEPENDS param_run_${TEST_SUFFIX})
 
         ADD_TEST(NAME check_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
@@ -215,7 +215,7 @@ IF (HDF5_FOUND)
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_full_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_run_${RES}.d)
+            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_run_${RES}.prm)
         SET_TESTS_PROPERTIES (run_full_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
 
         # Check that the results are internally self consistent
