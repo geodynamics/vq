@@ -106,7 +106,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
     sim->allReduceBlockVal(next_event, next_event_global, BLOCK_VAL_MIN);
 
     // If we didn't find any static failures or aftershocks, abort the simulation
-    assertThrow(next_event_global.val < DBL_MAX, "System stuck, no blocks to move.");
+    if (sim->isRootNode()) assertThrow(next_event_global.val < DBL_MAX, "System stuck, no blocks to move.");
 
     // Increment the simulation year to the next failure time and
     // update the slip on all other blocks
