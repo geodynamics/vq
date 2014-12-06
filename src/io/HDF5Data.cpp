@@ -316,9 +316,6 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
     status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 
     plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef HDF5_IS_PARALLEL
-    //H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-#endif
     status = H5Dread(green_shear_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, shear_vals);
     status = H5Dread(green_norm_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, norm_vals);
 
