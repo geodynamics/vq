@@ -73,7 +73,7 @@ void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex swee
     quakelib::ModelStressState  stress_state;
 
     if (getStressOutfileType() == "") return;
-    
+
     stress_state.setYear(getYear());
     stress_state.setEventNum(event_num);
     stress_state.setSweepNum(sweep_num);

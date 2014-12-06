@@ -33,14 +33,18 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
 
-    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-        gid = sim->getGlobalBID(lid);
-
+    // All processes need the friction values for all blocks, so we set rhogd here
+    // and transfer stress drop values between nodes later
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         double rho = 5.515e3;      // density of rock in kg m^-3
         double g = 9.81;           // force of gravity in m s^-2
         double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
+    }
+
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
 
         // Set stresses to their specified initial values
         sim->setShearStress(gid, sim->getBlock(gid).getInitShearStress());
@@ -65,6 +69,26 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             sim->compressNormalRow(gid, 0.7);
         }
     }
+
+#ifdef MPI_C_FOUND
+
+    // Transfer stress drop values between nodes
+    // This is needed for normal stress Green's calculations
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        double     stress_drop;
+
+        if (sim->isLocalBlockID(gid)) {
+            stress_drop = sim->getStressDrop(gid);
+        }
+
+        MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+
+        if (!sim->isLocalBlockID(gid)) {
+            sim->setStressDrop(gid, stress_drop);
+        }
+    }
+
+#endif
 
     // Compute initial stress on all blocks
     stressRecompute();
