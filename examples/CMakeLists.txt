@@ -11,6 +11,9 @@ SET(TAPER_METHODS none taper taper_renorm)
 SET(METHOD_MEANSLIP 100.4 0 0)
 SET(METHOD_INTEREVENT 49.2 0 0)
 
+INCLUDE(FindPythonModule)
+FIND_PYTHON_MODULE(h5py)
+
 # If MPI is available, set up MPI based tests as well
 IF(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
     SET(NUM_PROCS 1 2 4)
@@ -209,9 +212,12 @@ IF (HDF5_FOUND)
             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_gen_${RES}.prm)
         SET_TESTS_PROPERTIES (run_gen_${TEST_SUFFIX} PROPERTIES DEPENDS param_run_${TEST_SUFFIX})
 
-        ADD_TEST(NAME check_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${PYTHON_EXECUTABLE} ${GREENS_SCRIPT} greens_3000.h5 6.93247959318e-08 -92400201.204)
-        SET_TESTS_PROPERTIES (check_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
+        # If h5py is available, confirm the values in the Greens file sum to the correct value
+        IF(PY_H5PY)
+            ADD_TEST(NAME check_sum_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} ${GREENS_SCRIPT} greens_3000.h5 6.93247959318e-08 -92400201.204)
+            SET_TESTS_PROPERTIES (check_sum_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
+        ENDIF(PY_H5PY)
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_full_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
