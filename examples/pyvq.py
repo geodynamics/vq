@@ -117,32 +117,35 @@ class Events:
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
 
 class BasePlotter:
-    def scatter_plot(self, x_data, y_data, plot_title, x_label, y_label):
+    def create_plot(self, plot_type, x_data, y_data, plot_title, x_label, y_label):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         ax.set_yscale('log')
-        ax.scatter(x_data, y_data)
+        if plot_type == "scatter":
+            ax.scatter(x_data, y_data)
+        elif plot_type == "line":
+            ax.plot(x_data, y_data)
         plt.show()
 
 class MagnitudeFrequencyPlot(BasePlotter):
     def plot(self, events):
-        self.scatter_plot(x,y,xlabel,ylabel)
+        self.create_plot("scatter", x,y,xlabel,ylabel)
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
     def plot(self, events):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
-        self.scatter_plot(mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)")
+        self.create_plot("scatter", mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)")
 
 class MagnitudeMeanSlipPlot(BasePlotter):
     def plot(self, events):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
-        self.scatter_plot(mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)")
+        self.create_plot("scatter", mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)")
 
 class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, events):
@@ -159,8 +162,23 @@ class FrequencyMagnitudePlot(BasePlotter):
             mag_counts[i+1] += mag_counts[i]
         mag_counts.reverse()
         mag_norm = [m/float(len(mag_list)) for m in mag_counts]
-        self.scatter_plot(mag_vals, mag_norm, events.plot_str(), "Magnitude", "Frequency")
+        self.create_plot("scatter", mag_vals, mag_norm, events.plot_str(), "Magnitude", "Frequency")
         #print(mag_norm)
+
+class StressHistoryPlot(BasePlotter):
+    def plot(self, stress_set, elements):
+        stress_histories = {}
+        for element in elements:
+            stress_histories[element] = []
+        for stress_state in stress_set:
+            if stress_state.getSweepNum() == 0:
+                stresses = stress_state.stresses()
+                for stress in stresses:
+                    if stress._element_id in elements:
+                        stress_histories[element].append(stress._shear_stress)
+        for element in elements:
+            print(stress_histories[element])
+        #self.create_plot("scatter", mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
 
 if __name__ == "__main__":
     # Specify arguments
@@ -195,7 +213,7 @@ if __name__ == "__main__":
             help="List of model sections to use (all sections used if unspecified).")
 
     # Event plotting arguments
-    parser.add_argument('--plot_freq_mag', type=float, required=False,
+    parser.add_argument('--plot_freq_mag', required=False,
             help="Generate frequency magnitude plot.")
 
     # Stress plotting arguments
@@ -203,9 +221,9 @@ if __name__ == "__main__":
             help="List of elements to plot stress history for.")
 
     # Validation/testing arguments
-    parser.add_argument('--validate_slip_sum', type=float, required=False,
+    parser.add_argument('--validate_slip_sum', required=False,
             help="Ensure the sum of mean slip for all events is within 1 percent of the specified value.")
-    parser.add_argument('--validate_mean_interevent', type=float, required=False,
+    parser.add_argument('--validate_mean_interevent', required=False,
             help="Ensure the mean interevent time for all events is within 2 percent of the specified value.")
 
     args = parser.parse_args()
@@ -246,6 +264,11 @@ if __name__ == "__main__":
     # Generate plots
     if args.plot_freq_mag:
         FrequencyMagnitudePlot().plot(events)
+
+    # Generate stress plots
+    if args.stress_elements:
+        # TODO: check that stress_set is valid
+        StressHistoryPlot().plot(stress_set, args.stress_elements)
 
     # Validate data if requested
     err = False
