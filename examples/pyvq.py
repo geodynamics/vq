@@ -275,7 +275,7 @@ if __name__ == "__main__":
             help="List of model sections to use (all sections used if unspecified).")
 
     # Event plotting arguments
-    parser.add_argument('--plot_freq_mag', required=False,
+    parser.add_argument('--plot_freq_mag', required=False, action='store_true',
             help="Generate frequency magnitude plot.")
     parser.add_argument('--plot_mag_rupt_area', required=False,
             help="Generate magnitude vs rupture area plot.")        
@@ -299,10 +299,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the event and sweeps files
-    if args.event_file_type == "hdf5":
-        events = Events(args.event_file, args.event_file_type)
-    else:
-        events = Events(args.event_file, args.event_file_type, sweep_file = args.sweep_file)
+    events = Events(args.event_file, args.event_file_type, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
