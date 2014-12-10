@@ -39,6 +39,11 @@ void GreensFileOutput::initDesc(const SimFramework *_sim) const {
 void GreensFileOutput::init(SimFramework *_sim) {
 #ifdef HDF5_FOUND
     Simulation            *sim = static_cast<Simulation *>(_sim);
+#ifndef HDF5_IS_PARALLEL
+    if (sim->getWorldSize() > 1) {
+        assertThrow(false, "HDF5 output in parallel only allowed if using HDF5 parallel library.");
+    }
+#endif
     std::string             file_name = sim->getGreensOutfile();
     unsigned int            green_dim;
     BlockID                 row, col, global_row;
