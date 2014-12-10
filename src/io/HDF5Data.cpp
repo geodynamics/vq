@@ -42,10 +42,8 @@ HDF5CheckpointReader::HDF5CheckpointReader(const std::string &ckpt_file_name,
 
     if (plist_id < 0) exit(-1);
 
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
+#ifdef HDF5_IS_PARALLEL
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
 #endif
 
     data_file = H5Fopen(ckpt_file_name.c_str(), H5F_ACC_RDONLY, plist_id);
@@ -74,10 +72,8 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
     if (plist_id < 0) exit(-1);
 
-    #ifdef MPI_C_FOUND
-    #ifdef H5_HAVE_PARALLEL
+    #ifdef HDF5_IS_PARALLEL
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-    #endif
     #endif
 
     // Create the data file, overwriting any old files
@@ -138,10 +134,8 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
 
     // Write all block state data in parallel
     xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
-    #ifdef MPI_C_FOUND
-    #ifdef H5_HAVE_PARALLEL
+    #ifdef HDF5_IS_PARALLEL
     H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
-    #endif
     #endif
     status = H5Dwrite(state_dataset, H5T_NATIVE_DOUBLE, mem_select, file_select, xfer_plist_id, mem_state);
 
@@ -236,10 +230,8 @@ HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, co
 
     if (plist_id < 0) exit(-1);
 
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
+#ifdef HDF5_IS_PARALLEL
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
 #endif
     // Create the data file, overwriting any old files
     data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
@@ -290,10 +282,8 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
     status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 
     plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
-    //H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-#endif
+#ifdef HDF5_IS_PARALLEL
+    H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 #endif
     status = H5Dwrite(green_shear_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, shear_vals);
     status = H5Dwrite(green_norm_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, norm_vals);
@@ -326,11 +316,6 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
     status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 
     plist_id = H5Pcreate(H5P_DATASET_XFER);
-#ifdef MPI_C_FOUND
-#ifdef H5_HAVE_PARALLEL
-    //H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-#endif
-#endif
     status = H5Dread(green_shear_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, shear_vals);
     status = H5Dread(green_norm_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, norm_vals);
 
