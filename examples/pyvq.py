@@ -344,7 +344,7 @@ if __name__ == "__main__":
     if args.plot_p_of_t:
         ProbabilityPlot().plot_p_of_t(events)
     if args.plot_prob_vs_t_fixed_dt:
-        ProbabilityPlot().plot_conditional_fixed_dt(events)
+        ProbabilityPlot().plot_conditional_fixed_dt(events)`
 
     # Generate stress plots
     if args.stress_elements:

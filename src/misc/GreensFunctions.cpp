@@ -162,6 +162,8 @@ void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
     delete greens_file_reader;
     delete in_shear_green;
     delete in_normal_green;
+#else
+    assertThrow(false, "HDF5 is required to use Greens function file I/O.");
 #endif
 }
 
