@@ -2847,10 +2847,6 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
 #ifdef HDF5_FOUND
     hid_t       plist_id, data_file;
     herr_t      res;
-    LatLonDepth min_latlon, max_latlon;
-
-    // Clear the world first to avoid incorrectly mixing indices
-    clear();
 
     if (!H5Fis_hdf5(file_name.c_str())) return -1;
 
@@ -2862,9 +2858,8 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
 
     if (data_file < 0) exit(-1);
 
-    read_section_hdf5(data_file);
-    read_element_hdf5(data_file);
-    read_vertex_hdf5(data_file);
+    read_events_hdf5(data_file);
+    read_sweeps_hdf5(data_file);
 
     // Release HDF5 handles
     res = H5Pclose(plist_id);
@@ -2875,10 +2870,6 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
 
     if (res < 0) exit(-1);
 
-    // Reset the internal Cartesian coordinate system
-    get_bounds(min_latlon, max_latlon);
-    min_latlon.set_altitude(0);
-    reset_base_coord(min_latlon);
 #else
     // TODO: Error out
 #endif
@@ -2887,17 +2878,18 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
 
 #ifdef HDF5_FOUND
 void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
-    std::vector<FieldDesc>                          descs;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
-    hsize_t                     num_fields, num_sections;
+    std::vector<FieldDesc>                        descs;
+    std::map<UIndex, ModelEvent>::const_iterator  fit;
+    hsize_t                     num_fields, num_events;
     unsigned int                i;
-    SectionData                 *section_data;
+    EventData                   *event_data;
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
+    ModelSweeps                 file_sweeps;
 
     descs.clear();
-    ModelSection::get_field_descs(descs);
+    ModelEvent::get_field_descs(descs);
     num_fields = descs.size();
     field_offsets = new size_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -2907,26 +2899,26 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
-    res = H5TBget_table_info(data_file, ModelSection::hdf5_table_name().c_str(), &num_fields, &num_sections);
+    res = H5TBget_table_info(data_file, ModelEvent::hdf5_table_name().c_str(), &num_fields, &num_events);
 
     if (res < 0) exit(-1);
 
     // TODO: check that num_fields matches the descs
 
-    section_data = new SectionData[num_sections];
-    res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_sections, sizeof(SectionData), field_offsets, field_sizes, section_data);
+    event_data = new EventData[num_events];
+    res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
 
     if (res < 0) exit(-1);
 
     // Read section data into the World
     for (i=0; i<num_sections; ++i) {
-        ModelSection  new_section;
-        new_section.read_data(section_data[i]);
-        _sections.insert(std::make_pair(new_section.id(), new_section));
+        ModelEvent  new_event;
+        new_event.read_data(event_data[i]);
+        _data.insert(std::make_pair(new_event.getEventNumber(), new_event));
     }
 
     // Free memory for HDF5 related data
-    delete section_data;
+    delete event_data;
     delete field_offsets;
     delete field_sizes;
 }
@@ -2975,6 +2967,7 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     delete field_offsets;
     delete field_sizes;
 }
+#endif
 
 // ********************************************************************************************
 
