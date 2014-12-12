@@ -2886,8 +2886,8 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
-    ModelSweeps                 file_sweeps;
 
+    _events.clear();
     descs.clear();
     ModelEvent::get_field_descs(descs);
     num_fields = descs.size();
@@ -2906,15 +2906,15 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     // TODO: check that num_fields matches the descs
 
     event_data = new EventData[num_events];
-    res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
+    res = H5TBread_records(data_file, ModelEvent::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
 
     if (res < 0) exit(-1);
 
     // Read section data into the World
-    for (i=0; i<num_sections; ++i) {
+    for (i=0; i<num_events; ++i) {
         ModelEvent  new_event;
         new_event.read_data(event_data[i]);
-        _data.insert(std::make_pair(new_event.getEventNumber(), new_event));
+        _events.push_back(new_event);
     }
 
     // Free memory for HDF5 related data
@@ -2925,14 +2925,16 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
 
 void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
-    std::map<UIndex, ModelElement>::const_iterator  fit;
-    hsize_t                     num_fields, num_elements;
+    ModelEventSet::const_iterator                   fit;
+    hsize_t                     num_fields, num_sweeps;
     unsigned int                i;
-    ElementData                 *element_data;
+    unsigned int                *start_sweep;
+    unsigned int                *end_sweep;
+    ModelSweeps                 *event_sweeps;
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
-
+    
     descs.clear();
     ModelElement::get_field_descs(descs);
     num_fields = descs.size();
@@ -2944,28 +2946,26 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
-    res = H5TBget_table_info(data_file, ModelElement::hdf5_table_name().c_str(), &num_fields, &num_elements);
+    res = H5TBget_table_info(data_file, ModelSweeps::hdf5_table_name().c_str(), &num_fields, &num_sweeps);
 
     if (res < 0) exit(-1);
 
-    // TODO: check that num_fields matches the descs
-
-    element_data = new ElementData[num_elements];
-    res = H5TBread_records(data_file, ModelElement::hdf5_table_name().c_str(), 0, num_elements, sizeof(ElementData), field_offsets, field_sizes, element_data);
-
+    event_sweeps = new ModelSweeps[num_sweeps];
+    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(ModelSweeps), field_offsets, field_sizes, event_sweeps);
+    
     if (res < 0) exit(-1);
-
-    // Read element data into the World
-    for (i=0; i<num_elements; ++i) {
-        ModelElement  new_element;
-        new_element.read_data(element_data[i]);
-        _elements.insert(std::make_pair(new_element.id(), new_element));
+    
+    // Read sweeps data into the ModelEventSet
+    for (fit=_events.begin(); fit!=_events.end(); ++fit) {
+        fit->getStartEndSweep(&start_sweep, &end_sweep);
+        ModelSweeps new_sweeps;
+        
+        for (i=*start_sweep; i<*end_sweep; i++) {
+            new_sweeps.read_data(event_sweeps[i]);
+        }
+        fit->setSweeps(new_sweeps);
+        
     }
-
-    // Free memory for HDF5 related data
-    delete element_data;
-    delete field_offsets;
-    delete field_sizes;
 }
 #endif
 
