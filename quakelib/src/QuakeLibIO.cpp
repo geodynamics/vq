@@ -442,7 +442,7 @@ class TraceSpline {
         };
 };
 
-void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method) {
+void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements) {
     Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
     std::vector<UIndex> elem_ids;
     std::set<unsigned int> unused_trace_pts;
@@ -497,6 +497,12 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             }
         }
 
+        // If we used a fixed element size, one time through is enough
+        if (!resize_trace_elements) {
+            best_step = cur_elem_size_guess;
+            best_elem_count = elem_count;
+            break;
+        }
         // Record which element size got us closest to the end of the trace
         if (cur_t > best_t) {
             best_t = cur_t;
@@ -793,7 +799,7 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     return 0;
 }
 
-int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method) {
+int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements) {
     std::ifstream                   in_file;
     std::vector<FaultTracePoint>    trace_pts;
     std::string                     cur_section_name;
@@ -830,7 +836,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
             min_lon = fmin(min_lon, new_trace_pt.pos().lon());
         }
 
-        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method);
+        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements);
         this->insert(new_world);
     }
 
