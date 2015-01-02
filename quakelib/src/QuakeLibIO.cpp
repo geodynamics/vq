@@ -474,20 +474,20 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Initially we don't know the appropriate element size to exactly mesh
     // the trace points. This is solved by starting with the user suggested
-    // element size and iteratively adjusting it until the mesh fits the
-    // trace exactly. Iterate for 10 steps or until relative error is below 0.1%.
+    // element size and slowly shrinking it down to half the original element size until the mesh fits the
+    // trace exactly.
     double cur_elem_size_guess = element_size;
-    double overshoot = DBL_MAX, undershoot = DBL_MAX, t_per_meter=1;
-    unsigned int num_iters = 0;
+    double step_size = element_size/(2*1000);
+    double best_step = element_size, best_t = 0;
+    unsigned int best_elem_count = 0;
 
-    while ((fmin(overshoot, undershoot)/t_per_meter)/element_size > 1e-3 && num_iters < 10) {
+    while (cur_elem_size_guess > element_size/2.0) {
         double cur_t, next_t, sum_t=0;
         elem_count = 0;
         cur_t = 0;
 
         while (cur_t < 1) {
             next_t = spline.advance_element(cur_t, cur_elem_size_guess);
-
             if (next_t < 1) {
                 sum_t += next_t-cur_t;
                 elem_count++;
@@ -497,19 +497,16 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             }
         }
 
-        t_per_meter = (sum_t/elem_count)/cur_elem_size_guess;
-        overshoot = fabs(1-next_t)/elem_count;
-        undershoot = fabs(1-cur_t)/elem_count;
-
-        // If we're undershooting by less than we're overshooting, the best solution is to increase block size
-        if (undershoot < overshoot) cur_elem_size_guess += undershoot/t_per_meter;
-        // Otherwise we decrease block size
-        else cur_elem_size_guess -= overshoot/t_per_meter;
-
-        num_iters++;
+        // Record which element size got us closest to the end of the trace
+        if (cur_t > best_t) {
+            best_t = cur_t;
+            best_step = cur_elem_size_guess;
+            best_elem_count = elem_count;
+        }
+        cur_elem_size_guess -= step_size;
     }
 
-    double  horiz_elem_size = cur_elem_size_guess;
+    double  horiz_elem_size = best_step;
     double  vert_elem_size;
     unsigned int cur_elem_ind, next_elem_ind;
     double cur_t = 0, next_t;
@@ -522,7 +519,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     cur_elem_ind = 0;
     unused_trace_pts.erase(0);
 
-    for (i=0; i<elem_count; ++i) {
+    for (i=0; i<best_elem_count; ++i) {
         // Get the next t value along the trace by advancing the element size
         next_t = spline.advance_element(cur_t, horiz_elem_size);
 
@@ -548,6 +545,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         num_vert_elems = round(elem_depth/element_size);
         vert_elem_size = elem_depth / num_vert_elems;
 
+        // TODO: change this to an assertion throw
         if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
                                                << next_elem_ind << ". Element size may be too big." << std::endl;
 

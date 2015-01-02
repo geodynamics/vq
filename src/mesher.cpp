@@ -344,6 +344,7 @@ int main (int argc, char **argv) {
         std::cout << "File " << names[0] << " " << files[0][n] << " with type " << types[0][n] << "... ";
         unused_trace_segments.clear();
 
+        // TODO: change these to fail if file is not in expected format
         if (types[0][n] == "text") {
             res = new_world.read_file_ascii(files[0][n]);
         } else if (types[0][n] == "hdf5") {
