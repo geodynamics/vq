@@ -488,6 +488,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
         while (cur_t < 1) {
             next_t = spline.advance_element(cur_t, cur_elem_size_guess);
+
             if (next_t < 1) {
                 sum_t += next_t-cur_t;
                 elem_count++;
@@ -503,12 +504,14 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             best_elem_count = elem_count;
             break;
         }
+
         // Record which element size got us closest to the end of the trace
         if (cur_t > best_t) {
             best_t = cur_t;
             best_step = cur_elem_size_guess;
             best_elem_count = elem_count;
         }
+
         cur_elem_size_guess -= step_size;
     }
 

@@ -218,7 +218,7 @@ int main (int argc, char **argv) {
             case 'r':
                 resize_trace_elements = true;
                 break;
-                
+
             case 's':
                 stat_out_file = optarg;
                 break;
