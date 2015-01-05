@@ -215,7 +215,7 @@ IF (HDF5_FOUND)
         # If h5py is available, confirm the values in the Greens file sum to the correct value
         IF(PY_H5PY)
             ADD_TEST(NAME check_sum_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${GREENS_SCRIPT} greens_3000.h5 6.93247959318e-08 -92400201.204)
+                COMMAND ${PYTHON_EXECUTABLE} ${GREENS_SCRIPT} greens_3000.h5 6.9056016275796917e-08 -91753588.690448046)
             SET_TESTS_PROPERTIES (check_sum_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
         ENDIF(PY_H5PY)
 
