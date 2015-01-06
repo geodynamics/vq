@@ -151,7 +151,7 @@ class BasePlotter:
         ax.set_title(plot_title)
         if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
             sys.exit("These lists must be the same length: x_data, y_data, colors, labels, linewidths.")
-        for i in range(len(x_data))
+        for i in range(len(x_data)):
             ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
         ax.legend(title=legend_str, loc='best')
         plt.show()
@@ -477,7 +477,7 @@ if __name__ == "__main__":
     if args.plot_p_of_t:
         ProbabilityPlot().plot_p_of_t(events)
     if args.plot_prob_vs_t_fixed_dt:
-        ProbabilityPlot().plot_conditional_fixed_dt(events)`
+        ProbabilityPlot().plot_conditional_fixed_dt(events)
 
     # Generate stress plots
     if args.stress_elements:

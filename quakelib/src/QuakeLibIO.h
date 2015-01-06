@@ -791,7 +791,7 @@ namespace quakelib {
                 _data._start_sweep_rec = start_sweep;
                 _data._end_sweep_rec = end_sweep;
             }
-            void getStartEndSweep(unsigned int &start_sweep, unsigned int &end_sweep) {
+            void getStartEndSweep(unsigned int &start_sweep, unsigned int &end_sweep) const {
                 start_sweep = _data._start_sweep_rec;
                 end_sweep = _data._end_sweep_rec;
             }
