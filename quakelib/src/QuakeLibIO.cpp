@@ -1632,21 +1632,17 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
             new_element.set_lame_lambda(friction_data.get_lame_lambda());
             new_element.set_lame_mu(friction_data.get_lame_mu());
-            //new_element.set_static_strength(friction_data.get_static_strength(it->first));
-            //new_element.set_dynamic_strength(friction_data.get_dynamic_strength(it->first));
+            new_element.set_max_slip(0);    // Set a temporary maximum slip of 0 (this will be changed below)
 
             // Insert partially finished element into the eqsim_world
             eqsim_world.insert(new_element);
 
             // Compute area of the current element, add it to the total for this section
             fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
-
-
         }
 
         // Go through the created elements and assign maximum slip based on fault section area
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
-
             // From Table 2A in Wells Coppersmith 1994
             double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
@@ -1655,10 +1651,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
             // Set the max slip for the current element
             eit->set_max_slip(max_slip);
-
         }
-
-
     }
 
     insert(eqsim_world);
