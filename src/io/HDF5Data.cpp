@@ -271,11 +271,16 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
     file_select = H5Scopy(green_dataspace);
     mem_select = H5Scopy(green_dataspace);
 
-    file_start[0] = bid;                // start at xth block
-    file_start[1] = 0;
+    if (bid == UNDEFINED_ELEMENT_ID) {
+        file_start[0] = file_start[1] = 0;
+        count[0] = count[1] = 0;
+    } else {
+        file_start[0] = bid;                // start at xth block
+        file_start[1] = 0;
+        count[0] = 1;                       // 1xN set of values
+        count[1] = greens_dim;
+    }
     mem_start[0] = mem_start[1] = 0;    // start at element 0 in memory array
-    count[0] = 1;                       // 1xN set of values
-    count[1] = greens_dim;
 
     // Select the hyperslabs for the memory and file dataspace
     status = H5Sselect_hyperslab(file_select, H5S_SELECT_SET, file_start, NULL, count, NULL);

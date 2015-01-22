@@ -152,6 +152,9 @@ void print_usage(int argc, char **argv) {
     std::cerr << "\tMerge duplicate vertices after importing files." << std::endl;
     std::cerr << "-d, --delete_unused" << std::endl;
     std::cerr << "\tDelete unused vertices after importing files." << std::endl;
+    std::cerr << "-r, --resize_trace_elements" << std::endl;
+    std::cerr << "\tResize elements generated on traces to better match fault length." << std::endl;
+    std::cerr << "\tThis will only decrease and at most halve the element size." << std::endl;
 
     std::cerr << std::endl;
     std::cerr << "FILE IMPORT" << std::endl;
@@ -186,7 +189,8 @@ void print_usage(int argc, char **argv) {
 
 int main (int argc, char **argv) {
     quakelib::ModelWorld        world;
-    bool                        delete_unused, merge_duplicate_vertices, arg_error, failed;
+    bool                        delete_unused, merge_duplicate_vertices, resize_trace_elements;
+    bool                        arg_error, failed;
     std::string                 names[2] = {"import", "export"};
     std::string                 eqsim_geom_in_file, eqsim_fric_in_file, eqsim_cond_in_file;
     std::string                 eqsim_geom_out_file, eqsim_fric_out_file, eqsim_cond_out_file;
@@ -197,11 +201,11 @@ int main (int argc, char **argv) {
     int                         ch, res;
     unsigned int                i, n, j, num_trace_files;
 
-    arg_error = delete_unused = merge_duplicate_vertices = false;
+    arg_error = delete_unused = merge_duplicate_vertices = resize_trace_elements = false;
     eqsim_geom_in_file = eqsim_fric_in_file = eqsim_cond_in_file = "";
     eqsim_geom_out_file = eqsim_fric_out_file = eqsim_cond_out_file = "";
 
-    while ((ch = getopt_long(argc, argv, "mds:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "mdrs:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
         switch (ch) {
             case 'd':
                 delete_unused = true;
@@ -209,6 +213,10 @@ int main (int argc, char **argv) {
 
             case 'm':
                 merge_duplicate_vertices = true;
+                break;
+
+            case 'r':
+                resize_trace_elements = true;
                 break;
 
             case 's':
@@ -344,12 +352,13 @@ int main (int argc, char **argv) {
         std::cout << "File " << names[0] << " " << files[0][n] << " with type " << types[0][n] << "... ";
         unused_trace_segments.clear();
 
+        // TODO: change these to fail if file is not in expected format
         if (types[0][n] == "text") {
             res = new_world.read_file_ascii(files[0][n]);
         } else if (types[0][n] == "hdf5") {
             res = new_world.read_file_hdf5(files[0][n]);
         } else if (types[0][n] == "trace") {
-            res = new_world.read_file_trace_latlon(unused_trace_segments, files[0][n], trace_element_sizes.at(j), taper_fault_methods.at(j));
+            res = new_world.read_file_trace_latlon(unused_trace_segments, files[0][n], trace_element_sizes.at(j), taper_fault_methods.at(j), resize_trace_elements);
             ++j;
         }
 

@@ -25,6 +25,13 @@ void GreensFileOutput::initDesc(const SimFramework *_sim) const {
     const Simulation          *sim = static_cast<const Simulation *>(_sim);
 
 #ifdef HDF5_FOUND
+#ifndef HDF5_IS_PARALLEL
+
+    if (sim->getWorldSize() > 1) {
+        assertThrow(false, "# ERROR: Greens HDF5 output in parallel only allowed if using HDF5 parallel library.");
+    }
+
+#endif
     sim->console() << "# Greens output file: " << sim->getGreensOutfile() << std::endl;
 #else
     sim->console() << "# ERROR: Greens output file requires HDF5, will not be generated" << std::endl;
@@ -39,11 +46,6 @@ void GreensFileOutput::initDesc(const SimFramework *_sim) const {
 void GreensFileOutput::init(SimFramework *_sim) {
 #ifdef HDF5_FOUND
     Simulation            *sim = static_cast<Simulation *>(_sim);
-#ifndef HDF5_IS_PARALLEL
-    if (sim->getWorldSize() > 1) {
-        assertThrow(false, "HDF5 output in parallel only allowed if using HDF5 parallel library.");
-    }
-#endif
     std::string             file_name = sim->getGreensOutfile();
     unsigned int            green_dim;
     BlockID                 row, col, global_row;
@@ -57,13 +59,28 @@ void GreensFileOutput::init(SimFramework *_sim) {
     // Record the Greens function values
     shear_vals = new double[green_dim];
     norm_vals = new double[green_dim];
+    
+    // If the number of rows isn't the same on all processes, it will deadlock
+    // Have each process call the writing function an equal number of times,
+    // but use UNDEFINED_ELEMENT_ID if there's nothing new to write
+    int local_num_rows = sim->numLocalBlocks();
+    int global_max_rows;
+#ifdef MPI_C_FOUND
+    MPI_Allreduce(&local_num_rows, &global_max_rows, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+#else
+    global_max_rows = local_num_rows;
+#endif
 
-    for (row=0; row<sim->numLocalBlocks(); ++row) {
-        global_row = sim->getGlobalBID(row);
-
-        for (col=0; col<green_dim; ++col) {
-            shear_vals[col] = sim->getGreenShear(global_row, col);
-            norm_vals[col] = sim->getGreenNormal(global_row, col);
+    for (row=0; row<global_max_rows; ++row) {
+        if (row >= local_num_rows) {
+            global_row = UNDEFINED_ELEMENT_ID;
+        } else {
+            global_row = sim->getGlobalBID(row);
+            
+            for (col=0; col<green_dim; ++col) {
+                shear_vals[col] = sim->getGreenShear(global_row, col);
+                norm_vals[col] = sim->getGreenNormal(global_row, col);
+            }
         }
 
         h5_greens_data->setGreensVals(global_row, shear_vals, norm_vals);
