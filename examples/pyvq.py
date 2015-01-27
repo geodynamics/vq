@@ -213,7 +213,7 @@ if __name__ == "__main__":
             help="List of model sections to use (all sections used if unspecified).")
 
     # Event plotting arguments
-    parser.add_argument('--plot_freq_mag', required=False,
+    parser.add_argument('--plot_freq_mag', required=False, action="store_true",
             help="Generate frequency magnitude plot.")
 
     # Stress plotting arguments
