@@ -80,27 +80,12 @@ class Block : public quakelib::SimElement {
         FaultID         fid;                // fault id
         SectionID       sid;                // section id
 
-        // constants during simulation
-        double          dynamic_val;        // dynamic failure value for this block
-
-        double          init_shear_stress;  // initial shear stress
-        double          init_normal_stress; // initial normal stress
-
-        bool            failed;
-
     public:
 
         void get_rake_and_normal_stress_due_to_block(double stresses[2], const double &sample_dist, const Block &source_block) const;
 
         //! Resets the values of this block.
         void clear(void);
-
-        bool getFailed(void) const {
-            return failed;
-        };
-        void setFailed(bool in_failed) {
-            failed = in_failed;
-        };
 
         // Functions for manipulation of block parameters
         //! Set the block ID of this block.
@@ -128,32 +113,6 @@ class Block : public quakelib::SimElement {
         //! Return the section ID of this block.
         SectionID getSectionID(void) const {
             return sid;
-        };
-
-        //! Get the dynamic triggering value for this block.
-        double getDynamicVal(void) const {
-            return dynamic_val;
-        };
-        //! Set the dynamic triggering value for this block.
-        void setDynamicVal(const double &new_dyn_val) {
-            dynamic_val = new_dyn_val;
-        };
-
-        //! Set the initial shear stress of this block in bars.
-        void setInitShearStress(const double &new_stress) {
-            init_shear_stress = new_stress;
-        };
-        //! Get the initial shear stress of this block in bars.
-        double getInitShearStress(void) const {
-            return init_shear_stress;
-        };
-        //! Set the initial normal stress of this block in bars.
-        void setInitNormalStress(const double &new_stress) {
-            init_normal_stress = new_stress;
-        };
-        //! Get the initial normal stress of this block in bars.
-        double getInitNormalStress(void) const {
-            return init_normal_stress;
         };
 };
 
