@@ -151,5 +151,3 @@ unsigned int BASSAftershocks::generateAftershocks(Simulation *sim, EventAftersho
 
     return N;
 }
-
-#undef RAND
