@@ -122,6 +122,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         void multiplySumRow(double *c, const double *b, const GREEN_VAL *a, const int n, const bool dense);
         void multiplyRow(double *c, const double *b, const GREEN_VAL *a, const int n);
         void distributeUpdateField(void);
+        void broadcastUpdateField(void);
         void distributeBlocks(const quakelib::ElementIDSet &local_id_list, BlockIDProcMapping &global_id_list);
         void collectEventSweep(quakelib::ModelSweeps &sweeps);
 

@@ -35,6 +35,9 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
     AftershockVector::iterator  it;
     quakelib::Conversion        convert;
 
+    // Only the root node generates and processes aftershocks
+    if (!sim->isRootNode()) return SIM_STOP_OK;
+
     // If the last event wasn't a static failure event, don't generate aftershocks
     // Otherwise we're generating aftershocks for aftershocks, which is already done by the model
     if (sim->getCurrentEvent().getEventTrigger() == UNDEFINED_ELEMENT_ID) return SIM_STOP_OK;

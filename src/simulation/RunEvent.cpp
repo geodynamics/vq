@@ -390,7 +390,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 }
 
 /*!
- Process the next aftershock. This involves determining a suitable rupture area from an empirical relationship, finding the nearest elements,
+ Process the next aftershock. This involves determining a suitable rupture area from an empirical
+ relationship, finding the nearest elements, choosing enough elements to match the empirical
+ relationship, calculating the slip needed to generate the aftershock, and updating the stress
+ field appropriately.
  */
 void RunEvent::processAftershock(Simulation *sim) {
     std::map<double, BlockID>                   as_elem_dists;
@@ -403,59 +406,72 @@ void RunEvent::processAftershock(Simulation *sim) {
     quakelib::Conversion                        convert;
     quakelib::ModelSweeps                       event_sweeps;
 
-    // Pop the next aftershock off the list
-    as = sim->popAftershock();
-
-    // Calculate the distance from the aftershock to all elements
-    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        double as_to_elem_dist = sim->getBlock(gid).center().dist(as.loc());
-        as_elem_dists.insert(std::make_pair(as_to_elem_dist, gid));
-    }
-
-    // Determine the target rupture area given the aftershock magnitude
-    // TODO: make this equation user specifiable?
-    double rupture_area = pow(10, -3.49+0.91*as.mag);
-    double selected_rupture_area = 0;
-    double selected_rupture_area_mu = 0;
-
-    // Go through the elements, closest first, until we find enough to match the rupture area
-    for (it=as_elem_dists.begin(); it!=as_elem_dists.end(); ++it) {
-        Block &b=sim->getBlock(it->second);
-        selected_rupture_area += convert.sqm2sqkm(b.area());
-        selected_rupture_area_mu += b.area()*b.lame_mu();
-        id_set.insert(it->second);
-
-        if (selected_rupture_area > rupture_area) break;
-    }
-
-    // Determine the amount of slip needed to match the aftershock magnitude
-    // The contribution of each block to moment is based on its fraction of total area*mu
-    double total_moment = pow(10, (as.mag + 10.7)*(3.0/2.0))/1e7;
-
-    for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
-        Block &b=sim->getBlock(*bit);
-
-        // Calculate the slip based on the earthquake moment
-        double element_moment = total_moment*(b.area()*b.lame_mu()/selected_rupture_area_mu);
-        double element_slip = element_moment/(b.lame_mu()*b.area());
-
-        // Adjust the slip deficit appropriately
-        sim->setSlipDeficit(*bit, sim->getSlipDeficit(*bit)+element_slip);
-
-        // Create the sweep describing this aftershock
-        // Since we don't distinguish sweeps, every slip occurs in sweep 0
-        event_sweeps.setSlipAndArea(0, *bit, element_slip, b.area(), b.lame_mu());
-        event_sweeps.setInitStresses(0, *bit, sim->getShearStress(*bit), sim->getNormalStress(*bit));
-    }
-
-    // Set the update field to the slip of all blocks
+    // Set the update field to the slip on each block
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         sim->setShearStress(gid, 0.0);
         sim->setNormalStress(gid, sim->getRhogd(gid));
         sim->setUpdateField(gid, sim->getSlipDeficit(gid));
     }
 
+    // And distribute this around
     sim->distributeUpdateField();
+
+    // Only process the aftershock stress effects on the root node
+    if (sim->isRootNode()) {
+        // Pop the next aftershock off the list
+        as = sim->popAftershock();
+
+        // Calculate the distance from the aftershock to all elements
+        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+            double as_to_elem_dist = sim->getBlock(gid).center().dist(as.loc());
+            as_elem_dists.insert(std::make_pair(as_to_elem_dist, gid));
+        }
+
+        // Determine the target rupture area given the aftershock magnitude
+        // TODO: make this equation user specifiable?
+        double rupture_area = pow(10, -3.49+0.91*as.mag);
+        double selected_rupture_area = 0;
+        double selected_rupture_area_mu = 0;
+
+        // Go through the elements, closest first, until we find enough to match the rupture area
+        for (it=as_elem_dists.begin(); it!=as_elem_dists.end(); ++it) {
+            Block &b=sim->getBlock(it->second);
+            selected_rupture_area += convert.sqm2sqkm(b.area());
+            selected_rupture_area_mu += b.area()*b.lame_mu();
+            id_set.insert(it->second);
+
+            if (selected_rupture_area > rupture_area) break;
+        }
+
+        // Determine the amount of slip needed to match the aftershock magnitude
+        // The contribution of each block to moment is based on its fraction of total area*mu
+        double total_moment = pow(10, (as.mag + 10.7)*(3.0/2.0))/1e7;
+
+        for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
+            Block &b=sim->getBlock(*bit);
+
+            // Calculate the slip based on the earthquake moment
+            double element_moment = total_moment*(b.area()*b.lame_mu()/selected_rupture_area_mu);
+            double element_slip = element_moment/(b.lame_mu()*b.area());
+
+            // Adjust the slip deficit appropriately
+            sim->setUpdateField(*bit, sim->getUpdateField(*bit)+element_slip);
+
+            // Create the sweep describing this aftershock
+            // Since we don't distinguish sweeps, every slip occurs in sweep 0
+            event_sweeps.setSlipAndArea(0, *bit, element_slip, b.area(), b.lame_mu());
+            event_sweeps.setInitStresses(0, *bit, sim->getShearStress(*bit), sim->getNormalStress(*bit));
+        }
+
+    }
+
+    // Broadcast the new slip deficit from the root node to all processes
+    sim->broadcastUpdateField();
+
+    // And update the slip deficit on each process to take this into account
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        sim->setSlipDeficit(gid, sim->getUpdateField(gid));
+    }
 
     // Calculate the new shear stresses and CFFs given the new update field values
     sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
