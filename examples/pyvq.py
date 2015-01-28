@@ -105,12 +105,13 @@ class Events:
     def set_filters(self, filter_list):
         self._filtered_events = [evnum for evnum in range(len(self._events))]
         self._plot_str = ""
-        for cur_filter in filter_list:
-            new_filtered_events = [evnum for evnum in self._filtered_events if cur_filter.test_event(self._events[evnum])]
-            self._filtered_events = new_filtered_events
-            self._plot_str += cur_filter.plot_str()
-        if len(self._filtered_events) == 0:
-            raise "No events matching filters found!"
+        if filter_list!= []:
+            for cur_filter in filter_list:
+                new_filtered_events = [evnum for evnum in self._filtered_events if cur_filter.test_event(self._events[evnum])]
+                self._filtered_events = new_filtered_events
+                self._plot_str += cur_filter.plot_str()
+            if len(self._filtered_events) == 0:
+                raise "No events matching filters found!"
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events]
@@ -441,6 +442,7 @@ if __name__ == "__main__":
     if args.model_file:
         model = quakelib.ModelWorld()
         model.read_file_ascii(args.model_file)
+        # TODO: add HDF5 compatibility
     else:
         model = None
 
