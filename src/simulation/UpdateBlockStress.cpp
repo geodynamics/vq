@@ -41,7 +41,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
 
         gid = sim->getGlobalBID(lid);
-        
+
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
 
         sim->setDynamicVal(gid, sim->getDynamic());

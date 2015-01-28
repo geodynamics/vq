@@ -59,7 +59,7 @@ void GreensFileOutput::init(SimFramework *_sim) {
     // Record the Greens function values
     shear_vals = new double[green_dim];
     norm_vals = new double[green_dim];
-    
+
     // If the number of rows isn't the same on all processes, it will deadlock
     // Have each process call the writing function an equal number of times,
     // but use UNDEFINED_ELEMENT_ID if there's nothing new to write
@@ -76,7 +76,7 @@ void GreensFileOutput::init(SimFramework *_sim) {
             global_row = UNDEFINED_ELEMENT_ID;
         } else {
             global_row = sim->getGlobalBID(row);
-            
+
             for (col=0; col<green_dim; ++col) {
                 shear_vals[col] = sim->getGreenShear(global_row, col);
                 norm_vals[col] = sim->getGreenNormal(global_row, col);
