@@ -572,12 +572,13 @@ namespace quakelib {
                                 const UIndex &fault_id,
                                 const float &element_size,
                                 const std::string &section_name,
-                                const std::string &taper_method);
+                                const std::string &taper_method,
+                                const bool resize_trace_elements);
 
             int read_file_ascii(const std::string &file_name);
             int write_file_ascii(const std::string &file_name) const;
 
-            int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method);
+            int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements);
             int write_file_trace_latlon(const std::string &file_name, const float &depth_along_dip);
 
             int read_file_hdf5(const std::string &file_name);

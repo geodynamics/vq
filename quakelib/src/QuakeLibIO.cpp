@@ -442,7 +442,7 @@ class TraceSpline {
         };
 };
 
-void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method) {
+void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements) {
     Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
     std::vector<UIndex> elem_ids;
     std::set<unsigned int> unused_trace_pts;
@@ -474,13 +474,14 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Initially we don't know the appropriate element size to exactly mesh
     // the trace points. This is solved by starting with the user suggested
-    // element size and iteratively adjusting it until the mesh fits the
-    // trace exactly. Iterate for 10 steps or until relative error is below 0.1%.
+    // element size and slowly shrinking it down to half the original element size until the mesh fits the
+    // trace exactly.
     double cur_elem_size_guess = element_size;
-    double overshoot = DBL_MAX, undershoot = DBL_MAX, t_per_meter=1;
-    unsigned int num_iters = 0;
+    double step_size = element_size/(2*1000);
+    double best_step = element_size, best_t = 0;
+    unsigned int best_elem_count = 0;
 
-    while ((fmin(overshoot, undershoot)/t_per_meter)/element_size > 1e-3 && num_iters < 10) {
+    while (cur_elem_size_guess > element_size/2.0) {
         double cur_t, next_t, sum_t=0;
         elem_count = 0;
         cur_t = 0;
@@ -497,19 +498,24 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             }
         }
 
-        t_per_meter = (sum_t/elem_count)/cur_elem_size_guess;
-        overshoot = fabs(1-next_t)/elem_count;
-        undershoot = fabs(1-cur_t)/elem_count;
+        // If we used a fixed element size, one time through is enough
+        if (!resize_trace_elements) {
+            best_step = cur_elem_size_guess;
+            best_elem_count = elem_count;
+            break;
+        }
 
-        // If we're undershooting by less than we're overshooting, the best solution is to increase block size
-        if (undershoot < overshoot) cur_elem_size_guess += undershoot/t_per_meter;
-        // Otherwise we decrease block size
-        else cur_elem_size_guess -= overshoot/t_per_meter;
+        // Record which element size got us closest to the end of the trace
+        if (cur_t > best_t) {
+            best_t = cur_t;
+            best_step = cur_elem_size_guess;
+            best_elem_count = elem_count;
+        }
 
-        num_iters++;
+        cur_elem_size_guess -= step_size;
     }
 
-    double  horiz_elem_size = cur_elem_size_guess;
+    double  horiz_elem_size = best_step;
     double  vert_elem_size;
     unsigned int cur_elem_ind, next_elem_ind;
     double cur_t = 0, next_t;
@@ -522,7 +528,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     cur_elem_ind = 0;
     unused_trace_pts.erase(0);
 
-    for (i=0; i<elem_count; ++i) {
+    for (i=0; i<best_elem_count; ++i) {
         // Get the next t value along the trace by advancing the element size
         next_t = spline.advance_element(cur_t, horiz_elem_size);
 
@@ -548,6 +554,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         num_vert_elems = round(elem_depth/element_size);
         vert_elem_size = elem_depth / num_vert_elems;
 
+        // TODO: change this to an assertion throw
         if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
                                                << next_elem_ind << ". Element size may be too big." << std::endl;
 
@@ -795,7 +802,7 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     return 0;
 }
 
-int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method) {
+int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements) {
     std::ifstream                   in_file;
     std::vector<FaultTracePoint>    trace_pts;
     std::string                     cur_section_name;
@@ -832,7 +839,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
             min_lon = fmin(min_lon, new_trace_pt.pos().lon());
         }
 
-        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method);
+        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements);
         this->insert(new_world);
     }
 
@@ -1844,8 +1851,10 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                 // Output the KML format polygon for this section
                 out_file << "\t\t<Placemark>\n";
                 out_file << "\t\t<description>\n";
+                out_file << "Fault name: " << fit->second.name() << "\n";
                 out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
                 out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
+                out_file << "Aseismic: " << eit->second.aseismic() << "\n";
                 out_file << "\t\t</description>\n";
                 out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
                 out_file << "\t\t\t<Polygon>\n";
