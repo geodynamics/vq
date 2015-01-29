@@ -2882,8 +2882,8 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
     return 0;
 }
 
-#ifdef HDF5_FOUND
 void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                        descs;
     std::map<UIndex, ModelEvent>::const_iterator  fit;
     hsize_t                     num_fields, num_events;
@@ -2927,9 +2927,13 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     delete event_data;
     delete field_offsets;
     delete field_sizes;
+#else
+    // TODO: Error out
+#endif
 }
 
 void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                          descs;
     ModelEventSet::iterator                   fit;
     hsize_t                     num_fields, num_sweeps;
@@ -2972,10 +2976,11 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
         fit->setSweeps(new_sweeps);
         
     }
-    
+#else
+    // TODO: Error out
+#endif
     delete event_sweeps;
 }
-#endif
 
 // ********************************************************************************************
 
