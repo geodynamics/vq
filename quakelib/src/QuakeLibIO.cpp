@@ -2976,10 +2976,10 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
         fit->setSweeps(new_sweeps);
         
     }
+    delete event_sweeps;
 #else
     // TODO: Error out
 #endif
-    delete event_sweeps;
 }
 
 // ********************************************************************************************
