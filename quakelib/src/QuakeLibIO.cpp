@@ -1632,21 +1632,17 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
             new_element.set_lame_lambda(friction_data.get_lame_lambda());
             new_element.set_lame_mu(friction_data.get_lame_mu());
-            //new_element.set_static_strength(friction_data.get_static_strength(it->first));
-            //new_element.set_dynamic_strength(friction_data.get_dynamic_strength(it->first));
+            new_element.set_max_slip(0);    // Set a temporary maximum slip of 0 (this will be changed below)
 
             // Insert partially finished element into the eqsim_world
             eqsim_world.insert(new_element);
 
             // Compute area of the current element, add it to the total for this section
             fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
-
-
         }
 
         // Go through the created elements and assign maximum slip based on fault section area
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
-
             // From Table 2A in Wells Coppersmith 1994
             double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
@@ -1655,10 +1651,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
             // Set the max slip for the current element
             eit->set_max_slip(max_slip);
-
         }
-
-
     }
 
     insert(eqsim_world);
@@ -2324,7 +2317,11 @@ void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
 }
 
 void quakelib::ModelSweeps::read_data(const SweepData &in_data) {
-    //memcpy(&_data, &in_data, sizeof(SweepData));
+    // Record the sweep/element in the mapping
+    std::pair<UIndex, UIndex> sweep_elem = std::make_pair(in_data._sweep_number, in_data._element_id);
+    _rel.insert(std::make_pair(sweep_elem, _sweeps.size()));
+    // Put the sweep on the list
+    _sweeps.push_back(in_data);
 }
 
 void quakelib::ModelSweeps::write_data(SweepData &out_data) const {
@@ -2895,8 +2892,8 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
-    ModelSweeps                 file_sweeps;
 
+    _events.clear();
     descs.clear();
     ModelEvent::get_field_descs(descs);
     num_fields = descs.size();
@@ -2915,15 +2912,15 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     // TODO: check that num_fields matches the descs
 
     event_data = new EventData[num_events];
-    res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
+    res = H5TBread_records(data_file, ModelEvent::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
 
     if (res < 0) exit(-1);
 
     // Read section data into the World
-    for (i=0; i<num_sections; ++i) {
+    for (i=0; i<num_events; ++i) {
         ModelEvent  new_event;
         new_event.read_data(event_data[i]);
-        _data.insert(std::make_pair(new_event.getEventNumber(), new_event));
+        _events.push_back(new_event);
     }
 
     // Free memory for HDF5 related data
@@ -2934,16 +2931,18 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
 
 void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
-    std::map<UIndex, ModelElement>::const_iterator  fit;
-    hsize_t                     num_fields, num_elements;
+    ModelEventSet::iterator                   fit;
+    hsize_t                     num_fields, num_sweeps;
     unsigned int                i;
-    ElementData                 *element_data;
+    unsigned int                start_sweep;
+    unsigned int                end_sweep;
+    SweepData                   *event_sweeps;
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
-
+    
     descs.clear();
-    ModelElement::get_field_descs(descs);
+    ModelSweeps::get_field_descs(descs);
     num_fields = descs.size();
     field_offsets = new size_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -2953,28 +2952,28 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
         field_sizes[i] = descs[i].size;
     }
 
-    res = H5TBget_table_info(data_file, ModelElement::hdf5_table_name().c_str(), &num_fields, &num_elements);
+    res = H5TBget_table_info(data_file, ModelSweeps::hdf5_table_name().c_str(), &num_fields, &num_sweeps);
 
     if (res < 0) exit(-1);
 
-    // TODO: check that num_fields matches the descs
-
-    element_data = new ElementData[num_elements];
-    res = H5TBread_records(data_file, ModelElement::hdf5_table_name().c_str(), 0, num_elements, sizeof(ElementData), field_offsets, field_sizes, element_data);
-
+    event_sweeps = new SweepData[num_sweeps];
+    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(SweepData), field_offsets, field_sizes, event_sweeps);
+    
     if (res < 0) exit(-1);
-
-    // Read element data into the World
-    for (i=0; i<num_elements; ++i) {
-        ModelElement  new_element;
-        new_element.read_data(element_data[i]);
-        _elements.insert(std::make_pair(new_element.id(), new_element));
+    
+    // Read sweeps data into the ModelEventSet
+    for (fit=_events.begin(); fit!=_events.end(); ++fit) {
+        fit->getStartEndSweep(start_sweep, end_sweep);
+        ModelSweeps new_sweeps;
+        
+        for (i=start_sweep; i<end_sweep; i++) {
+            new_sweeps.read_data(event_sweeps[i]);
+        }
+        fit->setSweeps(new_sweeps);
+        
     }
-
-    // Free memory for HDF5 related data
-    delete element_data;
-    delete field_offsets;
-    delete field_sizes;
+    
+    delete event_sweeps;
 }
 #endif
 
