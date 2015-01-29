@@ -23,7 +23,11 @@ numpy_available = True
 try:
     import numpy as np
 except ImportError:
-    numpy_available = False 
+    numpy_available = False
+
+class SaveFile:
+    def __init__(self, event_file, plot_type):
+        self.filename = plot_type+"_"+event_file.split(".")[0]+".png"
 
 class MagFilter:
     def __init__(self, min_mag=None, max_mag=None):
@@ -105,13 +109,12 @@ class Events:
     def set_filters(self, filter_list):
         self._filtered_events = [evnum for evnum in range(len(self._events))]
         self._plot_str = ""
-        if filter_list!= []:
-            for cur_filter in filter_list:
-                new_filtered_events = [evnum for evnum in self._filtered_events if cur_filter.test_event(self._events[evnum])]
-                self._filtered_events = new_filtered_events
-                self._plot_str += cur_filter.plot_str()
-            if len(self._filtered_events) == 0:
-                raise "No events matching filters found!"
+        for cur_filter in filter_list:
+            new_filtered_events = [evnum for evnum in self._filtered_events if cur_filter.test_event(self._events[evnum])]
+            self._filtered_events = new_filtered_events
+            self._plot_str += cur_filter.plot_str()
+        if len(self._filtered_events) == 0:
+            raise "No events matching filters found!"
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events]
@@ -130,7 +133,7 @@ class Events:
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
 
 class BasePlotter:
-    def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label):
+    def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -142,9 +145,11 @@ class BasePlotter:
             ax.scatter(x_data, y_data)
         elif plot_type == "line":
             ax.plot(x_data, y_data)
-        plt.show()
-        
-    def multi_line_plot(self, x_data, y_data, colors, labels, linewidths, plot_title, x_label, y_label, legend_str):
+        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+    
+    def multi_line_plot(self, x_data, y_data, colors, labels, linewidths, plot_title, x_label, y_label, legend_str, filename):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -155,9 +160,11 @@ class BasePlotter:
         for i in range(len(x_data)):
             ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
         ax.legend(title=legend_str, loc='best')
-        plt.show()
+        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
         
-    def t0_vs_dt_plot(self, t0_dt_plot, wait_75):
+    def t0_vs_dt_plot(self, t0_dt_plot, wait_75, filename):
 # TODO: Set fonts explicitly
         t0_dt_main_line_color   = '#000000'
         t0_dt_sub_line_color    = '#737373'
@@ -189,27 +196,29 @@ class BasePlotter:
         # Draw vertical dotted line where "today" is denoted by years_since
         ax.axvline(x=years_since,ymin=0,ymax=wait_75,color=years_since_line_color,linewidth=t0_dt_main_line_width,linestyle='--')
         ax.legend(title='event prob.', loc=legend_loc, handlelength=5)
-        plt.show()
+        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
-    def plot(self, events):
+    def plot(self, events, filename):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
-        self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)")
+        self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
-    def plot(self, events):
+    def plot(self, events, filename):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
-        self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)")
+        self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
 
 class FrequencyMagnitudePlot(BasePlotter):
-    def plot(self, events):
+    def plot(self, events, filename):
         mag_list = events.event_magnitudes()
         min_mag = min(mag_list)
         max_mag = max(mag_list)
-        mag_width = (max_mag - min_mag)/99
+        mag_width = max((max_mag - min_mag)/99.0, 0.01)
         mag_vals = [min_mag+i*mag_width for i in range(100)]
         mag_counts = [0]*100
         for mag in mag_list:
@@ -219,8 +228,7 @@ class FrequencyMagnitudePlot(BasePlotter):
             mag_counts[i+1] += mag_counts[i]
         mag_counts.reverse()
         mag_norm = [m/float(len(mag_list)) for m in mag_counts]
-        self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Magnitude", "Frequency")
-        #print(mag_norm)
+        self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Magnitude", "Frequency", filename)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -238,15 +246,15 @@ class StressHistoryPlot(BasePlotter):
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
         
 class ProbabilityPlot(BasePlotter):
-    def plot_p_of_t(self, events):
+    def plot_p_of_t(self, events, filename):
         # Cumulative probability P(t) as a function of interevent time t
         intervals = np.array(events.interevent_times())
         prob = {}
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
-        self.create_plot("line", False, prob['x'], prob['y'], events.plot_str(), "P(t)","t [years]")
+        self.create_plot("line", False, prob['x'], prob['y'], events.plot_str(),"t [years]", "P(t)", filename)
         
-    def plot_conditional_fixed_dt(self, events, fixed_dt=30.0):
+    def plot_conditional_fixed_dt(self, events, filename, fixed_dt=30.0):
         # P(t0 + dt, t0) vs. t0 for fixed dt
         intervals = np.array(events.interevent_times())
         prob_dt = {'x':[],'y':[]}
@@ -257,108 +265,7 @@ class ProbabilityPlot(BasePlotter):
             if int_t0.size != 0:
                 prob_dt['x'].append(t0)
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
-        self.create_plot("line", False, prob_dt['x'], prob_dt['y'], events.plot_str(), "P(t0 + dt, t0)","t0 [years]")
-        
-    def plot_p_of_t_multi(self, events, beta, tau):
-        # Cumulative conditional probability P(t,t0) as a function of
-        # interevent time t, computed for multiple t0. Beta/Tau are Weibull parameters
-        line_colormap = plt.get_cmap('autumn')
-        intervals = np.array(events.interevent_times())
-        conditional = {}
-        weibull = {}
-        max_t0 = int(intervals.max())
-        t0_to_plot = np.linspace(0, int(max_t0/2.0), num=5)
-        t0_to_plot = [int(t0) for t0 in t0_to_plot]
-        for t0 in t0_to_plot:
-            int_t0 = intervals[np.where( intervals > t0)]
-            if int_t0.size != 0:
-                conditional[t0] = {'x':[],'y':[]}
-                weibull[t0]     = {'x':[],'y':[]}
-                for dt in range(max_t0-int(t0)):
-                    int_t0_dt = intervals[np.where( intervals > t0+dt)]
-                    conditional[t0]['x'].append(t0+dt)
-                    weibull[t0]['x'].append(t0+dt)
-                    prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                    weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,beta,tau)   
-                    weibull[t0]['y'].append(weibull_t0_dt)
-                    conditional[t0]['y'].append(prob_t0_dt)
-            else:
-                conditional[t0] = None
-                weibull[t0] = None
-        x_data_prob = [conditional[t0]['x'] for t0 in t0_to_plot]
-        y_data_prob = [conditional[t0]['y'] for t0 in t0_to_plot]
-        x_data_weib = [weibull[t0]['x'] for t0 in t0_to_plot]
-        y_data_weib = [weibull[t0]['y'] for t0 in t0_to_plot]
-        t0_colors   = [line_colormap(float(t0*.8)/t0_to_plot.max()) for t0 in t0_to_plot]
-        weib_colors = ['k' for t0 in t0_to_plot]
-        weib_labels = [None for t0 in t0_to_plot]
-        prob_lw     = [2 for t0 in t0_to_plot]
-        weib_lw     = [1 for t0 in t0_to_plot]
-        # List concatenation, not addition
-        colors = t0_colors + weib_colors
-        x_data = x_data_prob + x_data_weib
-        y_data = y_data_prob + y_data_weib
-        labels = t0_to_plot + weib_labels
-        linewidths = prob_lw + weib_lw
-        legend_string = r't$_0$='
-        y_lab         = r'P(t, t$_0$)'
-        x_lab         = r't = t$_0$ + $\Delta$t [years]'
-        plot_title    = ""
-        self.multi_line_plot(x_data, y_data, colors, labels, linewidths, plot_title, x_lab, y_lab, legend_string)
-        
-    def plot_dt_vs_t0(self, events, years_since):
-        # Plot the waiting times corresponding to 25/50/75% conditional probabilities
-        # as a function of t0 (time since last earthquake on the selected faults).
-        # years_since is the number of years since the last observed (real) earthquake
-        # on the selected faults.
-        intervals = np.array(events.interevent_times())
-        conditional = {}
-        max_t0 = int(intervals.max())
-        # t0_to_eval used to evaluate waiting times with 25/50/75% probability given t0=years_since
-        t0_to_eval = np.arange(0, max_t0, 1.0)
-        # t0_to_plot is "smoothed" so that the plots aren't as jagged
-        t0_to_plot = np.linspace(0, int(max_t0/2.0), num=5)
-        t0_to_plot = [int(t0) for t0 in t0_to_plot]
-        t0_dt      = {}
-        t0_dt_plot = {}
-        # First generate the conditional distributions P(t,t0) for each t0
-        for t0 in t0_to_eval:
-            int_t0 = intervals[np.where( intervals > t0)]
-            if int_t0.size != 0:
-                conditional[t0] = {'x':[],'y':[]}
-                for dt in range(max_t0-int(t0)):
-                    int_t0_dt = intervals[np.where( intervals > t0+dt)]
-                    conditional[t0]['x'].append(t0+dt)
-                    prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                    conditional[t0]['y'].append(prob_t0_dt)
-        # Loop over the probabilities whose waiting times we want to plot, invert P(t,t0)
-        for percent in [0.25, 0.5, 0.75]:
-            t0_dt[int(percent*100)]      = {'x':[],'y':[]}
-            t0_dt_plot[int(percent*100)] = {'x':[],'y':[]}
-            for t0 in t0_to_eval:
-                if conditional[t0] is not None:
-                    # Invert the conditional probabilities, find the recurrence time closest to
-                    # the current percent
-                    index   = (np.abs(np.array(conditional[t0]['y'])-percent)).argmin()
-                    dt      = conditional[t0]['x'][index]-t0
-                    t0_dt[int(percent*100)]['x'].append(t0)
-                    t0_dt[int(percent*100)]['y'].append(dt)     
-                    if t0 in t0_to_plot:
-                        t0_dt_plot[int(percent*100)]['x'].append(t0)
-                        t0_dt_plot[int(percent*100)]['y'].append(dt)
-        # Print out the "Forecast", the 25/50/75% probability given t0=years_since
-        ind_25 = (np.abs(np.array(t0_dt[25]['x'])-years_since)).argmin()
-        ind_50 = (np.abs(np.array(t0_dt[50]['x'])-years_since)).argmin()
-        ind_75 = (np.abs(np.array(t0_dt[75]['x'])-years_since)).argmin()
-        wait_25 = t0_dt[25]['y'][ind_25]        
-        wait_50 = t0_dt[50]['y'][ind_50]
-        wait_75 = t0_dt[75]['y'][ind_75]
-        sys.stdout.write('For t0 = {:.2f} years'.format(year_eval))
-        sys.stdout.write('\n25% waiting time: {:.2f} years'.format(wait_25))
-        sys.stdout.write('\n50% waiting time: {:.2f} years'.format(wait_50))
-        sys.stdout.write('\n75% waiting time: {:.2f} years'.format(wait_75))
-        sys.stdout.write('\n=======================================\n\n')
-        self.t0_vs_dt_plot(t0_dt_plot, wait_75)
+        self.create_plot("line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
         
 class Distributions:
     def weibull(X, beta, tau):
@@ -414,13 +321,13 @@ if __name__ == "__main__":
     # Event plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
             help="Generate frequency magnitude plot.")
-    parser.add_argument('--plot_mag_rupt_area', required=False,
+    parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
             help="Generate magnitude vs rupture area plot.")        
-    parser.add_argument('--plot_mag_mean_slip', required=False,
+    parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
             help="Generate magnitude vs mean slip plot.")
-    parser.add_argument('--plot_prob_vs_t', required=False,
+    parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t plot, --use_sections required.")
-    parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False,
+    parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t + dt vs t plot, --use_sections required.")
 
     # Stress plotting arguments
@@ -471,15 +378,20 @@ if __name__ == "__main__":
 
     # Generate plots
     if args.plot_freq_mag:
-        FrequencyMagnitudePlot().plot(events)
+        filename = SaveFile(args.event_file, "freq_mag").filename
+        FrequencyMagnitudePlot().plot(events, filename)
     if args.plot_mag_rupt_area:
-        MagnitudeRuptureAreaPlot().plot(events)
+        filename = SaveFile(args.event_file, "mag_rupt_area").filename
+        MagnitudeRuptureAreaPlot().plot(events, filename)
     if args.plot_mag_mean_slip:
-        MagnitudeMeanSlipPlot().plot(events)
-    if args.plot_p_of_t:
-        ProbabilityPlot().plot_p_of_t(events)
+        filename = SaveFile(args.event_file, "mag_mean_slip").filename
+        MagnitudeMeanSlipPlot().plot(events, filename)
+    if args.plot_prob_vs_t:
+        filename = SaveFile(args.event_file, "prob_vs_time").filename
+        ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        ProbabilityPlot().plot_conditional_fixed_dt(events)
+        filename = SaveFile(args.event_file, "p_vs_t_fixed_dt").filename
+        ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
 
     # Generate stress plots
     if args.stress_elements:

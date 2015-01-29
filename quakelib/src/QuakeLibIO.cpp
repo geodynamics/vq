@@ -2317,7 +2317,11 @@ void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
 }
 
 void quakelib::ModelSweeps::read_data(const SweepData &in_data) {
-    //memcpy(&_data, &in_data, sizeof(SweepData));
+    // Record the sweep/element in the mapping
+    std::pair<UIndex, UIndex> sweep_elem = std::make_pair(in_data._sweep_number, in_data._element_id);
+    _rel.insert(std::make_pair(sweep_elem, _sweeps.size()));
+    // Put the sweep on the list
+    _sweeps.push_back(in_data);
 }
 
 void quakelib::ModelSweeps::write_data(SweepData &out_data) const {
@@ -2938,7 +2942,7 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     herr_t                      res;
     
     descs.clear();
-    ModelElement::get_field_descs(descs);
+    ModelSweeps::get_field_descs(descs);
     num_fields = descs.size();
     field_offsets = new size_t[num_fields];
     field_sizes = new size_t[num_fields];
@@ -2953,7 +2957,7 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     if (res < 0) exit(-1);
 
     event_sweeps = new SweepData[num_sweeps];
-    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(ModelSweeps), field_offsets, field_sizes, event_sweeps);
+    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(SweepData), field_offsets, field_sizes, event_sweeps);
     
     if (res < 0) exit(-1);
     
@@ -2968,6 +2972,8 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
         fit->setSweeps(new_sweeps);
         
     }
+    
+    delete event_sweeps;
 }
 #endif
 
