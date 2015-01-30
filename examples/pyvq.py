@@ -15,6 +15,7 @@ except ImportError:
 
 matplotlib_available = True
 try:
+    import matplotlib as mplt
     import matplotlib.pyplot as plt
 except ImportError:
     matplotlib_available = False
@@ -146,6 +147,7 @@ class BasePlotter:
         elif plot_type == "line":
             ax.plot(x_data, y_data)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     
@@ -161,6 +163,7 @@ class BasePlotter:
             ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
         ax.legend(title=legend_str, loc='best')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -193,8 +196,9 @@ class BasePlotter:
                 color = t0_dt_main_line_color
                 linestyle = '-'
             ax.plot(t0_dt_plot[percent]['x'], t0_dt_plot[percent]['y'], color=color, linewidth=linewidth, linestyle=linestyle, label='{}%'.format(percent))
-        # Draw vertical dotted line where "today" is denoted by years_since
-        ax.axvline(x=years_since,ymin=0,ymax=wait_75,color=years_since_line_color,linewidth=t0_dt_main_line_width,linestyle='--')
+        if wait_75 is not None:
+            # Draw vertical dotted line where "today" is denoted by years_since
+            ax.axvline(x=years_since,ymin=0,ymax=wait_75,color=years_since_line_color,linewidth=t0_dt_main_line_width,linestyle='--')
         ax.legend(title='event prob.', loc=legend_loc, handlelength=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
@@ -267,6 +271,119 @@ class ProbabilityPlot(BasePlotter):
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
         self.create_plot("line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
         
+    def plot_p_of_t_multi(self, events, filename, beta=None, tau=None, num_t0=3, numPoints=200):
+        # Cumulative conditional probability P(t,t0) as a function of
+        # interevent time t, computed for multiple t0. Beta/Tau are Weibull parameters
+        line_colormap = plt.get_cmap('autumn')
+        intervals = np.array(events.interevent_times())
+        conditional = {}
+        weibull = {}
+        max_t0 = int(intervals.max())
+        t0_to_eval = np.linspace(0, max_t0, num=numPoints)
+        for t0 in t0_to_eval:
+            int_t0 = intervals[np.where( intervals > t0)]
+            if int_t0.size != 0:
+                conditional[t0] = {'x':[],'y':[]}
+                weibull[t0]     = {'x':[],'y':[]}
+                for dt in range(max_t0-int(t0)):
+                    int_t0_dt  = intervals[np.where( intervals > t0+dt)]
+                    prob_t0_dt = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                    conditional[t0]['x'].append(t0+dt)
+                    conditional[t0]['y'].append(prob_t0_dt)
+                    if beta is not None and tau is not None:
+                        weibull[t0]['x'].append(t0+dt)
+                        weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,beta,tau)   
+                        weibull[t0]['y'].append(weibull_t0_dt)
+            else:
+                conditional[t0] = None
+                weibull[t0] = None
+        t0_to_plot  = np.linspace(0, int(max_t0/2.0), num=num_t0)
+        match_inds  = [np.abs(np.array(t0_to_eval-t0_to_plot[i])).argmin() for i in range(len(t0_to_plot))]
+        t0_to_plot  = np.array([t0_to_eval[k] for k in match_inds])
+        x_data_prob = [conditional[t0]['x'] for t0 in t0_to_plot]
+        y_data_prob = [conditional[t0]['y'] for t0 in t0_to_plot]
+        t0_colors   = [line_colormap(float(t0*.8)/t0_to_plot.max()) for t0 in t0_to_plot]
+        prob_lw     = [2 for t0 in t0_to_plot]
+        if beta is not None and tau is not None:
+            x_data_weib = [weibull[t0]['x'] for t0 in t0_to_plot]
+            y_data_weib = [weibull[t0]['y'] for t0 in t0_to_plot]
+            weib_colors = ['k' for t0 in t0_to_plot]
+            weib_labels = [None for t0 in t0_to_plot]
+            weib_lw     = [1 for t0 in t0_to_plot]
+            # List concatenation, not addition
+            colors = t0_colors + weib_colors
+            x_data = x_data_prob + x_data_weib
+            y_data = y_data_prob + y_data_weib
+            labels = [round(t0_to_plot[k],2) for k in range(len(t0_to_plot))] + weib_labels
+            linewidths = prob_lw + weib_lw
+        else:
+            colors = t0_colors
+            x_data = x_data_prob
+            y_data = y_data_prob
+            labels = [round(t0_to_plot[k],2) for k in range(len(t0_to_plot))]
+            linewidths = prob_lw
+        legend_string = r't$_0$='
+        y_lab         = r'P(t, t$_0$)'
+        x_lab         = r't = t$_0$ + $\Delta$t [years]'
+        plot_title    = ""
+        self.multi_line_plot(x_data, y_data, colors, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename)
+        
+    def plot_dt_vs_t0(self, events, filename, years_since=None):
+        # Plot the waiting times corresponding to 25/50/75% conditional probabilities
+        # as a function of t0 (time since last earthquake on the selected faults).
+        # years_since is the number of years since the last observed (real) earthquake
+        # on the selected faults.
+        intervals = np.array(events.interevent_times())
+        conditional = {}
+        wait_75 = None
+        max_t0 = int(intervals.max())
+        # t0_to_eval used to evaluate waiting times with 25/50/75% probability given t0=years_since
+        t0_to_eval = np.arange(0, max_t0, 1.0)
+        # t0_to_plot is "smoothed" so that the plots aren't as jagged
+        t0_to_plot = np.linspace(0, int(max_t0/2.0), num=5)
+        t0_to_plot = [int(t0) for t0 in t0_to_plot]
+        t0_dt      = {}
+        t0_dt_plot = {}
+        # First generate the conditional distributions P(t,t0) for each t0
+        for t0 in t0_to_eval:
+            int_t0 = intervals[np.where( intervals > t0)]
+            if int_t0.size != 0:
+                conditional[t0] = {'x':[],'y':[]}
+                for dt in range(max_t0-int(t0)):
+                    int_t0_dt = intervals[np.where( intervals > t0+dt)]
+                    conditional[t0]['x'].append(t0+dt)
+                    prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                    conditional[t0]['y'].append(prob_t0_dt)
+        # Loop over the probabilities whose waiting times we want to plot, invert P(t,t0)
+        for percent in [0.25, 0.5, 0.75]:
+            t0_dt[int(percent*100)]      = {'x':[],'y':[]}
+            t0_dt_plot[int(percent*100)] = {'x':[],'y':[]}
+            for t0 in t0_to_eval:
+                if conditional[t0] is not None:
+                    # Invert the conditional probabilities, find the recurrence time closest to
+                    # the current percent
+                    index   = (np.abs(np.array(conditional[t0]['y'])-percent)).argmin()
+                    dt      = conditional[t0]['x'][index]-t0
+                    t0_dt[int(percent*100)]['x'].append(t0)
+                    t0_dt[int(percent*100)]['y'].append(dt)     
+                    if t0 in t0_to_plot:
+                        t0_dt_plot[int(percent*100)]['x'].append(t0)
+                        t0_dt_plot[int(percent*100)]['y'].append(dt)
+        if years_since is not None:                
+            # Print out the "Forecast", the 25/50/75% probability given t0=years_since
+            ind_25 = (np.abs(np.array(t0_dt[25]['x'])-years_since)).argmin()
+            ind_50 = (np.abs(np.array(t0_dt[50]['x'])-years_since)).argmin()
+            ind_75 = (np.abs(np.array(t0_dt[75]['x'])-years_since)).argmin()
+            wait_25 = t0_dt[25]['y'][ind_25]        
+            wait_50 = t0_dt[50]['y'][ind_50]
+            wait_75 = t0_dt[75]['y'][ind_75]
+            sys.stdout.write('For t0 = {:.2f} years'.format(year_eval))
+            sys.stdout.write('\n25% waiting time: {:.2f} years'.format(wait_25))
+            sys.stdout.write('\n50% waiting time: {:.2f} years'.format(wait_50))
+            sys.stdout.write('\n75% waiting time: {:.2f} years'.format(wait_75))
+            sys.stdout.write('\n=======================================\n\n')
+        self.t0_vs_dt_plot(t0_dt_plot, wait_75, filename)
+        
 class Distributions:
     def weibull(X, beta, tau):
         # Return the Weibull distribution for the parameters given, 
@@ -325,10 +442,16 @@ if __name__ == "__main__":
             help="Generate magnitude vs rupture area plot.")        
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
             help="Generate magnitude vs mean slip plot.")
+            
+    # Probability plotting arguments        
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
-            help="Generate earthquake recurrence probability at time t plot, --use_sections required.")
+            help="Generate earthquake recurrence probability at time t plot.")
     parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False, action='store_true',
-            help="Generate earthquake recurrence probability at time t + dt vs t plot, --use_sections required.")
+            help="Generate earthquake recurrence probability at time t + dt vs t plot.")
+    parser.add_argument('--plot_cond_prob_vs_t', required=False, action='store_true',
+            help="Generate earthquake recurrence conditional probabilities at time t = t0 + dt for multiple t0.")
+    parser.add_argument('--plot_waiting_times', required=False, action='store_true',
+            help="Generate waiting times until the next earthquake as function of time since last earthquake.")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -392,6 +515,12 @@ if __name__ == "__main__":
     if args.plot_prob_vs_t_fixed_dt:
         filename = SaveFile(args.event_file, "p_vs_t_fixed_dt").filename
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
+    if args.plot_cond_prob_vs_t:
+        filename = SaveFile(args.event_file, "cond_prob_vs_t").filename
+        ProbabilityPlot().plot_p_of_t_multi(events, filename)
+    if args.plot_waiting_times:
+        filename = SaveFile(args.event_file, "waiting_times").filename
+        ProbabilityPlot().plot_dt_vs_t0(events, filename)
 
     # Generate stress plots
     if args.stress_elements:
