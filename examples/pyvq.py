@@ -555,7 +555,7 @@ if __name__ == "__main__":
     if args.plot_freq_mag:
         filename = SaveFile(args.event_file, "freq_mag").filename
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
-        if args.plot_freq_mag == 1: UCERF2,b1 = False, True
+        if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
