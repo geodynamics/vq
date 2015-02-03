@@ -434,29 +434,12 @@ class ProbabilityPlot(BasePlotter):
         
 class Distributions:
     def weibull(self, X, beta, tau):
-        # Return the Weibull distribution for the parameters given, 
-        # for the x point or for the array of x values given.
-        try:
-            length = len(X)
-        except TypeError:
-            length = 0
-        
-        if length==0:
-            return 1-np.exp( -(X/float(tau))**beta)
-        else:
-            return np.array([1-np.exp( -(X/float(tau))**beta) for x in X])
-            
+        # Return the Weibull distribution at a point 
+        return 1-np.exp( -(X/float(tau))**beta)
+    
+    def cond_weibull(self, X, t0, beta, tau):
         # Return the conditional Weibull distribution at a single point
-        # or for an array of points.
-        try:
-            length = len(X)
-        except TypeError:
-            length = 0
-        
-        if length==0:
-            return 1-np.exp( (t0/float(tau))**beta - (X/float(tau))**beta)
-        else:
-            return np.array([1-np.exp( (t0/float(tau))**beta - (x/float(tau))**beta) for x in X])
+        return 1-np.exp( (t0/float(tau))**beta - (X/float(tau))**beta)
         
 if __name__ == "__main__":
     # Specify arguments
@@ -572,7 +555,7 @@ if __name__ == "__main__":
     if args.plot_freq_mag:
         filename = SaveFile(args.event_file, "freq_mag").filename
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
-        if args.plot_freq_mag == 2: UCERF2,b1 = False, True
+        if args.plot_freq_mag == 1: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
