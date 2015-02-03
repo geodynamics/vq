@@ -148,7 +148,6 @@ class BasePlotter:
         elif plot_type == "line":
             ax.plot(x_data, y_data)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     
@@ -164,7 +163,6 @@ class BasePlotter:
             ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
         ax.legend(title=legend_str, loc='best')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -220,7 +218,6 @@ class BasePlotter:
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         ax.legend(loc = "best")
-        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -236,7 +233,6 @@ class BasePlotter:
         ax.plot(line_x, line_y, label = line_label, c = 'k')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         ax.legend(loc = "best")
-        #ax.xaxis.set_major_formatter(mplt.ticker.FormatStrFormatter('%.2f'))
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
@@ -497,8 +493,8 @@ if __name__ == "__main__":
             help="List of model sections to use (all sections used if unspecified).")
 
     # Event plotting arguments
-    parser.add_argument('--plot_freq_mag', required=False, type=float,
-            help="Generate frequency magnitude plot. 1: Only event data, 2: Plot UCERF2 observed seismicity rates, 3: Plot UCERF2 and the b=1 line.")
+    parser.add_argument('--plot_freq_mag', required=False, type=int,
+            help="Generate frequency magnitude plot. 1: Only event data, 2: Plot b=1 Gutenberg-Richter relation, 3: Plot UCERF2 observed seismicity rates, 4: Plot UCERF2 and the b=1 line.")
     parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
             help="Generate magnitude vs rupture area plot.")        
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
@@ -576,8 +572,9 @@ if __name__ == "__main__":
     if args.plot_freq_mag:
         filename = SaveFile(args.event_file, "freq_mag").filename
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
-        if args.plot_freq_mag == 2: UCERF2,b1 = True, False
-        if args.plot_freq_mag == 3: UCERF2,b1 = True, True
+        if args.plot_freq_mag == 2: UCERF2,b1 = False, True
+        if args.plot_freq_mag == 3: UCERF2,b1 = True, False
+        if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
         filename = SaveFile(args.event_file, "mag_rupt_area").filename
