@@ -37,6 +37,12 @@
 #ifndef _QUAKELIB_H_
 #define _QUAKELIB_H_
 
+// This will result in a smallest calculated displacement of ~0.0001 m
+#define DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS                46.5
+
+// This will result in a smallest calculated gravity change of ~4e-9 
+#define DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY               8.0
+
 namespace quakelib {
     // Function to obtain the version/git information for the compiled quakelib
     static std::string quakelib_info(void) {
@@ -276,7 +282,45 @@ namespace quakelib {
                 b=_vert[2]-_vert[0];
                 return a.cross(b).unit_vector();
             };
+            
+            //! Returns the angle of the element relative to north. Positive rotating west, negitive rotating east.
+            double strike(void) const {
+                Vec<3> v1, v2, norm;
+                norm = normal();
+                v1[0] = norm[0];
+                v1[1] = norm[1];
+                v2[1] = 1.0;
+                return (v1.vector_angle(v2) - M_PI/2.0);
+            };
     };
+	
+    //Extend the SimElement class to include slip, for computing fields (gravity, displacement)
+	class SlippedElement: public SimElement {
+	protected:
+		double _slip;
+	public:
+		double slip(void) const { return _slip; };
+		void set_slip(const double &new_slip) { _slip = new_slip; };
+	
+	};
+    
+	typedef std::vector< SlippedElement > SlippedElementList;
+    
+    class SlipEvent {
+    private:
+        SlippedElementList involved_elements;
+    public:
+        SlipEvent() { };
+        void add_element(const SlippedElement &element) {involved_elements.push_back(element);};
+		void add_elements(const SlippedElementList involved_elements) {
+			for (unsigned int i=0; i < involved_elements.size(); i++)
+				add_element(involved_elements[i]);
+		};
+        VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
+		FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
+        FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
+    };
+    
 }
 
 #endif

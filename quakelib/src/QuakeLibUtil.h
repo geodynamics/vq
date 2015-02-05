@@ -305,6 +305,9 @@ namespace quakelib {
 
     std::ostream &operator<<(std::ostream &os, const Vec<2> &pt);
     std::ostream &operator<<(std::ostream &os, const Vec<3> &pt);
+    
+    typedef std::vector< double > FloatList;
+    typedef std::vector< Vec<3> > VectorList;
 
     template <unsigned int ncols>
     class TensorRow {
@@ -533,10 +536,6 @@ namespace quakelib {
                 return bars*1e5;
             };
     };
-
-
-
-
 
     /*
      Top class representing a dense matrix for computation.
