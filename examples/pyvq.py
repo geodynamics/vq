@@ -133,6 +133,23 @@ class Events:
 
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
+        
+#!!!!!!!!!!!!!!!!!!!!!!
+class SlipMap:
+    def __init__(self, element_slips, model):
+        elements = quakelib.SlippedElementList()
+        for element in model._elements:
+            ele = quakelib.SlippedElement()
+            ele.set_id(element.data)
+            ele.set_rake(element.rake())
+        
+        
+        self._plot_str = ""
+        
+
+
+    def plot_str(self):
+        return self._plot_str
 
 class BasePlotter:
     def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
@@ -497,6 +514,10 @@ if __name__ == "__main__":
     parser.add_argument('--tau', required=False, type=float,
             help="Tau parameter for the Weibull distribution, must also specify Beta")
             
+    # Field plotting arguments
+    parser.add_argument('--event_field', required=False, action='store_true',
+            help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
+    parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -517,7 +538,7 @@ if __name__ == "__main__":
     if args.model_file:
         model = quakelib.ModelWorld()
         model.read_file_ascii(args.model_file)
-        # TODO: add HDF5 compatibility
+# TODO: add HDF5 compatibility
     else:
         if args.use_sections:
             sys.exit("Model file required if specifying fault sections.")
@@ -527,6 +548,12 @@ if __name__ == "__main__":
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
         sys.exit("Must specify both beta and tau.")
+        
+    # Check that field_type is one of the supported types
+    if args.field_type:
+        type = args.field_type.lower()
+        if type != "gravity" or type != "dilat_gravity" or type != "displacement" or type != "insar":
+            sys.exit("Field type is one of gravity, dilat_gravity, displacement, insar")
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -580,10 +607,13 @@ if __name__ == "__main__":
     if args.plot_waiting_times:
         filename = SaveFile(args.event_file, "waiting_times").filename
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
+    if args.field_test:
+        
+        
 
     # Generate stress plots
     if args.stress_elements:
-        # TODO: check that stress_set is valid
+# TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
 
     # Validate data if requested

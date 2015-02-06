@@ -298,9 +298,12 @@ namespace quakelib {
 	class SlippedElement: public SimElement {
 	protected:
 		double _slip;
+        unsigned int _id;
 	public:
 		double slip(void) const { return _slip; };
 		void set_slip(const double &new_slip) { _slip = new_slip; };
+        double id(void) const { return _id; };
+		void set_id(const double &new_id) { _id = new_id; };
 	
 	};
     
