@@ -25,7 +25,7 @@
 #endif
 
 // Gravity change equations taken from Okubo 1992
-quakelib::FloatList quakelib::SlipEvent::gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
+quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
 	quakelib::FloatList gravity_changes;
 	Okada block_okada;
     double gravity_change, slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, xp3, yp3, x, y, xp, yp;
@@ -53,8 +53,8 @@ quakelib::FloatList quakelib::SlipEvent::gravity_changes(const VectorList &point
 		UD = slip * rake_sin;
 		UT = 0.0;
 		
-		L = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(0)).mag();
-		W = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(2)).mag();
+		L = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(0)).mag();
+		W = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(2)).mag();
 		c = fabs(involved_elements[ele_id].vert(1)[2]);
 		
 		dip = involved_elements[ele_id].dip();
@@ -72,8 +72,8 @@ quakelib::FloatList quakelib::SlipEvent::gravity_changes(const VectorList &point
 		xp0 = involved_elements[ele_id].vert(0)[0];
 		yp0 = involved_elements[ele_id].vert(0)[1];
 		
-		xp3 = involved_elements[ele_id].vert(3)[0];
-		yp3 = involved_elements[ele_id].vert(3)[1];
+		xp3 = involved_elements[ele_id].implicit_vert()[0];
+		yp3 = involved_elements[ele_id].implicit_vert()[1];
 		
 		for(VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
 			x = points[point_id][0];
@@ -101,7 +101,7 @@ quakelib::FloatList quakelib::SlipEvent::gravity_changes(const VectorList &point
 };
 
 //The dilatational gravity changes arise from only compression/dilatation
-quakelib::FloatList quakelib::SlipEvent::dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
+quakelib::FloatList quakelib::SlipMap::dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
 	quakelib::FloatList gravity_changes;
 	Okada block_okada;
     double gravity_change, slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, xp3, yp3, x, y, xp, yp;
@@ -129,8 +129,8 @@ quakelib::FloatList quakelib::SlipEvent::dilat_gravity_changes(const VectorList 
 		UD = slip * rake_sin;
 		UT = 0.0;
 		
-		L = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(0)).mag();
-		W = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(2)).mag();
+		L = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(0)).mag();
+		W = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(2)).mag();
 		c = fabs(involved_elements[ele_id].vert(1)[2]);
 		
 		dip = involved_elements[ele_id].dip();
@@ -148,8 +148,8 @@ quakelib::FloatList quakelib::SlipEvent::dilat_gravity_changes(const VectorList 
 		xp0 = involved_elements[ele_id].vert(0)[0];
 		yp0 = involved_elements[ele_id].vert(0)[1];
 		
-		xp3 = involved_elements[ele_id].vert(3)[0];
-		yp3 = involved_elements[ele_id].vert(3)[1];
+		xp3 = involved_elements[ele_id].implicit_vert()[0];
+		yp3 = involved_elements[ele_id].implicit_vert()[1];
 		
 		for(VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
 			x = points[point_id][0];
@@ -177,7 +177,7 @@ quakelib::FloatList quakelib::SlipEvent::dilat_gravity_changes(const VectorList 
 }
 
 // Displacements computed from equations given in Okada 1995
-quakelib::VectorList quakelib::SlipEvent::displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff)  {
+quakelib::VectorList quakelib::SlipMap::displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff)  {
 	quakelib::VectorList displacements;
 	Okada block_okada;
 	quakelib::Vec<3> displacement;
@@ -206,8 +206,8 @@ quakelib::VectorList quakelib::SlipEvent::displacements(const VectorList &points
 		UD = slip * rake_sin;
 		UT = 0.0;
 		
-		L = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(0)).mag();
-		W = (involved_elements[ele_id].vert(3) - involved_elements[ele_id].vert(2)).mag();
+		L = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(0)).mag();
+		W = (involved_elements[ele_id].implicit_vert() - involved_elements[ele_id].vert(2)).mag();
 		c = fabs(involved_elements[ele_id].vert(1)[2]);
 		
 		dip = involved_elements[ele_id].dip();
@@ -229,7 +229,7 @@ quakelib::VectorList quakelib::SlipEvent::displacements(const VectorList &points
 		std::cout << "v1: <" << involved_elements[ele_id].vert(0)[0] << ", " << involved_elements[ele_id].vert(0)[1] << ", " << involved_elements[ele_id].vert(0)[2] << ">" << std::endl;
 		std::cout << "v2: <" << involved_elements[ele_id].vert(1)[0] << ", " << involved_elements[ele_id].vert(1)[1] << ", " << involved_elements[ele_id].vert(1)[2] << ">" << std::endl;
 		std::cout << "v3: <" << involved_elements[ele_id].vert(2)[0] << ", " << involved_elements[ele_id].vert(2)[1] << ", " << involved_elements[ele_id].vert(2)[2] << ">" << std::endl;
-		std::cout << "v4: <" << involved_elements[ele_id].vert(3)[0] << ", " << involved_elements[ele_id].vert(3)[1] << ", " << involved_elements[ele_id].vert(3)[2] << ">" << std::endl;
+		std::cout << "v4: <" << involved_elements[ele_id].implicit_vert()[0] << ", " << involved_elements[ele_id].implicit_vert()[1] << ", " << involved_elements[ele_id].implicit_vert()[2] << ">" << std::endl;
 		std::cout << "L: " << L << std::endl;
 		std::cout << "W: " << W << std::endl;
 		std::cout << "c: " << c << std::endl;

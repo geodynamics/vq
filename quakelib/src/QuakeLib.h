@@ -306,11 +306,11 @@ namespace quakelib {
     
 	typedef std::vector< SlippedElement > SlippedElementList;
     
-    class SlipEvent {
+    class SlipMap {
     private:
         SlippedElementList involved_elements;
     public:
-        SlipEvent() { };
+        SlipMap() { };
         void add_element(const SlippedElement &element) {involved_elements.push_back(element);};
 		void add_elements(const SlippedElementList involved_elements) {
 			for (unsigned int i=0; i < involved_elements.size(); i++)
