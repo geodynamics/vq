@@ -723,6 +723,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
     delete block_ids;
     delete proc_block_count;
     delete proc_block_disps;
+    delete local_block_ids;
 #else   // MPI_C_FOUND
 
     // Copy the local IDs into the global list just for the single processor
