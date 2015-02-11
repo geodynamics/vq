@@ -99,7 +99,7 @@ class Events:
         elif event_file_type == "text" and sweep_file != None:
             self._events.read_file_ascii(event_file, sweep_file)
         else:
-            sys.exit("event_file_type must be hdf5 or text. If text, a sweep_file is required.")
+            raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
             
         self._filtered_events = range(len(self._events))
         self._plot_str = ""
@@ -134,19 +134,18 @@ class Events:
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
         
-#!!!!!!!!!!!!!!!!!!!!!!
 class SlipMap:
     def __init__(self, element_slips, model):
-        elements = quakelib.SlippedElementList()
-        for element in model._elements:
-            ele = quakelib.SlippedElement()
-            ele.set_id(element.data)
-            ele.set_rake(element.rake())
-        
-        
+        # Read elements and slips into the SlippedElementList
+        self.elements = quakelib.SlippedElementList()
+        ele_ids  = model.getElementIDs()
+        if len(element_slips) != len(ele_ids):
+            raise "Must specify slip for all elements!"
+        for ele_id in ele_ids:
+            new_ele = model.create_slipped_element(ele_id)
+            new_ele.set_slip(5.0)
+            self.elements.append(new_ele)
         self._plot_str = ""
-        
-
 
     def plot_str(self):
         return self._plot_str
@@ -175,7 +174,7 @@ class BasePlotter:
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
-            sys.exit("These lists must be the same length: x_data, y_data, colors, labels, linewidths.")
+            raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
         for i in range(len(x_data)):
             ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
         ax.legend(title=legend_str, loc='best')
@@ -515,7 +514,7 @@ if __name__ == "__main__":
             help="Tau parameter for the Weibull distribution, must also specify Beta")
             
     # Field plotting arguments
-    parser.add_argument('--event_field', required=False, action='store_true',
+    parser.add_argument('--field_test', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
     parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar")
 
@@ -541,19 +540,19 @@ if __name__ == "__main__":
 # TODO: add HDF5 compatibility
     else:
         if args.use_sections:
-            sys.exit("Model file required if specifying fault sections.")
+            raise "Model file required if specifying fault sections."
         else:
             model = None
             
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
-        sys.exit("Must specify both beta and tau.")
+        raise "Must specify both beta and tau."
         
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
         if type != "gravity" or type != "dilat_gravity" or type != "displacement" or type != "insar":
-            sys.exit("Field type is one of gravity, dilat_gravity, displacement, insar")
+            raise "Field type is one of gravity, dilat_gravity, displacement, insar"
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -608,8 +607,11 @@ if __name__ == "__main__":
         filename = SaveFile(args.event_file, "waiting_times").filename
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_test:
-        
-        
+        slips = np.zeros(2628)
+        ele_slips = {}
+        for i in range(len(slips)):
+            ele_slips[i] = slips[i]           
+        SlipMap(ele_slips, model)
 
     # Generate stress plots
     if args.stress_elements:
