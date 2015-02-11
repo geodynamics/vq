@@ -296,36 +296,36 @@ namespace quakelib {
 	
     //Extend the SimElement class to include slip, for computing fields (gravity, displacement)
 	class SlippedElement: public SimElement {
-	protected:
-		double _slip;
-        unsigned int _id;
-        unsigned int _section_id; 
-	public:
-		double slip(void) const { return _slip; };
-		void set_slip(const double &new_slip) { _slip = new_slip; };
-        double id(void) const { return _id; };
-		void set_id(const double &new_id) { _id = new_id; };
-        double section_id(void) const { return _section_id; };
-		void set_section_id(const double &new_id) { _section_id = new_id; };
-	};
-    
-	typedef std::vector< SlippedElement > SlippedElementList;
-    
-    class SlipMap {
-    private:
-        SlippedElementList involved_elements;
-        //LatLonDepth _base;
-    public:
-        SlipMap() { };
-        void add_element(const SlippedElement &element) {involved_elements.push_back(element);};
-		void add_elements(const SlippedElementList involved_elements) {
-			for (unsigned int i=0; i < involved_elements.size(); i++)
-				add_element(involved_elements[i]);
-		};
-        //void set_base(LatLonDepth &base) { _base = base; };
-        VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
-		FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
-        FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
+        protected:
+            double _slip;
+            unsigned int _id;
+            unsigned int _section_id; 
+        public:
+            double slip(void) const { return _slip; };
+            void set_slip(const double &new_slip) { _slip = new_slip; };
+            double id(void) const { return _id; };
+            void set_id(const double &new_id) { _id = new_id; };
+            double section_id(void) const { return _section_id; };
+            void set_section_id(const double &new_id) { _section_id = new_id; };
+        };
+        
+        typedef std::vector< SlippedElement > SlippedElementList;
+        
+        class SlipMap {
+        private:
+            SlippedElementList involved_elements;
+            //LatLonDepth _base;
+        public:
+            SlipMap() { };
+            void add_element(const SlippedElement &element) {involved_elements.push_back(element);};
+            void add_elements(const SlippedElementList involved_elements) {
+                for (unsigned int i=0; i < involved_elements.size(); i++)
+                    add_element(involved_elements[i]);
+            };
+            //void set_base(LatLonDepth &base) { _base = base; };
+            VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
+            FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
+            FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
     };
     
 }
