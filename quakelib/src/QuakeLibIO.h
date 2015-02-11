@@ -487,6 +487,8 @@ namespace quakelib {
             };
     };
 
+    typedef std::set<UIndex> ElementIDSet;
+
     class ModelWorld : public ModelIO {
         private:
             std::map<UIndex, ModelVertex>   _vertices;
@@ -555,6 +557,9 @@ namespace quakelib {
             void get_bounds(LatLonDepth &minimum, LatLonDepth &maximum) const;
 
             SimElement create_sim_element(const UIndex &element_id) const;
+            SlippedElement create_slipped_element(const UIndex &element_id) const;
+            
+            ElementIDSet getElementIDs(void) const;
 
             bool overwrite(const ModelRemapping &remap);
             void apply_remap(const ModelRemapping &remap);
@@ -589,8 +594,6 @@ namespace quakelib {
             int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
     };
-
-    typedef std::set<UIndex> ElementIDSet;
 
     // Class recording data associated with a block that slipped during an event
     // mu is static, but we retain it for use in calculating magnitude.

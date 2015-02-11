@@ -119,7 +119,6 @@ SET(QUAKELIB_SOURCES
     ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.cpp
     ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.cpp
     ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.cpp
-    ${QUAKELIB_SOURCE_DIR}/QuakeLibSlipMap.cpp
     )
 
 SET(QUAKELIB_HEADERS

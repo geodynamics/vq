@@ -1571,6 +1571,34 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     return new_element;
 }
 
+quakelib::SlippedElement quakelib::ModelWorld::create_slipped_element(const UIndex &element_id) const {
+    SlippedElement          new_element;
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    std::map<UIndex, ModelVertex>::const_iterator   vit;
+    unsigned int        i;
+
+    eit = _elements.find(element_id);
+
+    for (i=0; i<3; ++i) {
+        vit = _vertices.find(eit->second.vertex(i));
+        new_element.set_vert(i, vit->second.xyz());
+    }
+    
+    // TODO, vertices lat/lon or xyz, save base?
+    new_element.set_id(eit->second.id());
+    new_element.set_section_id(eit->second.section_id());
+    new_element.set_is_quad(eit->second.is_quad());
+    new_element.set_rake(eit->second.rake());
+    new_element.set_slip_rate(eit->second.slip_rate());
+    new_element.set_aseismic(eit->second.aseismic());
+    new_element.set_lame_mu(eit->second.lame_mu());
+    new_element.set_lame_lambda(eit->second.lame_lambda());
+    new_element.set_max_slip(eit->second.max_slip());
+    new_element.set_slip(0.0);
+
+    return new_element;
+}
+
 int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name) {
     quakelib::ModelWorld            eqsim_world;
     quakelib::EQSimGeometryReader   geometry_data;
@@ -2227,6 +2255,17 @@ size_t quakelib::ModelWorld::num_elements(const quakelib::UIndex &fid) const {
     }
 
     return num_elements;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getElementIDs(void) const {
+    ElementIDSet element_id_set;
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        element_id_set.insert(eit->second.id());
+    }
+
+    return element_id_set;
 }
 
 size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {
