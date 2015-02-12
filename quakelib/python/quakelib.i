@@ -325,3 +325,12 @@ using namespace quakelib;
   $1 = &temp[0];
 }
 
+
+
+// Map C++ LatLonDepth class to quakelib.LatLonDepth
+// TODO: This
+//%typemap(out) LatLonDepth {
+//}
+
+
+

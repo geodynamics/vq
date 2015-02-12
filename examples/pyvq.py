@@ -148,7 +148,7 @@ class SlipMap:
         self.slip_map = quakelib.SlipMap()
         self.slip_map.add_elements(self.elements)
         base = model.get_base()
-        print(base.lat())    
+        print(base[0])    
         self._plot_str = ""
 
     def plot_str(self):

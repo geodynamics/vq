@@ -550,8 +550,12 @@ namespace quakelib {
             LatLonDepth min_bound(const UIndex &fid=INVALID_INDEX) const;
             LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
             
-            LatLonDepth get_base(void) const {
-                return _base;
+            Vec<3> get_base(void) const {
+                Vec<3> base;
+                base[0] = _base.lat();
+                base[1] = _base.lon();
+                base[2] = _base.altitude();
+                return base;
             }
 
             void insert(const ModelWorld &other_world);
