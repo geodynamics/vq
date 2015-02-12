@@ -854,7 +854,7 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     for (it=_vertices.begin(); it!=_vertices.end(); ++it) {
         it->second.set_lld(it->second.lld(), new_base);
     }
-    this->set_base(new_base);
+    _base = new_base;
 }
 
 

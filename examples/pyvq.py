@@ -145,6 +145,10 @@ class SlipMap:
             new_ele = model.create_slipped_element(ele_id)
             new_ele.set_slip(5.0)
             self.elements.append(new_ele)
+        self.slip_map = quakelib.SlipMap()
+        self.slip_map.add_elements(self.elements)
+        base = model.get_base()
+        print(base.lat())    
         self._plot_str = ""
 
     def plot_str(self):

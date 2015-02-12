@@ -23,6 +23,7 @@ using namespace quakelib;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
 %template(ElementIDSet) std::set<unsigned int>;
+%template(SlippedElementList) std::vector<quakelib::SlippedElement>;
 
 %include "QuakeLib.h"
 %include "QuakeLibIO.h"
