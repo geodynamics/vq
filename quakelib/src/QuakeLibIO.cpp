@@ -854,7 +854,10 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     for (it=_vertices.begin(); it!=_vertices.end(); ++it) {
         it->second.set_lld(it->second.lld(), new_base);
     }
+    this->set_base(new_base);
 }
+
+
 
 // TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
 // Also assumes elements will be in order along the trace
