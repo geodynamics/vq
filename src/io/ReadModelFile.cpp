@@ -87,12 +87,9 @@ void ReadModelFile::init(SimFramework *_sim) {
         // Set VC specific values
         //new_block.setFaultID(eit->fault_id());
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
-        new_block.setFailed(false);
 
-        new_block.setInitShearStress(0);
-        new_block.setInitNormalStress(0);
-        new_block.setDynamicVal(sim->getDynamic());
+        BlockID bid = sim->addBlock(new_block);
 
-        sim->addBlock(new_block);
+        sim->setInitShearNormalStress(bid, 0, 0);
     }
 }

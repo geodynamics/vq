@@ -100,7 +100,7 @@ class Events:
             self._events.read_file_ascii(event_file, sweep_file)
         else:
             sys.exit("event_file_type must be hdf5 or text. If text, a sweep_file is required.")
-            
+
         self._filtered_events = range(len(self._events))
         self._plot_str = ""
 
@@ -150,7 +150,7 @@ class BasePlotter:
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-    
+
     def multi_line_plot(self, x_data, y_data, colors, labels, linewidths, plot_title, x_label, y_label, legend_str, filename):
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -165,7 +165,7 @@ class BasePlotter:
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+
     def t0_vs_dt_plot(self, t0_dt_plot, wait_75, filename):
 # TODO: Set fonts explicitly
         t0_dt_main_line_color   = '#000000'
@@ -202,7 +202,7 @@ class BasePlotter:
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+
     def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -220,7 +220,7 @@ class BasePlotter:
         ax.legend(loc = "best")
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+
     def scatter_and_line(self, log_y, x_data, y_data, line_x, line_y, line_label, plot_title, x_label, y_label, filename):
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -264,7 +264,7 @@ class FrequencyMagnitudePlot(BasePlotter):
         if min(years) < max(years)*.01:
             # In most sims, it takes 30-100 years for first sim to occur, but the sim started at year 0. So if the first event occurs at a year that's before the first 1% of sim time, consider the filtered events to represent year=0 and onward. Needed for accurate # of events/yr
             year_range = max(years)
-        else: 
+        else:
             year_range = max(years) - min(years)
         for num, mag in enumerate(sorted(mag_list)):
             cum_freq[mag] = num_events - (num + 1)
@@ -296,7 +296,7 @@ class StressHistoryPlot(BasePlotter):
         for element in elements:
             print(stress_histories[element])
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
-        
+
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
         # Cumulative probability P(t) as a function of interevent time t
@@ -305,7 +305,7 @@ class ProbabilityPlot(BasePlotter):
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
         self.create_plot("line", False, prob['x'], prob['y'], events.plot_str(),"t [years]", "P(t)", filename)
-        
+
     def plot_conditional_fixed_dt(self, events, filename, fixed_dt=30.0):
         # P(t0 + dt, t0) vs. t0 for fixed dt
         intervals = np.array(events.interevent_times())
@@ -318,7 +318,7 @@ class ProbabilityPlot(BasePlotter):
                 prob_dt['x'].append(t0)
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
         self.create_plot("line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
-        
+
     def plot_p_of_t_multi(self, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
         # Cumulative conditional probability P(t,t0) as a function of
         # interevent time t, computed for multiple t0. Beta/Tau are Weibull parameters
@@ -340,7 +340,7 @@ class ProbabilityPlot(BasePlotter):
                     conditional[t0]['y'].append(prob_t0_dt)
                     if beta is not None and tau is not None:
                         weibull[t0]['x'].append(t0+dt)
-                        weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,beta,tau)   
+                        weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,beta,tau)
                         weibull[t0]['y'].append(weibull_t0_dt)
             else:
                 conditional[t0] = None
@@ -375,7 +375,7 @@ class ProbabilityPlot(BasePlotter):
         x_lab         = r't = t$_0$ + $\Delta$t [years]'
         plot_title    = ""
         self.multi_line_plot(x_data, y_data, colors, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename)
-        
+
     def plot_dt_vs_t0(self, events, filename, years_since=None):
         # Plot the waiting times corresponding to 25/50/75% conditional probabilities
         # as a function of t0 (time since last earthquake on the selected faults).
@@ -413,16 +413,16 @@ class ProbabilityPlot(BasePlotter):
                     index   = (np.abs(np.array(conditional[t0]['y'])-percent)).argmin()
                     dt      = conditional[t0]['x'][index]-t0
                     t0_dt[int(percent*100)]['x'].append(t0)
-                    t0_dt[int(percent*100)]['y'].append(dt)     
+                    t0_dt[int(percent*100)]['y'].append(dt)
                     if t0 in t0_to_plot:
                         t0_dt_plot[int(percent*100)]['x'].append(t0)
                         t0_dt_plot[int(percent*100)]['y'].append(dt)
-        if years_since is not None:                
+        if years_since is not None:
             # Print out the "Forecast", the 25/50/75% probability given t0=years_since
             ind_25 = (np.abs(np.array(t0_dt[25]['x'])-years_since)).argmin()
             ind_50 = (np.abs(np.array(t0_dt[50]['x'])-years_since)).argmin()
             ind_75 = (np.abs(np.array(t0_dt[75]['x'])-years_since)).argmin()
-            wait_25 = t0_dt[25]['y'][ind_25]        
+            wait_25 = t0_dt[25]['y'][ind_25]
             wait_50 = t0_dt[50]['y'][ind_50]
             wait_75 = t0_dt[75]['y'][ind_75]
             sys.stdout.write('For t0 = {:.2f} years'.format(year_eval))
@@ -431,16 +431,16 @@ class ProbabilityPlot(BasePlotter):
             sys.stdout.write('\n75% waiting time: {:.2f} years'.format(wait_75))
             sys.stdout.write('\n=======================================\n\n')
         self.t0_vs_dt_plot(t0_dt_plot, wait_75, filename)
-        
+
 class Distributions:
     def weibull(self, X, beta, tau):
-        # Return the Weibull distribution at a point 
+        # Return the Weibull distribution at a point
         return 1-np.exp( -(X/float(tau))**beta)
-    
+
     def cond_weibull(self, X, t0, beta, tau):
         # Return the conditional Weibull distribution at a single point
         return 1-np.exp( (t0/float(tau))**beta - (X/float(tau))**beta)
-        
+
 if __name__ == "__main__":
     # Specify arguments
     parser = argparse.ArgumentParser(description="PyVQ.")
@@ -479,11 +479,11 @@ if __name__ == "__main__":
     parser.add_argument('--plot_freq_mag', required=False, type=int,
             help="Generate frequency magnitude plot. 1: Only event data, 2: Plot b=1 Gutenberg-Richter relation, 3: Plot UCERF2 observed seismicity rates, 4: Plot UCERF2 and the b=1 line.")
     parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
-            help="Generate magnitude vs rupture area plot.")        
+            help="Generate magnitude vs rupture area plot.")
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
             help="Generate magnitude vs mean slip plot.")
-            
-    # Probability plotting arguments        
+
+    # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t plot.")
     parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False, action='store_true',
@@ -496,7 +496,6 @@ if __name__ == "__main__":
             help="Beta parameter for the Weibull distribution, must also specify Tau")
     parser.add_argument('--tau', required=False, type=float,
             help="Tau parameter for the Weibull distribution, must also specify Beta")
-            
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -523,7 +522,7 @@ if __name__ == "__main__":
             sys.exit("Model file required if specifying fault sections.")
         else:
             model = None
-            
+
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
         sys.exit("Must specify both beta and tau.")
@@ -573,7 +572,7 @@ if __name__ == "__main__":
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
         filename = SaveFile(args.event_file, "cond_prob_vs_t").filename
-        if args.beta: 
+        if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
@@ -600,3 +599,4 @@ if __name__ == "__main__":
         print("Calculated mean interevent:", mean_interevent, "vs. expected:", args.mean_interevent)
 
     if err: exit(1)
+

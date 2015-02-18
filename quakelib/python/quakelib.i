@@ -82,6 +82,18 @@ using namespace quakelib;
     unsigned int __len__(void) { return $self->size(); };
 };
 
+%extend quakelib::ModelStressSet {
+    ModelStressState __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, ModelStressState new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return $self->size(); };
+};
+
+%extend quakelib::ModelStress {
+    StressData __getitem__(unsigned int i) { return (*$self)[i]; };
+	void __setitem__(unsigned int i, StressData new_val) { (*$self)[i] = new_val; };
+    unsigned int __len__(void) { return $self->size(); };
+};
+
 %extend quakelib::SweepData {
 	char *__str__(void) {
 		static char tmp[1024];
