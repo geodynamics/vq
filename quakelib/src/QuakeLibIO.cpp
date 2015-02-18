@@ -2986,7 +2986,7 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
     size_t                      *field_offsets;
     size_t                      *field_sizes;
     herr_t                      res;
-    
+
     descs.clear();
     ModelSweeps::get_field_descs(descs);
     num_fields = descs.size();
@@ -3004,20 +3004,22 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
 
     event_sweeps = new SweepData[num_sweeps];
     res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(SweepData), field_offsets, field_sizes, event_sweeps);
-    
+
     if (res < 0) exit(-1);
-    
+
     // Read sweeps data into the ModelEventSet
     for (fit=_events.begin(); fit!=_events.end(); ++fit) {
         fit->getStartEndSweep(start_sweep, end_sweep);
         ModelSweeps new_sweeps;
-        
+
         for (i=start_sweep; i<end_sweep; i++) {
             new_sweeps.read_data(event_sweeps[i]);
         }
+
         fit->setSweeps(new_sweeps);
-        
+
     }
+
     delete event_sweeps;
 #else
     // TODO: Error out

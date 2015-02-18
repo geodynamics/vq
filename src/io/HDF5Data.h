@@ -95,6 +95,9 @@ class HDF5GreensData {
     public:
         HDF5GreensData(void) {};
         ~HDF5GreensData(void);
+        unsigned int getGreensDim(void) const {
+            return greens_dim;
+        };
 };
 
 

@@ -144,6 +144,8 @@ void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
 
     num_global_blocks = sim->numGlobalBlocks();
     greens_file_reader = new HDF5GreensDataReader(sim->getGreensInputfile());
+    assertThrow(greens_file_reader->getGreensDim() == num_global_blocks, "Greens input file not same dimension as model.");
+
     in_shear_green = new double[num_global_blocks];
     in_normal_green = new double[num_global_blocks];
 

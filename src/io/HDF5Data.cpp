@@ -280,6 +280,7 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
         count[0] = 1;                       // 1xN set of values
         count[1] = greens_dim;
     }
+
     mem_start[0] = mem_start[1] = 0;    // start at element 0 in memory array
 
     // Select the hyperslabs for the memory and file dataspace
@@ -308,7 +309,12 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
 
     // Copy the selector for the entire dataspace
     file_select = H5Scopy(green_dataspace);
+
+    if (file_select < 0) exit(-1);
+
     mem_select = H5Scopy(green_dataspace);
+
+    if (mem_select < 0) exit(-1);
 
     file_start[0] = bid;                // start at xth block
     file_start[1] = 0;
@@ -318,11 +324,24 @@ void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, dou
 
     // Select the hyperslabs for the memory and file dataspace
     status = H5Sselect_hyperslab(file_select, H5S_SELECT_SET, file_start, NULL, count, NULL);
+
+    if (status < 0) exit(-1);
+
     status = H5Sselect_hyperslab(mem_select, H5S_SELECT_SET, mem_start, NULL, count, NULL);
 
+    if (status < 0) exit(-1);
+
     plist_id = H5Pcreate(H5P_DATASET_XFER);
+
+    if (plist_id < 0) exit(-1);
+
     status = H5Dread(green_shear_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, shear_vals);
+
+    if (status < 0) exit(-1);
+
     status = H5Dread(green_norm_set, H5T_NATIVE_DOUBLE, mem_select, file_select, plist_id, norm_vals);
+
+    if (status < 0) exit(-1);
 
     H5Pclose(plist_id);
     H5Sclose(file_select);
