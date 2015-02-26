@@ -32,7 +32,6 @@ using namespace quakelib;
 %template(SlippedElementList) std::vector<quakelib::SlippedElement>;
 %template(FloatList) std::vector<double>;
 %template(VectorList) std::vector< quakelib::Vec<3> >;
-%template(FloatArray) std::vector< quakelib::FloatList >;
 
 %exception {
     try {
@@ -360,43 +359,3 @@ using namespace quakelib;
   }
   $1 = &temp[0];
 }
-
-
-
-// Map C++ quakelib::Vec<3> class to quakelib.Vec3
-// CURRENTLY not working
-// Check class:   PyObject_IsInstance(inst, class)
-// PyObject_CallMethod
-//%typemap(out) quakelib::Vec<3> {
-//    $result = PyObject_CallFunctionObjArgs(quakelib.Vec3, $1->[0],$1->[1],$1->[2], NULL);
-//}
-
-
-// Add an append method and methods to allow these objects to be pickled
-//%extend std::vector< quakelib::Vec<3> > {
-//	void append( quakelib::Vec<3> item ) {(*$self).push_back(item);};
-//	%insert("python") %{
-//	def __setstate__(self, state):
-//        self.__init__(*state['args'])%}
-//	%insert("python") %{
-//    def __getstate__(self):
-//        return {'args': self.args}%}
-//};
-//
-//%extend std::vector< double > {
-//	void append( float item ) {(*$self).push_back(item);};
-//	%insert("python") %{
-//	def __setstate__(self, state):
-//        self.__init__(*state['args'])%}
-//	%insert("python") %{
-//    def __getstate__(self):
-//        return {'args': self.args}%}
-//};
-//
-
-
-
-
-
-
-
