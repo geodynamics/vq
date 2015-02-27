@@ -6,6 +6,7 @@ import math
 import sys
 import argparse
 import quakelib
+import gc
 
 scipy_available = True
 try:
@@ -15,8 +16,15 @@ except ImportError:
 
 matplotlib_available = True
 try:
-    import matplotlib as mplt
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
+    from mpl_toolkits.basemap import Basemap
+    import matplotlib.font_manager as mfont
+    import matplotlib.colors as mcolor
+    import matplotlib.colorbar as mcolorbar
+    import matplotlib.lines as mlines
+    from PIL import Image #TODO: Move this guy
+    plt.switch_backend('agg') #Required for map plots
 except ImportError:
     matplotlib_available = False
 
@@ -25,6 +33,17 @@ try:
     import numpy as np
 except ImportError:
     numpy_available = False
+    
+MIN_LON_DIFF = 0.118   #corresponds to 10km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = 0.090   #corresponds to 10km at lat,lon = (40.35, -124.85)
+
+#-------------------------------------------------------------------------------
+# Given a set of maxes and mins return a linear value betweem them.
+# Used to compute cutoff for field value evaluation, cutoff scales with
+# number of involved elements for FieldPlotter instances.
+#-------------------------------------------------------------------------------
+def linear_interp(x, x_min, x_max, y_min, y_max):
+    return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
 
 class SaveFile:
     def __init__(self, event_file, plot_type):
@@ -134,25 +153,560 @@ class Events:
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
         
-class SlipMap:
-    def __init__(self, element_slips, model):
+class FieldPlotter:
+    def __init__(self, model, element_slips=None, event_id=None, events=None, cbar_max=None):
+#TODO: Set fonts and figure size explicitly
+        self.max_lat, self.max_lon = 0.0,0.0
+        plot_height = 768.0
+        max_map_width = 690.0
+        max_map_height = 658.0
+        map_res     = 'i'
+        padding     = 0.08
+        map_proj = 'cyl'
+        # Define how the cutoff value scales if it is not explitly set.
+        # Cutoff is the max distance away from elements to compute
+        # the field given in units of element length.
+        self.cutoff_min_size = 20.0
+        self.cutoff_min = 20.0
+        self.cutoff_p2_size = 65.0
+        self.cutoff_p2 = 90.0
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
-        ele_ids  = model.getElementIDs()
-        if len(element_slips) != len(ele_ids):
-            raise "Must specify slip for all elements!"
-        for ele_id in ele_ids:
+        #if event_id is not None and events is not None and element_slips is None:
+            # TODO: Implement event element accessor
+            # get event_slips and element_ids
+            # self.element_slips = events.get_event_element_slips(event_id)
+        if event_id is None and events is None and element_slips is not None:
+            self.element_ids = element_slips.keys()
+            self.element_slips = element_slips
+        else:
+            raise "Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field."
+        if len(self.element_slips) != len(self.element_ids):
+            raise "Must specify slip for all elements."
+        for ele_id in self.element_ids:
             new_ele = model.create_slipped_element(ele_id)
-            new_ele.set_slip(5.0)
+            new_ele.set_slip(self.element_slips[ele_id])
             self.elements.append(new_ele)
         self.slip_map = quakelib.SlipMap()
         self.slip_map.add_elements(self.elements)
+        # Grab base Lat/Lon from fault model, used for lat/lon <-> xyz conversion
         base = model.get_base()
-        print(base[0])    
+        self.base_lat = self.min_lat = base[0]
+        self.base_lon = self.min_lon = base[1]
+        self.min_lat, self.max_lat, self.min_lon, self.max_lon = model.get_latlon_bounds()
+        # Expand lat/lon range in the case of plotting a few elements
+        if len(self.element_ids) < 10:
+            self.min_lat = self.min_lat - MIN_LAT_DIFF*10
+            self.max_lat = self.max_lat + MIN_LAT_DIFF*10
+            self.min_lon = self.min_lon - MIN_LON_DIFF*10
+            self.max_lon = self.max_lon + MIN_LON_DIFF*10
+        # Adjust bounds for good framing on plot
+        lon_range = self.max_lon - self.min_lon
+        lat_range = self.max_lat - self.min_lat
+        max_range = max((lon_range, lat_range))
+        self.min_lon = self.min_lon - lon_range*padding
+        self.min_lat = self.min_lat - lat_range*padding
+        self.max_lon = self.max_lon + lon_range*padding
+        self.max_lat = self.max_lat + lat_range*padding
+        self.lat0, self.lon0  = (self.max_lat+self.min_lat)/2.0, (self.max_lon+self.min_lon)/2.0
+        self.llcrnrlat = self.min_lat
+        self.llcrnrlon = self.min_lon
+        self.urcrnrlat = self.max_lat
+        self.urcrnrlon = self.max_lon
+        # We need a map instance to calculate the aspect ratio
+        map = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        # Using the aspect ratio (h/w) to find the actual map width and height in pixels
+        if map.aspect > max_map_height/max_map_width:
+            map_height = max_map_height
+            map_width = max_map_height/map.aspect
+        else:
+            map_width = max_map_width
+            map_height = max_map_width*map.aspect
+        # A conversion instance for doing the lat-lon to x-y conversions
+        base_lld = quakelib.LatLonDepth(self.base_lat, self.base_lon, 0.0)
+        self.convert = quakelib.Conversion(base_lld)
+        self.lons_1d = np.linspace(self.min_lon, self.max_lon, num=int(map_width))
+        self.lats_1d = np.linspace(self.min_lat, self.max_lat, num=int(map_height))
+        _lons_1d = quakelib.FloatList()
+        _lats_1d = quakelib.FloatList()
+        for lon in self.lons_1d:
+            _lons_1d.append(lon)
+        for lat in self.lats_1d:
+            _lats_1d.append(lat)
+        # Set up the points for field evaluation, convert to xyz basis
+        self.grid_1d = self.convert.convertArray2xyz(_lats_1d,_lons_1d)
+        # Convert the fault traces to lat-lon
+#TODO: find/create fault trace accessor
+#        fault_traces = !!!!!!!!!!!.get_fault_traces()
+#        fault_traces_latlon = {}
+#        for secid in fault_traces.iterkeys():
+#            fault_traces_latlon[secid] = zip(*[(lambda y: (y.lat(),y.lon()))(convert.convert2LatLon(quakelib.Vec3(x[0], x[1], x[2]))) for x in fault_traces[secid]])
         self._plot_str = ""
-
+        #-----------------------------------------------------------------------
+        # Gravity map configuration  #TODO: Put in switches for field_type
+        #-----------------------------------------------------------------------
+        if cbar_max is None:
+            cbar_max = 20
+        self.dmc = {
+            'font':               mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='normal'),
+            'font_bold':          mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='bold'),
+            'cmap':               plt.get_cmap('seismic'),
+        #water
+            'water_color':          '#4eacf4',
+        #map boundaries
+            'boundary_color':       '#000000',
+            'boundary_width':       1.0,
+            'coastline_color':      '#000000',
+            'coastline_width':      1.0,
+            'country_color':        '#000000',
+            'country_width':        1.0,
+            'state_color':          '#000000',
+            'state_width':          1.0,
+        #rivers
+            'river_width':          0.25,
+        #faults
+            'fault_color':          '#000000',
+            'event_fault_color':    '#ff0000',
+            'fault_width':          0.5,
+        #lat lon grid
+            'grid_color':           '#000000',
+            'grid_width':           0.0,
+            'num_grid_lines':       5,
+        #map props
+            'map_resolution':       map_res,
+            'map_projection':       map_proj,
+            'plot_resolution':      72.0,
+            'map_tick_color':       '#000000',
+            'map_frame_color':      '#000000',
+            'map_frame_width':      1,
+        #map_fontsize = 12
+            'map_fontsize':         16.0,   # 12   THIS IS BROKEN
+            'arrow_inset':          14.0, # 10
+            'arrow_fontsize':       12.0, #  9
+        #cb_fontsize = 12
+            'cb_fontsize':          20.0, # 12
+            'cb_fontcolor':         '#000000',
+            'cb_height':            20.0,
+            'cb_margin_t':          2.0, # 10
+         #min/max gravity change labels for colorbar (in microgals)
+            'cbar_min':             -cbar_max,
+            'cbar_max':             cbar_max
+        }
+        self.norm = None
+        #-----------------------------------------------------------------------
+        # m1, fig1 is the oceans and the continents. This will lie behind the
+        # masked data image.
+        #-----------------------------------------------------------------------
+        self.m1 = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, 
+            lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        #-----------------------------------------------------------------------
+        # m2, fig2 is the plotted deformation data.
+        #-----------------------------------------------------------------------
+        self.m2 = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, 
+            lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        #-----------------------------------------------------------------------
+        # m3, fig3 is the ocean land mask.
+        #-----------------------------------------------------------------------
+        self.m3 = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, 
+            lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        
+    def compute_field(self, field_type, cutoff=None):
+        self.lame_lambda = 3.2e10
+        self.lame_mu     = 3.0e10
+        #-----------------------------------------------------------------------
+        # If the cutoff is none (ie not explicitly set) calculate the cutoff for
+        # this event. 
+        #-----------------------------------------------------------------------
+        num_involved_elements = float(len(self.element_slips.keys()))
+        if cutoff is None:
+            if  num_involved_elements >= self.cutoff_min_size:
+                cutoff = linear_interp(
+                    num_involved_elements,
+                    self.cutoff_min_size,
+                    self.cutoff_p2_size,
+                    self.cutoff_min,
+                    self.cutoff_p2
+                    )
+            else:
+                cutoff = self.cutoff_min
+    
+        sys.stdout.write('{:0.2f} cutoff : '.format(cutoff))
+        sys.stdout.flush()
+        if field_type.lower() == "gravity":
+            print("Computing gravity field...")
+            self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+        elif field_type.lower() == "displacement":
+            self.field_1d = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            print("Computing displacement field...")
+            # Grab only dz
+        #elif field_type.lower() == "insar":
+            #print("Computing InSAR field...")
+#TODO: Have quakelib compute fringes
+        elif field_type.lower() == "dilat_gravity":
+            print("Computing dilatational gravity field...")
+            self.field_1d = self.slip_map.dilat_gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+        #elif field_type.lower() == "potential":
+#TODO: Add potential calculation to QuakeLibElement.cpp, add here
+        # Reshape field
+        self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+        
     def plot_str(self):
         return self._plot_str
+        
+    def create_field_image(self, fringes=True):
+        #-----------------------------------------------------------------------
+        # Set all of the plotting properties
+        #-----------------------------------------------------------------------
+        cmap            = self.dmc['cmap']
+        water_color     = self.dmc['water_color']
+        boundary_color  = self.dmc['boundary_color']
+        land_color      = cmap(0.5)
+        plot_resolution = self.dmc['plot_resolution']
+        #-----------------------------------------------------------------------
+        # Set the map dimensions
+        #-----------------------------------------------------------------------
+        mw = self.lons_1d.size
+        mh = self.lats_1d.size
+        mwi = mw/plot_resolution
+        mhi = mh/plot_resolution
+        #-----------------------------------------------------------------------
+        # Fig1 is the background land and ocean.
+        #-----------------------------------------------------------------------
+        fig1 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
+        self.m1.ax = fig1.add_axes((0,0,1,1))
+        self.m1.drawmapboundary(
+            color=boundary_color,
+            linewidth=0,
+            fill_color=water_color
+        )
+        self.m1.fillcontinents(
+            color=land_color,
+            lake_color=water_color
+        )
+        #-----------------------------------------------------------------------
+        # Fig2 is the deformations.
+        #-----------------------------------------------------------------------
+        fig2 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
+        self.m2.ax = fig2.add_axes((0,0,1,1))
+        
+        # make sure the values are located at the correct location on the map
+        dG_transformed = self.m2.transform_scalar(self.field, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
+        
+        if self.norm is None:
+            #self.norm = mcolor.Normalize(vmin=np.amin(dG_transformed), vmax=np.amax(dG_transformed))
+            # Changed units to microgals (multiply MKS unit by 10^8)
+            self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
+        
+        #self.m2.imshow(dG_transformed, cmap=cmap, norm=self.norm)
+        # Changed units to microgals (multiply MKS unit by 10^8)
+        self.m2.imshow(dG_transformed*float(pow(10,8)), cmap=cmap, norm=self.norm)
+        #-----------------------------------------------------------------------
+        # Composite fig 1 - 2 together
+        #-----------------------------------------------------------------------
+        # FIGURE 1 draw the renderer
+        fig1.canvas.draw()
+        
+        # FIGURE 1 Get the RGBA buffer from the figure
+        w,h = fig1.canvas.get_width_height()
+        buf = np.fromstring ( fig1.canvas.tostring_argb(), dtype=np.uint8 )
+        buf.shape = ( w, h,4 )
+     
+        # FIGURE 1 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+        buf = np.roll ( buf, 3, axis = 2 )
+        im1 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        
+        # FIGURE 2 draw the renderer
+        fig2.canvas.draw()
+        
+        # FIGURE 2 Get the RGBA buffer from the figure
+        w,h = fig2.canvas.get_width_height()
+        buf = np.fromstring ( fig2.canvas.tostring_argb(), dtype=np.uint8 )
+        buf.shape = ( w, h,4 )
+     
+        # FIGURE 2 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+        buf = np.roll ( buf, 3, axis = 2 )
+        im2 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        # Clear all three figures
+        fig1.clf()
+        fig2.clf()
+        plt.close('all')
+        gc.collect()
+        return im2
+
+    def plot_field(self, field_type, output_file=None, fringes=True, hi_res=False, cutoff=None):
+        self.compute_field(field_type, cutoff=cutoff)
+        map_image = self.create_field_image(fringes=fringes)
+        
+        sys.stdout.write('map overlay : ')
+        sys.stdout.flush()
+        # Convert the fault traces to lat-lon
+        """
+        fault_traces_latlon = {}
+        for secid in fault_traces.iterkeys():
+             fault_traces_latlon[secid] = zip(*[(lambda y: (y.lat(),y.lon()))(self.convert.convert2LatLon(quakelib.Vec3(x[0], x[1], x[2]))) for x in fault_traces[secid]])
+        """
+        #---------------------------------------------------------------------------
+        # Plot all of the geographic info on top of the displacement map image.
+        #---------------------------------------------------------------------------
+        # Grab all of the plot properties that we will need.
+        # properties that are fringes dependent
+        if fringes and field_type == 'displacement':
+            cmap            = self.dmc['cmap_f']
+            coastline_color = self.dmc['coastline_color_f']
+            country_color   = self.dmc['country_color_f']
+            state_color     = self.dmc['state_color_f']
+            fault_color     = self.dmc['fault_color_f']
+            map_tick_color  = self.dmc['map_tick_color_f']
+            map_frame_color = self.dmc['map_frame_color_f']
+            grid_color      = self.dmc['grid_color_f']
+            cb_fontcolor    = self.dmc['cb_fontcolor_f']
+        else:
+            cmap            = self.dmc['cmap']
+            coastline_color = self.dmc['coastline_color']
+            country_color   = self.dmc['country_color']
+            state_color     = self.dmc['state_color']
+            fault_color     = self.dmc['fault_color']
+            map_tick_color  = self.dmc['map_tick_color']
+            map_frame_color = self.dmc['map_frame_color']
+            grid_color      = self.dmc['grid_color']
+            cb_fontcolor    = self.dmc['cb_fontcolor']
+
+        # properties that are not fringes dependent
+        boundary_width  = self.dmc['boundary_width']
+        coastline_width = self.dmc['coastline_width']
+        country_width   = self.dmc['country_width']
+        state_width     = self.dmc['state_width']
+        river_width     = self.dmc['river_width']
+        fault_width     = self.dmc['fault_width']
+        map_frame_width = self.dmc['map_frame_width']
+        map_fontsize    = self.dmc['map_fontsize']
+        arrow_inset     = self.dmc['arrow_inset']
+        arrow_fontsize  = self.dmc['arrow_fontsize']
+        cb_fontsize     = self.dmc['cb_fontsize']
+        cb_height       = self.dmc['cb_height']
+        cb_margin_t     = self.dmc['cb_margin_t']
+        grid_width      = self.dmc['grid_width']
+        num_grid_lines  = self.dmc['num_grid_lines']
+        font            = self.dmc['font']
+        font_bold       = self.dmc['font_bold']
+
+        map_resolution  = self.dmc['map_resolution']
+        map_projection  = self.dmc['map_projection']
+        plot_resolution = self.dmc['plot_resolution']
+
+        # The sizing for the image is tricky. The aspect ratio of the plot is fixed,
+        # so we cant set all of margins to whatever we want. We will set the anchor
+        # to the top, left margin position. Then scale the image based on the
+        # bottom/right margin, whichever is bigger.
+
+        mw = self.lons_1d.size
+        mh = self.lats_1d.size
+
+        if mh > mw:
+            ph = 768.0
+            pw = mw + 70.0 + 40.0
+        else:
+            pw = 790.0
+            ph = mh + 70.0 + 40.0
+
+        width_frac = mw/pw
+        height_frac = mh/ph
+        left_frac = 70.0/pw
+        bottom_frac = 70.0/ph
+
+        pwi = pw/plot_resolution
+        phi = ph/plot_resolution
+
+        if hi_res:
+            fig_res = plot_resolution*4.0
+        else:
+            fig_res = plot_resolution
+
+        fig4 = plt.figure(figsize=(pwi, phi), dpi=fig_res)
+
+        #---------------------------------------------------------------------------
+        # m4, fig4 is all of the boundary data.
+        #---------------------------------------------------------------------------
+        m4 = Basemap(
+            llcrnrlon=self.min_lon,
+            llcrnrlat=self.min_lat,
+            urcrnrlon=self.max_lon,
+            urcrnrlat=self.max_lat,
+            lat_0=(self.max_lat+self.min_lat)/2.0,
+            lon_0=(self.max_lon+self.min_lon)/2.0,
+            resolution=map_resolution,
+            projection=map_projection,
+            suppress_ticks=True
+        )
+        m4.ax = fig4.add_axes((left_frac,bottom_frac,width_frac,height_frac))
+
+        # draw coastlines, edge of map.
+        m4.drawcoastlines(color=coastline_color, linewidth=coastline_width)
+
+        # draw countries
+        m4.drawcountries(linewidth=country_width, color=country_color)
+
+        # draw states
+        m4.drawstates(linewidth=state_width, color=state_color)
+
+        # draw parallels.
+        parallels = np.linspace(self.lats_1d.min(), self.lats_1d.max(), num_grid_lines+1)
+        m4_parallels = m4.drawparallels(parallels, labels=[1,0,0,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10], fontsize=map_fontsize)
+
+        # draw meridians
+        meridians = np.linspace(self.lons_1d.min(), self.lons_1d.max(), num_grid_lines+1)
+        m4_meridians = m4.drawmeridians(meridians, labels=[0,0,1,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10], fontsize=map_fontsize)
+
+        if field_type == 'displacement':
+            box_size = 70.0
+            # draw the azimuth look arrow
+            az_width_frac    = box_size/pw
+            az_height_frac   = box_size/ph
+            az_left_frac     = (70.0 + mw - arrow_inset - pw*az_width_frac)/pw
+            az_bottom_frac   = (70.0 + mh - arrow_inset - ph*az_height_frac)/ph
+            az_ax = fig4.add_axes((az_left_frac,az_bottom_frac,az_width_frac,az_height_frac))
+
+            az_ax.set_xlim((0,1.0))
+            az_ax.set_ylim((0,1.0))
+            for item in az_ax.yaxis.get_ticklabels() + az_ax.xaxis.get_ticklabels() + az_ax.yaxis.get_ticklines() + az_ax.xaxis.get_ticklines():
+                item.set_alpha(0)
+
+            az_arrow_start_x    = 0.5 - (0.8/2.0)*math.sin(self.look_azimuth)
+            az_arrow_start_y    = 0.5 - (0.8/2.0)*math.cos(self.look_azimuth)
+            az_arrow_dx      = 0.8*math.sin(self.look_azimuth)
+            az_arrow_dy      = 0.8*math.cos(self.look_azimuth)
+
+            az_ax.arrow( az_arrow_start_x , az_arrow_start_y, az_arrow_dx, az_arrow_dy, head_width=0.1, head_length= 0.1, overhang=0.1, shape='right', length_includes_head=True, lw=1.0, fc='k' )
+            az_ax.add_line(mlines.Line2D((0.5,0.5), (0.5,0.8), lw=1.0, ls=':', c='k', dashes=(2.0,1.0)))
+            az_ax.add_patch(mpatches.Arc((0.5,0.5), 0.3, 0.3, theta1=90.0 - self.convert.rad2deg(self.look_azimuth), theta2=90.0, fc='none', lw=1.0, ls='dotted', ec='k'))
+            az_ax.text(1.0, 1.0, 'az = {:0.1f}{}'.format(self.convert.rad2deg(self.look_azimuth),r'$^{\circ}$'), fontproperties=font_bold, size=arrow_fontsize, ha='right', va='top')
+
+            # draw the altitude look arrow
+            al_width_frac    = box_size/pw
+            al_height_frac   = box_size/ph
+            al_left_frac     = (70.0 + mw - arrow_inset - pw*az_width_frac)/pw
+            al_bottom_frac   = (70.0 + mh - arrow_inset - ph*az_height_frac - ph*al_height_frac)/ph
+            al_ax = fig4.add_axes((al_left_frac,al_bottom_frac,al_width_frac,al_height_frac))
+
+            al_ax.set_xlim((0,1.0))
+            al_ax.set_ylim((0,1.0))
+            for item in al_ax.yaxis.get_ticklabels() + al_ax.xaxis.get_ticklabels() + al_ax.yaxis.get_ticklines() + al_ax.xaxis.get_ticklines():
+                item.set_alpha(0)
+
+            al_arrow_start_x    = 0.1 + 0.8*math.cos(self.look_elevation)
+            al_arrow_start_y    = 0.1 + 0.8*math.sin(self.look_elevation)
+            al_arrow_dx      = -0.8*math.cos(self.look_elevation)
+            al_arrow_dy      = -0.8*math.sin(self.look_elevation)
+
+            al_ax.arrow( al_arrow_start_x , al_arrow_start_y, al_arrow_dx, al_arrow_dy, head_width=0.1, head_length= 0.1, overhang=0.1, shape='left', length_includes_head=True, lw=1.0, fc='k' )
+            al_ax.add_line(mlines.Line2D((0.1,0.9), (0.1,0.1), lw=1.0, ls=':', c='k', dashes=(2.0,1.0)))
+            al_ax.add_patch(mpatches.Arc((0.1,0.1), 0.5, 0.5, theta1=0.0, theta2=self.convert.rad2deg(self.look_elevation), fc='none', lw=1.0, ls='dotted', ec='k'))
+            al_ax.text(1.0, 1.0, 'al = {:0.1f}{}'.format(self.convert.rad2deg(self.look_elevation),r'$^{\circ}$'), fontproperties=font_bold, size=arrow_fontsize, ha='right', va='top')
+            
+            # draw the box with the magnitude
+            mag_width_frac    = box_size/pw
+            mag_height_frac   = 15.0/ph    # originally 10.0/ph
+            mag_left_frac     = (70.0 + mw - arrow_inset - pw*az_width_frac)/pw
+            mag_bottom_frac   = (70.0 + mh - arrow_inset - ph*az_height_frac  - ph*az_height_frac - ph*mag_height_frac)/ph
+            mag_ax = fig4.add_axes((mag_left_frac,mag_bottom_frac,mag_width_frac,mag_height_frac))
+
+            mag_ax.set_xlim((0,1.0))
+            mag_ax.set_ylim((0,1.0))
+            for item in mag_ax.yaxis.get_ticklabels() + mag_ax.xaxis.get_ticklabels() + mag_ax.yaxis.get_ticklines() + mag_ax.xaxis.get_ticklines():
+                item.set_alpha(0)
+            
+            mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(event_data['event_magnitude'])), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
+
+        # add the map image to the plot
+        m4.imshow(map_image, origin='upper')
+
+        # print faults on lon-lat plot
+        """
+        for sid, sec_trace in fault_traces_latlon.iteritems():
+            trace_Xs, trace_Ys = m4(sec_trace[1], sec_trace[0])
+            
+            if sid in event_sections:
+                linewidth = fault_width + 2.5
+            else:
+                linewidth = fault_width
+
+            m4.plot(trace_Xs, trace_Ys, color=fault_color, linewidth=linewidth, solid_capstyle='round', solid_joinstyle='round')
+        """
+
+        #plot the cb
+        left_frac = 70.0/pw
+        bottom_frac = (70.0 - cb_height - cb_margin_t)/ph
+        width_frac = mw/pw
+        height_frac = cb_height/ph
+
+        cb_ax = fig4.add_axes((left_frac,bottom_frac,width_frac,height_frac))
+        norm = self.norm
+        cb = mcolorbar.ColorbarBase(cb_ax, cmap=cmap,
+               norm=norm,
+               orientation='horizontal')
+        if field_type == 'displacement':
+            if fringes:
+                cb_title = 'Displacement [m]'
+            else:
+                cb_title = 'Total displacement [m]'
+
+        elif field_type == 'gravity' or field_type == 'dilat_gravity':
+            cb_title        = r'Gravity changes [$\mu gal$]'
+            # Make first and last ticks on colorbar be <MIN and >MAX
+            cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
+            cb_tick_labs[0] = '<'+cb_tick_labs[0]
+            cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
+            cb_ax.set_xticklabels(cb_tick_labs)
+
+        cb_ax.set_title(cb_title, fontproperties=font, color=cb_fontcolor, size=cb_fontsize, va='top', ha='left', position=(0,-1.5) )
+
+        for label in cb_ax.xaxis.get_ticklabels():
+            label.set_fontproperties(font)
+            label.set_fontsize(cb_fontsize)
+            label.set_color(cb_fontcolor)
+        for line in cb_ax.xaxis.get_ticklines():
+            line.set_alpha(0)
+
+        fig4.savefig(output_file, format='png', dpi=fig_res)
+        sys.stdout.write('\nPlot saved: {}'.format(output_file))
+        sys.stdout.write('\ndone\n')
+        sys.stdout.flush()
 
 class BasePlotter:
     def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
@@ -518,9 +1072,11 @@ if __name__ == "__main__":
             help="Tau parameter for the Weibull distribution, must also specify Beta")
             
     # Field plotting arguments
-    parser.add_argument('--field_test', required=False, action='store_true',
+    parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
     parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar")
+    parser.add_argument('--field_savefile', required=False, help="File name to save ")
+    parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -555,7 +1111,7 @@ if __name__ == "__main__":
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
-        if type != "gravity" or type != "dilat_gravity" or type != "displacement" or type != "insar":
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar":
             raise "Field type is one of gravity, dilat_gravity, displacement, insar"
 
     # Read the stress files if specified
@@ -610,12 +1166,18 @@ if __name__ == "__main__":
     if args.plot_waiting_times:
         filename = SaveFile(args.event_file, "waiting_times").filename
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
-    if args.field_test:
-        slips = np.zeros(2628)
+    if args.field_plot:
+        element_ids = model.getElementIDs()
         ele_slips = {}
-        for i in range(len(slips)):
-            ele_slips[i] = slips[i]           
-        SlipMap(ele_slips, model)
+        for ele_id in element_ids:
+            ele_slips[ele_id] = 5.0      
+            sys.stdout.write("Loading {} elements...".format(len(element_ids))) 
+        if args.colorbar_max: 
+            cbar_max = args.colorbar_max
+        else:
+            cbar_max = None
+        FP = FieldPlotter(model, element_slips=ele_slips, cbar_max=cbar_max)
+        FP.plot_field(args.field_type, output_file=args.field_savefile, cutoff=1000)
 
     # Generate stress plots
     if args.stress_elements:
