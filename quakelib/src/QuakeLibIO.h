@@ -552,11 +552,7 @@ namespace quakelib {
             LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
             
             Vec<3> get_base(void) const {
-                FloatList base;
-                base.push_back(_base.lat());
-                base.push_back(_base.lon());
-                base.push_back(_base.altitude());
-                return Vec<3>(base);
+                return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
             }
             
             std::vector<double> get_latlon_bounds(void) const {
