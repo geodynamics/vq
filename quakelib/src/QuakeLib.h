@@ -322,7 +322,6 @@ namespace quakelib {
                 for (unsigned int i=0; i < involved_elements.size(); i++)
                     add_element(involved_elements[i]);
             };
-            //void set_base(LatLonDepth &base) { _base = base; };
             VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
             FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
             FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);

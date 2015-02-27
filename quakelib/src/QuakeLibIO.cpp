@@ -798,6 +798,11 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     get_bounds(min_latlon, max_latlon);
     min_latlon.set_altitude(0);
     reset_base_coord(min_latlon);
+    // Keep track of Lat/Lon bounds in the ModelWorld
+    _min_lat = min_latlon.lat();
+    _min_lon = min_latlon.lon();
+    _max_lat = max_latlon.lat();
+    _max_lon = max_latlon.lon();
 
     return 0;
 }
@@ -856,8 +861,6 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     }
     _base = new_base;
 }
-
-
 
 // TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
 // Also assumes elements will be in order along the trace
@@ -1077,6 +1080,11 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
     get_bounds(min_latlon, max_latlon);
     min_latlon.set_altitude(0);
     reset_base_coord(min_latlon);
+    // Keep track of Lat/Lon bounds in the ModelWorld
+    _min_lat = min_latlon.lat();
+    _min_lon = min_latlon.lon();
+    _max_lat = max_latlon.lat();
+    _max_lon = max_latlon.lon();
 #else
     // TODO: Error out
 #endif

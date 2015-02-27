@@ -535,6 +535,8 @@ namespace quakelib {
             static double bar2pascal(const double &bars) {
                 return bars*1e5;
             };
+            
+            VectorList convertArray2xyz(const FloatList &lats, const FloatList &lons) const;
     };
 
     /*
