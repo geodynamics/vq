@@ -305,7 +305,7 @@ namespace quakelib {
 
     std::ostream &operator<<(std::ostream &os, const Vec<2> &pt);
     std::ostream &operator<<(std::ostream &os, const Vec<3> &pt);
-    
+
     typedef std::vector< double > FloatList;
     typedef std::vector< Vec<3> > VectorList;
 
@@ -535,7 +535,7 @@ namespace quakelib {
             static double bar2pascal(const double &bars) {
                 return bars*1e5;
             };
-            
+
             VectorList convertArray2xyz(const FloatList &lats, const FloatList &lons) const;
     };
 

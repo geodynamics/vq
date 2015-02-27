@@ -496,7 +496,7 @@ namespace quakelib {
             std::map<UIndex, ModelSection>  _sections;
             LatLonDepth _base;
             double _min_lat, _max_lat, _min_lon, _max_lon;
-            
+
 #ifdef HDF5_FOUND
             void read_section_hdf5(const hid_t &data_file);
             void read_element_hdf5(const hid_t &data_file);
@@ -550,11 +550,11 @@ namespace quakelib {
 
             LatLonDepth min_bound(const UIndex &fid=INVALID_INDEX) const;
             LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
-            
+
             Vec<3> get_base(void) const {
                 return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
             }
-            
+
             std::vector<double> get_latlon_bounds(void) const {
                 std::vector<double> bounds(4);
                 bounds[0] = _min_lat;
@@ -573,7 +573,7 @@ namespace quakelib {
 
             SimElement create_sim_element(const UIndex &element_id) const;
             SlippedElement create_slipped_element(const UIndex &element_id) const;
-            
+
             ElementIDSet getElementIDs(void) const;
 
             bool overwrite(const ModelRemapping &remap);

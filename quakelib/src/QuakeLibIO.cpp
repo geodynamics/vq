@@ -859,6 +859,7 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     for (it=_vertices.begin(); it!=_vertices.end(); ++it) {
         it->second.set_lld(it->second.lld(), new_base);
     }
+
     _base = new_base;
 }
 
@@ -1594,7 +1595,7 @@ quakelib::SlippedElement quakelib::ModelWorld::create_slipped_element(const UInd
         vit = _vertices.find(eit->second.vertex(i));
         new_element.set_vert(i, vit->second.xyz());
     }
-    
+
     // TODO, vertices lat/lon or xyz, save base?
     new_element.set_id(eit->second.id());
     new_element.set_section_id(eit->second.section_id());
