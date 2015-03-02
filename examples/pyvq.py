@@ -23,6 +23,7 @@ try:
     import matplotlib.colors as mcolor
     import matplotlib.colorbar as mcolorbar
     import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
     from PIL import Image #TODO: Move this guy
     plt.switch_backend('agg') #Required for map plots
 except ImportError:
@@ -36,6 +37,7 @@ except ImportError:
     
 MIN_LON_DIFF = 0.118   #corresponds to 10km at lat,lon = (40.35, -124.85)
 MIN_LAT_DIFF = 0.090   #corresponds to 10km at lat,lon = (40.35, -124.85)
+MIN_FIT_MAG  = 5.0     #lower end of magnitude for fitting freq_mag plot with b=1 curve
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -154,22 +156,41 @@ class Events:
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
         
 class FieldPlotter:
-    def __init__(self, model, element_slips=None, event_id=None, events=None, cbar_max=None):
+    def __init__(self, model, field_type, element_slips=None, event_id=None, events=None,
+                cbar_max=None):
 #TODO: Set fonts and figure size explicitly
-        self.max_lat, self.max_lon = 0.0,0.0
+        self.field_type = field_type.lower()
+        self.event_id = None
+        if event_id is not None: self.event_id = event_id
         plot_height = 768.0
         max_map_width = 690.0
         max_map_height = 658.0
-        map_res     = 'i'
-        padding     = 0.08
+        map_res  = 'i'
+        padding  = 0.08
         map_proj = 'cyl'
+        self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
         # Cutoff is the max distance away from elements to compute
         # the field given in units of element length.
-        self.cutoff_min_size = 20.0
-        self.cutoff_min = 20.0
-        self.cutoff_p2_size = 65.0
-        self.cutoff_p2 = 90.0
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+            self.cutoff_min_size = 20.0
+            self.cutoff_min = 20.0
+            self.cutoff_p2_size = 65.0
+            self.cutoff_p2 = 90.0
+        elif self.field_type == 'displacement' or self.field_type == 'insar' or self.field_type == 'potential':
+            self.look_azimuth = None
+            self.look_elevation = None
+            self.cutoff_min_size = 20.0
+            self.cutoff_min = 46.5
+            self.cutoff_p2_size = 65.0
+            self.cutoff_p2 = 90.0    
+            self.dX = None
+            self.dY = None
+            self.dZ = None
+            self.dX_min = sys.float_info.max
+            self.dY_min = sys.float_info.max
+            self.dZ_min = sys.float_info.max
+            self.wavelength = 0.03
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
         #if event_id is not None and events is not None and element_slips is None:
@@ -259,9 +280,9 @@ class FieldPlotter:
         self.dmc = {
             'font':               mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='normal'),
             'font_bold':          mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='bold'),
-            'cmap':               plt.get_cmap('seismic'),
         #water
             'water_color':          '#4eacf4',
+            'water_color_f':        '#4eacf4',
         #map boundaries
             'boundary_color':       '#000000',
             'boundary_width':       1.0,
@@ -289,9 +310,7 @@ class FieldPlotter:
             'map_frame_color':      '#000000',
             'map_frame_width':      1,
         #map_fontsize = 12
-            'map_fontsize':         16.0,   # 12   THIS IS BROKEN
-            'arrow_inset':          14.0, # 10
-            'arrow_fontsize':       12.0, #  9
+            'map_fontsize':         26.0,   # 12   THIS IS BROKEN
         #cb_fontsize = 12
             'cb_fontsize':          20.0, # 12
             'cb_fontcolor':         '#000000',
@@ -301,7 +320,25 @@ class FieldPlotter:
             'cbar_min':             -cbar_max,
             'cbar_max':             cbar_max
         }
-        self.norm = None
+        # Set field-specific plotting arguments
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential':
+            self.dmc['cmap'] = plt.get_cmap('seismic')
+        elif self.field_type == 'displacement' or self.field_type == 'insar':
+            self.dmc['boundary_color_f'] = '#ffffff'
+            self.dmc['coastline_color_f'] = '#ffffff'
+            self.dmc['cmap'] = plt.get_cmap('YlOrRd')
+            self.dmc['cmap_f'] = plt.get_cmap('jet')
+            self.dmc['country_color_f'] = '#ffffff'
+            self.dmc['state_color_f'] = '#ffffff'
+            self.dmc['fault_color_f'] = '#ffffff'
+            self.dmc['event_fault_color_f'] = '#ffffff'
+            self.dmc['grid_color_f'] = '#ffffff'
+            self.dmc['map_tick_color_f'] = '#000000'
+            self.dmc['map_frame_color_f'] = '#000000'
+            self.dmc['arrow_inset'] = 18.0
+            self.dmc['arrow_fontsize'] = 14.0
+            self.dmc['cb_fontcolor_f'] = '#000000'
+            self.dmc['cb_margin_t'] = 4.0
         #-----------------------------------------------------------------------
         # m1, fig1 is the oceans and the continents. This will lie behind the
         # masked data image.
@@ -346,7 +383,7 @@ class FieldPlotter:
             suppress_ticks=True
         )
         
-    def compute_field(self, field_type, cutoff=None):
+    def compute_field(self, cutoff=None):
         self.lame_lambda = 3.2e10
         self.lame_mu     = 3.0e10
         #-----------------------------------------------------------------------
@@ -365,38 +402,72 @@ class FieldPlotter:
                     )
             else:
                 cutoff = self.cutoff_min
-    
-        sys.stdout.write('{:0.2f} cutoff : '.format(cutoff))
+        sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
         sys.stdout.flush()
-        if field_type.lower() == "gravity":
+        if self.field_type == "gravity":
             print("Computing gravity field...")
+            self.fringes = False
             self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
-        elif field_type.lower() == "displacement":
+            # Reshape field
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+        elif self.field_type == "displacement" or self.field_type == "insar":
+            if self.field_type == "displacement": 
+                sys.stdout.write("Computing displacement field...")
+                self.fringes = False
+            else:
+                print("Computing InSAR field...")
+                self.fringes = True
             self.field_1d = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
-            print("Computing displacement field...")
-            # Grab only dz
-        #elif field_type.lower() == "insar":
-            #print("Computing InSAR field...")
-#TODO: Have quakelib compute fringes
-        elif field_type.lower() == "dilat_gravity":
-            print("Computing dilatational gravity field...")
-            self.field_1d = self.slip_map.dilat_gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            disp = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size,3))
+            # Parse returned VectorList into separate dX,dY,dZ 2D arrays
+            self.dX = np.empty((self.lats_1d.size, self.lons_1d.size))
+            self.dY = np.empty((self.lats_1d.size, self.lons_1d.size))
+            self.dZ = np.empty((self.lats_1d.size, self.lons_1d.size))
+            it = np.nditer(self.dX, flags=['multi_index'])
+            while not it.finished:
+                self.dX[it.multi_index] = disp[it.multi_index][0]
+                self.dY[it.multi_index] = disp[it.multi_index][1]
+                self.dZ[it.multi_index] = disp[it.multi_index][2]
+                it.iternext()
         #elif field_type.lower() == "potential":
 #TODO: Add potential calculation to QuakeLibElement.cpp, add here
-        # Reshape field
-        self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+
         
     def plot_str(self):
         return self._plot_str
         
-    def create_field_image(self, fringes=True):
+    def create_field_image(self, angles=None):
         #-----------------------------------------------------------------------
         # Set all of the plotting properties
         #-----------------------------------------------------------------------
-        cmap            = self.dmc['cmap']
-        water_color     = self.dmc['water_color']
-        boundary_color  = self.dmc['boundary_color']
-        land_color      = cmap(0.5)
+        if self.field_type == 'displacement' or self.field_type == 'insar':
+            if self.fringes:
+                cmap            = self.dmc['cmap_f']
+                water_color     = self.dmc['water_color_f']
+                boundary_color  = self.dmc['boundary_color_f']
+            else:
+                cmap            = self.dmc['cmap']
+                water_color     = self.dmc['water_color']
+                boundary_color  = self.dmc['boundary_color']
+            land_color      = cmap(0)
+            if angles is not None:
+                self.look_azimuth = angles[0]
+                self.look_elevation = angles[1]
+            else:
+                if self.field_type == 'insar':
+                    # Typical angles for InSAR are approx 30 deg and 40 deg respectively
+                    self.look_azimuth = 30.0*np.pi/180.0
+                    self.look_elevation = 40.0*np.pi/180.0
+                else:
+                    self.look_azimuth = 0.0
+                    self.look_elevation = 0.0
+            sys.stdout.write("Displacements projected along azimuth={:.1f}deg and elevation={:.1f}deg : ".format(self.look_azimuth*180.0/np.pi, self.look_elevation*180.0/np.pi))
+            sys.stdout.flush()
+        else:
+            cmap            = self.dmc['cmap']
+            water_color     = self.dmc['water_color']
+            boundary_color  = self.dmc['boundary_color']
+            land_color      = cmap(0.5)
         plot_resolution = self.dmc['plot_resolution']
         #-----------------------------------------------------------------------
         # Set the map dimensions
@@ -425,17 +496,63 @@ class FieldPlotter:
         fig2 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
         self.m2.ax = fig2.add_axes((0,0,1,1))
         
-        # make sure the values are located at the correct location on the map
-        dG_transformed = self.m2.transform_scalar(self.field, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
+        if self.field_type == 'displacement' or self.field_type == 'insar':
+            # Use observing angles to compute projection (field_proj) along the observing direction
+            self.field_proj = -self.dX * math.sin(self.look_azimuth) * math.cos(self.look_elevation) - self.dY * math.cos(self.look_azimuth) * math.cos(self.look_elevation) + self.dZ * math.sin(self.look_elevation)
+            
+            # Make sure field values are at correct map location
+            self.field_transformed = self.m2.transform_scalar(self.field_proj, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
+                        
+            if self.fringes:
+                # prepare the colors for the InSAR plot and do the plot
+                self.insar = np.empty((self.field_transformed.shape[0],self.field_transformed.shape[1],4))
+                r,g,b,a = cmap(0)
+                self.insar[:,:,0].fill(r)
+                self.insar[:,:,1].fill(g)
+                self.insar[:,:,2].fill(b)
+                self.insar[:,:,3].fill(a)
+                non_zeros = self.field_transformed.nonzero()
+                for n,i in enumerate(non_zeros[0]):
+                    j = non_zeros[1][n]
+                    r,g,b,a = cmap(math.modf(abs(self.field_transformed[i,j])/self.wavelength)[0])
+                    self.insar[i, j, 0] = r
+                    self.insar[i, j, 1] = g
+                    self.insar[i, j, 2] = b
+                    self.insar[i, j, 3] = a
+                if self.norm is None:
+                    self.norm = mcolor.Normalize(vmin=0, vmax=self.wavelength)
+                im = self.m2.imshow(self.insar, interpolation='spline36')
+            else:
+                # Prepare the displacement plot
+                self.insar = np.empty(self.field_transformed.shape)
+                non_zeros = self.field_transformed.nonzero()
+                self.insar.fill(5e-4)
+                self.insar[non_zeros] = np.fabs(self.field_transformed[non_zeros])
+                vmax = np.amax(self.insar)
+                if vmax <= 1:
+                    mod_vmax = 1
+                elif vmax > 1 and vmax <= 10:
+                    mod_vmax = 10
+                elif vmax > 10 and vmax <= 100:
+                    mod_vmax = 100
+                elif vmax > 100 and vmax <= 1000:
+                    mod_vmax = 1000
+                elif vmax > 1000:
+                    mod_vmax = 1000
+                if self.norm is None:
+                    self.norm = mcolor.LogNorm(vmin=5e-4, vmax=mod_vmax, clip=True)
+                im = self.m2.imshow(self.insar, cmap=cmap, norm=self.norm)            
+        else:
+            # make sure the values are located at the correct location on the map
+            self.field_transformed = self.m2.transform_scalar(self.field, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
+            
+            if self.norm is None:
+                self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
         
-        if self.norm is None:
-            #self.norm = mcolor.Normalize(vmin=np.amin(dG_transformed), vmax=np.amax(dG_transformed))
             # Changed units to microgals (multiply MKS unit by 10^8)
-            self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
-        
-        #self.m2.imshow(dG_transformed, cmap=cmap, norm=self.norm)
-        # Changed units to microgals (multiply MKS unit by 10^8)
-        self.m2.imshow(dG_transformed*float(pow(10,8)), cmap=cmap, norm=self.norm)
+            if self.field_type == 'gravity': self.field_transformed *= float(pow(10,8))
+            if self.field_type == 'dilat_gravity': self.field_transformed *= float(pow(10,8))
+            self.m2.imshow(self.field_transformed, cmap=cmap, norm=self.norm)
         #-----------------------------------------------------------------------
         # Composite fig 1 - 2 together
         #-----------------------------------------------------------------------
@@ -469,9 +586,9 @@ class FieldPlotter:
         gc.collect()
         return im2
 
-    def plot_field(self, field_type, output_file=None, fringes=True, hi_res=False, cutoff=None):
-        self.compute_field(field_type, cutoff=cutoff)
-        map_image = self.create_field_image(fringes=fringes)
+    def plot_field(self, output_file=None, cutoff=None):
+        self.compute_field(cutoff=cutoff)
+        map_image = self.create_field_image()
         
         sys.stdout.write('map overlay : ')
         sys.stdout.flush()
@@ -486,7 +603,7 @@ class FieldPlotter:
         #---------------------------------------------------------------------------
         # Grab all of the plot properties that we will need.
         # properties that are fringes dependent
-        if fringes and field_type == 'displacement':
+        if self.fringes and self.field_type == 'insar':
             cmap            = self.dmc['cmap_f']
             coastline_color = self.dmc['coastline_color_f']
             country_color   = self.dmc['country_color_f']
@@ -553,10 +670,7 @@ class FieldPlotter:
         pwi = pw/plot_resolution
         phi = ph/plot_resolution
 
-        if hi_res:
-            fig_res = plot_resolution*4.0
-        else:
-            fig_res = plot_resolution
+        fig_res = plot_resolution
 
         fig4 = plt.figure(figsize=(pwi, phi), dpi=fig_res)
 
@@ -587,13 +701,13 @@ class FieldPlotter:
 
         # draw parallels.
         parallels = np.linspace(self.lats_1d.min(), self.lats_1d.max(), num_grid_lines+1)
-        m4_parallels = m4.drawparallels(parallels, labels=[1,0,0,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10], fontsize=map_fontsize)
+        m4_parallels = m4.drawparallels(parallels, fontsize=map_fontsize, labels=[1,0,0,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10])
 
         # draw meridians
         meridians = np.linspace(self.lons_1d.min(), self.lons_1d.max(), num_grid_lines+1)
-        m4_meridians = m4.drawmeridians(meridians, labels=[0,0,1,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10], fontsize=map_fontsize)
+        m4_meridians = m4.drawmeridians(meridians, fontsize=map_fontsize, labels=[0,0,1,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10])
 
-        if field_type == 'displacement':
+        if self.field_type == 'displacement' or self.field_type == 'insar':
             box_size = 70.0
             # draw the azimuth look arrow
             az_width_frac    = box_size/pw
@@ -629,8 +743,8 @@ class FieldPlotter:
             for item in al_ax.yaxis.get_ticklabels() + al_ax.xaxis.get_ticklabels() + al_ax.yaxis.get_ticklines() + al_ax.xaxis.get_ticklines():
                 item.set_alpha(0)
 
-            al_arrow_start_x    = 0.1 + 0.8*math.cos(self.look_elevation)
-            al_arrow_start_y    = 0.1 + 0.8*math.sin(self.look_elevation)
+            al_arrow_start_x = 0.1 + 0.8*math.cos(self.look_elevation)
+            al_arrow_start_y = 0.1 + 0.8*math.sin(self.look_elevation)
             al_arrow_dx      = -0.8*math.cos(self.look_elevation)
             al_arrow_dy      = -0.8*math.sin(self.look_elevation)
 
@@ -641,7 +755,10 @@ class FieldPlotter:
             
             # draw the box with the magnitude
             mag_width_frac    = box_size/pw
-            mag_height_frac   = 15.0/ph    # originally 10.0/ph
+            if self.fringes:
+                mag_height_frac   = 25.0/ph    # originally 10.0/ph
+            else:
+                mag_height_frac   = 15.0/ph 
             mag_left_frac     = (70.0 + mw - arrow_inset - pw*az_width_frac)/pw
             mag_bottom_frac   = (70.0 + mh - arrow_inset - ph*az_height_frac  - ph*az_height_frac - ph*mag_height_frac)/ph
             mag_ax = fig4.add_axes((mag_left_frac,mag_bottom_frac,mag_width_frac,mag_height_frac))
@@ -651,7 +768,12 @@ class FieldPlotter:
             for item in mag_ax.yaxis.get_ticklabels() + mag_ax.xaxis.get_ticklabels() + mag_ax.yaxis.get_ticklines() + mag_ax.xaxis.get_ticklines():
                 item.set_alpha(0)
             
-            mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(event_data['event_magnitude'])), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
+            if self.event_id is not None:
+                mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(event_data['event_magnitude'])), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
+            else:
+                avg_slip = np.average([x[1] for x in self.element_slips.items()])
+                mag_ax.text(0.5, 0.5, 'mean slip \n{:0.3f}m'.format(avg_slip), fontproperties=font_bold, size=arrow_fontsize-1, ha='center', va='center')
+
 
         # add the map image to the plot
         m4.imshow(map_image, origin='upper')
@@ -680,13 +802,13 @@ class FieldPlotter:
         cb = mcolorbar.ColorbarBase(cb_ax, cmap=cmap,
                norm=norm,
                orientation='horizontal')
-        if field_type == 'displacement':
-            if fringes:
+        if self.field_type == 'displacement' or self.field_type == 'insar':
+            if self.fringes:
                 cb_title = 'Displacement [m]'
             else:
                 cb_title = 'Total displacement [m]'
 
-        elif field_type == 'gravity' or field_type == 'dilat_gravity':
+        elif self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
             cb_title        = r'Gravity changes [$\mu gal$]'
             # Make first and last ticks on colorbar be <MIN and >MAX
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
@@ -847,7 +969,8 @@ class FrequencyMagnitudePlot(BasePlotter):
             freq_y.append(float(cum_freq[mag])/year_range)
         if b1:
             add_x = np.linspace(min(freq_x),max(freq_x),10)
-            add_y = 10**(math.log(freq_y[0],10)+freq_x[0]-add_x)
+            fit_point = (np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()
+            add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
             add_label = "b==1"
         if UCERF2:
             self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename, add_x=add_x, add_y=add_y, add_label=add_label)
@@ -1077,6 +1200,7 @@ if __name__ == "__main__":
     parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar")
     parser.add_argument('--field_savefile', required=False, help="File name to save ")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
+    parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1169,15 +1293,19 @@ if __name__ == "__main__":
     if args.field_plot:
         element_ids = model.getElementIDs()
         ele_slips = {}
+        if len(element_ids) == 0:
+            raise "Error in reading model file, please make sure the file exists."
+        else:
+            sys.stdout.write("Loading {} elements...".format(len(element_ids))) 
+            sys.stdout.flush()
         for ele_id in element_ids:
             ele_slips[ele_id] = 5.0      
-            sys.stdout.write("Loading {} elements...".format(len(element_ids))) 
         if args.colorbar_max: 
             cbar_max = args.colorbar_max
         else:
             cbar_max = None
-        FP = FieldPlotter(model, element_slips=ele_slips, cbar_max=cbar_max)
-        FP.plot_field(args.field_type, output_file=args.field_savefile, cutoff=1000)
+        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, cbar_max=cbar_max)
+        FP.plot_field(output_file=args.field_savefile, cutoff=1000)
 
     # Generate stress plots
     if args.stress_elements:
