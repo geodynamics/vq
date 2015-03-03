@@ -50,8 +50,11 @@ def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
 
 class SaveFile:
-    def __init__(self, event_file, plot_type):
-        self.filename = plot_type+"_"+event_file.split(".")[0]+".png"
+    def event_plot(self, event_file, plot_type):
+        return plot_type+"_"+event_file.split(".")[0]+".png"
+        
+    def field_plot(self, model_file, field_type, res):
+        return model_file.split(".")[0]+"_"+field_type+"_"+res+"_res.png"
 
 class MagFilter:
     def __init__(self, min_mag=None, max_mag=None):
@@ -159,16 +162,20 @@ class Events:
         
 class FieldPlotter:
     def __init__(self, model, field_type, element_slips=None, event_id=None, events=None,
-                cbar_max=None):
+                cbar_max=None, res='low'):
+                # res is 'low','med','hi'
 #TODO: Set fonts and figure size explicitly
         self.field_type = field_type.lower()
         self.event_id = None
         if event_id is not None: self.event_id = event_id
-        plot_height = 768.0
-        max_map_width = 690.0
-        max_map_height = 658.0
+        if res == 'low': self.res_mult = 1
+        elif res == 'med': self.res_mult = 2
+        elif res == 'hi': self.res_mult = 4
+        plot_height = 768.0*self.res_mult
+        max_map_width = 690.0*self.res_mult
+        max_map_height = 658.0*self.res_mult
         map_res  = 'i'
-        padding  = 0.08
+        padding  = 0.08*self.res_mult
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
@@ -305,7 +312,7 @@ class FieldPlotter:
         #map props
             'map_resolution':       map_res,
             'map_projection':       map_proj,
-            'plot_resolution':      72.0,
+            'plot_resolution':      72.0*self.res_mult,
             'map_tick_color':       '#000000',
             'map_frame_color':      '#000000',
             'map_frame_width':      1,
@@ -313,7 +320,7 @@ class FieldPlotter:
             'map_fontsize':         26.0,   # 12   THIS IS BROKEN
         #cb_fontsize = 12
             'cb_fontcolor':         '#000000',
-            'cb_height':            20.0,
+            'cb_height':            20.0*self.res_mult,
             'cb_margin_t':          2.0, # 10
         }
         # Set field-specific plotting arguments
@@ -323,10 +330,10 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 cbar_max = 0.002
             elif self.field_type == 'geoid':
-                cbar_max = 0.0002
+                cbar_max = 0.00015
+                
         if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
             self.dmc['cmap'] = plt.get_cmap('seismic')
-            #min/max scalar field values for colorbar
             self.dmc['cbar_min'] = -cbar_max
             self.dmc['cbar_max'] = cbar_max
             if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
@@ -335,7 +342,8 @@ class FieldPlotter:
                 self.dmc['cb_fontsize'] = 16.0
             elif self.field_type == 'geoid':
                 self.dmc['cb_fontsize'] = 15.0
-        elif self.field_type == 'displacement' or self.field_type == 'insar':
+                
+        if self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
             self.dmc['coastline_color_f'] = '#ffffff'
             self.dmc['cmap'] = plt.get_cmap('YlOrRd')
@@ -351,6 +359,7 @@ class FieldPlotter:
             self.dmc['arrow_fontsize'] = 14.0
             self.dmc['cb_fontcolor_f'] = '#000000'
             self.dmc['cb_margin_t'] = 4.0
+            self.dmc['cb_fontsize'] = 20.0
         #-----------------------------------------------------------------------
         # m1, fig1 is the oceans and the continents. This will lie behind the
         # masked data image.
@@ -417,7 +426,7 @@ class FieldPlotter:
         sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
         self.fringes = False
         if self.field_type == "gravity":
-            sys.stdout.write("Computing gravity field...")
+            sys.stdout.write("Computing gravity field at {} points...".format(self.lats_1d.size*self.lons_1d.size))
             self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             # Reshape field
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
@@ -436,7 +445,7 @@ class FieldPlotter:
             self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
             # To convert from potential to geoid height, divide by mean gravity
-            self.field /= G_0
+            self.field /= -G_0
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
                 sys.stdout.write("Computing displacement field...")
@@ -465,7 +474,7 @@ class FieldPlotter:
         # Set all of the plotting properties
         #-----------------------------------------------------------------------
         if self.field_type == 'displacement' or self.field_type == 'insar':
-            if self.fringes:
+            if self.field_type == 'insar':
                 cmap            = self.dmc['cmap_f']
                 water_color     = self.dmc['water_color_f']
                 boundary_color  = self.dmc['boundary_color_f']
@@ -486,12 +495,14 @@ class FieldPlotter:
                     self.look_azimuth = 0.0
                     self.look_elevation = 0.0
             sys.stdout.write("Displacements projected along azimuth={:.1f}deg and elevation={:.1f}deg : ".format(self.look_azimuth*180.0/np.pi, self.look_elevation*180.0/np.pi))
-            sys.stdout.flush()
-        else:
+            
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
             cmap            = self.dmc['cmap']
+            print("!!Dont see me!!!!")
             water_color     = self.dmc['water_color']
             boundary_color  = self.dmc['boundary_color']
             land_color      = cmap(0.5)
+        sys.stdout.flush()
         plot_resolution = self.dmc['plot_resolution']
         #-----------------------------------------------------------------------
         # Set the map dimensions
@@ -545,7 +556,7 @@ class FieldPlotter:
                     self.insar[i, j, 3] = a
                 if self.norm is None:
                     self.norm = mcolor.Normalize(vmin=0, vmax=self.wavelength)
-                im = self.m2.imshow(self.insar, interpolation='spline36')
+                self.m2.imshow(self.insar, interpolation='spline36')
             else:
                 # Prepare the displacement plot
                 self.insar = np.empty(self.field_transformed.shape)
@@ -565,7 +576,7 @@ class FieldPlotter:
                     mod_vmax = 1000
                 if self.norm is None:
                     self.norm = mcolor.LogNorm(vmin=5e-4, vmax=mod_vmax, clip=True)
-                im = self.m2.imshow(self.insar, cmap=cmap, norm=self.norm)            
+                self.m2.imshow(self.insar, cmap=cmap, norm=self.norm)            
         else:
             # make sure the values are located at the correct location on the map
             self.field_transformed = self.m2.transform_scalar(self.field, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
@@ -610,7 +621,7 @@ class FieldPlotter:
         gc.collect()
         return im2
 
-    def plot_field(self, output_file=None, angles=None):
+    def plot_field(self, output_file=None, angles=None, res='lo'):
         map_image = self.create_field_image(angles=angles)
         
         sys.stdout.write('map overlay : ')
@@ -638,19 +649,19 @@ class FieldPlotter:
             cb_fontcolor    = self.dmc['cb_fontcolor_f']
             arrow_inset     = self.dmc['arrow_inset']
             arrow_fontsize  = self.dmc['arrow_fontsize']
-        elif self.field_type == 'displacement':
+        else:
+            cmap            = self.dmc['cmap']
+            coastline_color = self.dmc['coastline_color']
+            country_color   = self.dmc['country_color']
+            state_color     = self.dmc['state_color']
+            fault_color     = self.dmc['fault_color']
+            map_tick_color  = self.dmc['map_tick_color']
+            map_frame_color = self.dmc['map_frame_color']
+            grid_color      = self.dmc['grid_color']
+            cb_fontcolor    = self.dmc['cb_fontcolor']
             arrow_inset     = self.dmc['arrow_inset']
             arrow_fontsize  = self.dmc['arrow_fontsize']
-            
-        cmap            = self.dmc['cmap']
-        coastline_color = self.dmc['coastline_color']
-        country_color   = self.dmc['country_color']
-        state_color     = self.dmc['state_color']
-        fault_color     = self.dmc['fault_color']
-        map_tick_color  = self.dmc['map_tick_color']
-        map_frame_color = self.dmc['map_frame_color']
-        grid_color      = self.dmc['grid_color']
-        cb_fontcolor    = self.dmc['cb_fontcolor']
+        
         boundary_width  = self.dmc['boundary_width']
         coastline_width = self.dmc['coastline_width']
         country_width   = self.dmc['country_width']
@@ -679,10 +690,10 @@ class FieldPlotter:
         mh = self.lats_1d.size
 
         if mh > mw:
-            ph = 768.0
+            ph = 768.0*self.res_mult
             pw = mw + 70.0 + 40.0
         else:
-            pw = 790.0
+            pw = 790.0*self.res_mult
             ph = mh + 70.0 + 40.0
 
         width_frac = mw/pw
@@ -1171,9 +1182,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyVQ.")
 
     # Event/model file arguments
-    parser.add_argument('--event_file', required=True,
+    parser.add_argument('--event_file', required=False,
             help="Name of event file to analyze.")
-    parser.add_argument('--event_file_type', required=True,
+    parser.add_argument('--event_file_type', required=False,
             help="Event file type, either hdf5 or text.")
     parser.add_argument('--sweep_file', required=False,
             help="Name of sweep file to analyze.")
@@ -1226,9 +1237,9 @@ if __name__ == "__main__":
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
     parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar, potential, geoid")
-    parser.add_argument('--field_savefile', required=False, help="File name to save ")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
+    parser.add_argument('--res', required=False, help="Plot resolution: low, med, hi")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1291,34 +1302,54 @@ if __name__ == "__main__":
 
     # Generate plots
     if args.plot_freq_mag:
-        filename = SaveFile(args.event_file, "freq_mag").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "freq_mag").filename
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile(args.event_file, "mag_rupt_area").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area").filename
         MagnitudeRuptureAreaPlot().plot(events, filename)
     if args.plot_mag_mean_slip:
-        filename = SaveFile(args.event_file, "mag_mean_slip").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip").filename
         MagnitudeMeanSlipPlot().plot(events, filename)
     if args.plot_prob_vs_t:
-        filename = SaveFile(args.event_file, "prob_vs_time").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time").filename
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile(args.event_file, "p_vs_t_fixed_dt").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt").filename
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile(args.event_file, "cond_prob_vs_t").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t").filename
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile(args.event_file, "waiting_times").filename
+        if not args.event_file or not args.event_file_type:
+            raise "Must specify --event_file and --event_file_type"
+        filename = SaveFile().event_plot(args.event_file, "waiting_times").filename
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
+        if not args.model_file or not args.field_type:
+            raise "Must specify --model_file and --field_type"
+        if not args.res: res = 'lo'
+        else: res = args.res
+        type = args.field_type.lower()
+        filename = SaveFile().field_plot(args.model_file, type, res)
         element_ids = model.getElementIDs()
         ele_slips = {}
         angles = None
@@ -1333,9 +1364,9 @@ if __name__ == "__main__":
             cbar_max = args.colorbar_max
         else:
             cbar_max = None
-        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, cbar_max=cbar_max)
+        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, cbar_max=cbar_max, res=res)
         FP.compute_field(cutoff=1000)
-        FP.plot_field(output_file=args.field_savefile, angles=angles)
+        FP.plot_field(output_file=filename, angles=angles, res=res)
 
     # Generate stress plots
     if args.stress_elements:
