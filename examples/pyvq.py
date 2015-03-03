@@ -35,9 +35,11 @@ try:
 except ImportError:
     numpy_available = False
     
-MIN_LON_DIFF = 0.118   #corresponds to 10km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = 0.090   #corresponds to 10km at lat,lon = (40.35, -124.85)
-MIN_FIT_MAG  = 5.0     #lower end of magnitude for fitting freq_mag plot with b=1 curve
+# ----------------- Global constants -------------------------------------------
+MIN_LON_DIFF = 0.118   # corresponds to 10km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = 0.090   # corresponds to 10km at lat,lon = (40.35, -124.85)
+MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
+G_0          = 9.80665 # value from NIST, via Wikipedia [m/s^2]
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -172,12 +174,12 @@ class FieldPlotter:
         # Define how the cutoff value scales if it is not explitly set.
         # Cutoff is the max distance away from elements to compute
         # the field given in units of element length.
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
             self.cutoff_min_size = 20.0
             self.cutoff_min = 20.0
             self.cutoff_p2_size = 65.0
             self.cutoff_p2 = 90.0
-        elif self.field_type == 'displacement' or self.field_type == 'insar' or self.field_type == 'potential':
+        elif self.field_type == 'displacement' or self.field_type == 'insar':
             self.look_azimuth = None
             self.look_elevation = None
             self.cutoff_min_size = 20.0
@@ -275,8 +277,6 @@ class FieldPlotter:
         #-----------------------------------------------------------------------
         # Gravity map configuration  #TODO: Put in switches for field_type
         #-----------------------------------------------------------------------
-        if cbar_max is None:
-            cbar_max = 20
         self.dmc = {
             'font':               mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='normal'),
             'font_bold':          mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='bold'),
@@ -312,17 +312,29 @@ class FieldPlotter:
         #map_fontsize = 12
             'map_fontsize':         26.0,   # 12   THIS IS BROKEN
         #cb_fontsize = 12
-            'cb_fontsize':          20.0, # 12
             'cb_fontcolor':         '#000000',
             'cb_height':            20.0,
             'cb_margin_t':          2.0, # 10
-         #min/max gravity change labels for colorbar (in microgals)
-            'cbar_min':             -cbar_max,
-            'cbar_max':             cbar_max
         }
         # Set field-specific plotting arguments
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential':
+        if cbar_max is None:
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+                cbar_max = 20
+            elif self.field_type == 'potential':
+                cbar_max = 0.002
+            elif self.field_type == 'geoid':
+                cbar_max = 0.0002
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
             self.dmc['cmap'] = plt.get_cmap('seismic')
+            #min/max scalar field values for colorbar
+            self.dmc['cbar_min'] = -cbar_max
+            self.dmc['cbar_max'] = cbar_max
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+                self.dmc['cb_fontsize'] = 20.0
+            elif self.field_type == 'potential':
+                self.dmc['cb_fontsize'] = 16.0
+            elif self.field_type == 'geoid':
+                self.dmc['cb_fontsize'] = 15.0
         elif self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
             self.dmc['coastline_color_f'] = '#ffffff'
@@ -403,19 +415,33 @@ class FieldPlotter:
             else:
                 cutoff = self.cutoff_min
         sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
-        sys.stdout.flush()
+        self.fringes = False
         if self.field_type == "gravity":
-            print("Computing gravity field...")
-            self.fringes = False
+            sys.stdout.write("Computing gravity field...")
             self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             # Reshape field
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+        if self.field_type == "dilat_gravity":
+            sys.stdout.write("Computing dilatational gravity field...")
+            self.field_1d = self.slip_map.dilat_gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+        if self.field_type == "potential":
+            sys.stdout.write("Computing gravitational potential field... ")
+            sys.stdout.write("Potential computation assumes water filling cavitation. (under-sea faults) : ")
+            self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+        elif self.field_type == "geoid":
+            sys.stdout.write("Computing geoid height change field... ")
+            sys.stdout.write("Potential computation assumes water filling cavitation. (under-sea faults) : ")
+            self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
+            # To convert from potential to geoid height, divide by mean gravity
+            self.field /= G_0
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
                 sys.stdout.write("Computing displacement field...")
-                self.fringes = False
             else:
-                print("Computing InSAR field...")
+                sys.stdout.write("Computing InSAR field...")
                 self.fringes = True
             self.field_1d = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             disp = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size,3))
@@ -429,9 +455,7 @@ class FieldPlotter:
                 self.dY[it.multi_index] = disp[it.multi_index][1]
                 self.dZ[it.multi_index] = disp[it.multi_index][2]
                 it.iternext()
-        #elif field_type.lower() == "potential":
-#TODO: Add potential calculation to QuakeLibElement.cpp, add here
-
+        sys.stdout.flush()
         
     def plot_str(self):
         return self._plot_str
@@ -586,9 +610,8 @@ class FieldPlotter:
         gc.collect()
         return im2
 
-    def plot_field(self, output_file=None, cutoff=None):
-        self.compute_field(cutoff=cutoff)
-        map_image = self.create_field_image()
+    def plot_field(self, output_file=None, angles=None):
+        map_image = self.create_field_image(angles=angles)
         
         sys.stdout.write('map overlay : ')
         sys.stdout.flush()
@@ -603,7 +626,7 @@ class FieldPlotter:
         #---------------------------------------------------------------------------
         # Grab all of the plot properties that we will need.
         # properties that are fringes dependent
-        if self.fringes and self.field_type == 'insar':
+        if self.field_type == 'insar':
             cmap            = self.dmc['cmap_f']
             coastline_color = self.dmc['coastline_color_f']
             country_color   = self.dmc['country_color_f']
@@ -613,18 +636,21 @@ class FieldPlotter:
             map_frame_color = self.dmc['map_frame_color_f']
             grid_color      = self.dmc['grid_color_f']
             cb_fontcolor    = self.dmc['cb_fontcolor_f']
-        else:
-            cmap            = self.dmc['cmap']
-            coastline_color = self.dmc['coastline_color']
-            country_color   = self.dmc['country_color']
-            state_color     = self.dmc['state_color']
-            fault_color     = self.dmc['fault_color']
-            map_tick_color  = self.dmc['map_tick_color']
-            map_frame_color = self.dmc['map_frame_color']
-            grid_color      = self.dmc['grid_color']
-            cb_fontcolor    = self.dmc['cb_fontcolor']
-
-        # properties that are not fringes dependent
+            arrow_inset     = self.dmc['arrow_inset']
+            arrow_fontsize  = self.dmc['arrow_fontsize']
+        elif self.field_type == 'displacement':
+            arrow_inset     = self.dmc['arrow_inset']
+            arrow_fontsize  = self.dmc['arrow_fontsize']
+            
+        cmap            = self.dmc['cmap']
+        coastline_color = self.dmc['coastline_color']
+        country_color   = self.dmc['country_color']
+        state_color     = self.dmc['state_color']
+        fault_color     = self.dmc['fault_color']
+        map_tick_color  = self.dmc['map_tick_color']
+        map_frame_color = self.dmc['map_frame_color']
+        grid_color      = self.dmc['grid_color']
+        cb_fontcolor    = self.dmc['cb_fontcolor']
         boundary_width  = self.dmc['boundary_width']
         coastline_width = self.dmc['coastline_width']
         country_width   = self.dmc['country_width']
@@ -633,8 +659,6 @@ class FieldPlotter:
         fault_width     = self.dmc['fault_width']
         map_frame_width = self.dmc['map_frame_width']
         map_fontsize    = self.dmc['map_fontsize']
-        arrow_inset     = self.dmc['arrow_inset']
-        arrow_fontsize  = self.dmc['arrow_fontsize']
         cb_fontsize     = self.dmc['cb_fontsize']
         cb_height       = self.dmc['cb_height']
         cb_margin_t     = self.dmc['cb_margin_t']
@@ -642,7 +666,6 @@ class FieldPlotter:
         num_grid_lines  = self.dmc['num_grid_lines']
         font            = self.dmc['font']
         font_bold       = self.dmc['font_bold']
-
         map_resolution  = self.dmc['map_resolution']
         map_projection  = self.dmc['map_projection']
         plot_resolution = self.dmc['plot_resolution']
@@ -807,10 +830,15 @@ class FieldPlotter:
                 cb_title = 'Displacement [m]'
             else:
                 cb_title = 'Total displacement [m]'
-
-        elif self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
-            cb_title        = r'Gravity changes [$\mu gal$]'
-            # Make first and last ticks on colorbar be <MIN and >MAX
+        else:
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+                cb_title = r'Gravity changes [$\mu gal$]'
+            elif self.field_type == 'potential':
+                cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
+            elif self.field_type == 'geoid':
+                cb_title = 'Geoid height change [m]'
+            # Make first and last ticks on colorbar be <MIN and >MAX.
+            # Values of colorbar min/max are set in FieldPlotter init.
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
             cb_tick_labs[0] = '<'+cb_tick_labs[0]
             cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
@@ -1197,7 +1225,7 @@ if __name__ == "__main__":
     # Field plotting arguments
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
-    parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar")
+    parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar, potential, geoid")
     parser.add_argument('--field_savefile', required=False, help="File name to save ")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
@@ -1235,8 +1263,8 @@ if __name__ == "__main__":
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar":
-            raise "Field type is one of gravity, dilat_gravity, displacement, insar"
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
+            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -1293,6 +1321,7 @@ if __name__ == "__main__":
     if args.field_plot:
         element_ids = model.getElementIDs()
         ele_slips = {}
+        angles = None
         if len(element_ids) == 0:
             raise "Error in reading model file, please make sure the file exists."
         else:
@@ -1305,7 +1334,8 @@ if __name__ == "__main__":
         else:
             cbar_max = None
         FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, cbar_max=cbar_max)
-        FP.plot_field(output_file=args.field_savefile, cutoff=1000)
+        FP.compute_field(cutoff=1000)
+        FP.plot_field(output_file=args.field_savefile, angles=angles)
 
     # Generate stress plots
     if args.stress_elements:

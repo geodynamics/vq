@@ -43,6 +43,9 @@
 // This will result in a smallest calculated gravity change of ~4e-9
 #define DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY               8.0
 
+// This needs to be set, guessing for now
+#define DIST_SQRT_AREA_RATIO_CUTOFF_POTENTIAL              50.0
+
 namespace quakelib {
     // Function to obtain the version/git information for the compiled quakelib
     static std::string quakelib_info(void) {
@@ -339,6 +342,7 @@ namespace quakelib {
             VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
             FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
             FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
+            FloatList potential_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_POTENTIAL);
     };
 
 }
