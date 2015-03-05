@@ -160,8 +160,15 @@ class Events:
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
         
+    def read_sweeps(self, event_id):
+        self._sweeps 
+        
+    def get_event_element_slips(self, evnum):
+        element_ids = self._events[evnum].getInvolvedElements()
+        return {ele_id:self._events[evnum].getEventSlip(ele_id) for ele_id in element_ids}
+        
 class FieldPlotter:
-    def __init__(self, model, field_type, element_slips=None, event_id=None, events=None,
+    def __init__(self, model, field_type, element_slips=None, event_id=None, event=None,
                 cbar_max=None, res='low'):
                 # res is 'low','med','hi'
 #TODO: Set fonts and figure size explicitly
@@ -206,11 +213,11 @@ class FieldPlotter:
             # TODO: Implement event element accessor
             # get event_slips and element_ids
             # self.element_slips = events.get_event_element_slips(event_id)
-        if event_id is None and events is None and element_slips is not None:
+        if event_id is None and event is None and element_slips is None:
+            raise "Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field."
+        else:
             self.element_ids = element_slips.keys()
             self.element_slips = element_slips
-        else:
-            raise "Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field."
         if len(self.element_slips) != len(self.element_ids):
             raise "Must specify slip for all elements."
         for ele_id in self.element_ids:
@@ -426,31 +433,31 @@ class FieldPlotter:
         sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
         self.fringes = False
         if self.field_type == "gravity":
-            sys.stdout.write("Computing gravity field at {} points...".format(self.lats_1d.size*self.lons_1d.size))
+            sys.stdout.write(" Computing gravity field at {} points :".format(self.lats_1d.size*self.lons_1d.size))
             self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             # Reshape field
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         if self.field_type == "dilat_gravity":
-            sys.stdout.write("Computing dilatational gravity field...")
+            sys.stdout.write(" Computing dilatational gravity field :")
             self.field_1d = self.slip_map.dilat_gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         if self.field_type == "potential":
-            sys.stdout.write("Computing gravitational potential field... ")
-            sys.stdout.write("Potential computation assumes water filling cavitation. (under-sea faults) : ")
+            sys.stdout.write(" Computing gravitational potential field :")
+            sys.stdout.write(" Potential computation assumes water filling cavitation. (under-sea faults) : ")
             self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         elif self.field_type == "geoid":
-            sys.stdout.write("Computing geoid height change field... ")
-            sys.stdout.write("Potential computation assumes water filling cavitation. (under-sea faults) : ")
+            sys.stdout.write(" Computing geoid height change field :")
+            sys.stdout.write(" Potential computation assumes water filling cavitation. (under-sea faults) : ")
             self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
             # To convert from potential to geoid height, divide by mean gravity
             self.field /= -G_0
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
-                sys.stdout.write("Computing displacement field...")
+                sys.stdout.write(" Computing displacement field :")
             else:
-                sys.stdout.write("Computing InSAR field...")
+                sys.stdout.write(" Computing InSAR field :")
                 self.fringes = True
             self.field_1d = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             disp = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size,3))
@@ -659,6 +666,7 @@ class FieldPlotter:
             map_frame_color = self.dmc['map_frame_color']
             grid_color      = self.dmc['grid_color']
             cb_fontcolor    = self.dmc['cb_fontcolor']
+        if self.field_type == 'displacement':             
             arrow_inset     = self.dmc['arrow_inset']
             arrow_fontsize  = self.dmc['arrow_fontsize']
         
@@ -1190,6 +1198,8 @@ if __name__ == "__main__":
             help="Name of sweep file to analyze.")
     parser.add_argument('--model_file', required=False,
             help="Name of model (geometry) file to use in analysis.")
+    parser.add_argument('--model_file_type', required=False,
+            help="Model file type, either hdf5 or text.")
     parser.add_argument('--stress_index_file', required=False,
             help="Name of stress index file to use in analysis.")
     parser.add_argument('--stress_file', required=False,
@@ -1240,6 +1250,7 @@ if __name__ == "__main__":
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--res', required=False, help="Plot resolution: low, med, hi")
+    parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1259,8 +1270,12 @@ if __name__ == "__main__":
     # Read the geometry model if specified
     if args.model_file:
         model = quakelib.ModelWorld()
-        model.read_file_ascii(args.model_file)
-# TODO: add HDF5 compatibility
+        if args.model_file_type =='text' or args.model_file.split(".")[-1] == 'txt':
+            model.read_file_ascii(args.model_file)
+        elif args.model_file_type == 'hdf5' or args.model_file.split(".")[-1] == 'h5' or args.model_file.split(".")[-1] == 'hdf5':
+            model.read_file_hdf5(args.model_file)
+        else:
+            raise "Must specify --model_file_type, either hdf5 or text"
     else:
         if args.use_sections:
             raise "Model file required if specifying fault sections."
@@ -1344,27 +1359,38 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "waiting_times").filename
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
-        if not args.model_file or not args.field_type:
-            raise "Must specify --model_file and --field_type"
+        if args.model_file is None:
+            raise "Must specify --model_file for field plots"
+        elif args.field_type is None:
+            raise "Must specify --field_type for field plots"
         if not args.res: res = 'lo'
         else: res = args.res
         type = args.field_type.lower()
+        if args.colorbar_max: cbar_max = args.colorbar_max
+        else: cbar_max = None
         filename = SaveFile().field_plot(args.model_file, type, res)
-        element_ids = model.getElementIDs()
-        ele_slips = {}
         angles = None
-        if len(element_ids) == 0:
-            raise "Error in reading model file, please make sure the file exists."
+        if args.event_id is None:
+            element_ids = model.getElementIDs()
+            ele_slips = {}
+            if args.uniform_slip is None: uniform_slip = 5.0
+            else: uniform_slip = args.uniform_slip
+            sys.stdout.write(" Computing field for uniform slip {}meters :".format(uniform_slip))
+            for ele_id in element_ids:
+                ele_slips[ele_id] = uniform_slip
+            event = None
         else:
-            sys.stdout.write("Loading {} elements...".format(len(element_ids))) 
-            sys.stdout.flush()
-        for ele_id in element_ids:
-            ele_slips[ele_id] = 5.0      
-        if args.colorbar_max: 
-            cbar_max = args.colorbar_max
+            sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events._events[args.event_id].getMagnitude()))
+            ele_slips = events.get_event_element_slips(args.event_id)
+            event = events._events[args.event_id]
+        
+        if len(ele_slips.keys()) == 0:
+            raise "Error in processing slips."
         else:
-            cbar_max = None
-        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, cbar_max=cbar_max, res=res)
+            sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
+        sys.stdout.flush()
+     
+        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, event=event, cbar_max=cbar_max, res=res)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles, res=res)
 
