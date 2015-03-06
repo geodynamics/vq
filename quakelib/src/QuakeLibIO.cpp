@@ -602,7 +602,14 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             v0.set_xyz(cur_trace_point+vert_step*ve, base_coord);
             v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
             v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
-
+            
+            // If this element is at the top, it is a trace point. 
+            // Keep track for field plots with PyVQ
+            if (ve == 0) {
+                v0.set_is_trace(true);
+                v2.set_is_trace(true);
+            }
+                
             // Set distance along strike for each vertex
             v0.set_das(dist_along_strike);
             v1.set_das(dist_along_strike);
@@ -717,6 +724,16 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+    
+    field_desc.name = "is_trace";
+    field_desc.details = "Whether an element in on the fault trace (non-zero) or not (zero).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(VertexData, _is_trace);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+    
 }
 
 void quakelib::ModelVertex::read_data(const VertexData &in_data) {
@@ -735,6 +752,7 @@ void quakelib::ModelVertex::read_ascii(std::istream &in_stream) {
     ss >> _data._lon;
     ss >> _data._alt;
     ss >> _data._das;
+    ss >> _data._is_trace;
 }
 
 void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
@@ -742,8 +760,8 @@ void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._lat << " ";
     out_stream << _data._lon << " ";
     out_stream << _data._alt << " ";
-    out_stream << _data._das;
-
+    out_stream << _data._das << " ";
+    out_stream << _data._is_trace;
     next_line(out_stream);
 }
 
@@ -2278,6 +2296,28 @@ quakelib::ElementIDSet quakelib::ModelWorld::getElementIDs(void) const {
     }
 
     return element_id_set;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getVertexIDs(void) const {
+    ElementIDSet vertex_id_set;
+    std::map<UIndex, ModelVertex>::const_iterator  vit;
+
+    for (vit=_vertices.begin(); vit!=_vertices.end(); ++vit) {
+        vertex_id_set.insert(vit->second.id());
+    }
+
+    return vertex_id_set;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getSectionIDs(void) const {
+    ElementIDSet sec_id_set;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
+
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+        sec_id_set.insert(sit->second.id());
+    }
+
+    return sec_id_set;
 }
 
 size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {

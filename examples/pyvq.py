@@ -53,8 +53,13 @@ class SaveFile:
     def event_plot(self, event_file, plot_type):
         return plot_type+"_"+event_file.split(".")[0]+".png"
         
-    def field_plot(self, model_file, field_type, res):
-        return model_file.split(".")[0]+"_"+field_type+"_"+res+"_res.png"
+    def field_plot(self, model_file, field_type, uniform_slip, event_id):
+        if uniform_slip is None and event_id is not None:
+            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+".png"
+        elif uniform_slip is not None and event_id is None:
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m.png"
+        else:
+            raise "Must specify either uniform_slip or event_id"
 
 class MagFilter:
     def __init__(self, min_mag=None, max_mag=None):
@@ -104,7 +109,7 @@ class EventNumFilter:
 class SectionFilter:
     def __init__(self, model, section_list):
         self._section_list = section_list
-        self._elem_to_section_map = {elem_num: model.element(elem_num).section_id() for elem_num in range(model.num_elements())}
+        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
 
     def test_event(self, event):
         event_elements = event.getInvolvedElements()
@@ -116,6 +121,40 @@ class SectionFilter:
 
     def plot_str(self):
         return "my_string"
+        
+class Geometry:
+    def __init__(self, model_file=None, model_file_type=None):
+        if model_file is not None:
+            self.model = quakelib.ModelWorld()
+            if model_file_type =='text' or model_file.split(".")[-1] == 'txt':
+                self.model.read_file_ascii(model_file)
+            elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
+                self.model.read_file_hdf5(model_file)
+            else:
+                raise "Must specify --model_file_type, either hdf5 or text"
+            self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
+        else:
+            if args.use_sections:
+                raise "Model file required if specifying fault sections."
+            return None
+
+    def get_fault_traces(self):
+        traces_lat_lon = {}
+        ele_ids = self.model.getElementIDs()
+        for eid in ele_ids:
+            sid      = self._elem_to_section_map[eid]
+            vids     = [self.model.element(eid).vertex(i) for i in range(3)]
+            vertices = [self.model.vertex(vid) for vid in vids]
+            for vert in vertices:
+                if vert.is_trace():
+                    lat = vert.lld().lat()
+                    lon = vert.lld().lon()
+                    try:
+                        traces_lat_lon[sid].append((lat,lon))
+                    except KeyError:
+                        traces_lat_lon[sid] = [(lat,lon)]
+                    #break
+        return traces_lat_lon
 
 class Events:
     def __init__(self, event_file, event_file_type, sweep_file = None):
@@ -167,11 +206,15 @@ class Events:
         element_ids = self._events[evnum].getInvolvedElements()
         return {ele_id:self._events[evnum].getEventSlip(ele_id) for ele_id in element_ids}
         
+    def get_event_sections(self, evnum, geometry):
+        sec_ids = [geometry.model.element(eid).section_id() for eid in self._events[evnum].getInvolvedElements()]
+        # Get unique section ids by converting to a set, then back to a list for ease of use
+        return list(set(sec_ids))
+        
 class FieldPlotter:
-    def __init__(self, model, field_type, element_slips=None, event_id=None, event=None,
+    def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
                 cbar_max=None, res='low'):
                 # res is 'low','med','hi'
-#TODO: Set fonts and figure size explicitly
         self.field_type = field_type.lower()
         self.event_id = None
         if event_id is not None: self.event_id = event_id
@@ -209,10 +252,6 @@ class FieldPlotter:
             self.wavelength = 0.03
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
-        #if event_id is not None and events is not None and element_slips is None:
-            # TODO: Implement event element accessor
-            # get event_slips and element_ids
-            # self.element_slips = events.get_event_element_slips(event_id)
         if event_id is None and event is None and element_slips is None:
             raise "Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field."
         else:
@@ -221,16 +260,16 @@ class FieldPlotter:
         if len(self.element_slips) != len(self.element_ids):
             raise "Must specify slip for all elements."
         for ele_id in self.element_ids:
-            new_ele = model.create_slipped_element(ele_id)
+            new_ele = geometry.model.create_slipped_element(ele_id)
             new_ele.set_slip(self.element_slips[ele_id])
             self.elements.append(new_ele)
         self.slip_map = quakelib.SlipMap()
         self.slip_map.add_elements(self.elements)
         # Grab base Lat/Lon from fault model, used for lat/lon <-> xyz conversion
-        base = model.get_base()
+        base = geometry.model.get_base()
         self.base_lat = self.min_lat = base[0]
         self.base_lon = self.min_lon = base[1]
-        self.min_lat, self.max_lat, self.min_lon, self.max_lon = model.get_latlon_bounds()
+        self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
         # Expand lat/lon range in the case of plotting a few elements
         if len(self.element_ids) < 10:
             self.min_lat = self.min_lat - MIN_LAT_DIFF*10
@@ -281,12 +320,7 @@ class FieldPlotter:
             _lats_1d.append(lat)
         # Set up the points for field evaluation, convert to xyz basis
         self.grid_1d = self.convert.convertArray2xyz(_lats_1d,_lons_1d)
-        # Convert the fault traces to lat-lon
-#TODO: find/create fault trace accessor
-#        fault_traces = !!!!!!!!!!!.get_fault_traces()
-#        fault_traces_latlon = {}
-#        for secid in fault_traces.iterkeys():
-#            fault_traces_latlon[secid] = zip(*[(lambda y: (y.lat(),y.lon()))(convert.convert2LatLon(quakelib.Vec3(x[0], x[1], x[2]))) for x in fault_traces[secid]])
+        self.fault_traces_latlon = geometry.get_fault_traces()
         self._plot_str = ""
         #-----------------------------------------------------------------------
         # Gravity map configuration  #TODO: Put in switches for field_type
@@ -505,7 +539,6 @@ class FieldPlotter:
             
         if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
             cmap            = self.dmc['cmap']
-            print("!!Dont see me!!!!")
             water_color     = self.dmc['water_color']
             boundary_color  = self.dmc['boundary_color']
             land_color      = cmap(0.5)
@@ -633,12 +666,6 @@ class FieldPlotter:
         
         sys.stdout.write('map overlay : ')
         sys.stdout.flush()
-        # Convert the fault traces to lat-lon
-        """
-        fault_traces_latlon = {}
-        for secid in fault_traces.iterkeys():
-             fault_traces_latlon[secid] = zip(*[(lambda y: (y.lat(),y.lon()))(self.convert.convert2LatLon(quakelib.Vec3(x[0], x[1], x[2]))) for x in fault_traces[secid]])
-        """
         #---------------------------------------------------------------------------
         # Plot all of the geographic info on top of the displacement map image.
         #---------------------------------------------------------------------------
@@ -811,27 +838,34 @@ class FieldPlotter:
                 item.set_alpha(0)
             
             if self.event_id is not None:
-                mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(event_data['event_magnitude'])), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
+                mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(events._events[self.event_id].getMagnitude())), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
             else:
                 avg_slip = np.average([x[1] for x in self.element_slips.items()])
                 mag_ax.text(0.5, 0.5, 'mean slip \n{:0.3f}m'.format(avg_slip), fontproperties=font_bold, size=arrow_fontsize-1, ha='center', va='center')
 
-
         # add the map image to the plot
         m4.imshow(map_image, origin='upper')
+        
+        # If plotting event field, get involved sections
+        if self.event_id is not None:
+            involved_sections = events.get_event_sections(self.event_id, geometry)
+            sys.stdout.write(" Event slips on {} sections out of {} : ".format(len(involved_sections), len(geometry.model.getSectionIDs()) ))
+        else:
+            involved_sections = geometry.model.getSectionIDs()
 
         # print faults on lon-lat plot
-        """
-        for sid, sec_trace in fault_traces_latlon.iteritems():
-            trace_Xs, trace_Ys = m4(sec_trace[1], sec_trace[0])
+        for sid, sec_trace in self.fault_traces_latlon.iteritems():
+            sec_trace_lons = [lat_lon[1] for lat_lon in sec_trace]
+            sec_trace_lats = [lat_lon[0] for lat_lon in sec_trace]
             
-            if sid in event_sections:
+            trace_Xs, trace_Ys = m4(sec_trace_lons, sec_trace_lats)
+            
+            if sid in involved_sections:
                 linewidth = fault_width + 2.5
             else:
                 linewidth = fault_width
 
             m4.plot(trace_Xs, trace_Ys, color=fault_color, linewidth=linewidth, solid_capstyle='round', solid_joinstyle='round')
-        """
 
         #plot the cb
         left_frac = 70.0/pw
@@ -1265,22 +1299,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the event and sweeps files
-    events = Events(args.event_file, args.event_file_type, args.sweep_file)
+    if args.event_file:
+        events = Events(args.event_file, args.event_file_type, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
-        model = quakelib.ModelWorld()
-        if args.model_file_type =='text' or args.model_file.split(".")[-1] == 'txt':
-            model.read_file_ascii(args.model_file)
-        elif args.model_file_type == 'hdf5' or args.model_file.split(".")[-1] == 'h5' or args.model_file.split(".")[-1] == 'hdf5':
-            model.read_file_hdf5(args.model_file)
+        if args.model_file_type:
+            geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
         else:
-            raise "Must specify --model_file_type, either hdf5 or text"
-    else:
-        if args.use_sections:
-            raise "Model file required if specifying fault sections."
-        else:
-            model = None
+            geometry = Geometry(model_file=args.model_file)
 
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
@@ -1313,7 +1340,8 @@ if __name__ == "__main__":
     if args.use_sections:
         event_filters.append(SectionFilter(model, args.use_sections))
 
-    events.set_filters(event_filters)
+    if args.event_file:
+        events.set_filters(event_filters)
 
     # Generate plots
     if args.plot_freq_mag:
@@ -1363,19 +1391,19 @@ if __name__ == "__main__":
             raise "Must specify --model_file for field plots"
         elif args.field_type is None:
             raise "Must specify --field_type for field plots"
-        if not args.res: res = 'lo'
+        if not args.res: res = 'low'
         else: res = args.res
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
-        filename = SaveFile().field_plot(args.model_file, type, res)
+        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
         angles = None
         if args.event_id is None:
-            element_ids = model.getElementIDs()
+            element_ids = geometry.model.getElementIDs()
             ele_slips = {}
             if args.uniform_slip is None: uniform_slip = 5.0
             else: uniform_slip = args.uniform_slip
-            sys.stdout.write(" Computing field for uniform slip {}meters :".format(uniform_slip))
+            sys.stdout.write(" Computing field for uniform slip {}m :".format(int(uniform_slip)))
             for ele_id in element_ids:
                 ele_slips[ele_id] = uniform_slip
             event = None
@@ -1389,8 +1417,8 @@ if __name__ == "__main__":
         else:
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
-     
-        FP = FieldPlotter(model, args.field_type, element_slips=ele_slips, event=event, cbar_max=cbar_max, res=res)
+        
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, res=res)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles, res=res)
 

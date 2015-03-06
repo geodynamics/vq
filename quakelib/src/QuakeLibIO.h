@@ -100,6 +100,7 @@ namespace quakelib {
         UIndex  _id;
         float   _lat, _lon, _alt;
         float   _das;
+        bool    _is_trace;
     };
 
     class ModelVertex : public ModelIO {
@@ -113,6 +114,7 @@ namespace quakelib {
                 _data._lat = _data._lon = _data._alt = std::numeric_limits<float>::quiet_NaN();
                 _pos = Vec<3>();
                 _data._das = std::numeric_limits<float>::quiet_NaN();
+                _data._is_trace = false;
             };
 
             VertexData data(void) const {
@@ -155,6 +157,13 @@ namespace quakelib {
             };
             void set_das(const float &das) {
                 _data._das = das;
+            };
+
+            bool is_trace(void) const {
+                return _data._is_trace;
+            };
+            void set_is_trace(const bool &is_trace) {
+                _data._is_trace = is_trace;
             };
 
 #ifdef HDF5_FOUND
@@ -575,6 +584,8 @@ namespace quakelib {
             SlippedElement create_slipped_element(const UIndex &element_id) const;
 
             ElementIDSet getElementIDs(void) const;
+            ElementIDSet getVertexIDs(void) const;
+            ElementIDSet getSectionIDs(void) const;
 
             bool overwrite(const ModelRemapping &remap);
             void apply_remap(const ModelRemapping &remap);
