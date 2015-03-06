@@ -603,6 +603,13 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
             v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
 
+            // If this element is at the top, it is a trace point.
+            // Keep track for field plots with PyVQ
+            if (ve == 0) {
+                v0.set_is_trace(true);
+                v2.set_is_trace(true);
+            }
+
             // Set distance along strike for each vertex
             v0.set_das(dist_along_strike);
             v1.set_das(dist_along_strike);
@@ -717,6 +724,16 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+
+    field_desc.name = "is_trace";
+    field_desc.details = "Whether an element in on the fault trace (non-zero) or not (zero).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(VertexData, _is_trace);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(unsigned int);
+#endif
+    descs.push_back(field_desc);
+
 }
 
 void quakelib::ModelVertex::read_data(const VertexData &in_data) {
@@ -735,6 +752,7 @@ void quakelib::ModelVertex::read_ascii(std::istream &in_stream) {
     ss >> _data._lon;
     ss >> _data._alt;
     ss >> _data._das;
+    ss >> _data._is_trace;
 }
 
 void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
@@ -742,8 +760,8 @@ void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._lat << " ";
     out_stream << _data._lon << " ";
     out_stream << _data._alt << " ";
-    out_stream << _data._das;
-
+    out_stream << _data._das << " ";
+    out_stream << _data._is_trace;
     next_line(out_stream);
 }
 
@@ -798,6 +816,11 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     get_bounds(min_latlon, max_latlon);
     min_latlon.set_altitude(0);
     reset_base_coord(min_latlon);
+    // Keep track of Lat/Lon bounds in the ModelWorld
+    _min_lat = min_latlon.lat();
+    _min_lon = min_latlon.lon();
+    _max_lat = max_latlon.lat();
+    _max_lon = max_latlon.lon();
 
     return 0;
 }
@@ -854,6 +877,8 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     for (it=_vertices.begin(); it!=_vertices.end(); ++it) {
         it->second.set_lld(it->second.lld(), new_base);
     }
+
+    _base = new_base;
 }
 
 // TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
@@ -1074,6 +1099,11 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
     get_bounds(min_latlon, max_latlon);
     min_latlon.set_altitude(0);
     reset_base_coord(min_latlon);
+    // Keep track of Lat/Lon bounds in the ModelWorld
+    _min_lat = min_latlon.lat();
+    _min_lon = min_latlon.lon();
+    _max_lat = max_latlon.lat();
+    _max_lon = max_latlon.lon();
 #else
     // TODO: Error out
 #endif
@@ -1567,6 +1597,34 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     new_element.set_lame_mu(eit->second.lame_mu());
     new_element.set_lame_lambda(eit->second.lame_lambda());
     new_element.set_max_slip(eit->second.max_slip());
+
+    return new_element;
+}
+
+quakelib::SlippedElement quakelib::ModelWorld::create_slipped_element(const UIndex &element_id) const {
+    SlippedElement          new_element;
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    std::map<UIndex, ModelVertex>::const_iterator   vit;
+    unsigned int        i;
+
+    eit = _elements.find(element_id);
+
+    for (i=0; i<3; ++i) {
+        vit = _vertices.find(eit->second.vertex(i));
+        new_element.set_vert(i, vit->second.xyz());
+    }
+
+    // TODO, vertices lat/lon or xyz, save base?
+    new_element.set_id(eit->second.id());
+    new_element.set_section_id(eit->second.section_id());
+    new_element.set_is_quad(eit->second.is_quad());
+    new_element.set_rake(eit->second.rake());
+    new_element.set_slip_rate(eit->second.slip_rate());
+    new_element.set_aseismic(eit->second.aseismic());
+    new_element.set_lame_mu(eit->second.lame_mu());
+    new_element.set_lame_lambda(eit->second.lame_lambda());
+    new_element.set_max_slip(eit->second.max_slip());
+    new_element.set_slip(0.0);
 
     return new_element;
 }
@@ -2227,6 +2285,39 @@ size_t quakelib::ModelWorld::num_elements(const quakelib::UIndex &fid) const {
     }
 
     return num_elements;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getElementIDs(void) const {
+    ElementIDSet element_id_set;
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        element_id_set.insert(eit->second.id());
+    }
+
+    return element_id_set;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getVertexIDs(void) const {
+    ElementIDSet vertex_id_set;
+    std::map<UIndex, ModelVertex>::const_iterator  vit;
+
+    for (vit=_vertices.begin(); vit!=_vertices.end(); ++vit) {
+        vertex_id_set.insert(vit->second.id());
+    }
+
+    return vertex_id_set;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getSectionIDs(void) const {
+    ElementIDSet sec_id_set;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
+
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+        sec_id_set.insert(sit->second.id());
+    }
+
+    return sec_id_set;
 }
 
 size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {

@@ -5,14 +5,20 @@
 %include "std_set.i"
 %include "exception.i"
 %{
-#include "QuakeLib.h"
-#include "QuakeLibIO.h"
 #include "QuakeLibUtil.h"
 #include "QuakeLibOkada.h"
+#include "QuakeLib.h"
 #include "QuakeLibEQSim.h"
+#include "QuakeLibIO.h"
 
 using namespace quakelib;
 %}
+
+%include "QuakeLibUtil.h"
+%include "QuakeLibOkada.h"
+%include "QuakeLib.h"
+%include "QuakeLibEQSim.h"
+%include "QuakeLibIO.h"
 
 // Ignore the reader/writer classes since the user shouldn't be using these anyway
 %ignore quakelib::EQSimFileReader;
@@ -23,12 +29,9 @@ using namespace quakelib;
 %template(EQSimEventSlipList) std::vector<quakelib::EQSimEventSlipMap>;
 %template(LatLonDepthPointList) std::vector<quakelib::LatLonDepth>;
 %template(ElementIDSet) std::set<unsigned int>;
-
-%include "QuakeLib.h"
-%include "QuakeLibIO.h"
-%include "QuakeLibUtil.h"
-%include "QuakeLibOkada.h"
-%include "QuakeLibEQSim.h"
+%template(SlippedElementList) std::vector<quakelib::SlippedElement>;
+%template(FloatList) std::vector<double>;
+%template(VectorList) std::vector< quakelib::Vec<3> >;
 
 %exception {
     try {
@@ -39,19 +42,40 @@ using namespace quakelib;
     }
 }
 
+// Add an append method and methods to allow these objects to be pickled
+%extend std::vector< double > {
+	void append( float item ) {(*$self).push_back(item);};
+	%insert("python") %{
+	def __setstate__(self, state):
+        self.__init__(*state['args'])%}
+	%insert("python") %{
+    def __getstate__(self):
+        return {'args': self.args}%}
+};
+
+%extend std::vector< quakelib::Vec<3> > {
+	void append( quakelib::Vec<3> item ) {(*$self).push_back(item);};
+	%insert("python") %{
+	def __setstate__(self, state):
+        self.__init__(*state['args'])%}
+	%insert("python") %{
+    def __getstate__(self):
+        return {'args': self.args}%}
+};
+
 // Create aliases for 2D and 3D vector templates
 %template(Vec2) quakelib::Vec<2>;
 %template(Vec3) quakelib::Vec<3>;
 %extend quakelib::Vec<2> {
-	double __getitem__(unsigned int i) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
-    unsigned int __len__(void) { return 2; };
+	inline double __getitem__(unsigned int i) { return (*$self)[i]; };
+	inline void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
+    inline unsigned int __len__(void) { return 2; };
 };
 
 %extend quakelib::Vec<3> {
-	double __getitem__(unsigned int i) { return (*$self)[i]; };
-	void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
-    unsigned int __len__(void) { return 3; };
+	inline double __getitem__(unsigned int i) { return (*$self)[i]; };
+	inline void __setitem__(unsigned int i, double new_val) { (*$self)[i] = new_val; };
+    inline unsigned int __len__(void) { return 3; };
 };
 
 %template(TensorRow3) quakelib::TensorRow<3>;
@@ -335,4 +359,3 @@ using namespace quakelib;
   }
   $1 = &temp[0];
 }
-

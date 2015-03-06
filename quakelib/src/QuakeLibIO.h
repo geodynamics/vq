@@ -100,6 +100,7 @@ namespace quakelib {
         UIndex  _id;
         float   _lat, _lon, _alt;
         float   _das;
+        bool    _is_trace;
     };
 
     class ModelVertex : public ModelIO {
@@ -113,6 +114,7 @@ namespace quakelib {
                 _data._lat = _data._lon = _data._alt = std::numeric_limits<float>::quiet_NaN();
                 _pos = Vec<3>();
                 _data._das = std::numeric_limits<float>::quiet_NaN();
+                _data._is_trace = false;
             };
 
             VertexData data(void) const {
@@ -155,6 +157,13 @@ namespace quakelib {
             };
             void set_das(const float &das) {
                 _data._das = das;
+            };
+
+            bool is_trace(void) const {
+                return _data._is_trace;
+            };
+            void set_is_trace(const bool &is_trace) {
+                _data._is_trace = is_trace;
             };
 
 #ifdef HDF5_FOUND
@@ -487,11 +496,15 @@ namespace quakelib {
             };
     };
 
+    typedef std::set<UIndex> ElementIDSet;
+
     class ModelWorld : public ModelIO {
         private:
             std::map<UIndex, ModelVertex>   _vertices;
             std::map<UIndex, ModelElement>  _elements;
             std::map<UIndex, ModelSection>  _sections;
+            LatLonDepth _base;
+            double _min_lat, _max_lat, _min_lon, _max_lon;
 
 #ifdef HDF5_FOUND
             void read_section_hdf5(const hid_t &data_file);
@@ -547,6 +560,19 @@ namespace quakelib {
             LatLonDepth min_bound(const UIndex &fid=INVALID_INDEX) const;
             LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
 
+            Vec<3> get_base(void) const {
+                return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
+            }
+
+            std::vector<double> get_latlon_bounds(void) const {
+                std::vector<double> bounds(4);
+                bounds[0] = _min_lat;
+                bounds[1] = _max_lat;
+                bounds[2] = _min_lon;
+                bounds[3] = _max_lon;
+                return bounds;
+            }
+
             void insert(const ModelWorld &other_world);
             void insert(const ModelSection &new_section);
             void insert(const ModelElement &new_element);
@@ -555,6 +581,11 @@ namespace quakelib {
             void get_bounds(LatLonDepth &minimum, LatLonDepth &maximum) const;
 
             SimElement create_sim_element(const UIndex &element_id) const;
+            SlippedElement create_slipped_element(const UIndex &element_id) const;
+
+            ElementIDSet getElementIDs(void) const;
+            ElementIDSet getVertexIDs(void) const;
+            ElementIDSet getSectionIDs(void) const;
 
             bool overwrite(const ModelRemapping &remap);
             void apply_remap(const ModelRemapping &remap);
@@ -589,8 +620,6 @@ namespace quakelib {
             int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
     };
-
-    typedef std::set<UIndex> ElementIDSet;
 
     // Class recording data associated with a block that slipped during an event
     // mu is static, but we retain it for use in calculating magnitude.

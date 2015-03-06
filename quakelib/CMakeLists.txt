@@ -117,8 +117,8 @@ SET(QUAKELIB_SOURCES
     ${QUAKELIB_SOURCE_DIR}/QuakeLibElement.cpp
     ${QUAKELIB_SOURCE_DIR}/QuakeLibEQSim.cpp
     ${QUAKELIB_SOURCE_DIR}/QuakeLibIO.cpp
-	${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.cpp
-	${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.cpp
+    ${QUAKELIB_SOURCE_DIR}/QuakeLibOkada.cpp
+    ${QUAKELIB_SOURCE_DIR}/QuakeLibUtil.cpp
     )
 
 SET(QUAKELIB_HEADERS
