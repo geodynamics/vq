@@ -602,14 +602,14 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             v0.set_xyz(cur_trace_point+vert_step*ve, base_coord);
             v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
             v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
-            
-            // If this element is at the top, it is a trace point. 
+
+            // If this element is at the top, it is a trace point.
             // Keep track for field plots with PyVQ
             if (ve == 0) {
                 v0.set_is_trace(true);
                 v2.set_is_trace(true);
             }
-                
+
             // Set distance along strike for each vertex
             v0.set_das(dist_along_strike);
             v1.set_das(dist_along_strike);
@@ -724,7 +724,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
-    
+
     field_desc.name = "is_trace";
     field_desc.details = "Whether an element in on the fault trace (non-zero) or not (zero).";
 #ifdef HDF5_FOUND
@@ -733,7 +733,7 @@ void quakelib::ModelVertex::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(unsigned int);
 #endif
     descs.push_back(field_desc);
-    
+
 }
 
 void quakelib::ModelVertex::read_data(const VertexData &in_data) {

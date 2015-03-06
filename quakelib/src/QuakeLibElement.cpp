@@ -528,7 +528,7 @@ quakelib::FloatList quakelib::SlipMap::potential_changes(const VectorList &point
 
                 xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
                 yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
-                
+
                 // CHANGE this to enable dV calculations below z=0
                 zp = 0.0;
 
