@@ -100,7 +100,7 @@ namespace quakelib {
         UIndex  _id;
         float   _lat, _lon, _alt;
         float   _das;
-        bool    _is_trace;
+        unsigned int _is_trace;
     };
 
     class ModelVertex : public ModelIO {
@@ -114,7 +114,7 @@ namespace quakelib {
                 _data._lat = _data._lon = _data._alt = std::numeric_limits<float>::quiet_NaN();
                 _pos = Vec<3>();
                 _data._das = std::numeric_limits<float>::quiet_NaN();
-                _data._is_trace = false;
+                _data._is_trace = 0;
             };
 
             VertexData data(void) const {
@@ -159,10 +159,10 @@ namespace quakelib {
                 _data._das = das;
             };
 
-            bool is_trace(void) const {
+            unsigned int is_trace(void) const {
                 return _data._is_trace;
             };
-            void set_is_trace(const bool &is_trace) {
+            void set_is_trace(const unsigned int &is_trace) {
                 _data._is_trace = is_trace;
             };
 
