@@ -2,36 +2,36 @@
  ----------------- Example usage --------------------------
 
  Frequency magnitude plot for all events in the sim file
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_freq_mag 1
 
  Frequency magnitude plot including a b=1 line, only using EQs that produce slip
    on sections 1,2,3 (must also specify a model file)
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_freq_mag 1 
             --model_file path/to/model.txt --use_sections 1 2 3
 
  Magnitude vs Rupture Area plot for all events in the sim file
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_mag_rupt_area
 
  Plot prob vs time of 3.0 < Mag < 6.0 earthquakes for all events in the sim file
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_prob_vs_t --min_magnitude 3.0 
             --max_magnitude 6.0
 
  Plot conditional prob vs time of Mag > 5.5 earthquakes, and plotting a weibull
    curve with beta=1.2 and tau=19
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_cond_prob_vs_t --min_magnitude 5.5 
             --beta 1.2 --tau 19
 
  Plot waiting times vs time for Mag > 6.0 earthquakes
- python path/to/vq/examples/pyvq.py --event_file path/to/sim_file.h5 
+ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 
             --event_file_type 'hdf5' --plot_waiting_times --min_magnitude 6.0
             
  Plot gravity changes for 5m slip on all elements in fault model
- python path/to/vq/examples/pyvq.py --model_file path/to/faults.txt --field_plot
+ python path/to/vq/pyvq/pyvq.py --model_file path/to/faults.txt --field_plot
             --field_type "gravity"
 
 
