@@ -107,7 +107,7 @@ class EventNumFilter:
         return label_str
 
 class SectionFilter:
-    def __init__(self, model, section_list):
+    def __init__(self, geometry, section_list):
         self._section_list = section_list
         self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
 
@@ -1105,7 +1105,11 @@ class ProbabilityPlot(BasePlotter):
         conditional = {}
         weibull = {}
         max_t0 = int(intervals.max())
-        t0_to_eval = np.linspace(0, max_t0, num=numPoints)
+        t0_to_eval = list(np.linspace(0, max_t0, num=numPoints))
+        t0_to_plot = [int(t) for t in np.linspace(0, int(max_t0/2.0), num=num_t0)]
+        # To get the lines of P(t,t0) evaluated at integer values of t0
+        t0_to_eval = np.sort(t0_to_eval+t0_to_plot)
+        t0_to_plot = np.array(t0_to_plot)
         for t0 in t0_to_eval:
             int_t0 = intervals[np.where( intervals > t0)]
             if int_t0.size != 0:
@@ -1123,9 +1127,6 @@ class ProbabilityPlot(BasePlotter):
             else:
                 conditional[t0] = None
                 weibull[t0] = None
-        t0_to_plot  = np.linspace(0, int(max_t0/2.0), num=num_t0)
-        match_inds  = [np.abs(np.array(t0_to_eval-t0_to_plot[i])).argmin() for i in range(len(t0_to_plot))]
-        t0_to_plot  = np.array([t0_to_eval[k] for k in match_inds])
         x_data_prob = [conditional[t0]['x'] for t0 in t0_to_plot]
         y_data_prob = [conditional[t0]['y'] for t0 in t0_to_plot]
         t0_colors   = [line_colormap(float(t0*.8)/t0_to_plot.max()) for t0 in t0_to_plot]
@@ -1140,13 +1141,13 @@ class ProbabilityPlot(BasePlotter):
             colors = t0_colors + weib_colors
             x_data = x_data_prob + x_data_weib
             y_data = y_data_prob + y_data_weib
-            labels = [round(t0_to_plot[k],2) for k in range(len(t0_to_plot))] + weib_labels
+            labels = [t0 for t0 in t0_to_plot] + weib_labels
             linewidths = prob_lw + weib_lw
         else:
             colors = t0_colors
             x_data = x_data_prob
             y_data = y_data_prob
-            labels = [round(t0_to_plot[k],1) for k in range(len(t0_to_plot))]
+            labels = [t0 for t0 in t0_to_plot]
             linewidths = prob_lw
         legend_string = r't$_0$='
         y_lab         = r'P(t, t$_0$)'
@@ -1166,7 +1167,7 @@ class ProbabilityPlot(BasePlotter):
         # t0_to_eval used to evaluate waiting times with 25/50/75% probability given t0=years_since
         t0_to_eval = np.arange(0, max_t0, 1.0)
         # t0_to_plot is "smoothed" so that the plots aren't as jagged
-        t0_to_plot = np.linspace(0, int(max_t0/2.0), num=5)
+        t0_to_plot = np.linspace(0, int(max_t0), num=10)
         t0_to_plot = [int(t0) for t0 in t0_to_plot]
         t0_dt      = {}
         t0_dt_plot = {}
@@ -1285,6 +1286,8 @@ if __name__ == "__main__":
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--res', required=False, help="Plot resolution: low, med, hi")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
+    parser.add_argument('--angles', type=float, nargs='+', required=False,
+            help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1297,6 +1300,25 @@ if __name__ == "__main__":
             help="Ensure the mean interevent time for all events is within 2 percent of the specified value.")
 
     args = parser.parse_args()
+    
+    # ------------------------------------------------------------------------
+    # Catch these errors before reading events to save unneeded computation
+    if args.field_plot:
+        if args.model_file is None:
+            raise "Must specify --model_file for field plots"
+        elif args.field_type is None:
+            raise "Must specify --field_type for field plots"
+            
+    # Check that if either beta or tau is given then the other is also given
+    if (args.beta and not args.tau) or (args.tau and not args.beta):
+        raise "Must specify both beta and tau."
+        
+    # Check that field_type is one of the supported types
+    if args.field_type:
+        type = args.field_type.lower()
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
+            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
+    # ------------------------------------------------------------------------
 
     # Read the event and sweeps files
     if args.event_file:
@@ -1308,16 +1330,6 @@ if __name__ == "__main__":
             geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
         else:
             geometry = Geometry(model_file=args.model_file)
-
-    # Check that if either beta or tau is given then the other is also given
-    if (args.beta and not args.tau) or (args.tau and not args.beta):
-        raise "Must specify both beta and tau."
-        
-    # Check that field_type is one of the supported types
-    if args.field_type:
-        type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
-            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -1338,66 +1350,53 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
     if args.use_sections:
-        event_filters.append(SectionFilter(model, args.use_sections))
+        event_filters.append(SectionFilter(geometry, args.use_sections))
 
     if args.event_file:
         events.set_filters(event_filters)
 
     # Generate plots
     if args.plot_freq_mag:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "freq_mag").filename
+        filename = SaveFile().event_plot(args.event_file, "freq_mag")
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area").filename
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area")
         MagnitudeRuptureAreaPlot().plot(events, filename)
     if args.plot_mag_mean_slip:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip").filename
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip")
         MagnitudeMeanSlipPlot().plot(events, filename)
     if args.plot_prob_vs_t:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time").filename
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time")
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt").filename
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt")
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t").filename
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t")
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "waiting_times").filename
+        filename = SaveFile().event_plot(args.event_file, "waiting_times")
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
-        if args.model_file is None:
-            raise "Must specify --model_file for field plots"
-        elif args.field_type is None:
-            raise "Must specify --field_type for field plots"
         if not args.res: res = 'low'
         else: res = args.res
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
-        angles = None
+        if args.angles: 
+            if len(args.angles) != 2:
+                raise "Must specify 2 angles"
+            else:
+                angles = np.array(args.angles)*np.pi/180.0
+        else: angles = None
         if args.event_id is None:
             element_ids = geometry.model.getElementIDs()
             ele_slips = {}
