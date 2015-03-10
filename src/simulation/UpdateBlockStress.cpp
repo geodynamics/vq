@@ -36,11 +36,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // All processes need the friction values for all blocks, so we set rhogd here
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
+        
         double rho = 5.515e3;      // density of rock in kg m^-3
         double g = 9.81;           // force of gravity in m s^-2
         double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
-
-        gid = sim->getGlobalBID(lid);
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
 
