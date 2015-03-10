@@ -42,6 +42,8 @@ void VCInitBlocks::dryRun(SimFramework *_sim) {
 void VCInitBlocks::init(SimFramework *_sim) {
     Simulation            *sim = static_cast<Simulation *>(_sim);
     BlockList::iterator     bit;
+    
+    printf("**Debug: Num_global blocks [from VCInitBlocks::init()]: %d\n", sim->numGlobalBlocks());
 
     assertThrow(sim->numGlobalBlocks() > 0, "Simulation must include at least 1 block.");
 

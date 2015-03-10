@@ -218,7 +218,10 @@ int SimFramework::internalBroadcast(const unsigned int &val) {
  */
 PluginID SimFramework::registerPlugin(SimPlugin *new_plugin, const bool &is_active) {
     PluginID        next_id;
-
+    //
+    //printf("**Debug SimFramework::registerPlugin() registering, %d/%d\n", plugin_active.size(), plugin_objs.size());
+    //std::cout << "**Debug SimFramework::registerPlugin() registering, " << plugin_active.size() << ", " << plugin_objs.size() << "\n";
+    //
     next_id = plugin_active.size();
     plugin_active[next_id] = is_active;
     plugin_objs[next_id] = new_plugin;
@@ -312,16 +315,23 @@ void SimFramework::init(void) {
     console() << std::setw(width) << std::left << "# *** OpenMP not enabled" << " ***" << std::endl;
 #endif
     console() << "# *******************************" << std::endl;
-
+    //
+    printf("**Debug: SimFramework::init() initializing plugins...\n");
+    int j_plugin=0;
     // Do the dry run or normal initialization
     for (it=ordered_plugins.begin(); it!=ordered_plugins.end(); ++it) {
         cur_plugin = plugin_objs[*it];
-
+        //
+        // **Debug:
+        //
         if (dry_run) {
             cur_plugin->dryRun(this);
         } else {
             cur_plugin->initDesc(this);
+            //printf("**Debug: SimFramewor::init(); BEGIN init() for plugin(%d)\n", j_plugin);
+            //std::cout << "**Degug: plugin name: " << cur_plugin->name() << "\n";
             cur_plugin->init(this);
+            //printf("**Debug: SimFramewor::init(); END init() for plugin(%d)\n", j_plugin++);
             plugin_timers[*it] = (cur_plugin->needsTimer() ? initTimer(cur_plugin->name(), false, true) : -1);
         }
     }
