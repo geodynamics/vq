@@ -60,6 +60,7 @@ SimFramework::SimFramework(int argc, char **argv) {
     barrier_timer = initTimer("Comm Barrier", false, false);
 
 #ifdef MPI_C_FOUND
+	// yoder: node_rank and world_size (defined in header) set by MPI_Comm_rank/_size.
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &node_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);

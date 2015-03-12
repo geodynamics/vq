@@ -85,9 +85,10 @@ void GreensFileOutput::init(SimFramework *_sim) {
 
         h5_greens_data->setGreensVals(global_row, shear_vals, norm_vals);
     }
-
-    delete shear_vals;
-    delete norm_vals;
+    //
+    // yoder: use delete [] for c-array types:
+    delete [] shear_vals;
+    delete [] norm_vals;
     delete h5_greens_data;
 #endif
 }

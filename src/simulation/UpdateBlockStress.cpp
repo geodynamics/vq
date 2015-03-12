@@ -75,6 +75,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Transfer stress drop values between nodes
     // This is needed for normal stress Green's calculations
+    // yoder: note for me and other C++ idiots:: ++gid and gid++ are equivalent in the for loop because 
+    //   they execute at the end of the code loop. ++gid should be slightly faster.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         double     stress_drop;
 
@@ -286,5 +288,5 @@ void UpdateBlockStress::stressRecompute(void) {
 }
 
 void UpdateBlockStress::finish(SimFramework *_sim) {
-    delete tmpBuffer;
+    delete [] tmpBuffer;
 }

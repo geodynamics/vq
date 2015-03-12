@@ -131,13 +131,20 @@ void GreensInit::init(SimFramework *_sim) {
     	//printf("**Debug(%d): begin MPI debug\n", getpid());
     	//std::cout << "** Debug("<<getpid()<<") Begin GreensInit::init() MPI bit\n";		// even this appears to fail on child nodes, so
     	                                                                              // i'm guessing that a seg-fault long since made a mess.
-        double global_shear_bytes, global_normal_bytes;
+        // yoder: try initializing these (just to suppress memcheck errors):
+        double global_shear_bytes = std::numeric_limits<float>::quiet_NaN();
+        double global_normal_bytes = std::numeric_limits<float>::quiet_NaN();
+        //double global_shear_bytes, global_normal_bytes;
+        //
         MPI_Reduce(&shear_bytes, &global_shear_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&normal_bytes, &global_normal_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        //
         int global_shear_ind = (log(global_shear_bytes)/log(2))/10;
         int global_norm_ind = (log(global_normal_bytes)/log(2))/10;
         double abbr_global_shear_bytes = global_shear_bytes/pow(2,global_shear_ind*10);
         double abbr_global_normal_bytes = global_normal_bytes/pow(2,global_norm_ind*10);
+        
+        printf("\n** GreensInit Debugging(%d): %f, %f ## %f, %f \n", getpid(), global_shear_bytes, global_normal_bytes, abbr_global_shear_bytes, abbr_global_normal_bytes); 
         //
         /*
         printf("**Debug(%d): now printf globals (%d)\n", getpid(), getpid());

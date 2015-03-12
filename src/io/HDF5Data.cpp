@@ -193,7 +193,10 @@ HDF5GreensDataReader::HDF5GreensDataReader(const std::string &hdf5_file_name) : 
     if (ndims < 0) exit(-1);
 
     greens_dim = dims[0];
-    delete dims;
+    //
+    // yoder: use delete []
+    //delete dims;
+    delete [] dims;
 }
 
 HDF5GreensData::~HDF5GreensData(void) {

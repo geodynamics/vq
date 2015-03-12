@@ -81,6 +81,7 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
                                    b.getBlockID(),
                                    sim->getShearStress(gid),
                                    sim->getNormalStress(gid));
+            // yoder: so does this leave the final stresses (_normal_final, _shear_final) unassigned? i think this makes sense for the initial failure.
 
             sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
         }
@@ -195,9 +196,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         }
 
         // Delete the memory arrays created
-        delete fullx;
-        delete fullb;
-        delete fullA;
+        // yoder: use delete [] for arrays...
+        delete [] fullx;
+        delete [] fullb;
+        delete [] fullA;
     } else {
 #ifdef MPI_C_FOUND
 
@@ -236,10 +238,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
         }
     }
-
-    delete A;
-    delete b;
-    delete x;
+    // yoder: use delete [] for arrays...
+    delete [] A;
+    delete [] b;
+    delete [] x;
 }
 
 /*!
