@@ -160,7 +160,8 @@ void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
             sim->setGreens(gid, j, in_shear_green[j], in_normal_green[j]);
         }
     }
-	// yoder: use delete [] for c-arrays.
+
+    // yoder: use delete [] for c-arrays.
     delete greens_file_reader;
     delete [] in_shear_green;
     delete [] in_normal_green;
@@ -247,8 +248,8 @@ void GreensFuncCalc::symmetrizeMatrix(Simulation *sim, GreensValsSparseMatrix &s
     delete [] global_ids;
     delete [] send_buf;
     delete [] recv_buf;
-    
-    
+
+
 #endif
 
     // Symmetrize the shear stress matrices

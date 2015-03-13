@@ -60,7 +60,7 @@ SimFramework::SimFramework(int argc, char **argv) {
     barrier_timer = initTimer("Comm Barrier", false, false);
 
 #ifdef MPI_C_FOUND
-	// yoder: node_rank and world_size (defined in header) set by MPI_Comm_rank/_size.
+    // yoder: node_rank and world_size (defined in header) set by MPI_Comm_rank/_size.
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &node_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -317,11 +317,12 @@ void SimFramework::init(void) {
 #endif
     console() << "# *******************************" << std::endl;
     //
-    printf("**Debug: SimFramework::init() initializing plugins...\n");
     int j_plugin=0;
+
     // Do the dry run or normal initialization
     for (it=ordered_plugins.begin(); it!=ordered_plugins.end(); ++it) {
         cur_plugin = plugin_objs[*it];
+
         //
         // **Debug:
         //
@@ -329,10 +330,7 @@ void SimFramework::init(void) {
             cur_plugin->dryRun(this);
         } else {
             cur_plugin->initDesc(this);
-            //printf("**Debug: SimFramewor::init(); BEGIN init() for plugin(%d)\n", j_plugin);
-            //std::cout << "**Degug: plugin name: " << cur_plugin->name() << "\n";
             cur_plugin->init(this);
-            //printf("**Debug: SimFramewor::init(); END init() for plugin(%d)\n", j_plugin++);
             plugin_timers[*it] = (cur_plugin->needsTimer() ? initTimer(cur_plugin->name(), false, true) : -1);
         }
     }

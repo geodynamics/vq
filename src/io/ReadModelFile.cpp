@@ -86,6 +86,7 @@ void ReadModelFile::init(SimFramework *_sim) {
 
         // Set VC specific values
         //new_block.setFaultID(eit->fault_id());
+        new_block.setFaultID(world.section(eit->section_id()).fault_id());
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
 
         BlockID bid = sim->addBlock(new_block);

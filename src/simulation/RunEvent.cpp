@@ -60,6 +60,8 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
         if (sim->isLocalBlockID(*fit)) {
             BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
+            
+            printf("**Debug: RunEvent:processBlocksOrigFail(), BlockID: %d, sweep_num: %d\n", gid, sweep_num);
 
             // calculate the drop in stress from the failure
             stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
@@ -81,7 +83,6 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
                                    b.getBlockID(),
                                    sim->getShearStress(gid),
                                    sim->getNormalStress(gid));
-            // yoder: so does this leave the final stresses (_normal_final, _shear_final) unassigned? i think this makes sense for the initial failure.
 
             sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
         }
@@ -130,10 +131,12 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         gid = sim->getGlobalBID(lid);
 
         // If the block has already failed (but not in this sweep) then adjust the slip
+        // note: these are the cases that do not report final stresses.
         if (sim->getFailed(gid) && global_failed_elements.count(gid) == 0) {
             local_id_list.insert(gid);
         }
     }
+    printf("**Debug: begin processBlocksSecondaryFailures() for %d blocks\n", local_id_list.size());
 
     // Figure out how many failures there were over all processors
     sim->distributeBlocks(local_id_list, global_id_list);
@@ -144,7 +147,16 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     double *A = new double[num_local_failed*num_global_failed];
     double *b = new double[num_local_failed];
     double *x = new double[num_local_failed];
+    //
+    // yoder, debug:: let's see what the stresses look like in the begining of this cycle:
+     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
+        Block &block = sim->getBlock(*it);
 
+        double slip = x[i] - sim->getSlipDeficit(*it);
+        printf("**Debug: secondary slip/stress update_initial (block_id: %d, sweep_num: %d, slip: %f, ss: %f, ns:%f)\n", *it, sweep_num, 42.0, sim->getShearStress(*it), sim->getNormalStress(*it));
+        }
+    //
+    // stress transfer (greens functions) between each local element and all global elements.
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
         for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
             A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
@@ -221,7 +233,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
         Block &block = sim->getBlock(*it);
 
-        double slip = x[i] - sim->getSlipDeficit(*it);;
+        double slip = x[i] - sim->getSlipDeficit(*it);
+        printf("**Debug: secondary slip/stress update_end (block_id: %d, sweep_num: %d, slip: %f, ss: %f, ns:%f)\n", *it, sweep_num, slip, sim->getShearStress(*it), sim->getNormalStress(*it));
 
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresses
@@ -238,6 +251,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
         }
     }
+
     // yoder: use delete [] for arrays...
     delete [] A;
     delete [] b;
@@ -259,6 +273,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     bool                    final_sweep = false;
     std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> nbr_start_end;
     quakelib::ElementIDSet::const_iterator  nit;
+    
+    printf("\n\n**Debug: begin processStaticFailure()\n");
 
     // Get the event trigger block and fault
     triggerID = sim->getCurrentEvent().getEventTrigger();
@@ -285,9 +301,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
+        //printf("**Debug: global_failed_elements.size(%d) (before)\n", global_failed_elements.size());
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
+        //printf("**Debug: global_failed_elements.size(%d) (after)\n", global_failed_elements.size());
 
-        // Process the blocks that failed
+        // Process the blocks that failed.  
+        // note: setInitStresses() called in processBlocksOrigFail(). presently, this init-->final does not appear to be paired.
         processBlocksOrigFail(sim, event_sweeps);
 
         // Recalculate CFF for all blocks where slipped blocks don't contribute
@@ -329,6 +348,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->computeCFFs();
 
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
+        // note that setInitStresses() is executed in processBlocksSecondaryFailures() (and then setFinalInitStresses() is executed after computeCFFs() here )
         processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
@@ -360,6 +380,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
+                printf("**Debug: setFinalStresses(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
                 event_sweeps.setFinalStresses(sweep_num,
                                               fit->first,
                                               sim->getShearStress(fit->first),
@@ -430,7 +451,7 @@ void RunEvent::processAftershock(Simulation *sim) {
         }
 
         // Determine the target rupture area given the aftershock magnitude
-        // TODO: make this equation user specifiable?
+        // TODO: make this equation user specifiable? (yoder: yes, we should do something with this. 1) .91->1.0*mag. in general, the .91 factor = b_gr.
         double rupture_area = pow(10, -3.49+0.91*as.mag);
         double selected_rupture_area = 0;
         double selected_rupture_area_mu = 0;

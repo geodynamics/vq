@@ -110,12 +110,10 @@ Simulation::~Simulation(void) {
 #ifdef DEBUG
     console() << "Number matrix multiplies: " << num_mults << std::endl;
 #endif
-    // yoder: aren't these supposed to be cleared with free(), or at least delete [] ???
-    //if (mult_buffer) delete mult_buffer;
-    //if (decompress_buf) delete decompress_buf;
+
     if (mult_buffer) free( mult_buffer );
     if (decompress_buf) free( decompress_buf );
-
+    //
     deallocateArrays();
 }
 
@@ -328,8 +326,22 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
     width = numGlobalBlocks();
     array_dim = localSize();
     //
+    // yoder debug:
+    /*
+    // these (height, width, array_dim) always appear to be zero (or at least often early in the sim...).
+    if (height!=0.0 or width!=0.0 or array_dim!=0.0) {
+	    printf("\n**Debug: Simulation::matricVectorMultiplyAccum(): height: %f, width: %f, array_dim: %f\n\n", height, width, array_dim);
+	    }
+	else{
+		printf("**Debug: Simulation::matricVectorMultiplyAccum(): zeros\n");
+	    }
+	*/
+    //
     // yoder: why not always reallocate this? we always overwrite it...
+    //     we're seeing a failure on Greens functions check-sum tests (P1, P2, P4) and "run_full" tests (P2,P4). it could
+    //     be related to this buffer array not being allocated correctly, particularly on child nodes.
     if (!decompress_buf) decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
+
     //decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
 
     /*if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
@@ -353,8 +365,9 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
         //
         // TODO:
         // yoder: why not always reallocate memory here? is it possible that the array might have been initialized, but the size has changed? or
-        // are we sharing this buffer between other functions (aka, it might have been assigned by somebody else? or is this size fixed? i performance vs safety...
+        // are we sharing this buffer between other functions (aka, it might have been assigned by somebody else? or is this size fixed? performance vs safety?)
         if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
+
         //mult_buffer = (double *)valloc(sizeof(double)*array_dim);    //??
 
         // Reset the temporary buffer
@@ -726,6 +739,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
             ++n;
         }
     }
+
     //
     // yoder: use delete [] for arrays...
     delete [] block_ids;
@@ -748,6 +762,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
  */
 void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 #ifdef MPI_C_FOUND
+    // note: this does nothing if not MPI_C_FOUND
     int                             *sweep_counts, *sweep_offsets;
     int                             num_local_sweeps, i, total_sweep_count;
     BlockSweepVals                  *sweep_vals, *all_sweeps;
@@ -764,8 +779,6 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
         sweep_counts = new int[world_size];
         sweep_offsets = new int[world_size];
     } else {
-        // yoder:
-    	// is this a good idea? do we need to reallocate, free, etc? note, these have to be freed (delete, delete[])ed appropriately. this makes a bit of a mess.
         sweep_counts = sweep_offsets = NULL;
     }
 
@@ -776,6 +789,8 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
         total_sweep_count = 0;
 
         for (i=0; i<world_size; ++i) {
+            // note: this gives the starting position of sweeps from each node (first node starts at position i=0,
+            // second at i=n_0, third at i=n_1, etc.)
             sweep_offsets[i] = total_sweep_count;
             total_sweep_count += sweep_counts[i];
         }
@@ -786,6 +801,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
     sweep_vals = new BlockSweepVals[num_local_sweeps];
 
     if (isRootNode()) all_sweeps = new BlockSweepVals[total_sweep_count];
+
     //
     for (i=0,it=sweeps.begin(); it!=sweeps.end(); ++it,++i) {
         sweep_vals[i].element_id = it->_element_id;
@@ -798,6 +814,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
     }
 
     // Gather the sweep info at the root node
+    // yoder: (aka, consolidate sweep_vals into all_sweeps)
     MPI_Gatherv(sweep_vals, num_local_sweeps, element_sweep_type,
                 all_sweeps, sweep_counts, sweep_offsets, element_sweep_type,
                 ROOT_NODE_RANK, MPI_COMM_WORLD);
@@ -821,18 +838,18 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
                                     all_sweeps[i].final_shear,
                                     all_sweeps[i].final_normal);
         }
+
         // yoder: use delete [] for arrays:
         if (isRootNode()) {
             delete [] sweep_counts;
             delete [] sweep_offsets;
             delete [] all_sweeps;
-            }
-        else {
-        	// note that in this case, sweep_counts=NULL; sweep_offsets=NULL; and so far, all_sweeps is uninitialized or maybe populated by an MPI call?
-        	delete sweep_counts;
+        } else {
+            // note that in this case, sweep_counts=NULL; sweep_offsets=NULL; and so far, all_sweeps is uninitialized or maybe populated by an MPI call?
+            delete sweep_counts;
             delete sweep_offsets;
             delete all_sweeps;
-            }
+        }
     }
 
     delete [] sweep_vals;
@@ -855,7 +872,7 @@ void Simulation::partitionBlocks(void) {
     std::set<BlockID>               cur_assigns;
     std::set<BlockID>::iterator     bit;
     std::set<BlockID>               avail_ids;
-    //BlockID                         *assign_array;		// declare in line?
+    //BlockID                         *assign_array;        // declare in line?
     int                             num_assign;
     BlockList::iterator             git;
     bool                            more_to_assign;
@@ -867,27 +884,11 @@ void Simulation::partitionBlocks(void) {
     num_global_blocks = numGlobalBlocks();
     num_local_blocks = num_global_blocks/world_size;
     local_rank = getNodeRank();
-    //
-    printf("**Debug(%d): world_size: %d, num_global_blocks: %d, num_local_blocks: %d, local_rank: %d\n", getpid(), world_size, num_global_blocks, num_local_blocks, local_rank);
-    //yoder:
-    printf("**Debug: declare test_ary\n");
-    BlockID * test_ary = new BlockID[100];
-    printf("**Debug: declared test_ary\n");
-    
-    for (unsigned j_index = 0; j_index<10; ++j_index) {
-    	test_ary[j_index] = j_index+11;
-     	}
-    printf("**Debug: should have assigned some values. let's have a look...\n");
-    for (unsigned j_index=0;j_index<10;++j_index) {
-      	printf("%d, ", test_ary[j_index]);
-      	}
-    printf("**Debug: finished. delete the array\n");
-    
-    delete [] test_ary;
-    //printf("**Debug: deleted.\n");
 
+    //
     // Make a set of available BlockIDs
-    // yoder: so Simulation() acts like a list-container of some sort (a BlockList?)? begin()/end() refer to this.begin(), this.end() ??
+    // yoder: so Simulation() acts like a list-container of some sort (a BlockList?)? begin()/end() refer to this.begin(), this.end()
+    //      Simulator.begin()/end() return an iterator to a vector<> like member object.
     for (git=begin(); git!=end(); ++git) avail_ids.insert(git->getBlockID());
 
     // Segment->Node assignment is made at the root node, then transmitted to other nodes
@@ -953,34 +954,28 @@ void Simulation::partitionBlocks(void) {
 
         // Send the BlockIDs to all nodes
         num_assign = cur_assigns.size();
-        printf("**Debug(%d): some sizes: %d, %d, %d\n", getpid(), sizeof(num_assign), sizeof(MPI_INT), sizeof(MPI_SHORT));
         MPI_Bcast(&num_assign, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
         //
-        // try delclaring/deleting inline...        
+        // try delclaring/deleting inline...
         //assign_array = new BlockID[num_assign];
-        BlockID * assign_array = new BlockID[num_assign];
-        //
-        printf("**Debug(%d): num_assign: %d, num_local_blocks: %d, Root_node: %d\n", getpid(), num_assign, num_local_blocks, ROOT_NODE_RANK);
+        BlockID *assign_array = new BlockID[num_assign];
 
+        //
         // Put the assigned IDs into the array on the root node
         if (isRootNode()) {
-            printf("**Debug(%d): BEGIN assign_array on root node\n", getpid());
+            //
             for (n=0,bit=cur_assigns.begin(); bit!=cur_assigns.end(); ++n,++bit) {
-                // yoder: 
-                //printf("**   **Debug(%d):n(assign_array[n]): %d/%d\n", getpid(), n,sizeof(*bit));
                 assign_array[n] = *bit;
             }
-            printf("**Debug(%d): END assign_array on root node:: %d\n", getpid(), n);
         }
-        
+
 
         // Broadcast the assignments to all nodes
         // what is the correct MPI data type to use here? int has size 4; MPI_INT 8.
         //MPI_Bcast(assign_array, num_assign, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
         MPI_Bcast(assign_array, num_assign, MPI_UNSIGNED, ROOT_NODE_RANK, MPI_COMM_WORLD);
-        
-        printf("**Debug(%d): sizeof(assign_array[0]): %d, sizeof(MPI_INT): %d\n", getpid(), sizeof(assign_array[0]), sizeof(MPI_INT));
 
+        //
         for (n=0; n<num_assign; ++n) {
             if (local_rank == i) {
                 local_block_ids.push_back(assign_array[n]);
@@ -990,13 +985,14 @@ void Simulation::partitionBlocks(void) {
             block_node_map.insert(std::make_pair(assign_array[n], i));
             node_block_map.insert(std::make_pair(i, assign_array[n]));
         }
-		
+
         delete [] assign_array;
     }
 
     if (isRootNode()) assertThrow(avail_ids.size()==0, "Did not assign all blocks in partitioning.");
-	//
-	// (i think) these are declared in core/Comm.h. are they ever destructed, or do they need to be since they presist for the whole program?
+
+    //
+    // these are declared and deallocated in core/Comm.h.
     updateFieldRecvIDs = new BlockID[num_global_blocks];
     updateFieldRecvBuf = new GREEN_VAL[num_global_blocks];
 
@@ -1045,9 +1041,7 @@ void Simulation::partitionBlocks(void) {
     }
 
 #endif
-	// yoder: i don't get this. we've declared and allocated memory to this. don't we need to free() it before we set it to null (in which case, the memory just
-	// goes off into space?)? for now, let's just comment away. the existing code (i think) 
-	// ... but if we don't have MPI, we won't use these, so set them to NULL. however, that means we have to dispose of them differently as well.
+    //
     mult_buffer = NULL;
     decompress_buf = NULL;
 

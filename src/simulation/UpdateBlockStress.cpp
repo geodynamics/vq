@@ -29,6 +29,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     int                 lid;
     double              stress_drop, norm_velocity;
+    // yoder:
+    // move these (quasi)static variable definitions outside the for loop:
+    double rho = 5.515e3;      // density of rock in kg m^-3
+    double g = 9.81;           // force of gravity in m s^-2
+    double depth = 0.0;         // or we might want to initialize with a nan or NULL...
 
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
@@ -37,10 +42,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        
-        double rho = 5.515e3;      // density of rock in kg m^-3
-        double g = 9.81;           // force of gravity in m s^-2
-        double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
+        //
+        // yoder: move these (quasi)static variable definitions outside the for loop.
+        //double rho = 5.515e3;      // density of rock in kg m^-3
+        //double g = 9.81;           // force of gravity in m s^-2
+        //double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
+        depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
 
@@ -75,10 +82,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Transfer stress drop values between nodes
     // This is needed for normal stress Green's calculations
-    // yoder: note for me and other C++ idiots:: ++gid and gid++ are equivalent in the for loop because 
+    // yoder: note for me and other C++ idiots:: ++gid and gid++ are equivalent in the for loop because
     //   they execute at the end of the code loop. ++gid should be slightly faster.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        double     stress_drop;
+        // yoder: try initializing this...
+        //double     stress_drop;
+        double       stress_drop=std::numeric_limits<float>::quiet_NaN();
 
         if (sim->isLocalBlockID(gid)) {
             stress_drop = sim->getStressDrop(gid);
@@ -95,6 +104,10 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
+    //
+    // yoder:
+    // ... but valgrind does not like deleting this; i get an "illegal write". dunno...
+    //delete [] tmpBuffer;
 }
 
 /*!
@@ -242,6 +255,9 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
         // If the time to slip is less than the current shortest time, record the block
         // To ensure reproducibility with multiple processes, if multiple blocks fail
         // at the same time then we choose the block with the lowest ID over all the processes
+        // yoder: regarding a tie for failure time:: this is probably fine, but for a given instantiation of geometry, it
+        // favors certain fault segments for failure. we should probably determine these randomly... unless we very specifically want
+        // this part of the simulation to remain deterministic.
         if (ts < next_static_fail.val) {
             next_static_fail.block_id = gid;
             next_static_fail.val = ts;

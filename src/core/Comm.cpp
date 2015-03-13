@@ -208,8 +208,9 @@ VCComm::VCComm(void) {
 
 VCComm::~VCComm(void) {
 #ifdef MPI_C_FOUND
-	// these are declared with "new type[]", so use delete []:
-	//
+
+    // these are declared with "new type[]", so use delete []:
+    //
     if (updateFieldCounts) delete [] updateFieldCounts;
 
     if (updateFieldDisps) delete [] updateFieldDisps;

@@ -78,9 +78,7 @@ int main (int argc, char **argv) {
     state_output_file = vc_sim->registerPlugin(new CheckpointFileOutput, vc_sim->getCheckpointPeriod() > 0);
 
     // These plugins are always active in a simulation
-    //printf("**Debug: BEGIN register VCInitBlocks \n");
     init_blocks = vc_sim->registerPlugin(new VCInitBlocks, true);
-    //printf("**Debug: END register VCInitBlocks \n");
     update_block_stress = vc_sim->registerPlugin(new UpdateBlockStress, true);
     run_event = vc_sim->registerPlugin(new RunEvent, true);
     event_output = vc_sim->registerPlugin(new EventOutput, !vc_sim->getEventOutfile().empty());
@@ -129,7 +127,7 @@ int main (int argc, char **argv) {
     vc_sim->init();
     //printf("**Debug: END  plugins and dependencies registered; run vc_sim->init()\n");
     //std::cout << "**Debug: using cout: FINISHED vc_sim->init(), " << getpid() << "\n";
-    
+
     vc_sim->run();
     vc_sim->finish();
 

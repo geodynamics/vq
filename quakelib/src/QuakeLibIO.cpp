@@ -1130,8 +1130,6 @@ void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     for (i=0; i<num_fields; ++i) {
         field_offsets[i] = descs[i].offset;
         field_sizes[i] = descs[i].size;
-        //
-        printf("**Debug: offset/size(%d) = %d/%d :: %s\n", i, descs[i].offset, descs[i].size, ModelSection::hdf5_table_name().c_str());
     }
 
     res = H5TBget_table_info(data_file, ModelSection::hdf5_table_name().c_str(), &num_fields, &num_sections);
@@ -1139,11 +1137,7 @@ void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     if (res < 0) exit(-1);
 
     // TODO: check that num_fields matches the descs
-	//
-	// Debug (note getpid() not declared. getPID maybe?):
-	printf("**Debug (%d): num_fields: %lu, num_sections: %lu\n", 0, num_fields, num_sections);		// note: num_sections is type hsize_t, not int. so maybe this is part of the problem?
-	printf("**Debug (%d): sizes: %lu/%lu/%lu \n", 0, sizeof(int), sizeof(size_t), sizeof(hsize_t));
-	//
+    //
     section_data = new SectionData[num_sections];
     res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_sections, sizeof(SectionData), field_offsets, field_sizes, section_data);
 
@@ -2397,10 +2391,12 @@ void quakelib::ModelSweeps::read_ascii(std::istream &in_stream, const unsigned i
 }
 
 void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
-    std::vector<SweepData>::const_iterator it;		// declre an iterator (const_iterator) object (named it) to a vector<SweepData> container...
-                                                    // which will point to _sweeps, which is a member of the class ModelSweeps()
+    std::vector<SweepData>::const_iterator it;      // declre an iterator (const_iterator) object (named it) to a vector<SweepData> container...
+
+    // which will point to _sweeps, which is a member of the class ModelSweeps()
     // yoder: we're seeing a valgrind complaint from this block; it might actually be the case that _normal_final is broken (not allocated properly).
     for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+        /*
         printf("**Debug: _normal_init: %f\n", it->_normal_init);
         printf("**Debug: _normal_final: %f\n", it->_normal_final);
         printf("**Debug: _shear_init: %f\n", it->_shear_init);
@@ -2412,6 +2408,7 @@ void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
         std::cout << "**Debug cout: _shear_init: " <<  it->_shear_init << "\n";
         std::cout << "**Debug cout: _shear_final: " <<  it->_shear_final << "\n";
         std::cout << "**Debug cout:\n";
+        */
         //
         out_stream << it->_event_number << " ";
         out_stream << it->_sweep_number << " ";

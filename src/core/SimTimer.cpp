@@ -191,6 +191,7 @@ void SimTimer::printAllTimers(std::ostream &out_stream, int world_size, int node
             out_stream.unsetf(std::ios::fixed);
         }
     }
+
     // yoder: use delete [] for "new" arrays.
     if (time_recv_buf)  delete [] time_recv_buf;
 
