@@ -1,0 +1,35 @@
+#!/bin/bash
+# installer shell script for vq.
+
+num_processors=1
+
+if [$1 -eq ""]; then
+	#echo "iffing..."
+	echo "use default num_processors " $num_processors
+else
+	#echo "elsing..."
+	num_processors=$1
+	echo "setting num_processors = " $1
+fi
+
+rm -rf build
+mkdir build
+cd build
+## spp:
+ #cmake ..
+ ## mpp:
+#CC=mpicc CXX=mpicxx cmake ..
+CC=mpicc CXX=mpicxx cmake .. -DCMAKE_BUILD_TYPE=Debug
+make -j $num_processors
+cd ..
+
+
+## note on cmake options for debugging -- optimization:
+#CC=mpicc CXX=mpicxx cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo
+## Half and half
+#
+#CC=mpicc CXX=mpicxx cmake -DCMAKE_BUILD_TYPE=Release
+## Most optimized, can’t do backtraces
+#
+#CC=mpicc CXX=mpicxx cmake -DCMAKE_BUILD_TYPE=Debug
+## Least optimized
