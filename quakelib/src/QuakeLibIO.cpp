@@ -193,7 +193,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(ElementData, _is_quad);
     field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
+    field_desc.size = sizeof(UIndex);
 #endif
     descs.push_back(field_desc);
 
@@ -1151,6 +1151,7 @@ void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
+    // May need to use delete [] section_data, etc
     delete section_data;
     delete field_offsets;
     delete field_sizes;
