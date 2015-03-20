@@ -365,7 +365,7 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
         //
         // TODO:
         // yoder: why not always reallocate memory here? is it possible that the array might have been initialized, but the size has changed? or
-        // are we sharing this buffer between other functions (aka, it might have been assigned by somebody else? or is this size fixed? performance vs safety?)
+        // are we sharing this buffer between other functions (aka, it might have been assigned someplace else? or is this size fixed?)
         if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
 
         //mult_buffer = (double *)valloc(sizeof(double)*array_dim);    //??

@@ -19,6 +19,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include "Simulation.h"
+#include <math.h>
 
 #ifndef _RUN_EVENT_H_
 #define _RUN_EVENT_H_
@@ -33,7 +34,11 @@ class RunEvent : public SimPlugin {
         BlockIDProcMapping      global_failed_elements;
         quakelib::ElementIDSet  loose_elements;
         unsigned int            sweep_num;
-
+        //
+        // yoder: let's see if we can't sort out the secondary failures bit by declaring (and renaming for clarity) these lists at the class scope level:
+        quakelib::ElementIDSet          local_secondary_id_list;
+        BlockIDProcMapping              global_secondary_id_list;
+        
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
         virtual void markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault);
@@ -52,5 +57,7 @@ class RunEvent : public SimPlugin {
         };
         virtual SimRequest run(SimFramework *_sim);
 };
+
+void solve_it(int n, double *x, double *A, double *b);
 
 #endif
