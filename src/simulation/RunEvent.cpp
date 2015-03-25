@@ -61,9 +61,7 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
         if (sim->isLocalBlockID(*fit)) {
             BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
-            
-            printf("**Debug: RunEvent:processBlocksOrigFail(), BlockID: %d, sweep_num: %d\n", gid, sweep_num);
-
+            //
             // calculate the drop in stress from the failure
             stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
 
@@ -125,14 +123,18 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     unsigned int    i, n;
     //quakelib::ElementIDSet          local_id_list;
     //BlockIDProcMapping              global_id_list;		// yoder: use class scope declarations for these lists...
+    quakelib::ElementIDSet          local_secondary_id_list;
+    BlockIDProcMapping              global_secondary_id_list;
+    //
     quakelib::ElementIDSet::const_iterator      it;
     BlockIDProcMapping::const_iterator  jt;
     //
-    //for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-    for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+    //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
     	// would a faster way to do this step be to look through the current event_sweeps list? yes, but we're assuming that "original failure" has been processed,
     	// which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
-    	lid = s_it->_element_id;
+    	// another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
+    	//lid = s_it->_element_id;
         gid = sim->getGlobalBID(lid);
         //
         // If the block has already failed (but not in this sweep) then adjust the slip
@@ -142,7 +144,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             local_secondary_id_list.insert(gid);
         }
     }
-    printf("**Debug: begin processBlocksSecondaryFailures() for %d blocks\n", local_secondary_id_list.size());
     //
     // use: global/local_secondary_id_list;
     // Figure out how many failures there were over all processors
@@ -250,8 +251,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         Block &block = sim->getBlock(*it);
         //
         double slip = x[i] - sim->getSlipDeficit(*it);
-        printf("**Debug: secondary slip/stress update_end (block_id: %d/%d, sweep_num: %d, slip: %f, ss: %f, ns:%f)\n", *it, i, sweep_num, slip, sim->getShearStress(*it), sim->getNormalStress(*it));
-
+        //
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresse
             sweeps.setSlipAndArea(sweep_num,
@@ -290,9 +290,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     bool                    final_sweep = false;
     std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> nbr_start_end;
     quakelib::ElementIDSet::const_iterator  nit;
-    //
-    printf("\n\n**Debug: begin processStaticFailure()\n");
-    //
     // Get the event trigger block and fault
     triggerID = sim->getCurrentEvent().getEventTrigger();
     trigger_fault = sim->getBlock(triggerID).getFaultID();
@@ -304,7 +301,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
     // yoder:
-    local_secondary_id_list.clear();
+    //local_secondary_id_list.clear();
     //
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
@@ -317,7 +314,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     // yoder: we'll use this iterator to efficiently walk through the event_sweeps list when we update stresses:
     //quakelib::ModelSweeps::iterator s_it=event_sweeps.begin();
     unsigned int event_sweeps_pos = 0;
-    
     //
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
@@ -362,7 +358,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 		//
         // Calculate the CFFs based on the stuck blocks
         // multiply greenSchear() x getUpdateFieldPtr() --> getShearStressPtr() ... right?
-        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to (i think) sim->getRhogd(gid) -- see cod a couple paragraphs above.
+        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to (i think) sim->getRhogd(gid) -- see code a couple paragraphs above.
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
@@ -379,8 +375,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
         // note that setInitStresses() is executed in processBlocksSecondaryFailures(), and then setFinalInitStresses() is executed after computeCFFs() here.
-        // note that, however, setFinalInitStresses() is only executed for new block failures (not secondary), so we get a bunch of nan values for finalStress.
-        // note: sim->distributeBlocks() runs inside the processBlocksSecondaryFailures() script.
+        // note that, however, the global/local_failed_elements lists contain element_ids only for new ("original") failures.
+        // in order to properly update secondary failures, we need to either 1) keep older events in the global_failed_elements list (and adjust a bunch of other logic),
+        // 2) maintain a secondary list like global_secondary_failures (sample code may still be present), or 3) loop over the sweeps/event_sweeps objects-list directly
+        // to update all elements in the rupture. these different options have their own (dis)advantages in speed/memory optimization, code clarity, etc.
+        //
         processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
@@ -392,13 +391,23 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // 
             // yoder:
             // original: evaluates at 0 for getFailed(gig)==True, otherwise slipDeficite()... 
-            // i think the main problem here is taht getFailed() returns true only for "original" type failures.
-            // still, there is some question as to how exactly this is supposed to work: setUpdate for all elements?
-            // elements in the current rupture? either way, we get prev_final != current_init, though that may not be
-            // incorrect.
+            // so note that this sets the update-field value to 0 for all currently failed elements. since we're trying to update for secondary failures
+            // (on already failed blocks), clearly this is not quite right. however, do we updata ALL blocks, or ALL except "original" failure type blocks?
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
             //
-            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            // note: ... and here's how this goes:
+            // 1) if we use the original code, final stresses don't change, because we set the update field->0 for all failed blocks.
+            // 2) if we update all blocks except those that most recently failed [(global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)))], for an
+            // event's first (trigger) block failure, we see an intermediate sterss change on its "original" failrue and then failure to nearly zero in its first 
+            // secondary failure. subsequent blocks seem to fail close to zero (but not consistently as close as the trigger block), in their second (first secondary) failure
+            // 3) if we always update all blocks, the "original" trigger failure -->; subsequent failures (original and secondary) show no particular pattern, except that
+            // they tend to have shear_stress<0. note that (3) gives us approximately 2x as many stress calculations, propagate-event-ruptures, 24000/1800 (3) vs 16000/720 (2)
+            // sweeps/events for type (3), (2) respectively. more pointedly, this one fails two tests on "make test" that (2) passes: 196 - test_two_slip_none_6000 (Failed), 201 - test_two_slip_none_3000 (Failed)
+            // all but originals:
+            // (this one passes "make test")
+            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));            
+            // all blocks, every time:
+            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
         }
         //
         sim->distributeUpdateField();
@@ -421,7 +430,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Record the final stresses of blocks that failed during this sweep
         BlockIDProcMapping::iterator        fit;
         //
-        // yoder: this is the original code, to loop over all new failures. nominally, we want to do this plus loop over secondary failures as well.
+        // yoder: there area  couple ways to see that we loop over all the necessary elements. here's an approach that starts with the original code.
+        // i recommend leaving these comments in place for a revision or two, just until we make a final decision about how we're going to do this
+        // (process these two populations of block failures).
+        //
+        // this is the original code, to loop over all new failures. nominally, we want to do this plus loop over secondary failures as well.
         // this loop ignores all secondary slip events. do we loop over a different list, or do we need to maintain a collective global_failed_element list (aka,
         // not re-initialize it every sweep)? ... and of course, we must ask: is this by design? can we loop over event_sweeps (or at least new entries therein) directly?
         /*
@@ -434,7 +447,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                                               sim->getNormalStress(fit->first));
             }
         }
-        // yoder: this loops over the global list of secondary failures (which has been moved to a class-wide declaration). 
+        // yoder: this loops over a global list of secondary failures (which has/d been moved to a class-wide declaration, if this is how we want to handle this). 
         for (fit=global_secondary_id_list.begin(); fit!=global_secondary_id_list.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
                 printf("**Debug: setFinalStresses_secondary(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
@@ -452,27 +465,24 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
         	//
-        	//unsigned int sweeps_pos = event_sweeps.sweepElementPos(sweep_num, s_it->_element_id);
         	unsigned int sweeps_pos = 0;		// just a place holder for now; this is a private declaration.
-        	//printf("**Debug [RunEvent.cpp:RunEvent::processStaticFailure()]: current_sweep: %d, sweep_sweep: %d, gid:%d, pos: %d, ss_0:%f, ss_f:%f, ns_0:%f, ns_f:%f\n", sweep_num, s_it->_sweep_number, s_it->_element_id, sweeps_pos, s_it->_shear_init, s_it->_shear_final, s_it->_normal_init, s_it->_normal_final);
+            //
         	if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
-        		//printf("**Debug: ... and we'd update this (above) row.\n");
         		event_sweeps.setFinalStresses(sweep_num,
         		                              s_it->_element_id, 
         		                              sim->getShearStress(s_it->_element_id), 
         		                              sim->getNormalStress(s_it->_element_id));
-        		//printf("**Debug [** Updated **]: current_sweep: %d, sweep_sweep: %d, gid:%d, pos: %d, ss_0:%f, ss_f:%f, ns_0:%f, ns_f:%f\n", sweep_num, s_it->_sweep_number, s_it->_element_id, sweeps_pos, s_it->_shear_init, s_it->_shear_final, s_it->_normal_init, s_it->_normal_final);
+
         		}
         	}
         	
         //
-
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear(); // we are done with these blocks
         //
         // yoder:
-        local_secondary_id_list.clear();
-        global_secondary_id_list.clear();
+        //local_secondary_id_list.clear();
+        //global_secondary_id_list.clear();
 
         // Find any blocks that fail because of the new stresses
         markBlocks2Fail(sim, trigger_fault);
@@ -536,6 +546,7 @@ void RunEvent::processAftershock(Simulation *sim) {
 
         // Determine the target rupture area given the aftershock magnitude
         // TODO: make this equation user specifiable? (yoder: yes, we should do something with this. 1) .91->1.0*mag. in general, the .91 factor = b_gr.
+        //         in general, we should move all constants declarations/assignments to a .h module and/or parameter file.
         double rupture_area = pow(10, -3.49+0.91*as.mag);
         double selected_rupture_area = 0;
         double selected_rupture_area_mu = 0;

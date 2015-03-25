@@ -36,8 +36,8 @@ class RunEvent : public SimPlugin {
         unsigned int            sweep_num;
         //
         // yoder: let's see if we can't sort out the secondary failures bit by declaring (and renaming for clarity) these lists at the class scope level:
-        quakelib::ElementIDSet          local_secondary_id_list;
-        BlockIDProcMapping              global_secondary_id_list;
+        //quakelib::ElementIDSet          local_secondary_id_list;
+        //BlockIDProcMapping              global_secondary_id_list;
         
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);

@@ -11,13 +11,13 @@ file_name = sys.argv[1]
 expected_normal = float(sys.argv[2])
 expected_shear = float(sys.argv[3])
 
-fp = h5py.File(file_name, "r")
-
-greens_normal = fp["greens_normal"]
-greens_shear = fp["greens_shear"]
+#fp = h5py.File(file_name, "r")
+with h5py.File(file_name, "r") as fp:
+	greens_normal = fp["greens_normal"][()] # copy directly to arrays using [()] syntax.
+	greens_shear = fp["greens_shear"][()]
 normal_sum = sum([sum(row) for row in greens_normal])
 shear_sum = sum([sum(row) for row in greens_shear])
-fp.close()
+#fp.close()
 
 normal_err = abs(expected_normal - normal_sum)/abs(max(expected_normal, normal_sum))
 shear_err = abs(expected_shear - shear_sum)/abs(max(expected_shear, shear_sum))
