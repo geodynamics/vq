@@ -202,7 +202,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     for (it=sim->begin(); it!=sim->end(); ++it) {
         tmpBuffer[it->getBlockID()] = 0.0;
 
-        // Set the update field to be the slip rate of each block
+        // Set the update field to be the slip rate of each block (note: these are local blockID values.)
         sim->setUpdateField(it->getBlockID(), it->slip_rate());
     }
 
@@ -211,10 +211,17 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                    sim->greenShear(),
                                    sim->getUpdateFieldPtr(),
                                    true);
-
+    /*
+    printf("**Debug(%d): tmp_buffer_before_normal: ", getpid());
+    for (it=sim->begin(); it!=sim->end(); ++it){
+    	printf("(%d:%f:%f), ", it->getBlockID(), tmpBuffer[it->getBlockID()], sim->getUpdateField(it->getBlockID()));
+    	}
+    printf("**end \n");
+    */
     if (sim->doNormalStress()) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
-            BlockID gid = it->getBlockID();
+            BlockID gid = it->getBlockID();	
+            printf("**Debug(%d)[normals]: friction: %f, slip_rate: %f\n", getpid(),sim->getFriction(gid), it->slip_rate());
             sim->setUpdateField(gid, -sim->getFriction(gid)*it->slip_rate());
         }
 
@@ -223,7 +230,14 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
-
+    /*
+    printf("**Debug(%d): tmp_buffer_after_normal: ", getpid());
+    for (it=sim->begin(); it!=sim->end(); ++it){
+    	printf("(%d:%f:%f), ", it->getBlockID(), tmpBuffer[it->getBlockID()], sim->getUpdateField(it->getBlockID()));
+    	}
+    printf("**end \n\n");
+    */
+    
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;
     next_static_fail.block_id = UNDEFINED_ELEMENT_ID;
