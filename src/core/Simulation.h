@@ -152,7 +152,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
 
         //! Calculates the static friction of this block.
         void calcFriction(const BlockID gid) {
-            printf("**Debug(%d)[%d]: stress_drop: %f, rhogd: %f\n", getpid(), gid, stress_drop[gid], rhogd[gid]);
+            //printf("**Debug(%d)[%d]: stress_drop: %f, rhogd: %f\n", getpid(), gid, stress_drop[gid], rhogd[gid]);
             friction[gid] = (fabs(stress_drop[gid])/rhogd[gid]);
         }
         //! Get the static friction of this block.

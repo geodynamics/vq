@@ -122,20 +122,22 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     BlockID         gid;
     unsigned int    i, n;
     //quakelib::ElementIDSet          local_id_list;
-    //BlockIDProcMapping              global_id_list;		// yoder: use class scope declarations for these lists...
+    //BlockIDProcMapping              global_id_list;       // yoder: use class scope declarations for these lists...
     quakelib::ElementIDSet          local_secondary_id_list;
     BlockIDProcMapping              global_secondary_id_list;
     //
     quakelib::ElementIDSet::const_iterator      it;
     BlockIDProcMapping::const_iterator  jt;
+
     //
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-    //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
-    	// would a faster way to do this step be to look through the current event_sweeps list? yes, but we're assuming that "original failure" has been processed,
-    	// which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
-    	// another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
-    	//lid = s_it->_element_id;
+        //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
+        // would a faster way to do this step be to look through the current event_sweeps list? yes, but we're assuming that "original failure" has been processed,
+        // which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
+        // another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
+        //lid = s_it->_element_id;
         gid = sim->getGlobalBID(lid);
+
         //
         // If the block has already failed (but not in this sweep) then adjust the slip
         // note: these are the cases that now do report final stress, but the stresses are questionable. 1) final_stress_j != initial_stress_{j+1}, 2) negative stress values.
@@ -144,6 +146,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             local_secondary_id_list.insert(gid);
         }
     }
+
     //
     // use: global/local_secondary_id_list;
     // Figure out how many failures there were over all processors
@@ -158,9 +161,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     double *A = new double[num_local_failed*num_global_failed];
     double *b = new double[num_local_failed];
     double *x = new double[num_local_failed];
+
     //
     // stress transfer (greens functions) between each local element and all global elements.
-    // yoder: are GF supposed to be symmetric? they're not -- almost, but not quite. so are 
+    // yoder: are GF supposed to be symmetric? they're not -- almost, but not quite. so are
     //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
     //    for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
@@ -174,6 +178,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
         b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
     }
+
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
     if (sim->isRootNode()) {
@@ -187,7 +192,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             if (jt->second != sim->getNodeRank()) {
 #ifdef MPI_C_FOUND
                 //
-                // element NOT local to this (root) node, so receive this data element from the remote process with mpi_rank jt->second: 
+                // element NOT local to this (root) node, so receive this data element from the remote process with mpi_rank jt->second:
                 // note: jt-> first: global_id, jt->second: node_id/rank
                 MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -195,15 +200,17 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 assertThrow(false, "Single processor version of code, but faults mapped to multiple processors.");
 #endif
             } else {
-            	// YES, element is local to this node:
+                // YES, element is local to this node:
                 memcpy(&(fullA[i*num_global_failed]), &(A[n*num_global_failed]), sizeof(double)*num_global_failed);
                 memcpy(&(fullb[i]), &(b[n]), sizeof(double));
                 n++;
             }
         }
+
         //
         // Solve the global system on the root node (we're inside an if (sim->isRootNode()) {} block )
         solve_it(num_global_failed, fullx, fullA, fullb);
+
         //
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
@@ -222,19 +229,21 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 n++;
             }
         }
+
         //
         // Delete the memory arrays created (use delete [] for arrays)
         delete [] fullx;
         delete [] fullb;
         delete [] fullA;
     } else {
-    	// NOT root_node:
+        // NOT root_node:
 #ifdef MPI_C_FOUND
-		// send these values to root (rank 0) node:
+        // send these values to root (rank 0) node:
         for (i=0; i<num_local_failed; ++i) {
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
+
         // fetch x[i] from root (rank 0) node:
         for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -251,6 +260,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         Block &block = sim->getBlock(*it);
         //
         double slip = x[i] - sim->getSlipDeficit(*it);
+
         //
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresse
@@ -267,6 +277,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
         }
     }
+
     //
     // delete/de-allocate arrays (use "delete []" for arrays, as opposed to "delete" for single objects)
     delete [] A;
@@ -284,7 +295,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     BlockList::iterator     it;
     quakelib::ModelSweeps   event_sweeps;
     //BlockID                 triggerID, gid;
-    BlockID                 triggerID;			// limit variable gid to local loop scopes.
+    BlockID                 triggerID;          // limit variable gid to local loop scopes.
     FaultID                 trigger_fault;
     int                     more_blocks_to_fail;
     bool                    final_sweep = false;
@@ -300,6 +311,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
+
     // yoder:
     //local_secondary_id_list.clear();
     //
@@ -308,12 +320,14 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         loose_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
+
     //
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
     //
     // yoder: we'll use this iterator to efficiently walk through the event_sweeps list when we update stresses:
     //quakelib::ModelSweeps::iterator s_it=event_sweeps.begin();
     unsigned int event_sweeps_pos = 0;
+
     //
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
@@ -326,7 +340,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         //printf("**Debug: global_failed_elements.size(%d) (after)\n", global_failed_elements.size());
 
-        // Process the blocks that failed.  
+        // Process the blocks that failed.
         // note: setInitStresses() called in processBlocksOrigFail().
         processBlocksOrigFail(sim, event_sweeps);
 
@@ -345,7 +359,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // yoder: let's emulate the sim->begin()/sim->end() notation (which, as per eric, should be the standard looping methodology:
         //for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
-        	BlockID gid = it->getBlockID();
+            BlockID gid = it->getBlockID();
+
             // Add block neighbors if the block has slipped
             if (sim->getUpdateField(gid) > 0) {
                 nbr_start_end = sim->getNeighbors(gid);
@@ -355,7 +370,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                 }
             }
         }
-		//
+
+        //
         // Calculate the CFFs based on the stuck blocks
         // multiply greenSchear() x getUpdateFieldPtr() --> getShearStressPtr() ... right?
         // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to (i think) sim->getRhogd(gid) -- see code a couple paragraphs above.
@@ -385,12 +401,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Set the update field to the slip of all blocks
         //for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
-        	BlockID gid = it->getBlockID();
+            BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            // 
+            //
             // yoder:
-            // original: evaluates at 0 for getFailed(gig)==True, otherwise slipDeficite()... 
+            // original: evaluates at 0 for getFailed(gig)==True, otherwise slipDeficite()...
             // so note that this sets the update-field value to 0 for all currently failed elements. since we're trying to update for secondary failures
             // (on already failed blocks), clearly this is not quite right. however, do we updata ALL blocks, or ALL except "original" failure type blocks?
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
@@ -398,17 +414,18 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // note: ... and here's how this goes:
             // 1) if we use the original code, final stresses don't change, because we set the update field->0 for all failed blocks.
             // 2) if we update all blocks except those that most recently failed [(global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)))], for an
-            // event's first (trigger) block failure, we see an intermediate sterss change on its "original" failrue and then failure to nearly zero in its first 
+            // event's first (trigger) block failure, we see an intermediate sterss change on its "original" failrue and then failure to nearly zero in its first
             // secondary failure. subsequent blocks seem to fail close to zero (but not consistently as close as the trigger block), in their second (first secondary) failure
             // 3) if we always update all blocks, the "original" trigger failure -->; subsequent failures (original and secondary) show no particular pattern, except that
             // they tend to have shear_stress<0. note that (3) gives us approximately 2x as many stress calculations, propagate-event-ruptures, 24000/1800 (3) vs 16000/720 (2)
             // sweeps/events for type (3), (2) respectively. more pointedly, this one fails two tests on "make test" that (2) passes: 196 - test_two_slip_none_6000 (Failed), 201 - test_two_slip_none_3000 (Failed)
             // all but originals:
             // (this one passes "make test")
-            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));            
+            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             // all blocks, every time:
             //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
         }
+
         //
         sim->distributeUpdateField();
 
@@ -447,11 +464,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                                               sim->getNormalStress(fit->first));
             }
         }
-        // yoder: this loops over a global list of secondary failures (which has/d been moved to a class-wide declaration, if this is how we want to handle this). 
+        // yoder: this loops over a global list of secondary failures (which has/d been moved to a class-wide declaration, if this is how we want to handle this).
         for (fit=global_secondary_id_list.begin(); fit!=global_secondary_id_list.end(); ++fit) {
             if (sim->isLocalBlockID(fit->first)) {
                 printf("**Debug: setFinalStresses_secondary(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
-                //if (not fit->_slip>0) {continue;};		// note: i think nan will always throw a false, so this should work for both nan and <=0.
+                //if (not fit->_slip>0) {continue;};        // note: i think nan will always throw a false, so this should work for both nan and <=0.
                 event_sweeps.setFinalStresses(sweep_num,
                                               fit->first,
                                               sim->getShearStress(fit->first),
@@ -460,22 +477,23 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
         */
         //
-        
+
         // and this loop updates final_stress values by looping directly over the current sweeps list.
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
-        	//
-        	unsigned int sweeps_pos = 0;		// just a place holder for now; this is a private declaration.
             //
-        	if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
-        		event_sweeps.setFinalStresses(sweep_num,
-        		                              s_it->_element_id, 
-        		                              sim->getShearStress(s_it->_element_id), 
-        		                              sim->getNormalStress(s_it->_element_id));
+            unsigned int sweeps_pos = 0;        // just a place holder for now; this is a private declaration.
 
-        		}
-        	}
-        	
+            //
+            if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
+                event_sweeps.setFinalStresses(sweep_num,
+                                              s_it->_element_id,
+                                              sim->getShearStress(s_it->_element_id),
+                                              sim->getNormalStress(s_it->_element_id));
+
+            }
+        }
+
         //
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear(); // we are done with these blocks
@@ -497,6 +515,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sweep_num++;
     }
+
     //
     // output_stress() for final item in list.
     sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);

@@ -112,7 +112,9 @@ Simulation::~Simulation(void) {
 #endif
 
     if (mult_buffer) free( mult_buffer );
+
     if (decompress_buf) free( decompress_buf );
+
     //
     deallocateArrays();
 }
@@ -325,21 +327,8 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
     height = numLocalBlocks();
     width = numGlobalBlocks();
     array_dim = localSize();
+
     //
-    // yoder debug:
-    /*
-    // these (height, width, array_dim) always appear to be zero (or at least often early in the sim...).
-    if (height!=0.0 or width!=0.0 or array_dim!=0.0) {
-	    printf("\n**Debug: Simulation::matricVectorMultiplyAccum(): height: %f, width: %f, array_dim: %f\n\n", height, width, array_dim);
-	    }
-	else{
-		printf("**Debug: Simulation::matricVectorMultiplyAccum(): zeros\n");
-	    }
-	*/
-    //
-    // yoder: why not always reallocate this? we always overwrite it...
-    //     we're seeing a failure on Greens functions check-sum tests (P1, P2, P4) and "run_full" tests (P2,P4). it could
-    //     be related to this buffer array not being allocated correctly, particularly on child nodes.
     if (!decompress_buf) decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
 
     //decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
