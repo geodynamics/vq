@@ -60,7 +60,7 @@ SimFramework::SimFramework(int argc, char **argv) {
     barrier_timer = initTimer("Comm Barrier", false, false);
 
 #ifdef MPI_C_FOUND
-    // yoder: node_rank and world_size (defined in header) set by MPI_Comm_rank/_size.
+    // node_rank and world_size (defined in header) set by MPI_Comm_rank/_size.
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &node_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -220,9 +220,6 @@ int SimFramework::internalBroadcast(const unsigned int &val) {
 PluginID SimFramework::registerPlugin(SimPlugin *new_plugin, const bool &is_active) {
     PluginID        next_id;
     //
-    //printf("**Debug SimFramework::registerPlugin() registering, %d/%d\n", plugin_active.size(), plugin_objs.size());
-    //std::cout << "**Debug SimFramework::registerPlugin() registering, " << plugin_active.size() << ", " << plugin_objs.size() << "\n";
-    //
     next_id = plugin_active.size();
     plugin_active[next_id] = is_active;
     plugin_objs[next_id] = new_plugin;
@@ -322,9 +319,6 @@ void SimFramework::init(void) {
     // Do the dry run or normal initialization
     for (it=ordered_plugins.begin(); it!=ordered_plugins.end(); ++it) {
         cur_plugin = plugin_objs[*it];
-
-        //
-        // **Debug:
         //
         if (dry_run) {
             cur_plugin->dryRun(this);

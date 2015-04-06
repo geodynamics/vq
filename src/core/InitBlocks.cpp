@@ -43,7 +43,7 @@ void VCInitBlocks::init(SimFramework *_sim) {
     Simulation            *sim = static_cast<Simulation *>(_sim);
     BlockList::iterator     bit;
 
-    //yoder: this assertion can fail if the geometry (faults) file is corrupt. if you see this failing:
+    // this assertion can fail if the geometry (faults) file is corrupt. if you see this failing:
     // 1) check the config file; make sure the right files are selected, etc.
     // 2) Do the Greens functions being used (if loading from file) match the fault geometry?
     // 3) the fault geometry might be corrupt; re-create it. you might have to also recalculate the Greens functions.

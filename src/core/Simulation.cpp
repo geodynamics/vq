@@ -353,8 +353,6 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
         // 80% or more of the matrix-vector multiplications have sparse vectors.
         //
         // TODO:
-        // yoder: why not always reallocate memory here? is it possible that the array might have been initialized, but the size has changed? or
-        // are we sharing this buffer between other functions (aka, it might have been assigned someplace else? or is this size fixed?)
         if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
 
         //mult_buffer = (double *)valloc(sizeof(double)*array_dim);    //??
@@ -730,7 +728,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
     }
 
     //
-    // yoder: use delete [] for arrays...
+    // use delete [] for arrays...
     delete [] block_ids;
     delete [] proc_block_count;
     delete [] proc_block_disps;
@@ -803,7 +801,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
     }
 
     // Gather the sweep info at the root node
-    // yoder: (aka, consolidate sweep_vals into all_sweeps)
+    // (aka, consolidate sweep_vals into all_sweeps)
     MPI_Gatherv(sweep_vals, num_local_sweeps, element_sweep_type,
                 all_sweeps, sweep_counts, sweep_offsets, element_sweep_type,
                 ROOT_NODE_RANK, MPI_COMM_WORLD);
@@ -828,7 +826,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
                                     all_sweeps[i].final_normal);
         }
 
-        // yoder: use delete [] for arrays:
+        // use delete [] for arrays:
         if (isRootNode()) {
             delete [] sweep_counts;
             delete [] sweep_offsets;
@@ -876,8 +874,6 @@ void Simulation::partitionBlocks(void) {
 
     //
     // Make a set of available BlockIDs
-    // yoder: so Simulation() acts like a list-container of some sort (a BlockList?)? begin()/end() refer to this.begin(), this.end()
-    //      Simulator.begin()/end() return an iterator to a vector<> like member object.
     for (git=begin(); git!=end(); ++git) avail_ids.insert(git->getBlockID());
 
     // Segment->Node assignment is made at the root node, then transmitted to other nodes

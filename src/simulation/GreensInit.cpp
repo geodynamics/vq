@@ -120,17 +120,12 @@ void GreensInit::init(SimFramework *_sim) {
     sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
 
-    // Debug:
-    //sim->console() << "\n\n** Degug: Begin debugging GreensInit::init() MPI bit\n";
-    //sim->console() << "**Debug: RootNode: " << getpid() << "\n";
-    // debugging comment: basically, anything that uses the << operator seems to crash big-time.
-
 #ifdef MPI_C_FOUND
 
     //
     if (sim->getWorldSize() > 1) {
         //                                                                            // i'm guessing that a seg-fault long since made a mess.
-        // yoder: try initializing these (just to suppress memcheck errors):
+        // initialize these to suppress memcheck errors:
         double global_shear_bytes = std::numeric_limits<float>::quiet_NaN();
         double global_normal_bytes = std::numeric_limits<float>::quiet_NaN();
         //double global_shear_bytes, global_normal_bytes;
@@ -145,8 +140,6 @@ void GreensInit::init(SimFramework *_sim) {
 
             double abbr_global_shear_bytes = global_shear_bytes/pow(2,global_shear_ind*10);
             double abbr_global_normal_bytes = global_normal_bytes/pow(2,global_norm_ind*10);
-
-            //printf("\n** GreensInit Debugging(%d): %f, %f ## %f, %f \n", getpid(), global_shear_bytes, global_normal_bytes, abbr_global_shear_bytes, abbr_global_normal_bytes);
             //
             sim->console() << "# Global Greens shear matrix takes " << abbr_global_shear_bytes << " " << space_vals[global_shear_ind] << "." << std::endl;
             sim->console() << "# Global Greens normal matrix takes " << abbr_global_normal_bytes << " " << space_vals[global_norm_ind] << "." << std::endl;

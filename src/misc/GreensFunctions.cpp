@@ -161,7 +161,7 @@ void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
         }
     }
 
-    // yoder: use delete [] for c-arrays.
+    // use delete [] for c-arrays.
     delete greens_file_reader;
     delete [] in_shear_green;
     delete [] in_normal_green;
@@ -241,7 +241,7 @@ void GreensFuncCalc::symmetrizeMatrix(Simulation *sim, GreensValsSparseMatrix &s
         }
     }
 
-    // yoder: use delete [] for c-arrays.
+    // use delete [] for c-arrays.
     delete [] local_counts;
     delete [] displs;
     delete [] local_ids;

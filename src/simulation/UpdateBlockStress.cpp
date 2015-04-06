@@ -29,8 +29,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     int                 lid;
     double              stress_drop, norm_velocity;
-    // yoder:
-    // move these (quasi)static variable definitions outside the for loop:
     double rho = 5.515e3;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
     double depth = 0.0;         //
@@ -43,10 +41,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
         //
-        // yoder: move these (quasi)static variable definitions outside the for loop.
-        //double rho = 5.515e3;      // density of rock in kg m^-3
-        //double g = 9.81;           // force of gravity in m s^-2
-        //double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
         depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
@@ -81,26 +75,14 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
     }
 
-    // yoder:
-    /*
-    printf("**Debug(%d): rhogd values (before_mpi): ", getpid());
-    //for (it=sim->begin(); it!=sim->end(); ++it) {
-    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        //printf("[%d]:%f, ", it->getBlockID(), sim->getRhogd(it->getBlockID));
-        printf("[%d]:%f, ", gid, sim->getRhogd(gid));
-    }
-    printf("[end %d]\n", getpid());
-    */
-
 #ifdef MPI_C_FOUND
 
     // Transfer stress drop values between nodes
-    // yoder: also broadcast the rhogd value. note that this is a protected array in simulation. there are probably smarter ways to distribute these
-    // values (rather than MPI_Bcast for each individual value -- aka, do an MPI_Reduce with a custom mpi funciton to gather/add/whatever, but handle nan),
-    // but since this only runs once at the sim initialization, it's not a huge problem.
+    // also broadcast the rhogd value. 
+    // note that the array rhogd[] is a protected array, so we cannot access it directly (aka, using MPI_Reduce with a custom mpi funciton to
+    // gather/add/whatever, but handle nan), but since this only runs once at the sim initialization, it's not a huge problem.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        // yoder: try initializing this...
-        //double     stress_drop;
+        // initialize these to avoid memcheck errors:
         double       stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       tmp_rhogd = std::numeric_limits<float>::quiet_NaN();
 
@@ -111,7 +93,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
-        //yoder:
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
 
         if (!sim->isLocalBlockID(gid)) {
@@ -124,23 +105,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 #endif
 
     // Compute initial stress on all blocks
-    // yoder: so now stress should be distributed, and presumably stressRecompute will recalculate friction[], BUT, i don't think the rhogd values are
-    // being properly distributed, so friction[] assignments are not happening correctly (rhogd -- i think, need to be directly broadcast system wide)
-    // maybe we can add this into stressRecompute() (or something similar), since (i think) rhogd can be calced directly from stress.
     stressRecompute();
-    /*
-    printf("**Debug(%d): rhogd values (after_mpi): ", getpid());
-    //for (it=sim->begin(); it!=sim->end(); ++it) {
-    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        //printf("[%d]:%f, ", it->getBlockID(), sim->getRhogd(it->getBlockID));
-        printf("[%d]:%f, ", gid, sim->getRhogd(gid));
-    }
-    printf("[end %d]\n", getpid());
-    */
-    //
-    // yoder:
-    //delete [] tmpBuffer;
-    // ... but valgrind does not like deleting this; i get an "illegal write". dunno...
 }
 
 /*!
@@ -245,17 +210,10 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                    sim->getUpdateFieldPtr(),
                                    true);
 
-    /*
-    printf("**Debug(%d): tmp_buffer_before_normal: ", getpid());
-    for (it=sim->begin(); it!=sim->end(); ++it){
-        printf("(%d:%f:%f), ", it->getBlockID(), tmpBuffer[it->getBlockID()], sim->getUpdateField(it->getBlockID()));
-        }
-    printf("**end \n");
-    */
+    //
     if (sim->doNormalStress()) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
             BlockID gid = it->getBlockID();
-            //printf("**Debug(%d)[normals]: friction: %f, slip_rate: %f\n", getpid(),sim->getFriction(gid), it->slip_rate());
             sim->setUpdateField(gid, -sim->getFriction(gid)*it->slip_rate());
         }
 
@@ -264,15 +222,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
-
-    /*
-    printf("**Debug(%d): tmp_buffer_after_normal: ", getpid());
-    for (it=sim->begin(); it!=sim->end(); ++it){
-        printf("(%d:%f:%f), ", it->getBlockID(), tmpBuffer[it->getBlockID()], sim->getUpdateField(it->getBlockID()));
-        }
-    printf("**end \n\n");
-    */
-
+    //
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;
     next_static_fail.block_id = UNDEFINED_ELEMENT_ID;

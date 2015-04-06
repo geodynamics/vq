@@ -122,11 +122,8 @@ int main (int argc, char **argv) {
     // ************************************************************
     // ** Initialize and run the simulation
     // ************************************************************
-    //printf("**Debug: BEGIN  plugins and dependencies registered; run vc_sim->init()\n");
-    //std::cout << "**Debug: using cout: do vc_sim->init(), " << getpid() << "\n";
     vc_sim->init();
-    //printf("**Debug: END  plugins and dependencies registered; run vc_sim->init()\n");
-    //std::cout << "**Debug: using cout: FINISHED vc_sim->init(), " << getpid() << "\n";
+    
 
     vc_sim->run();
     vc_sim->finish();

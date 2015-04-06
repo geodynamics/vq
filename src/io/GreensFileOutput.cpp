@@ -87,7 +87,7 @@ void GreensFileOutput::init(SimFramework *_sim) {
     }
 
     //
-    // yoder: use delete [] for c-array types:
+    // use delete [] for c-array types:
     delete [] shear_vals;
     delete [] norm_vals;
     delete h5_greens_data;
