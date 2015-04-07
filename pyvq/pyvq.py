@@ -36,8 +36,8 @@ except ImportError:
     numpy_available = False
     
 # ----------------- Global constants -------------------------------------------
-MIN_LON_DIFF = 0.118   # corresponds to 10km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = 0.090   # corresponds to 10km at lat,lon = (40.35, -124.85)
+MIN_LON_DIFF = 0.04   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = 0.025   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 G_0          = 9.80665 # value from NIST, via Wikipedia [m/s^2]
 
@@ -213,9 +213,11 @@ class Events:
         
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
-                cbar_max=None, res='low'):
+                cbar_max=None, res='low', levels=None):
                 # res is 'low','med','hi'
         self.field_type = field_type.lower()
+        self.levels = None
+        if levels is not None: self.levels = levels
         self.event_id = None
         if event_id is not None: self.event_id = event_id
         if res == 'low': self.res_mult = 1
@@ -271,7 +273,7 @@ class FieldPlotter:
         self.base_lon = self.min_lon = base[1]
         self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
         # Expand lat/lon range in the case of plotting a few elements
-        if len(self.element_ids) < 10:
+        if len(self.element_ids) < 20:
             self.min_lat = self.min_lat - MIN_LAT_DIFF*10
             self.max_lat = self.max_lat + MIN_LAT_DIFF*10
             self.min_lon = self.min_lon - MIN_LON_DIFF*10
@@ -627,7 +629,14 @@ class FieldPlotter:
             # Changed units to microgals (multiply MKS unit by 10^8)
             if self.field_type == 'gravity': self.field_transformed *= float(pow(10,8))
             if self.field_type == 'dilat_gravity': self.field_transformed *= float(pow(10,8))
-            self.m2.imshow(self.field_transformed, cmap=cmap, norm=self.norm)
+            
+            # Plot the field on the map
+            if self.levels is None:
+                self.m2.imshow(self.field_transformed, cmap=cmap, norm=self.norm)
+            else:
+                map_x, map_y = self.m2(self.lons_1d, self.lats_1d)
+                XX,YY = np.meshgrid(map_x, map_y)
+                self.m2.contourf(XX, YY, self.field_transformed, self.levels, cmap=cmap, norm=self.norm)
         #-----------------------------------------------------------------------
         # Composite fig 1 - 2 together
         #-----------------------------------------------------------------------
@@ -1351,6 +1360,8 @@ if __name__ == "__main__":
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
+    parser.add_argument('--levels', type=float, nargs='+', required=False,
+            help="Levels for contour plot.")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1402,9 +1413,10 @@ if __name__ == "__main__":
         stress_set = None
         
     if args.all_stat_plots:
-        args.plot_freq_mag = 1
+        args.plot_freq_mag = 3
         args.plot_mag_rupt_area = True
         args.plot_mag_mean_slip = True
+        args.wc94 = True
 
     # Set up filters
     event_filters = []
@@ -1458,6 +1470,8 @@ if __name__ == "__main__":
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
+        if args.levels: levels = args.levels
+        else: levels = None
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
         if args.angles: 
             if len(args.angles) != 2:
@@ -1485,7 +1499,7 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         
-        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, res=res)
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, res=res, levels=levels)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles, res=res)
 
