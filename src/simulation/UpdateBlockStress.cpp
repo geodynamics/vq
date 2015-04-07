@@ -91,9 +91,14 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             //
             tmp_rhogd = sim->getRhogd(gid);
         }
+        
+        printf("**Debug(%d): mpi_bcast(stress_drop)[%d]\n", getpid(), gid);
 
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        printf("**Debug(%d): mpi_bcast(tmp_rhogd)[%d]\n", getpid(), gid);
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        
+        printf("**Debug(%d): finished mpi_bcast(tmp_rhogd,stress_drop)[%d]\n", getpid(), gid);
 
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
