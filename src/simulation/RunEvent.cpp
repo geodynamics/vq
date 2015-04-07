@@ -456,7 +456,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             unsigned int sweeps_pos = 0;        // just a place holder for now; this is a private declaration.
 
             //
-            if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
+            // yoder: as per request by KS, change isnan() --> std::isnan(); isnan() appears to throw an error on some platforms.
+            if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
                 // note: the stress entries are initialized with nan values, but if there are cases where non nan values need to be updated,
                 // this logic should be revisited.
                 event_sweeps.setFinalStresses(sweep_num,
