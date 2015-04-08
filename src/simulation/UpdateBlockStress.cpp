@@ -91,15 +91,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             //
             tmp_rhogd = sim->getRhogd(gid);
         }
-        
-        printf("**Debug(%d): mpi_bcast(stress_drop)[%d]\n", getpid(), gid);
-
+        //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
-        printf("**Debug(%d): mpi_bcast(tmp_rhogd)[%d]\n", getpid(), gid);
+        //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
-        
-        printf("**Debug(%d): finished mpi_bcast(tmp_rhogd,stress_drop)[%d]\n", getpid(), gid);
-
+        //
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
             //
@@ -146,6 +142,7 @@ SimRequest UpdateBlockStress::run(SimFramework *_sim) {
 
     // Each node now has the time before the first failure among its blocks
     // Determine the time to first failure over all nodes
+    // (MPI_Reduce operation executed if MPI is present).
     sim->allReduceBlockVal(next_event, next_event_global, BLOCK_VAL_MIN);
 
     // If we didn't find any static failures or aftershocks, abort the simulation
@@ -286,6 +283,7 @@ void UpdateBlockStress::stressRecompute(void) {
     }
 
     // Distribute the new update field over all nodes
+    // (MPI_ calls when MPI enabled)
     sim->distributeUpdateField();
 
     // Multiply the Greens shear function by the slipDeficit vector
