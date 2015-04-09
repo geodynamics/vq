@@ -128,8 +128,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     int             lid;
     BlockID         gid;
     unsigned int    i, n;
-    //quakelib::ElementIDSet          local_id_list;
-    //BlockIDProcMapping              global_id_list;       // yoder: use class scope declarations for these lists...
     quakelib::ElementIDSet          local_secondary_id_list;  // lists of local/global secondary failures.
     BlockIDProcMapping              global_secondary_id_list;
     //
@@ -171,9 +169,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
     //
     // stress transfer (greens functions) between each local element and all global elements.
-    // yoder: are GF supposed to be symmetric? they're not -- almost, but not quite. so are
-    //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
-    //    for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
         for (n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++n,++jt) {
             A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
@@ -206,6 +201,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 // MPI_Recv(in_buff{out}, in_len, mpi_dtype, src_node, tag, comm, status{out})
                 // note that in_buff and status are technically "output" parameters for the MPI_Recv function; we read data into in_buff by
                 // calling MPI_Recv()
+                //printf("**Debug[%d/%d]: A[],b MPI_Recv root-node blocking...\n", sim->getNodeRank(), getpid());
                 MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 #else
@@ -222,7 +218,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         //
         // Solve the global system on the root node (we're inside an if (sim->isRootNode()) {} block )
         solve_it(num_global_failed, fullx, fullA, fullb);
-
         //
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
@@ -252,6 +247,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 #ifdef MPI_C_FOUND
         // send these values to root (rank 0) node:
         for (i=0; i<num_local_failed; ++i) {
+            //printf("**Debug[%d/%d]: A[],b MPI_Send child-node blocking...\n", sim->getNodeRank(), getpid());
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
@@ -518,8 +514,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
     //
-    // yoder: we'll use this iterator to efficiently walk through the event_sweeps list when we update stresses:
-    //quakelib::ModelSweeps::iterator s_it=event_sweeps.begin();
+    // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
     unsigned int event_sweeps_pos = 0;
 
     //
@@ -588,6 +583,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //
+            // if this is a current/original failure, then 0 else...
             sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
         }
 
@@ -646,9 +642,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // and this loop updates final_stress values by looping directly over the current sweeps list.
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
-            //
-            unsigned int sweeps_pos = 0;        // just a place holder for now; this is a private declaration.
-
             //
             // yoder: as per request by KS, change isnan() --> std::isnan(); isnan() appears to throw an error on some platforms.
             if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
@@ -830,6 +823,10 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // TODO: reinstate this check
     // TODO: currently fails because processors may locally have no failures
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
+    // yoder: is this the cause of heisen_hang? let's start by outputting indications of this:
+    if (sim->getCurrentEvent().size() == 0) {
+    	printf("**Debug(%d/%d): this node has no current failures (sim->getCurrentEvent().size() == 0\n", sim->getNodeRank(), getpid());
+    }
 
     return SIM_STOP_OK;
 }

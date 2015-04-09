@@ -188,20 +188,25 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 void EventOutput::finish(SimFramework *_sim) {
     Simulation        *sim = static_cast<Simulation *>(_sim);
 
+    printf("**Debug(%d/%d): Begin EventOuput::finish().\n", sim->getNodeRank(), getpid());
 #ifdef HDF5_FOUND
 
+    printf("**Debug(%d/%d): Begin HDF5 EventOuput::finish().\n", sim->getNodeRank(), getpid());
     if (data_file) {
+    	// should this only happen on the root node? is this only called by the root node?
+    	printf("**Debug(%d/%d): Closing h5 data file.\n", sim->getNodeRank(), getpid());
         herr_t res = H5Fclose(data_file);
 
         if (res < 0) exit(-1);
     }
 
 #endif
-
+    printf("**Debug(%d/%d): Begin TEXT EventOuput::finish().\n", sim->getNodeRank(), getpid());
     if (sim->getEventOutfileType() == "text") {
         event_outfile.flush();
         event_outfile.close();
         sweep_outfile.flush();
         sweep_outfile.close();
     }
+    printf("**Debug(%d/%d): Finish EventOuput::finish().\n", sim->getNodeRank(), getpid());
 }

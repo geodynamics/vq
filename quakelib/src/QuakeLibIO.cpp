@@ -2681,11 +2681,7 @@ void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
 
     if (res < 0) exit(-1);
 
-    // Free memory for HDF5 related data
-    // yoder: ... and use delete [] for array types...
-    //delete sweep_data;
-    //delete field_offsets;
-    //delete field_sizes;
+    // Free memory for HDF5 related data; use delete [] for array types...
     delete [] sweep_data;
     delete [] field_offsets;
     delete [] field_sizes;
