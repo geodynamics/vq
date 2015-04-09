@@ -824,9 +824,9 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // TODO: currently fails because processors may locally have no failures
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
     // yoder: is this the cause of heisen_hang? let's start by outputting indications of this:
-    if (sim->getCurrentEvent().size() == 0) {
-    	printf("**Debug(%d/%d): this node has no current failures (sim->getCurrentEvent().size() == 0\n", sim->getNodeRank(), getpid());
-    }
+    //if (sim->getCurrentEvent().size() == 0) {
+    //	printf("**Debug(%d/%d): this node has no current failures (sim->getCurrentEvent().size() == 0\n", sim->getNodeRank(), getpid());
+    //}
 
     return SIM_STOP_OK;
 }
