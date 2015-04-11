@@ -206,7 +206,7 @@ namespace quakelib {
                 _static_strength = _dynamic_strength = _max_slip = std::numeric_limits<double>::quiet_NaN();
             };
 
-            //! Returns a unit vector along the direction of fault dip.
+            //! Returns the dip angle.
             double dip(void) const {
                 return normal().vector_angle(Vec<3>(0,0,1));
             };
@@ -288,14 +288,17 @@ namespace quakelib {
 
             //! Returns the angle of the element relative to north. Positive rotating clockwise from north.
             double strike(void) const {
-                Vec<3> north, v;
+                Vec<3> v;
                 v = _vert[2]-_vert[0];
-                // Handle the case when v points west 
-                if (v[0] < 0.0) {
-                    v = _vert[0]-_vert[2];
+                double strike;
+                // Handle the various quadrants differently
+                // atan2(y,x) return counter-clock angle from (x,y)=(1,0) aka East
+                if (v[1] >= 0 && v[0] < 0) {
+                    strike = 5*M_PI/2 - atan2(v[1],v[0]);
+                } else {
+                    strike = M_PI/2 - atan2(v[1],v[0]);
                 }
-                north[1] = 1.0;
-                return (v.vector_angle(north));
+                return (strike);
             };
     };
 
