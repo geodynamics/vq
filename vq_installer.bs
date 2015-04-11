@@ -1,7 +1,8 @@
 #!/bin/bash
 # installer shell script for vq.
 
-default_num_processors=4
+default_num_processors=nproc
+#default_num_processors=4
 default_debug="debug0"
 
 num_processors=${1:-$default_num_processors}

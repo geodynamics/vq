@@ -187,7 +187,10 @@ SimRequest EventOutput::run(SimFramework *_sim) {
  */
 void EventOutput::finish(SimFramework *_sim) {
     Simulation        *sim = static_cast<Simulation *>(_sim);
-
+    //
+    // debugging and runtime note: this code will execute on all nodes. however, as vq is parameterized now, if(data_file)==true only
+    // on the root node, so the h5/txt actions will occur only on the head node. in the event that we allow parallel writing,
+    // we may need to be more careful about flushing output from chile nodes and closing only from the root node after the child nodes finish.
     printf("**Debug(%d/%d): Begin EventOuput::finish().\n", sim->getNodeRank(), getpid());
 #ifdef HDF5_FOUND
 
