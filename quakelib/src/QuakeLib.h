@@ -286,14 +286,16 @@ namespace quakelib {
                 return a.cross(b).unit_vector();
             };
 
-            //! Returns the angle of the element relative to north. Positive rotating west, negitive rotating east.
+            //! Returns the angle of the element relative to north. Positive rotating clockwise from north.
             double strike(void) const {
-                Vec<3> v1, v2, norm;
-                norm = normal();
-                v1[0] = norm[0];
-                v1[1] = norm[1];
-                v2[1] = 1.0;
-                return (v1.vector_angle(v2) - M_PI/2.0);
+                Vec<3> north, v;
+                v = _vert[2]-_vert[0];
+                // Handle the case when v points west 
+                if (v[0] < 0.0) {
+                    v = _vert[0]-_vert[2];
+                }
+                north[1] = 1.0;
+                return (v.vector_angle(north));
             };
     };
 
