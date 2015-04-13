@@ -1137,7 +1137,7 @@ void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     if (res < 0) exit(-1);
 
     // TODO: check that num_fields matches the descs
-
+    //
     section_data = new SectionData[num_sections];
     res = H5TBread_records(data_file, ModelSection::hdf5_table_name().c_str(), 0, num_sections, sizeof(SectionData), field_offsets, field_sizes, section_data);
 
@@ -1151,10 +1151,11 @@ void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    // May need to use delete [] section_data, etc
-    delete section_data;
-    delete field_offsets;
-    delete field_sizes;
+    // yoder: ... and use delete [] for arrays...
+    delete [] section_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
+
 }
 
 void quakelib::ModelWorld::read_element_hdf5(const hid_t &data_file) {
@@ -1197,9 +1198,9 @@ void quakelib::ModelWorld::read_element_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    delete element_data;
-    delete field_offsets;
-    delete field_sizes;
+    delete [] element_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelWorld::read_vertex_hdf5(const hid_t &data_file) {
@@ -1242,9 +1243,10 @@ void quakelib::ModelWorld::read_vertex_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    delete vertex_data;
-    delete field_offsets;
-    delete field_sizes;
+    // yoder: ... and use delete [] for vector/array types...
+    delete [] vertex_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
@@ -1499,18 +1501,18 @@ void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     }
 
     // Free memory for HDF5 related data
-    delete vertex_data;
+    delete [] vertex_data;
 
-    for (i=0; i<num_fields; ++i) delete field_names[i];
+    for (i=0; i<num_fields; ++i) delete [] field_names[i];
 
-    delete field_names;
+    delete [] field_names;
 
-    for (i=0; i<num_fields; ++i) delete field_details[i];
+    for (i=0; i<num_fields; ++i) delete [] field_details[i];
 
-    delete field_details;
-    delete field_offsets;
-    delete field_types;
-    delete field_sizes;
+    delete [] field_details;
+    delete [] field_offsets;
+    delete [] field_types;
+    delete [] field_sizes;
 }
 #endif
 
@@ -2390,9 +2392,25 @@ void quakelib::ModelSweeps::read_ascii(std::istream &in_stream, const unsigned i
 }
 
 void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
-    std::vector<SweepData>::const_iterator it;
+    std::vector<SweepData>::const_iterator it;      // declre an iterator (const_iterator) object (named it) to a vector<SweepData> container...
 
+    // which will point to _sweeps, which is a member of the class ModelSweeps()
+    // yoder: we're seeing a valgrind complaint from this block; it might actually be the case that _normal_final is broken (not allocated properly).
     for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+        /*
+        printf("**Debug: _normal_init: %f\n", it->_normal_init);
+        printf("**Debug: _normal_final: %f\n", it->_normal_final);
+        printf("**Debug: _shear_init: %f\n", it->_shear_init);
+        printf("**Debug: _shear_final: %f\n", it->_shear_final);
+        printf("**Degub:\n");
+        //
+        std::cout << "**Debug cout: _normal_init: " << it->_normal_init << "\n";
+        std::cout << "**Debug cout: _normal_final: " <<  it->_normal_final << "\n";
+        std::cout << "**Debug cout: _shear_init: " <<  it->_shear_init << "\n";
+        std::cout << "**Debug cout: _shear_final: " <<  it->_shear_final << "\n";
+        std::cout << "**Debug cout:\n";
+        */
+        //
         out_stream << it->_event_number << " ";
         out_stream << it->_sweep_number << " ";
         out_stream << it->_element_id << " ";
@@ -2610,16 +2628,17 @@ void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    for (i=0; i<num_fields; ++i) delete field_names[i];
+    // yoder: ... and use delete [] for vector types...
+    for (i=0; i<num_fields; ++i) delete [] field_names[i];
 
-    delete field_names;
+    delete [] field_names;
 
-    for (i=0; i<num_fields; ++i) delete field_details[i];
+    for (i=0; i<num_fields; ++i) delete [] field_details[i];
 
-    delete field_details;
-    delete field_offsets;
-    delete field_types;
-    delete field_sizes;
+    delete [] field_details;
+    delete [] field_offsets;
+    delete [] field_types;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
@@ -2664,10 +2683,13 @@ void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
     if (res < 0) exit(-1);
 
     // Free memory for HDF5 related data
-    delete sweep_data;
-
-    delete field_offsets;
-    delete field_sizes;
+    // yoder: ... and use delete [] for array types...
+    //delete sweep_data;
+    //delete field_offsets;
+    //delete field_sizes;
+    delete [] sweep_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 #endif
 
@@ -2857,16 +2879,17 @@ void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    for (i=0; i<num_fields; ++i) delete field_names[i];
+    // yoder: ... and delete [] for arrays...
+    for (i=0; i<num_fields; ++i) delete [] field_names[i];
 
-    delete field_names;
+    delete [] field_names;
 
-    for (i=0; i<num_fields; ++i) delete field_details[i];
+    for (i=0; i<num_fields; ++i) delete [] field_details[i];
 
-    delete field_details;
-    delete field_offsets;
-    delete field_types;
-    delete field_sizes;
+    delete [] field_details;
+    delete [] field_offsets;
+    delete [] field_types;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
@@ -2901,8 +2924,8 @@ void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
     if (res < 0) exit(-1);
 
     // Free memory for HDF5 related data
-    delete field_offsets;
-    delete field_sizes;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 #endif
 
@@ -3016,9 +3039,9 @@ void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    delete event_data;
-    delete field_offsets;
-    delete field_sizes;
+    delete [] event_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
 #else
     // TODO: Error out
 #endif
@@ -3070,7 +3093,10 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
 
     }
 
-    delete event_sweeps;
+    delete [] event_sweeps;
+    // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
+    delete [] field_offsets;
+    delete [] field_sizes;
 #else
     // TODO: Error out
 #endif
@@ -3162,16 +3188,17 @@ void quakelib::ModelStress::setup_stress_hdf5(const hid_t &data_file) {
     }
 
     // Free memory for HDF5 related data
-    for (i=0; i<num_fields; ++i) delete field_names[i];
+    // yoder: ... and delete [] for arrays:
+    for (i=0; i<num_fields; ++i) delete [] field_names[i];
 
-    delete field_names;
+    delete [] field_names;
 
-    for (i=0; i<num_fields; ++i) delete field_details[i];
+    for (i=0; i<num_fields; ++i) delete [] field_details[i];
 
-    delete field_details;
-    delete field_offsets;
-    delete field_types;
-    delete field_sizes;
+    delete [] field_details;
+    delete [] field_offsets;
+    delete [] field_types;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelStress::append_stress_hdf5(const hid_t &data_file) const {
@@ -3212,10 +3239,10 @@ void quakelib::ModelStress::append_stress_hdf5(const hid_t &data_file) const {
     if (res < 0) exit(-1);
 
     // Free memory for HDF5 related data
-    delete stress_data;
+    delete [] stress_data;
 
-    delete field_offsets;
-    delete field_sizes;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 #endif
 
@@ -3355,16 +3382,16 @@ void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file)
     }
 
     // Free memory for HDF5 related data
-    for (i=0; i<num_fields; ++i) delete field_names[i];
+    for (i=0; i<num_fields; ++i) delete [] field_names[i];
 
-    delete field_names;
+    delete [] field_names;
 
-    for (i=0; i<num_fields; ++i) delete field_details[i];
+    for (i=0; i<num_fields; ++i) delete [] field_details[i];
 
-    delete field_details;
-    delete field_offsets;
-    delete field_types;
-    delete field_sizes;
+    delete [] field_details;
+    delete [] field_offsets;
+    delete [] field_types;
+    delete [] field_sizes;
 }
 
 void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file) const {
@@ -3397,8 +3424,8 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
     if (res < 0) exit(-1);
 
     // Free memory for HDF5 related data
-    delete field_offsets;
-    delete field_sizes;
+    delete [] field_offsets;
+    delete [] field_sizes;
 }
 #endif
 

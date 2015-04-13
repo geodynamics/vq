@@ -111,10 +111,11 @@ Simulation::~Simulation(void) {
     console() << "Number matrix multiplies: " << num_mults << std::endl;
 #endif
 
-    if (mult_buffer) delete mult_buffer;
+    if (mult_buffer) free( mult_buffer );
 
-    if (decompress_buf) delete decompress_buf;
+    if (decompress_buf) free( decompress_buf );
 
+    //
     deallocateArrays();
 }
 
@@ -327,7 +328,10 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
     width = numGlobalBlocks();
     array_dim = localSize();
 
+    //
     if (!decompress_buf) decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
+
+    //decompress_buf = (GREEN_VAL *)valloc(sizeof(GREEN_VAL)*array_dim);
 
     /*if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
     for (x=0;x<height;++x) mult_buffer[x] = 0;
@@ -347,8 +351,11 @@ void Simulation::matrixVectorMultiplyAccum(double *c, const quakelib::DenseMatri
         // individually. In the case where most of the vector elements are zero this
         // will be much faster than normal multiplication techniques. For VC about
         // 80% or more of the matrix-vector multiplications have sparse vectors.
-
+        //
+        // TODO:
         if (!mult_buffer) mult_buffer = (double *)valloc(sizeof(double)*array_dim);
+
+        //mult_buffer = (double *)valloc(sizeof(double)*array_dim);    //??
 
         // Reset the temporary buffer
         for (x=0; x<height; ++x) mult_buffer[x] = 0;
@@ -720,10 +727,12 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
         }
     }
 
-    delete block_ids;
-    delete proc_block_count;
-    delete proc_block_disps;
-    delete local_block_ids;
+    //
+    // use delete [] for arrays...
+    delete [] block_ids;
+    delete [] proc_block_count;
+    delete [] proc_block_disps;
+    delete [] local_block_ids;
 #else   // MPI_C_FOUND
 
     // Copy the local IDs into the global list just for the single processor
@@ -740,6 +749,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
  */
 void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 #ifdef MPI_C_FOUND
+    // note: this does nothing if not MPI_C_FOUND
     int                             *sweep_counts, *sweep_offsets;
     int                             num_local_sweeps, i, total_sweep_count;
     BlockSweepVals                  *sweep_vals, *all_sweeps;
@@ -766,6 +776,8 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
         total_sweep_count = 0;
 
         for (i=0; i<world_size; ++i) {
+            // note: this gives the starting position of sweeps from each node (first node starts at position i=0,
+            // second at i=n_0, third at i=n_1, etc.)
             sweep_offsets[i] = total_sweep_count;
             total_sweep_count += sweep_counts[i];
         }
@@ -777,6 +789,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
 
     if (isRootNode()) all_sweeps = new BlockSweepVals[total_sweep_count];
 
+    //
     for (i=0,it=sweeps.begin(); it!=sweeps.end(); ++it,++i) {
         sweep_vals[i].element_id = it->_element_id;
         sweep_vals[i].sweep_num = it->_sweep_number;
@@ -788,6 +801,7 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
     }
 
     // Gather the sweep info at the root node
+    // (aka, consolidate sweep_vals into all_sweeps)
     MPI_Gatherv(sweep_vals, num_local_sweeps, element_sweep_type,
                 all_sweeps, sweep_counts, sweep_offsets, element_sweep_type,
                 ROOT_NODE_RANK, MPI_COMM_WORLD);
@@ -812,12 +826,20 @@ void Simulation::collectEventSweep(quakelib::ModelSweeps &sweeps) {
                                     all_sweeps[i].final_normal);
         }
 
-        delete sweep_counts;
-        delete sweep_offsets;
-        delete all_sweeps;
+        // use delete [] for arrays:
+        if (isRootNode()) {
+            delete [] sweep_counts;
+            delete [] sweep_offsets;
+            delete [] all_sweeps;
+        } else {
+            // note that in this case, sweep_counts=NULL; sweep_offsets=NULL; and so far, all_sweeps is uninitialized or maybe populated by an MPI call?
+            delete sweep_counts;
+            delete sweep_offsets;
+            delete all_sweeps;
+        }
     }
 
-    delete sweep_vals;
+    delete [] sweep_vals;
 
 #ifdef DEBUG
     stopTimer(sweep_comm_timer);
@@ -837,7 +859,7 @@ void Simulation::partitionBlocks(void) {
     std::set<BlockID>               cur_assigns;
     std::set<BlockID>::iterator     bit;
     std::set<BlockID>               avail_ids;
-    BlockID                         *assign_array;
+    //BlockID                         *assign_array;        // declare in line?
     int                             num_assign;
     BlockList::iterator             git;
     bool                            more_to_assign;
@@ -850,6 +872,7 @@ void Simulation::partitionBlocks(void) {
     num_local_blocks = num_global_blocks/world_size;
     local_rank = getNodeRank();
 
+    //
     // Make a set of available BlockIDs
     for (git=begin(); git!=end(); ++git) avail_ids.insert(git->getBlockID());
 
@@ -917,18 +940,27 @@ void Simulation::partitionBlocks(void) {
         // Send the BlockIDs to all nodes
         num_assign = cur_assigns.size();
         MPI_Bcast(&num_assign, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
-        assign_array = new BlockID[num_assign];
+        //
+        // try delclaring/deleting inline...
+        //assign_array = new BlockID[num_assign];
+        BlockID *assign_array = new BlockID[num_assign];
 
+        //
         // Put the assigned IDs into the array on the root node
         if (isRootNode()) {
+            //
             for (n=0,bit=cur_assigns.begin(); bit!=cur_assigns.end(); ++n,++bit) {
                 assign_array[n] = *bit;
             }
         }
 
-        // Broadcast the assignments to all nodes
-        MPI_Bcast(assign_array, num_assign, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
 
+        // Broadcast the assignments to all nodes
+        // what is the correct MPI data type to use here? int has size 4; MPI_INT 8.
+        //MPI_Bcast(assign_array, num_assign, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
+        MPI_Bcast(assign_array, num_assign, MPI_UNSIGNED, ROOT_NODE_RANK, MPI_COMM_WORLD);
+
+        //
         for (n=0; n<num_assign; ++n) {
             if (local_rank == i) {
                 local_block_ids.push_back(assign_array[n]);
@@ -939,11 +971,13 @@ void Simulation::partitionBlocks(void) {
             node_block_map.insert(std::make_pair(i, assign_array[n]));
         }
 
-        delete assign_array;
+        delete [] assign_array;
     }
 
     if (isRootNode()) assertThrow(avail_ids.size()==0, "Did not assign all blocks in partitioning.");
 
+    //
+    // these are declared and deallocated in core/Comm.h.
     updateFieldRecvIDs = new BlockID[num_global_blocks];
     updateFieldRecvBuf = new GREEN_VAL[num_global_blocks];
 
@@ -992,7 +1026,8 @@ void Simulation::partitionBlocks(void) {
     }
 
 #endif
-
+    //
     mult_buffer = NULL;
     decompress_buf = NULL;
+
 }

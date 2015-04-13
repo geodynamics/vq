@@ -29,6 +29,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     int                 lid;
     double              stress_drop, norm_velocity;
+    double rho = 5.515e3;      // density of rock in kg m^-3
+    double g = 9.81;           // force of gravity in m s^-2
+    double depth = 0.0;         //
 
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
@@ -37,18 +40,19 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        
-        double rho = 5.515e3;      // density of rock in kg m^-3
-        double g = 9.81;           // force of gravity in m s^-2
-        double depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
+        //
+        depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
+        //printf("**Degbug(%d): setting rhogd[%d/%dg], %f, %f, %f ==> %f\n", getpid(), lid, gid, rho, g, depth, sim->getRhogd(gid));
 
         sim->setDynamicVal(gid, sim->getDynamic());
         sim->setFailed(gid, false);
 
         // Set stresses to their specified initial values
+        //printf("**Degbug(%d): shear[%d]\n", getpid(), gid);
         sim->setShearStress(gid, sim->getInitShearStress(gid));
+        //printf("**Degbug(%d): normal[%d]\n", getpid(), gid);
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
 
         // Set the stress drop based on the Greens function calculations
@@ -74,18 +78,27 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 #ifdef MPI_C_FOUND
 
     // Transfer stress drop values between nodes
-    // This is needed for normal stress Green's calculations
+    // also broadcast the rhogd value. 
+    // note that the array rhogd[] is a protected array, so we cannot access it directly (aka, using MPI_Reduce with a custom mpi funciton to
+    // gather/add/whatever, but handle nan), but since this only runs once at the sim initialization, it's not a huge problem.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        double     stress_drop;
+        // initialize these to avoid memcheck errors:
+        double       stress_drop=std::numeric_limits<float>::quiet_NaN();
+        double       tmp_rhogd = std::numeric_limits<float>::quiet_NaN();
 
         if (sim->isLocalBlockID(gid)) {
             stress_drop = sim->getStressDrop(gid);
+            //
+            tmp_rhogd = sim->getRhogd(gid);
         }
 
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
 
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
+            //
+            sim->setRhogd(gid, tmp_rhogd);
         }
     }
 
@@ -187,7 +200,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     for (it=sim->begin(); it!=sim->end(); ++it) {
         tmpBuffer[it->getBlockID()] = 0.0;
 
-        // Set the update field to be the slip rate of each block
+        // Set the update field to be the slip rate of each block (note: these are local blockID values.)
         sim->setUpdateField(it->getBlockID(), it->slip_rate());
     }
 
@@ -197,6 +210,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                    sim->getUpdateFieldPtr(),
                                    true);
 
+    //
     if (sim->doNormalStress()) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
             BlockID gid = it->getBlockID();
@@ -208,7 +222,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
-
+    //
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;
     next_static_fail.block_id = UNDEFINED_ELEMENT_ID;
@@ -240,6 +254,9 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
         // If the time to slip is less than the current shortest time, record the block
         // To ensure reproducibility with multiple processes, if multiple blocks fail
         // at the same time then we choose the block with the lowest ID over all the processes
+        // yoder: regarding a tie for failure time:: this is probably fine, but for a given instantiation of geometry, it
+        // favors certain fault segments for failure. we should probably determine these randomly... unless we very specifically want
+        // this part of the simulation to remain deterministic.
         if (ts < next_static_fail.val) {
             next_static_fail.block_id = gid;
             next_static_fail.val = ts;
@@ -286,5 +303,5 @@ void UpdateBlockStress::stressRecompute(void) {
 }
 
 void UpdateBlockStress::finish(SimFramework *_sim) {
-    delete tmpBuffer;
+    delete [] tmpBuffer;
 }

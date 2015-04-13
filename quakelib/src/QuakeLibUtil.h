@@ -47,8 +47,8 @@
 #define assertThrow(COND, ERR_MSG) assert(COND);
 
 #ifdef GEOGRAPHICLIB_FOUND
-#include </opt/local/include/GeographicLib/Geodesic.hpp>
-#include </opt/local/include/GeographicLib/Constants.hpp>
+#include <GeographicLib/Geodesic.hpp>
+#include <GeographicLib/Constants.hpp>
 #endif
 
 #ifndef _QUAKELIB_UTIL_H_

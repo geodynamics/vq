@@ -35,7 +35,11 @@ def check_self_consistent(events):
                 error = True
 
         # Confirm that the event magnitude is equal to the value determined from the sweeps
-        summed_mag = (2.0/3.0)*math.log10(1e7*summed_moment) - 10.7
+        # yoder: including the 1e7 term in the log argument can cause problems for really big numbers... which is likely indicative of a problem in and
+        # of itself, but for now, let's just take it out so we can handle bigger numbers.
+        #summed_mag = (2.0/3.0)*math.log10(1e7*summed_moment) - 10.7
+        summed_mag = (2.0/3.0)*(7.0 + math.log10(summed_moment)) - 10.7
+        #
         if abs(event.getMagnitude()-summed_mag) > 1e-5:
             print("ERROR: Recorded magnitude and summed sweep magnitude is not equal for event", event.event_num)
             error = True

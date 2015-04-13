@@ -658,6 +658,16 @@ namespace quakelib {
                     new_data._event_number = _event_number;
                     new_data._sweep_number = sweep;
                     new_data._element_id = elem;
+                    //
+                    // yoder: and we seem to be getting an error that implies that the rest of these values should be initialized
+                    //     (specifically, we get a complaint from valgring/memcheck that references to _normal_final (mostly) is (or might be) refered to,
+                    //     but is not initialized.
+                    // note: this makes the memcheck/valgrind errors go away, but we do see sweep writes with _normal_final=nan, _shear_final=nan
+                    // these might be the initial slips, or we might be making a mistake about how we iterate over the blocks.
+                    new_data._slip = new_data._area = new_data._mu = std::numeric_limits<float>::quiet_NaN();
+                    new_data._shear_init  = new_data._shear_final  = std::numeric_limits<float>::quiet_NaN();
+                    new_data._normal_init = new_data._normal_final = std::numeric_limits<float>::quiet_NaN();
+                    //
                     _rel.insert(std::make_pair(se, _sweeps.size()));
                     _sweeps.push_back(new_data);
                 }
@@ -971,10 +981,15 @@ namespace quakelib {
                 _event_trigger_on_this_node = false;
 
                 _data._event_number = UNDEFINED_EVENT_ID;
-                _data._event_year = _data._event_magnitude = std::numeric_limits<double>::quiet_NaN();
+                _data._event_year = std::numeric_limits<double>::quiet_NaN();
+                _data._event_magnitude = std::numeric_limits<double>::quiet_NaN();
+                //
                 _data._event_trigger = UNDEFINED_ELEMENT_ID;
-                _data._shear_stress_init = _data._shear_stress_final = std::numeric_limits<double>::quiet_NaN();
-                _data._normal_stress_init = _data._normal_stress_final = std::numeric_limits<double>::quiet_NaN();
+                _data._shear_stress_init   = std::numeric_limits<double>::quiet_NaN();
+                _data._shear_stress_final  = std::numeric_limits<double>::quiet_NaN();
+                _data._normal_stress_init  = std::numeric_limits<double>::quiet_NaN();
+                _data._normal_stress_final = std::numeric_limits<double>::quiet_NaN();
+                //
                 _data._start_sweep_rec = _data._end_sweep_rec = UNDEFINED_EVENT_ID;
 
                 _sweeps.clear();
