@@ -207,8 +207,23 @@ namespace quakelib {
             };
 
             //! Returns the dip angle.
+            // Kasey re-writing the function. It looks like the cross product messes
+            // up dip when you switch the strike direction
             double dip(void) const {
                 return normal().vector_angle(Vec<3>(0,0,1));
+                //Vec<3> down_dip, horiz;
+                //down_dip = _vert[1]-_vert[0];
+                // Define the horizontal vector in same x/y direction as the down_dip vector
+                // Catch vertical strike slip cases and handle them specially
+                //if ((down_dip[0] == 0 || down_dip[0] == -0) && (down_dip[1] == 0 || down_dip[1] == -0)){
+                //    horiz[0] = 1.0;
+                //    horiz[1] = 1.0;
+                //} else {
+                //    horiz[0] = down_dip[0];
+                //    horiz[1] = down_dip[1];
+                //}
+                //horiz[2] = 0.0;
+                //return down_dip.vector_angle(horiz);
             };
 
             //! Returns unit vector along the direction of fault rake.
@@ -279,24 +294,27 @@ namespace quakelib {
             };
 
             //! Get the normal unit vector to the plane of this element.
+            // Kasey switching order of cross product to reflect the VQ convention
+            // that faults dip to the left of the strike direction. (corrected from a x b to b x a)
             Vec<3> normal(void) const {
                 Vec<3> a,b;
                 a=_vert[1]-_vert[0];
                 b=_vert[2]-_vert[0];
-                return a.cross(b).unit_vector();
+                return b.cross(a).unit_vector();
             };
 
             //! Returns the angle of the element relative to north. Positive rotating clockwise from north.
             double strike(void) const {
-                Vec<3> v;
+                Vec<3> v, north;
+                north[1] = 1.0;
                 v = _vert[2]-_vert[0];
+                v[2] = 0.0; 
                 double strike;
-                // Handle the various quadrants differently
-                // atan2(y,x) return counter-clock angle from (x,y)=(1,0) aka East
-                if (v[1] >= 0 && v[0] < 0) {
-                    strike = 5*M_PI/2 - atan2(v[1],v[0]);
+                // Handle the case where strike has a westward component
+                if (v[0] < 0.0) {
+                    strike = 2*M_PI - north.vector_angle(v);
                 } else {
-                    strike = M_PI/2 - atan2(v[1],v[0]);
+                    strike = north.vector_angle(v);
                 }
                 return (strike);
             };
