@@ -15,36 +15,38 @@ import math
 import pylab as plt
 import h5py
 import itertools
+import scipy.optimize
+
 
 class PyGreens(object):
 	# class to manage, analyze, modify greent functions. might eventually try to code this up as a quakelib class.
 	#
-	def __init__(self, greens_fname='model1_greens_3000.h5', gr_shear=True, gr_normal=False):
+	def __init__(self, greens_fname='model1_greens_3000.h5', do_shear=True, do_normal=False):
 		'''
 		# greens_fname: file name of greens functions to load. maybe later build in an option to load an array directly.
-		# gr_shear {True/False}: load greens_shear array
-		# gr_normal {True/False}: load greens_normal array   (for large simulations, it will likely be desirable to load only one of these.
+		# do_shear {True/False}: load greens_shear array
+		# do_normal {True/False}: load greens_normal array   (for large simulations, it will likely be desirable to load only one of these.
 		# 
 		'''
 		#
 		self.greens_fname = greens_fname
-		self.gr_shear = gr_shear
-		self.gr_normal = gr_normal
+		self.do_shear = do_shear
+		self.do_normal = do_normal
 		#
 		# assign some functions as well:
 		self.get_h5_greens_array = get_h5_greens_array
 		#
-		ary_shear  = None
-		ary_normal = None
+		self.ary_shear  = None
+		self.ary_normal = None
 		#
-		if gr_shear:  ary_shear  = get_h5_greens_array(greens_fname=greens_fname, shear_normal='shear')
-		if gr_normal: ary_normal = get_h5_greens_array(greens_fname=greens_fname, shear_normal='normal')
+		if do_shear:  self.ary_shear  = get_h5_greens_array(greens_fname=greens_fname, shear_normal='shear')
+		if do_normal: self.ary_normal = get_h5_greens_array(greens_fname=greens_fname, shear_normal='normal')
 		#
 	#
 	def get_shear(self):
-		return ary_shear
+		return self.ary_shear
 	def get_normal(self):
-		return ary_normal
+		return self.ary_normal
 	#
 	def get_shear_h5(self, greens_fname=None):
 		if greens_fname==None: greens_fname = self.greens_fname
@@ -91,6 +93,13 @@ class PyGreens(object):
 		#
 		del(g_data)
 	#
+	# note: another way to do this is to make a sub-class like greens_hist(object), and then child classes:
+	# plot_normal_hist(greens_hist), in which shear_normal='normal' is defined in the child objects __init__() function.
+	def plot_normal_hist(self, greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
+		return self.plot_greens_hist(shear_normal='normal', greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
+	def plot_shear_hist(self, greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
+		return self.plot_greens_hist(shear_normal='shear', greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
+
 	def plot_greens_hist(self, shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
 		'''
 		# plot_greens_hist: plot a histogram of greens funciton values. besides giving a histogram, as oppposed to a cumulative type dist.,
@@ -102,8 +111,8 @@ class PyGreens(object):
 		#
 		if greens_ary == None:
 			shear_normal = shear_normal_aliases(shear_normal)
-			if shear_normal=='greens_shear':  g_data = self.get_shear()
-			if shear_normal=='greens_normal': g_data = self.get_normal()
+			if shear_normal=='greens_shear':  greens_ary = self.get_shear()
+			if shear_normal=='greens_normal': greens_ary = self.get_normal()
 		#
 		#n_bins = hist_kwargs.get('bins', n_bins)
 		hist_kwargs['bins'] = hist_kwargs.get('bins', n_bins)
@@ -111,17 +120,16 @@ class PyGreens(object):
 		hist_kwargs['histtype'] = hist_kwargs.get('histtype', 'step')
 		#print hist_kwargs
 		#
-		g_data = greens_array(greens_fname=greens_fname, shear_normal=shear_normal)
-		sh_0 = g_data.shape
-		g_data.shape = (1, g_data.size)
+		sh_0 = greens_ary.shape
+		greens_ary.shape = (1, greens_ary.size)
 		#
-		#n_bins = min(n_bins, g_data.size/2)
+		#n_bins = min(n_bins, greens_ary.size/2)
 		print "Some stats:"
-		gr_val_mean   = numpy.mean(g_data[0])
-		gr_val_stdev  = numpy.std(g_data[0])
-		gr_val_median = numpy.median(g_data[0])
-		gr_val_max, gr_val_min = max(g_data[0]), min(g_data[0])
-		gr_val_max_abs, gr_val_min_abs = max(abs(g_data[0])), min(abs(g_data[0]))
+		gr_val_mean   = numpy.mean(greens_ary[0])
+		gr_val_stdev  = numpy.std(greens_ary[0])
+		gr_val_median = numpy.median(greens_ary[0])
+		gr_val_max, gr_val_min = max(greens_ary[0]), min(greens_ary[0])
+		gr_val_max_abs, gr_val_min_abs = max(abs(greens_ary[0])), min(abs(greens_ary[0]))
 		print "mean(greens): ", gr_val_mean
 		print "median(greens): ", gr_val_median
 		print "stdev(greens): ", gr_val_stdev
@@ -132,11 +140,48 @@ class PyGreens(object):
 		plt.figure(fnum)
 		#plt.ion()
 		if do_clf: plt.clf()
-		my_hist = plt.hist(g_data[0], **hist_kwargs)
-		max_h = max(my_hist[0])
-		plt.vlines(sorted([gr_val_mean + j*gr_val_stdev, gr_val_mean-j*gr_val_stdev] for j in xrange(4)), numpy.zeros(4), max_h*.9*numpy.ones(4), lw=1.5, alpha=.8, color='r')
+		gr_hist = plt.hist(greens_ary[0], **hist_kwargs)
+		bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
+		bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
 		#
+		max_h = max(gr_hist[0])
+		n_v_lines = 4
+		#plt.vlines(sorted([gr_val_mean + float(j)*gr_val_stdev, gr_val_mean-j*gr_val_stdev] for j in xrange(n_v_lines)), numpy.ones(n_v_lines), max_h*.9*numpy.ones(n_v_lines), lw=1.5, alpha=.8, color='r')
+		plt.vlines([gr_val_mean + float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
 		#
+		# now, get a gaussian fit. we can use this to strip away extraneous values...
+		print "begin fitting to gauss model..."
+		gauss_p0 = [numpy.log10(max_h), 0., gr_val_stdev]
+		print "begin fit: A, mu, sigma = ", gauss_p0
+		#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
+		coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(numpy.log10(gr_hist[0])), p0=gauss_p0)
+		print "fit complete: A, mu, sigma = ", coeff
+		#
+		plt.figure(1)
+		plt.clf()
+		hist_fit = gauss_pdf(bin_centers, *coeff)
+		#hist_fit = [gauss_pdf(x, *coeff) for x in bin_centers]
+		
+		#plt.plot(bin_centers, hist_fit, '.-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+		ax = plt.gca()
+		ax.set_yscale('log')
+		ax.plot(bin_centers, numpy.power(10., hist_fit), '.-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+		
+		#
+		# return to original shape.
+		greens_ary.shape=sh_0
+		#
+		return gr_hist
+#
+def gauss_pdf(x, *p):
+	'''
+	# gaussian pdf for line fitting (the CDF is probably better, but...)
+	# *p should be like A,mu,sigma
+	so calling is like y = gauss_pdf(x, my_A, my_mu, my_sigma)
+	'''
+	A,mu,sigma=p
+	#
+	return A*numpy.exp(-((x-mu)**2)/(2.*sigma**2))
 #
 def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=0, n_bins=1000, top_n=.95, bottom_n=.95, **hist_kwargs):
 	#
@@ -195,6 +240,46 @@ def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=
 	f_hist = plot_greens_hist(greens_fname=greens_fname, shear_normal=shear_normal, fnum=fnum+1, do_clf=True, n_bins=n_bins, **hist_kwargs)
 	
 	
+##########################
+##########################
+# Module level functions (helper functions, scripts, etc.)
+#######
+
+def plot_greens_hist(greens_fname='model1_greens_3000.h5', shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
+	str_shr_norm = shear_normal_aliases(shear_normal=shear_normal)
+	obj_gr = PyGreens(greens_fname=greens_fname, do_shear=(str_shr_norm=='greens_shear'), do_normal=(str_shr_norm=='greens_normal') )
+	#return obj_gr
+	gr_hist = obj_gr.plot_shear_hist(greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
+	#
+	return gr_hist
+
+
+def shear_normal_aliases(shear_normal=None):
+	if shear_normal==None: return None
+	#
+	if shear_normal.lower() in ('shear', 'shr', 'greensshear'):
+		return 'greens_shear'
+	elif shear_normal.lower() in ('normal', 'nrml', 'norm', 'normalshear'):
+		return 'greens_normal'
+	else:
+		return 'greens_shear'
+
+def get_h5_greens_array(greens_fname='model1_greens_3000.h5', shear_normal='shear'):
+	# return a greens arrray from a greens file.
+	#
+	if shear_normal.lower() in ('shear', 'shr', 'greensshear'):
+		shear_normal = 'greens_shear'
+	elif shear_normal.lower() in ('normal', 'nrml', 'norm', 'normalshear'):
+		shear_normal = 'greens_normal'
+	else:
+		shear_normal = 'greens_shear'
+	#
+	#print "fetching h5 data with (%s)" % shear_normal
+	with h5py.File(greens_fname) as gr_data:
+		g_data = gr_data[shear_normal][()]
+	#
+	return g_data
+
 #
 def greens_consistency_check(greens_fname='model1_greens_3000.h5', shear_normal='shear', n_bins=1000, lowmem=False, fnum=0, **hist_kwargs):
 	'''
@@ -236,29 +321,4 @@ def greens_consistency_check(greens_fname='model1_greens_3000.h5', shear_normal=
 	#del(X)
 	del(g_data)
 	return X
-
-def shear_normal_aliases(shear_normal=None):
-	if shear_normal==None: return None
-	#
-	if shear_normal.lower() in ('shear', 'shr', 'greensshear'):
-		return = 'greens_shear'
-	elif shear_normal.lower() in ('normal', 'nrml', 'norm', 'normalshear'):
-		return = 'greens_normal'
-	else:
-		return = 'greens_shear'
-
-def get_h5_greens_array(greens_fname='model1_greens_3000.h5', shear_normal='shear'):
-	# return a greens arrray from a greens file.
-	#
-	if shear_normal.lower() in ('shear', 'shr', 'greensshear'):
-		shear_normal = 'greens_shear'
-	elif shear_normal.lower() in ('normal', 'nrml', 'norm', 'normalshear'):
-		shear_normal = 'greens_normal'
-	else:
-		shear_normal = 'greens_shear'
-	#
-	with h5py.File(greens_fname) as gr_data:
-		g_data = gr_data[shear_normal][()]
-	#
-	return g_data
 	
