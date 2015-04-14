@@ -9,5 +9,5 @@ if __name__ == "__main__":
 	# to run pyvq funcitons from the command line.
 	#
 	#
-	my_hist = pyvq.betas.plot_greens_hist('all_cal_greens_3000.h5')
+	my_hist = pyvq.betas.plot_greens_hist('all_cal_greens_5000.h5')
 	plt.show()

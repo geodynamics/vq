@@ -16,6 +16,7 @@ import pylab as plt
 import h5py
 import itertools
 import scipy.optimize
+from scipy.stats import norm
 
 
 class PyGreens(object):
@@ -118,6 +119,7 @@ class PyGreens(object):
 		hist_kwargs['bins'] = hist_kwargs.get('bins', n_bins)
 		hist_kwargs['log'] = hist_kwargs.get('log', True)
 		hist_kwargs['histtype'] = hist_kwargs.get('histtype', 'step')
+		hist_kwargs['normed'] = hist_kwargs.get('normed', False)
 		#print hist_kwargs
 		#
 		sh_0 = greens_ary.shape
@@ -139,6 +141,7 @@ class PyGreens(object):
 		#
 		plt.figure(fnum)
 		#plt.ion()
+		ax = plt.gca()
 		if do_clf: plt.clf()
 		gr_hist = plt.hist(greens_ary[0], **hist_kwargs)
 		bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
@@ -147,31 +150,57 @@ class PyGreens(object):
 		max_h = max(gr_hist[0])
 		n_v_lines = 4
 		#plt.vlines(sorted([gr_val_mean + float(j)*gr_val_stdev, gr_val_mean-j*gr_val_stdev] for j in xrange(n_v_lines)), numpy.ones(n_v_lines), max_h*.9*numpy.ones(n_v_lines), lw=1.5, alpha=.8, color='r')
-		plt.vlines([gr_val_mean + float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
+		plt.vlines([gr_val_mean + 4.*float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
 		#
 		# now, get a gaussian fit. we can use this to strip away extraneous values...
 		print "begin fitting to gauss model..."
-		gauss_p0 = [numpy.log10(max_h), 0., gr_val_stdev]
-		print "begin fit: A, mu, sigma = ", gauss_p0
-		#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
-		coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(numpy.log10(gr_hist[0])), p0=gauss_p0)
-		print "fit complete: A, mu, sigma = ", coeff
-		#
+		x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
 		plt.figure(1)
 		plt.clf()
-		hist_fit = gauss_pdf(bin_centers, *coeff)
-		#hist_fit = [gauss_pdf(x, *coeff) for x in bin_centers]
+		plt.plot(x_hist, y_hist, '-')
+		#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
+		#return x_hist, y_hist
+		#plt.figure(0)
 		
-		#plt.plot(bin_centers, hist_fit, '.-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+		#gauss_p0 = [numpy.log10(max_h), 0., numpy.std(numpy.log10(gr_hist[0]))]
+		std_0 = numpy.std(y_hist)
+		gauss_p0 = [max(y_hist), 0., 10.*std_0]
+		#gauss_p0 = [1., 0., 1.]
+		#
+		print "begin fit: A, mu, sigma = ", gauss_p0
+		#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
+		coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
+		#
+		'''
+		fitfunc  = lambda p, x: p[0]*numpy.exp(-0.5*((x-p[1])/p[2])**2.)  #+p[3]
+		errfunc  = lambda p, x, y: (y - fitfunc(p, x))
+		out   = scipy.optimize.leastsq( errfunc, gauss_p0, args=(x_hist, y_hist))
+		print "out: ", out
+		'''
+		print "fit complete: A, mu, sigma = ", coeff, gauss_p0
+		#
+		#plt.figure(1)
+		#plt.clf()
+		hist_fit = gauss_pdf(numpy.array(x_hist), *coeff)
+		#hist_fit = [gauss_pdf(float(x), *coeff) for x in x_hist]
+		
+		#plt.plot(bin_centers, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
 		ax = plt.gca()
-		ax.set_yscale('log')
-		ax.plot(bin_centers, numpy.power(10., hist_fit), '.-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+		#ax.set_yscale('log')
+		plt.figure(2)
+		plt.clf()
+		ax=plt.gca()
+		ax.plot(x_hist, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
 		
 		#
 		# return to original shape.
 		greens_ary.shape=sh_0
 		#
 		return gr_hist
+		#, x_hist, hist_fit
+#
+def err_gauss_pdf(y, x, *p):
+	return (y-gauss_pdf(x, *p))
 #
 def gauss_pdf(x, *p):
 	'''
@@ -180,8 +209,9 @@ def gauss_pdf(x, *p):
 	so calling is like y = gauss_pdf(x, my_A, my_mu, my_sigma)
 	'''
 	A,mu,sigma=p
+	#print "A, mu, sigma: ", A, mu, sigma
 	#
-	return A*numpy.exp(-((x-mu)**2)/(2.*sigma**2))
+	return A*numpy.exp(-((x-mu)**2.)/(2.*sigma**2.))
 #
 def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=0, n_bins=1000, top_n=.95, bottom_n=.95, **hist_kwargs):
 	#
