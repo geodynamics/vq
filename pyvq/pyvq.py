@@ -37,10 +37,9 @@ except ImportError:
     numpy_available = False
     
 # ----------------- Global constants -------------------------------------------
-MAP_WIDTH = 690.0
-MAP_HEIGHT = 422.0
-MIN_LON_DIFF = 0.035   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = MIN_LON_DIFF*MAP_HEIGHT/MAP_WIDTH   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+LAT_LON_DIFF_FACTOR = 1.333 
+MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
 #-------------------------------------------------------------------------------
@@ -53,9 +52,15 @@ def linear_interp(x, x_min, x_max, y_min, y_max):
 
 class SaveFile:
     def event_plot(self, event_file, plot_type):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
         return plot_type+"_"+event_file.split(".")[0]+".png"
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
         if uniform_slip is None and event_id is not None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+".png"
         elif uniform_slip is not None and event_id is None:
