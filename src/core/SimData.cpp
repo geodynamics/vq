@@ -113,6 +113,7 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
  Deallocate previously created arrays.
  */
 void VCSimData::deallocateArrays(void) {
+    // note: green_shear and green_normal are container objects, not arrays, so we use delete, not delete[]
     if (green_shear) delete green_shear;
 
     if (green_normal) delete green_normal;

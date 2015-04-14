@@ -86,6 +86,7 @@ void ReadModelFile::init(SimFramework *_sim) {
 
         // Set VQ specific values
         // Uncommenting the line setting fault_id (Kasey)
+
         new_block.setFaultID(world.section(eit->section_id()).fault_id());
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
 
