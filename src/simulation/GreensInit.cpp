@@ -120,8 +120,16 @@ void GreensInit::init(SimFramework *_sim) {
     sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
 	//
+<<<<<<< HEAD
 	// yoder: and now, if GF limits have been set, let's spin through the GF values and truncate non-physical entries:
 	// (note we can also do this during the various **.CalculateGreens(). 
+=======
+	// yoder: print some greens max/min/mean stats:
+    double shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean;
+    getGreensStats(sim, shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean);
+    sim->console() << "# Greens Shear:\n max: " << shear_max << "\n min: " << shear_min << "\n mean: " << shear_mean << std::endl << std::endl;
+    sim->console() << "# Greens Normal:\n max: " << normal_max << "\n min: " << normal_min << "\n mean: " << normal_mean << std::endl << std::endl;
+>>>>>>> d4184e4a58897c1316ec8ec2a906ca0035ba2810
 
 #ifdef MPI_C_FOUND
     //
@@ -150,8 +158,65 @@ void GreensInit::init(SimFramework *_sim) {
     }
 
 #endif
+    
 
 }
+
+// yoder:
+void GreensInit::getGreensStats(Simulation *sim, double &shear_min, double &shear_max, double &shear_mean, double &normal_min, double &normal_max, double &normal_mean) {
+	// gather max/min values for greens functions (which we may have defined in the parameter file).
+	// note: we (see ProgressMonitor.cpp/h; we could use BlockVal declarations (is there a GreensVal object? we could create one) to
+	// combine the block_id, or in this case the block_id pair, with the gr_values.
+	//
+	int         lid;
+    BlockID     gid;
+    double      shear_min_l, shear_max_l, normal_min_l, normal_max_l;	// local-node copies of min/max. we'll mpi_reduce --> shear_min, shear_max, etc.
+    double      shear_sum, normal_sum;
+    double      cur_shear, cur_normal;
+    BlockList::iterator nt;
+
+    shear_min  = DBL_MAX;
+    normal_min = DBL_MAX;
+    shear_max  = -DBL_MAX;
+    normal_max = -DBL_MAX;
+    //
+    shear_sum = normal_sum = 0;
+    
+    //min_val.block_id = max_val.block_id = sum_val.block_id = UNDEFINED_ELEMENT_ID;
+
+    // Get the minimum, maximum and sum CFF values on this node
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
+        //
+        // now, loop over the sim events to get greens-pair values:
+        for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+            //stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
+            cur_shear  = sim->getGreenShear(gid, nt->getBlockID());
+            cur_normal = sim->getGreenNormal(gid, nt->getBlockID());
+            //
+            if (cur_shear<shear_min_l) shear_min_l = cur_shear;
+            if (cur_shear>shear_max_l) shear_max_l = cur_shear;
+            shear_sum += cur_shear;
+            //
+            if (cur_normal<normal_min_l) normal_min_l = cur_normal;
+            if (cur_normal>normal_max_l) normal_max_l = cur_normal;
+            normal_sum += cur_normal;
+        };
+    };
+    
+
+    // Reduce to the min/avg/max over all nodes
+    sim->allReduceBlockVal(shear_min_l, shear_min, BLOCK_VAL_MIN);
+    sim->allReduceBlockVal(shear_max_l, shear_max, BLOCK_VAL_MAX);
+    //
+    sim->allReduceBlockVal(normal_min_l, normal_min, BLOCK_VAL_MIN);
+    sim->allReduceBlockVal(normal_max_l, normal_max, BLOCK_VAL_MAX);
+    
+    sim->allReduceBlockVal(shear_sum, shear_mean, BLOCK_VAL_SUM);
+    sim->allReduceBlockVal(normal_sum, normal_mean, BLOCK_VAL_SUM);
+    shear_mean  /= sim->numGlobalBlocks();
+    normal_mean /= sim->numGlobalBlocks();
+};
 
 
 

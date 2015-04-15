@@ -112,6 +112,7 @@ class PyGreens(object):
 		#
 		if greens_ary == None:
 			shear_normal = shear_normal_aliases(shear_normal)
+			print "shear_normal (translated): ", shear_normal
 			if shear_normal=='greens_shear':  greens_ary = self.get_shear()
 			if shear_normal=='greens_normal': greens_ary = self.get_normal()
 		#
@@ -310,8 +311,11 @@ def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=
 
 def plot_greens_hist(greens_fname='model1_greens_3000.h5', shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
 	str_shr_norm = shear_normal_aliases(shear_normal=shear_normal)
+	print "plot hist for %s array" % str_shr_norm
+	#
 	obj_gr = PyGreens(greens_fname=greens_fname, do_shear=(str_shr_norm=='greens_shear'), do_normal=(str_shr_norm=='greens_normal') )
 	#return obj_gr
+	# change this to allow normal plots too:
 	gr_hist = obj_gr.plot_shear_hist(greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
 	#
 	return gr_hist
