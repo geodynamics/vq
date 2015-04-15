@@ -35,6 +35,9 @@ class GreensInit : public SimPlugin {
 
         virtual void dryRun(SimFramework *_sim);
         virtual void init(SimFramework *_sim);
+        //
+        // yoder: also get some greens stats:
+        void getGreensStats(Simulation *sim, double &shear_min, double &shear_max, double &shear_mean, double &normal_min, double &normal_max, double &normal_mean);
 };
 
 #endif
