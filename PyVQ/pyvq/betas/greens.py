@@ -153,8 +153,22 @@ class PyGreens(object):
 		plt.vlines([gr_val_mean + 4.*float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
 		#
 		# now, get a gaussian fit. we can use this to strip away extraneous values...
-		print "begin fitting to gauss model..."
-		x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
+		# ... but this is not as straight forward as it looks; there's some log-scaling, then of course negative numbers, and
+		# generally the fit needs some coersion...
+		'''
+		#print "begin fitting to gauss model..."
+		#x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
+		x_hist, y_hist = [], []
+		for j,x in enumerate(bin_centers):
+			#
+			if gr_hist[0][j]>0:
+				y_hist += [gr_hist[0][j]]
+			else:
+				if len(y_hist)==0: continue
+				y_hist += [y_hist[-1]]
+			#
+			x_hist += [x]
+		
 		plt.figure(1)
 		plt.clf()
 		plt.plot(x_hist, y_hist, '-')
@@ -164,19 +178,15 @@ class PyGreens(object):
 		
 		#gauss_p0 = [numpy.log10(max_h), 0., numpy.std(numpy.log10(gr_hist[0]))]
 		std_0 = numpy.std(y_hist)
-		gauss_p0 = [max(y_hist), 0., 10.*std_0]
+		gauss_p0 = [math.log10(max(y_hist)), 0., 10.*std_0]
 		#gauss_p0 = [1., 0., 1.]
 		#
 		print "begin fit: A, mu, sigma = ", gauss_p0
 		#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
 		coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
+		coeff[0]=10**coeff[0]
 		#
-		'''
-		fitfunc  = lambda p, x: p[0]*numpy.exp(-0.5*((x-p[1])/p[2])**2.)  #+p[3]
-		errfunc  = lambda p, x, y: (y - fitfunc(p, x))
-		out   = scipy.optimize.leastsq( errfunc, gauss_p0, args=(x_hist, y_hist))
-		print "out: ", out
-		'''
+
 		print "fit complete: A, mu, sigma = ", coeff, gauss_p0
 		#
 		#plt.figure(1)
@@ -191,7 +201,7 @@ class PyGreens(object):
 		plt.clf()
 		ax=plt.gca()
 		ax.plot(x_hist, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
-		
+		'''
 		#
 		# return to original shape.
 		greens_ary.shape=sh_0
@@ -199,6 +209,29 @@ class PyGreens(object):
 		return gr_hist
 		#, x_hist, hist_fit
 #
+def gauss_fit_mc(y,x,nits=1000, A=1.0, mu=0.0, sigma=1.0, dy=0.0, dA=None, dmu=None, dsigma=None, ddy=None):
+	
+	# note: allow a 4th parameter, the y-lift.
+	#if len(p0)<4: p0+=[0.]
+	#
+	fitfunc  = lambda p, x: (10.**p[0])*exp(-0.5*((x-p[1])/p[2])**2)+p[3]
+	errfunc  = lambda p, x, y: (y - fitfunc(p, x))
+	Rs = [random.Random() for k in p0]
+	#
+	if dA  == None: dA=max()*2.0
+	if dmu == None: dmu=.5*(max(x)-min(x))
+	if dsigma == None: dsigma = max(y)
+	if ddy == None: ddy = .25*numpy.mean(y)
+	#
+	# for now, just slop through this (little or no optimization):
+	for n in xrange(nits):
+		# get random guesses:
+		this_A = A + dA*Rs[0].random()
+		this_mu = mu + dmu*(.5 - Rs[1].random())
+		this_sigma = sigma + dsigma
+		
+	
+	
 def err_gauss_pdf(y, x, *p):
 	return (y-gauss_pdf(x, *p))
 #
@@ -211,7 +244,7 @@ def gauss_pdf(x, *p):
 	A,mu,sigma=p
 	#print "A, mu, sigma: ", A, mu, sigma
 	#
-	return A*numpy.exp(-((x-mu)**2.)/(2.*sigma**2.))
+	return (10.**A)*numpy.exp(-((x-mu)**2.)/(2.*sigma**2.))
 #
 def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=0, n_bins=1000, top_n=.95, bottom_n=.95, **hist_kwargs):
 	#
