@@ -120,16 +120,11 @@ void GreensInit::init(SimFramework *_sim) {
     sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
 	//
-<<<<<<< HEAD
-	// yoder: and now, if GF limits have been set, let's spin through the GF values and truncate non-physical entries:
-	// (note we can also do this during the various **.CalculateGreens(). 
-=======
 	// yoder: print some greens max/min/mean stats:
     double shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean;
     getGreensStats(sim, shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean);
     sim->console() << "# Greens Shear:\n max: " << shear_max << "\n min: " << shear_min << "\n mean: " << shear_mean << std::endl << std::endl;
     sim->console() << "# Greens Normal:\n max: " << normal_max << "\n min: " << normal_min << "\n mean: " << normal_mean << std::endl << std::endl;
->>>>>>> d4184e4a58897c1316ec8ec2a906ca0035ba2810
 
 #ifdef MPI_C_FOUND
     //
@@ -206,14 +201,35 @@ void GreensInit::getGreensStats(Simulation *sim, double &shear_min, double &shea
     
 
     // Reduce to the min/avg/max over all nodes
-    sim->allReduceBlockVal(shear_min_l, shear_min, BLOCK_VAL_MIN);
-    sim->allReduceBlockVal(shear_max_l, shear_max, BLOCK_VAL_MAX);
-    //
-    sim->allReduceBlockVal(normal_min_l, normal_min, BLOCK_VAL_MIN);
-    sim->allReduceBlockVal(normal_max_l, normal_max, BLOCK_VAL_MAX);
+    #ifdef MPI_C_FOUND
+    int mpi_return=0;	// holder variable; mpi_reduce returns an int. maybe we'll have on efor each?
+    // construct MPI_reduce calls here:
+    mpi_return = MPI_Allreduce(&shear_min_l, &shear_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_max_l, &shear_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_sum, &shear_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     
-    sim->allReduceBlockVal(shear_sum, shear_mean, BLOCK_VAL_SUM);
-    sim->allReduceBlockVal(normal_sum, normal_mean, BLOCK_VAL_SUM);
+    mpi_return = MPI_Allreduce(&normal_min_l, &normal_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_max_l, &normal_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_sum, &normal_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    //sim->allReduceBlockVal(shear_min_l, shear_min, BLOCK_VAL_MIN);
+    //sim->allReduceBlockVal(shear_max_l, shear_max, BLOCK_VAL_MAX);
+    //
+    //sim->allReduceBlockVal(normal_min_l, normal_min, BLOCK_VAL_MIN);
+    //sim->allReduceBlockVal(normal_max_l, normal_max, BLOCK_VAL_MAX);
+    
+    //sim->allReduceBlockVal(shear_sum, shear_mean, BLOCK_VAL_SUM);
+    //sim->allReduceBlockVal(normal_sum, normal_mean, BLOCK_VAL_SUM);
+    
+    #else
+    shear_min = shear_min_l;
+    shear_max = shear_max_l;
+    shear_mean = shear_sum;
+    
+    normal_min = normal_min_l;
+    normal_max = normal_max_l;
+    normal_mean = normal_sum;
+    #endif
     shear_mean  /= sim->numGlobalBlocks();
     normal_mean /= sim->numGlobalBlocks();
 };
