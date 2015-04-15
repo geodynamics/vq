@@ -82,6 +82,18 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_stress", "");
     params.readSet<string>("sim.file.output_stress_index", "");
     params.readSet<string>("sim.file.output_stress_type", "");
+    //
+    // yoder: add parameters to truncate crazy greens function values:
+    //params.readSet<double>("sim.greens.shear_max", INFINITY);
+    //params.readSet<double>("sim.greens.shear_min", -INFINITY);
+    //params.readSet<double>("sim.greens.normal_max", INFINITY);
+    //params.readSet<double>("sim.greens.normal_min", -INFINITY);
+    // note: std::numeric_limits<double>::min()=0.0
+    params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
+    params.readSet<double>("sim.greens.shear_min",  -std::numeric_limits<double>::max());
+    params.readSet<double>("sim.greens.normal_max", std::numeric_limits<double>::max());
+    params.readSet<double>("sim.greens.normal_min", -std::numeric_limits<double>::max());
+    //printf("**Debug: greens shear_max=%f, shear_min=%f\n",std::numeric_limits<double>::max(), std::numeric_limits<double>::min() );
 }
 
 void VCParams::write_params(const std::string &param_file_name) {

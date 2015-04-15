@@ -119,12 +119,14 @@ void GreensInit::init(SimFramework *_sim) {
 
     sim->console() << "# Greens shear matrix takes " << abbr_shear_bytes << " " << space_vals[shear_ind] << std::endl;
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
+	//
+	// yoder: and now, if GF limits have been set, let's spin through the GF values and truncate non-physical entries:
+	// (note we can also do this during the various **.CalculateGreens(). 
 
 #ifdef MPI_C_FOUND
-
     //
     if (sim->getWorldSize() > 1) {
-        //                                                                            // i'm guessing that a seg-fault long since made a mess.
+        //
         // initialize these to suppress memcheck errors:
         double global_shear_bytes = std::numeric_limits<float>::quiet_NaN();
         double global_normal_bytes = std::numeric_limits<float>::quiet_NaN();
