@@ -293,187 +293,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     delete [] x;
 }
 
-/*
-void RunEvent::processBlocksSecondaryFailures_bkp(Simulation *sim, quakelib::ModelSweeps &sweeps) {
-	// yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
-	// logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
-	// 1) first, distribute the A,B arrays (an array and a vector) between the nodes.
-	// 2) then, multiply, etc.
-	// 3) then redistribute the result back to the various nodes.
-	// basically move the second part of the isRoot() (don't recall how the not isRoot() block looks) outside the send/recv block.
-	//
-    int             lid;
-    BlockID         gid;
-    unsigned int    i, n;
-    //quakelib::ElementIDSet          local_id_list;
-    //BlockIDProcMapping              global_id_list;       // yoder: use class scope declarations for these lists...
-    quakelib::ElementIDSet          local_secondary_id_list;  // lists of local/global secondary failures.
-    BlockIDProcMapping              global_secondary_id_list;
-    //
-    quakelib::ElementIDSet::const_iterator      it;
-    BlockIDProcMapping::const_iterator  jt;
 
-    //
-    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-        //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
-        // would a faster way to do this step be to look through the current event_sweeps list? yes, but we're assuming that "original failure" has been processed,
-        // which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
-        // another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
-        //lid = s_it->_element_id;
-        gid = sim->getGlobalBID(lid);
-
-        //
-        // If the block has already failed (but not in this sweep) then adjust the slip
-        // do we have the correct list of global failed elements?
-        if (sim->getFailed(gid) && global_failed_elements.count(gid) == 0) {
-            //local_id_list.insert(gid);
-            local_secondary_id_list.insert(gid);
-        }
-    }
-
-    //
-    // use: global/local_secondary_id_list;
-    // Figure out how many failures there were over all processors
-    //sim->distributeBlocks(local_id_list, global_id_list);
-    sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
-
-    //int num_local_failed = local_id_list.size();
-    //int num_global_failed = global_id_list.size();
-    int num_local_failed = local_secondary_id_list.size();
-    int num_global_failed = global_secondary_id_list.size();
-
-    double *A = new double[num_local_failed*num_global_failed];
-    double *b = new double[num_local_failed];
-    double *x = new double[num_local_failed];
-
-    //
-    // stress transfer (greens functions) between each local element and all global elements.
-    // yoder: are GF supposed to be symmetric? they're not -- almost, but not quite. so are
-    //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
-    //    for (n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++n,++jt) {
-    for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
-        for (n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++n,++jt) {
-            A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
-
-            if (sim->doNormalStress()) {
-                A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
-            }
-        }
-
-        b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
-    }
-    //
-    // heisenbug/heisen_hang likely candidate...
-    //
-    // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
-    // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
-    if (sim->isRootNode()) {
-        double *fullA = new double[num_global_failed*num_global_failed];
-        double *fullb = new double[num_global_failed];
-        double *fullx = new double[num_global_failed];
-
-        // Fill in the A matrix and b vector from the various processes
-        //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
-        for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
-            if (jt->second != sim->getNodeRank()) {
-#ifdef MPI_C_FOUND
-                //
-                // element NOT local to this (root) node, so receive this data element from the remote process with mpi_rank jt->second:
-                // note: jt-> first: global_id, jt->second: node_id/rank
-                // MPI_Recv(in_buff{out}, in_len, mpi_dtype, src_node, tag, comm, status{out})
-                // note that in_buff and status are technically "output" parameters for the MPI_Recv function; we read data into in_buff by
-                // calling MPI_Recv()
-                MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#else
-                assertThrow(false, "Single processor version of code, but faults mapped to multiple processors.");
-#endif
-            } else {
-                // YES, element is local to this node; copy from the "local" array to the "global" array:
-                memcpy(&(fullA[i*num_global_failed]), &(A[n*num_global_failed]), sizeof(double)*num_global_failed);
-                memcpy(&(fullb[i]), &(b[n]), sizeof(double));
-                n++;
-            }
-        }
-
-        //
-        // Solve the global system on the root node (we're inside an if (sim->isRootNode()) {} block )
-        solve_it(num_global_failed, fullx, fullA, fullb);
-
-        //
-        // Send back the resulting values from x to each process
-        //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
-        for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
-            if (jt->second != sim->getNodeRank()) {
-#ifdef MPI_C_FOUND
-                // send these values to node-rank jt->second:
-                MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
-#else
-                assertThrow(false, "Single processor version of code, but faults mapped to multiple processors.");
-#endif
-            } else {
-                // yoder: so we're copying the revised xfull[j] -- x[n] ('global' to 'local'); x[n] are the local
-                // node's values. aka, node sends these values back to itself.
-                memcpy(&(x[n]), &(fullx[i]), sizeof(double));
-                n++;
-            }
-        }
-
-        //
-        // Delete the memory arrays created (use delete [] for arrays)
-        delete [] fullx;
-        delete [] fullb;
-        delete [] fullA;
-    } else {
-        // NOT root_node:
-#ifdef MPI_C_FOUND
-        // send these values to root (rank 0) node:
-        for (i=0; i<num_local_failed; ++i) {
-            MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-            MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-        }
-
-        // fetch x[i] from root (rank 0) node:
-        for (i=0; i<num_local_failed; ++i) {
-            MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-
-#else
-        assertThrow(false, "Single processor version of code, but processor MPI rank is non-zero.");
-#endif
-    }
-
-    // Take the results of the calculation and determine how much each ruptured block slipped
-    //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
-    for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
-        Block &block = sim->getBlock(*it);
-        //
-        double slip = x[i] - sim->getSlipDeficit(*it);
-
-        //
-        if (slip > 0) {
-            // Record how much the block slipped in this sweep and initial stresse
-            sweeps.setSlipAndArea(sweep_num,
-                                  *it,
-                                  slip,
-                                  block.area(),
-                                  block.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   *it,
-                                   sim->getShearStress(*it),
-                                   sim->getNormalStress(*it));
-            //
-            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
-        }
-    }
-
-    //
-    // delete/de-allocate arrays (use "delete []" for arrays, as opposed to "delete" for single objects)
-    delete [] A;
-    delete [] b;
-    delete [] x;
-}
-*/
 
 /*!
  Given an initial failed block, propagates the failure throughout the system
@@ -501,22 +321,17 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
-
-    // yoder:
-    //local_secondary_id_list.clear();
     //
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         loose_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
-
     //
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
     //
     // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
     unsigned int event_sweeps_pos = 0;
-
     //
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
@@ -536,7 +351,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
         }
 
         // Distribute the update field values to other processors
@@ -573,7 +389,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         sim->computeCFFs();
-
+        //
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
         processBlocksSecondaryFailures(sim, event_sweeps);
 
@@ -584,9 +400,16 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //
             // if this is a current/original failure, then 0 else...
-            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
         }
-
+        //
+        //
+        // could we be getting MPI conflicts here? if one process is trying to distribute original failures (using update_field), and another process is already 
+        // trying to distribute secondary failures, this could (???) cause a conflict and hang???
+        // let's try an MPI_Barrier here (i think we've got this wrapped up in an ifmpi block somewhere...):
+        // yoder: (debug)
+        sim->barrier();
         //
         sim->distributeUpdateField();
 

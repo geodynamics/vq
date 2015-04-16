@@ -89,25 +89,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         double getGreenShear(const BlockID &r, const BlockID &c) const {
             return greenShear()->val(getLocalInd(r), c);
         };
-        // yoder: move content to Simulation.cpp.
+        // yoder: move content to Simulation.cpp (enforcing min/max values for greens values).
         void setGreens(const BlockID &r, const BlockID &c, const double &new_green_shear, const double &new_green_normal);
-        /*
-        void setGreens(const BlockID &r, const BlockID &c, const double &new_green_shear, const double &new_green_normal) {
-            // TODO:
-            // yoder: add extreme greens-value checking here. see Params.h/.cpp, double getGreensShearMax(void), etc.
-            // looks like we place a condition on the values of {new_green_shear, new_green_normal}
-            // it may also be desirable to distinguish between self-stress (diagonal elements) and off-diagonals. however, if it comes
-            // to that, we'll probably want to use Python/quakelib tools to modify a Greens output file directly and just load those values.
-            //
-            //greenShear()->setVal(getLocalInd(r), c, new_green_shear);
-            //greenNormal()->setVal(getLocalInd(r), c, new_green_normal);
-            greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
-            greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
 
-            //if (r == c) setSelfStresses(r, new_green_shear, new_green_normal);
-            if (r == c) setSelfStresses(r, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())), std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
-        };
-        */
         double getGreenNormal(const BlockID &r, const BlockID &c) const {
             return greenNormal()->val(getLocalInd(r), c);
         };
