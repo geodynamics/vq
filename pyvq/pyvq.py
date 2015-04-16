@@ -51,11 +51,20 @@ def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
 
 class SaveFile:
-    def event_plot(self, event_file, plot_type):
+    def event_plot(self, event_file, plot_type, min_mag):
+        min_mag = str(min_mag)
         # Remove any folders in front of model_file name
-        if len(model_file.split("/")) > 1:
+        if len(event_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
-        return plot_type+"_"+event_file.split(".")[0]+".png"
+        if min_mag is not None: 
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                mag = "minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]+"_"
+            else:
+                mag = "minMag_"+min_mag+"_"
+        else:
+            mag = ""
+        return plot_type+"_"+mag+event_file.split(".")[0]+".png"
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
         # Remove any folders in front of model_file name
@@ -352,7 +361,7 @@ class GreensPlotter:
 
 class TracePlotter:
     # Plot fault traces on a map
-    def __init__(self, geometry, output_file, small_model=False):
+    def __init__(self, geometry, output_file, use_sections=None, small_model=False):
         self.small_model = small_model
         plot_height = 768.0
         max_map_width = 690.0
@@ -442,6 +451,7 @@ class TracePlotter:
         fault_color = '#000000'
         event_fault_color = '#ff0000'
         fault_width = 0.5
+        fault_width_bold = 2.5
         grid_color = '#000000'
         grid_width = 0.5
         num_grid_lines = 5
@@ -533,7 +543,13 @@ class TracePlotter:
             
             trace_Xs, trace_Ys = self.m1(sec_trace_lons, sec_trace_lats)
             
-            linewidth = fault_width + 2.5
+            if use_sections is not None:
+                if sid in use_sections:
+                    linewidth = fault_width_bold
+                else:
+                    linewidth = fault_width
+            else:  
+                linewidth = fault_width_bold
 
             self.m1.plot(trace_Xs, trace_Ys, color=fault_color, linewidth=linewidth, solid_capstyle='round', solid_joinstyle='round')
 
@@ -713,7 +729,7 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 self.dmc['cb_fontsize'] = 16.0
             elif self.field_type == 'geoid':
-                self.dmc['cb_fontsize'] = 15.0
+                self.dmc['cb_fontsize'] = 16.0
                 
         if self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
@@ -958,6 +974,7 @@ class FieldPlotter:
             # Changed units to microgals (multiply MKS unit by 10^8)
             if self.field_type == 'gravity': self.field_transformed *= float(pow(10,8))
             if self.field_type == 'dilat_gravity': self.field_transformed *= float(pow(10,8))
+            if self.field_type == 'geoid': self.field_transformed *= float(pow(10,2))
             
             # Plot the field on the map
             if self.levels is None:
@@ -1227,7 +1244,7 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
             elif self.field_type == 'geoid':
-                cb_title = 'Geoid height change [m]'
+                cb_title = 'Geoid height change [cm]'
             # Make first and last ticks on colorbar be <MIN and >MAX.
             # Values of colorbar min/max are set in FieldPlotter init.
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
@@ -1789,32 +1806,32 @@ if __name__ == "__main__":
 
     # Generate plots
     if args.plot_freq_mag:
-        filename = SaveFile().event_plot(args.event_file, "freq_mag")
+        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area")
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude)
         MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_mag_mean_slip:
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip")
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude)
         MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time")
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude)
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt")
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude)
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t")
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude)
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile().event_plot(args.event_file, "waiting_times")
+        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
         type = args.field_type.lower()
@@ -1875,7 +1892,7 @@ if __name__ == "__main__":
     if args.traces:
         filename = SaveFile().trace_plot(args.model_file)
         if args.small_model is None: args.small_model = False
-        TP = TracePlotter(geometry, filename, small_model=args.small_model)
+        TP = TracePlotter(geometry, filename, use_sections=args.use_sections, small_model=args.small_model)
 
     # Generate stress plots
     if args.stress_elements:
