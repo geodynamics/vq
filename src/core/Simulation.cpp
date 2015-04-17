@@ -697,7 +697,6 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 
     // Count total, displacement of block IDs
     int total_blocks = 0;
-
     for (i=0; i<world_size; ++i) {
         proc_block_disps[i] = total_blocks;
         total_blocks += proc_block_count[i];
@@ -719,11 +718,11 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
-
+    //
     n = 0;
-
     for (p=0; p<world_size; ++p) {
         for (i=0; i<proc_block_count[p]; ++i) {
+            // global_id_list is a collection of pairs like <block_id, node_rank_id> .
             global_id_list.insert(std::make_pair(block_ids[n], p));
             ++n;
         }

@@ -31,6 +31,7 @@ then
     CC=mpicc CXX=mpicxx cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
 elif "${debug_mode}" == "debug2" || $debug_mode == "debug" ]
 then
+    # most-debugging, slowest.
     CC=mpicc CXX=mpicxx cmake .. -DCMAKE_BUILD_TYPE=Debug
 else
     CC=mpicc CXX=mpicxx cmake ..

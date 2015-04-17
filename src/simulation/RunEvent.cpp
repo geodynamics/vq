@@ -191,6 +191,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         double *fullx = new double[num_global_failed];
 
         // Fill in the A matrix and b vector from the various processes
+        // note: for an empty global_id_list, this list will do nothing, so MPI_Recv() will not execute, and we'll probably end up with a hanging MPI_Send().
+        //       can that ever happen? global_secondary_id_list is empty on one node but not on another? maybe between iterations?
+        sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==False set.
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
@@ -219,6 +222,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // Solve the global system on the root node (we're inside an if (sim->isRootNode()) {} block )
         solve_it(num_global_failed, fullx, fullA, fullb);
         //
+        // root node regroups (barrier() ), then does its sending bit:
+        sim->barrier();		//yoder: (debug)
+        
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
@@ -236,7 +242,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 n++;
             }
         }
-
         //
         // Delete the memory arrays created (use delete [] for arrays)
         delete [] fullx;
@@ -246,12 +251,17 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // NOT root_node:
 #ifdef MPI_C_FOUND
         // send these values to root (rank 0) node:
+        // ... and note that if there are no local failures, these MPI_Send() commands will not execute. do we end up with a hanging send/receive pair?
+        // Child Nodes do their sending bit:
+        sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==True set.
         for (i=0; i<num_local_failed; ++i) {
             //printf("**Debug[%d/%d]: A[],b MPI_Send child-node blocking...\n", sim->getNodeRank(), getpid());
             MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
-
+        //
+        // regroup (barrier()), then child nodes do their receiving bit:
+        sim->barrier();		//yoder: (debug)
         // fetch x[i] from root (rank 0) node:
         for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -340,9 +350,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
-        sim->barrier();    // yoder: (debug)
+        //sim->barrier();    // yoder: (debug)   (we're probably safe without this barrier() ).
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
-        sim->barrier(); // yoder: (debug)
+        //sim->barrier(); // yoder: (debug)
         //  
         // Process the blocks that failed.
         // note: setInitStresses() called in processBlocksOrigFail().
@@ -359,6 +369,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         // Distribute the update field values to other processors
+        // (possible) MPI operations:
         sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
         sim->barrier();    // yoder: (debug)
@@ -423,22 +434,22 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
         sim->barrier();    // yoder: (debug)
-
+        //
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
                                        true);
-
+        //
         if (sim->doNormalStress()) {
             sim->matrixVectorMultiplyAccum(sim->getNormalStressPtr(),
                                            sim->greenNormal(),
                                            sim->getUpdateFieldPtr(),
                                            true);
         }
-
+        //
         sim->computeCFFs();
-
+        //
         // Record the final stresses of blocks that failed during this sweep
         BlockIDProcMapping::iterator        fit;
         //
@@ -488,15 +499,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
             }
         }
-
         //
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear(); // we are done with these blocks
         //
-        // yoder (see comments/discussion above about looping over failed blocks):
-        //local_secondary_id_list.clear();
-        //global_secondary_id_list.clear();
-
         // Find any blocks that fail because of the new stresses
         markBlocks2Fail(sim, trigger_fault);
 
