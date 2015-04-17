@@ -556,9 +556,6 @@ namespace quakelib {
             //
 
 
-
-
-
             //
             //Added by KWS, below is for change in gravitational potential
             //
@@ -576,6 +573,22 @@ namespace quakelib {
             double Cv(double xi, double eta, double _q);
             double I0v(double _R, double eta, double _q);
             double I1v(double _R, double xi, double eta, double _q);
+            
+            
+            //
+            // dg test (dg2)
+            // components
+            double dSh(double x, double _p, double _q, double L, double W);
+            double dDh(double x, double _p, double _q, double L, double W);
+            double dTh(double x, double _p, double _q, double L, double W);
+            // globals
+            double Sh(double xi, double eta, double _q);
+            double Dh(double xi, double eta, double _q);
+            double Th(double xi, double eta, double _q);
+            double I1h(double _R, double xi, double eta, double _q);
+            double I4h(double _R, double xi, double eta, double _q);
+            double I5h(double _R, double xi, double eta, double _q);
+            
     };
 }
 
