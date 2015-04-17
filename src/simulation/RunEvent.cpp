@@ -340,10 +340,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
+        sim->barrier();    // yoder: (debug)
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
+        sim->barrier(); // yoder: (debug)
         //  
         // Process the blocks that failed.
         // note: setInitStresses() called in processBlocksOrigFail().
+        // note: processBlocksOrigFail() is entirely local (no MPI).
         processBlocksOrigFail(sim, event_sweeps);
 
         // Recalculate CFF for all blocks where slipped blocks don't contribute
@@ -356,7 +359,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         // Distribute the update field values to other processors
+        sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
+        sim->barrier();    // yoder: (debug)
 
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
         for (it=sim->begin(); it!=sim->end(); ++it) {
@@ -414,10 +419,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // could we be getting MPI conflicts here? if one process is trying to distribute original failures (using update_field), and another process is already 
         // trying to distribute secondary failures, this could (???) cause a conflict and hang???
         // let's try an MPI_Barrier here (i think we've got this wrapped up in an ifmpi block somewhere...):
-        // yoder: (debug)
-        sim->barrier();
-        //
+        // 
+        sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
+        sim->barrier();    // yoder: (debug)
 
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
