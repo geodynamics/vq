@@ -391,7 +391,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->computeCFFs();
         //
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
+        // yoder: (debug)
+        sim->barrier();
+        //
         processBlocksSecondaryFailures(sim, event_sweeps);
+        // yoder: (debug)
+        sim->barrier();
+        //
 
         // Set the update field to the slip of all blocks
         for (it=sim->begin(); it!=sim->end(); ++it) {
