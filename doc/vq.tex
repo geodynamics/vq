@@ -327,7 +327,9 @@ same equations and data formats as the simulation. The Python interface
 is also used as the basis for a testing framework to ensure that any
 changes made to the code do not affect the scientific results and
 that computations on different platforms yield the same results within
-a specified tolerance.
+a specified tolerance. Currently the QuakeLib library is wrapped into a python module
+called ``quakelib'' that is utilized by the plotting and analysis scripts located in
+the ``pyvq'' folder, examples are given later in the text.
 
 
 \chapter{VQ Components and Governing Equations\label{sec:Governing-Equations}}
@@ -724,7 +726,7 @@ but rather iterative calculations of stress and element failure to
 approximate a rupture propagating through the fault system.
 
 
-\section{QuakeLib Tour}
+\section{QuakeLib Tour \label{sec:quakelib_tour}}
 
 As mentioned in Section \ref{sec:About_quakelib}, the QuakeLib library
 provides tools and a Python interface to develop earthquake simulations,
@@ -736,7 +738,9 @@ To only compile QuakeLib, follow the install instructions in section
 
 This chapter provides a brief visual tour of a few analytical utilities
 in QuakeLib and to illustrate its capacity as the computational backbone
-for impressive and informative visualizations.
+for impressive and informative visualizations. The script that generates
+these plots is vq/pyvq/pyvq.py, and a tutorial for generating plots like these
+is given in section \ref{sec:pyvq}.
 
 \subsection{Conventions}
 
@@ -1018,6 +1022,8 @@ Quake source\texttt{.}~\\
 \item Use make to build QuakeLib and the VQ binaries.\texttt{}~\\
 \texttt{}~\\
 \texttt{\$ make}
+\item The final step is required only if the user intends to use the quakelib python module \texttt{}~\\
+\texttt{\$ sudo make install}
 \end{enumerate}
 If you are content to run Virtual Quake from the build directory,
 then you are done. Upon successful completion, the \texttt{make} command
@@ -1844,7 +1850,7 @@ The output data is stored in \texttt{events\_3000.txt} and \texttt{sweeps\_3000.
 \ref{chap:Virtual-Quake-Output}.
 
 
-\section{Building the Quake Fault Model}
+\section{Building the full California Fault Model}
 \subsection{Overview}
 
 In the examples folder we also provide all the major fault traces in California and an executable script that can use them to build a full fault model. To build the full California fault model, execute the following commands to mesh the model into 3km elements:
@@ -1854,15 +1860,226 @@ $ cd examples/ca_model/
 $ ./gen_ca_model.sh 3000
 \end{verbatim}
 
-Next, create an appropriate parameter file and run VQ as shown in the previous sections.  Note that the full CA simulation requires a fair amount of memory and may take several hours to finish.  Progress will be reported during the simulation if the \texttt{sim.system.progress\_period} parameter is set to a nonzero value.
+Next, create an appropriate parameter file and run VQ as shown in the previous sections.  Note that the full CA simulation requires a fair amount of memory and may take several hours to finish.  Progress will be reported during the simulation if the \texttt{sim.system.progress\_period} parameter is set to a nonzero value (unit is seconds).
+
+
+
+\section{Virtual Quake Data Analysis Tutorial (PyVQ) \label{sec:pyvq}}
+\subsection{Overview}
+
+Section \ref{sec:quakelib_tour} showed plots of gravity changes and an InSAR interferogram for a selected simulated earthquake. These plots that analyze simulation data utilize the python interface to the QuakeLib library, specifically a python module named quakelib that is generated during the final step of compiling Virtual Quake (when using the command ``sudo make install'', see section \ref{sec:Install}). In the following sections we describe how to make plots with Virtual Quake data using the pyvq script in the pyvq directory.
+
+The set of simulation data analysis plotting scripts are located in the pyvq folder, and accessing by calling the python script pyvq.py with various command line arguments. The functionality is briefly explained in the README\_PYVQ file and discussed in further detail here. The full list of possible pyvq parameters is given in section \ref{sec:pyvq_params}.
+
+\subsection{Simulation Statistics Plots}
+
+To generate a frequency magnitude plot from your simulation file (hdf5), located at ``path/to/sim\_file.h5'', simply execute the shell command (in one line):
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5' --plot_freq_mag 1
+\end{verbatim}
+
+If you generated a text file from your simulation, simply use instead: 
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.txt --event_file_type 
+     'text' --plot_freq_mag 1
+\end{verbatim}
+
+This saves the plot to a file with the filename chosen from the name of the simulation file and the type of plot being drawn, Figure \ref{fig:freq_mag}.
+
+\begin{figure}
+\centering{}
+\includegraphics[width=0.7\textwidth]{graphics/freq_mag_example.png}
+\caption{\label{fig:freq_mag} Example frequency-magnitude distribution.}
+\end{figure}
+
+To plot both the magnitude-rupture area and magnitude-mean slip distributions (Figure \ref{fig:mag_area_slip}) simply execute:
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5' --plot_mag_rupt_area --plot_mag_mean_slip
+\end{verbatim}
+
+\begin{figure}
+\centering{}
+\includegraphics[width=0.49\textwidth]{graphics/mag_rupt_area_example.png}
+\includegraphics[width=0.49\textwidth]{graphics/mag_mean_slip_example.png}
+\caption{\label{fig:mag_area_slip} \textbf{Left}: Example magnitude vs rupture area distribution.  \textbf{Right}: Example magnitude vs mean slip distribution. Compare these to Wells and Coppersmith 1994 relations.}
+\end{figure}
+
+\subsection{Earthquake Probability Plots}
+
+To plot the conditional probabilities (Figure \ref{fig:probabilities}) of an earthquake with magnitude $\geq 7$ occurring on sections [4,5,6,7,8,9,10,11,12,13] (as defined in your fault model) as a function of time since the last earthquake on those sections:
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5'  --plot_cond_prob_vs_t  --model_file path/to/model.txt --model_file_type
+     'text' --min_magnitude 7.0 --use_sections 4 5 6 7 8 9 10 11 12 13
+\end{verbatim}
+
+To plot the expected waiting times until the next earthquake with magnitude $\geq 7$ occurring on sections [4,5,6,7,8,9,10,11,12,13] as a function of time since the last earthquake on those sections:
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5'  --plot_waiting_times  --model_file path/to/model.txt --model_file_type
+     'text' --min_magnitude 7.0 --use_sections 4 5 6 7 8 9 10 11 12 13
+\end{verbatim}
+
+
+\begin{figure}
+\centering{}
+\includegraphics[width=0.49\textwidth]{graphics/cond_prob_vs_t_example.png}
+\includegraphics[width=0.49\textwidth]{graphics/waiting_times_example.png}
+\caption{\label{fig:probabilities} \textbf{Left}: Conditional probability of an earthquake $M \geq 7$ on the specified sections as a function of time since the last earthquake $M \geq 7$. \textbf{Right}: Distribution of waiting times until the next earthquake $M \geq 7$ for waiting times with 25\%, 50\% and 75\% probability.}
+\end{figure}
+
+
+\subsection{Field Plots}
+
+QuakeLib uses Green's functions to compute co-seismic fields given a fault geometry and a slip distribution. For displacements we use Okada's equations and for gravity, potential, and geoid height changes we use Okubo's equations. 
+
+To compute the gravity changes for 5 meters of uniform slip on your fault model (example shown in Figure \ref{fig:single_element} for single 10km by 10km faults):
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --model_file path/to/model.txt --model_file_type
+     'text' --uniform_slip 5 --field_plot --field_type 'gravity'
+\end{verbatim}
+
+\begin{figure}
+\centering{}
+\includegraphics[width=0.49\textwidth]{graphics/example_vert_strikeslip_with_trace_fault_10000_gravity_uniform_slip5m.png}
+\includegraphics[width=0.48\textwidth]{graphics/example_normal_dip60_with_trace_fault_10000_gravity_uniform_slip1m.png}
+\caption{\label{fig:single_element} \textbf{Left}: Gravity changes for 5m slip on a 10km by 10km vertical strikeslip fault. \textbf{Right}: Gravity changes for 1m slip on a 10km by 10km normal fault with dip angle 30 degrees.}
+\end{figure}
+
+To compute the gravity changes and InSAR interferogram for event \#210 from your simulation (Figures \ref{fig:event_insar} and \ref{fig:event_gravity}):
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5' --model_file path/to/model.txt --model_file_type 'text' --field_plot 
+     --field_type 'gravity' --event_id 210
+     
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5 --event_file_type 
+     'hdf5' --model_file path/to/model.txt --model_file_type 'text' --field_plot 
+     --field_type 'insar' --event_id 210
+\end{verbatim}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{graphics/event_insar_example.png}
+\caption{\label{fig:event_insar} Simulated InSAR interferogram for magnitude 7.26 earthquake on the San Andreas Fault. }
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{graphics/event_gravity_example.png}
+\caption{\label{fig:event_gravity} Simulated gravity changes for magnitude 7.26 earthquake on the San Andreas Fault. }
+\end{figure}
+
+\section{PyVQ Plotting Arguments Grouped by Functionality\label{sec:pyvq_params}}
+
+This section summarizes the current functionality of the pyvq script (section \ref{sec:pyvq}). These parameters do not have default values, and are not used unless specified. 
+
+\subsection{Model parameters}
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--event\_file}} & The simulation output file.\tabularnewline
+\hline 
+\texttt{\small{--event\_file\_type}} & Either 'hdf5' or 'text'.\tabularnewline
+\hline 
+\texttt{\small{--sweep\_file}} & The simulation sweep file, required only if simulation file is text.\tabularnewline
+\hline 
+\texttt{\small{--model\_file}} & The fault model file.\tabularnewline
+\hline 
+\texttt{\small{--model\_file\_type}} & Either 'hdf5' or 'text'.\tabularnewline
+\hline 
+\end{tabular}
+
+\subsection{Subsetting Parameters}
+These parameters are used to select subsets of the faults or subsets of events. \\
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--use\_sections}} & Select a subset of the fault sections from the model file. To select sections 23, 43, and 101 it would be ``--use\_sections 23 43 101''.\tabularnewline
+\hline 
+\texttt{\small{--min\_magnitude}} & Select a minimum magnitude for earthquakes to be analyzed. To select earthquakes only above magnitude 5.5 it would be ``--min\_magnitude 5.5''.\tabularnewline
+\hline 
+\texttt{\small{--max\_magnitude}} & Select a maximum magnitude for earthquakes to be analyzed. Can be used in conjunction with --min\_magnitude to specify a range of magnitudes. \tabularnewline
+\hline 
+\end{tabular}
+
+
+\subsection{\noindent Statistical Plotting Parameters}
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--plot\_freq\_mag n}} & Frequency-Magnitude. n=1 Normal plot, n=2 adds a Gutenberg-Richter line with b=1, n=3 adds UCERF2 observed seismicity rates in California, n=4 adds both the b=1 line and observed California rates.\tabularnewline
+\hline 
+\texttt{\small{--plot\_mag\_rupt\_area}} & Magnitude vs Rupture Area scaling. Compare to Wells and Coppersmith 1994.\tabularnewline
+\hline 
+\texttt{\small{--plot\_mag\_mean\_slip}} & Magnitude vs Mean Slip scaling. Compare to Wells and Coppersmith 1994.\tabularnewline
+\hline
+\texttt{\small{--all\_stat\_plots}} & Plot all statistical plots.\tabularnewline
+\hline 
+\texttt{\small{--wc94}} & Add Wells and Coppersmith 1994 scaling relation to Mean Slip or Rupture Area plots.\tabularnewline
+\hline
+\end{tabular}
+
+\subsection{\noindent Probability Plotting Parameters}
+These parameters can be used in combination with ``--use\_sections'', ``--min\_magnitude'', and ``--max\_magnitude'' to select subsets of your fault model and events for analysis. \\
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--plot\_prob\_vs\_t}} & Plot probability of earthquake as a function of time since the last earthquake.\tabularnewline
+\hline 
+\texttt{\small{--plot\_prob\_vs\_t\_fixed\_dt DT}} & Plot probability of earthquake in the next DT years as a function of time since the last earthquake. E.g. ``--plot\_prob\_vs\_t\_fixed\_dt 30'' plots the probability of an earthquake in the next 30 years as a function of time.\tabularnewline
+\hline 
+\texttt{\small{--plot\_cond\_prob\_vs\_t}} & Plot conditional probability of earthquake as a function of time since the last earthquake plotted at various times after the last earthquake to show the evolution of the distribution.\tabularnewline
+\hline 
+\texttt{\small{--plot\_waiting\_times}} & Plot the waiting times until the next earthquake as a function of time since the last earthquake, for waiting times with 25\%, 50\% and 75\% probability.\tabularnewline
+\hline 
+\texttt{\small{--beta}} & Beta parameter for the Weibull distribution, must also specify tau. If beta and tau are specified, the corresponding Weibull distribution is drawn in the ``--plot\_cond\_prob\_vs\_t'' plot.\tabularnewline
+\hline 
+\texttt{\small{--tau}} & Tau parameter for the Weibull distribution, must also specify beta.\tabularnewline
+\hline 
+\end{tabular}
+
+\subsection{\noindent Field Plotting Parameters}
+For any field plot you must specify ``--model\_file'' and ``--model\_file\_type''. To plot co-seismic fields, you must also specify an ``--event\_file'', ``--event\_file\_type'', and ``--event\_id''. To plot the field resulting from uniform slip across the entire fault model you must also specify ``--uniform\_slip''. \\
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--field\_plot}} & Required to plot any fields\tabularnewline
+\hline 
+\texttt{\small{--field\_type}} & The type of co-seismic field to plot. Options are: ``gravity'', ``dilat\_gravity'' (dilatational), ``displacement'', ``insar'', ``potential'' (gravitational potential), ``geoid'' (geoid height changes). \tabularnewline
+\hline 
+\texttt{\small{--event\_id}} & The number of the event to plot. \tabularnewline
+\hline 
+\texttt{\small{--uniform\_slip}} & The slip to apply to every fault element in the fault model, in meters.\tabularnewline
+\hline
+\texttt{\small{--colorbar\_max}} & The maximum value for the colorbar scale on field plots (excluding insar and displacement). E.g. to limit the gravity field plots to the color range -20 microGal to 20 microGal you would specify ``--colorbar\_max 20''. \tabularnewline
+\hline 
+\texttt{\small{--angles}} & The observing angles for displacements and InSAR, the field is projected along this direction. Must specify azimuth and elevation angles in degrees. E.g. ``--angles 20.5 66.2''. \tabularnewline
+\hline 
+\end{tabular}
+
 
 %-------------------------------- End tutorials, begin appendices
 \part{Appendices}
 
 \appendix
 
-\chapter{\label{cha:Appendix-A:-Input}Input Parameters for Virtual Quake}
 
+\chapter{\label{cha:Appendix-A:-Input}Input Parameters for Virtual Quake}
 
 \section{Input Parameters Grouped by Functionality}
 

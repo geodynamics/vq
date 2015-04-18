@@ -107,7 +107,7 @@ class EventNumFilter:
         return label_str
 
 class SectionFilter:
-    def __init__(self, model, section_list):
+    def __init__(self, geometry, section_list):
         self._section_list = section_list
         self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
 
@@ -921,9 +921,9 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data)
+            ax.scatter(x_data, y_data, color='g')
         elif plot_type == "line":
-            ax.plot(x_data, y_data)
+            ax.plot(x_data, y_data, color='g')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -980,7 +980,7 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
+    def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, err_label, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -989,7 +989,7 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data)
-        ax.errorbar(err_x, err_y, yerr = y_error, label="UCERF2", ecolor='r')
+        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
@@ -1006,25 +1006,66 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data)
-        ax.plot(line_x, line_y, label = line_label, c = 'k')
+        ax.scatter(x_data, y_data, color='g')
+        ax.plot(line_x, line_y, label = line_label, ls='--', c = 'k')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         ax.legend(loc = "best")
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+        
+    def scatter_and_multiline(self, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_title(plot_title)
+        if log_y: ax.set_yscale('log')
+        ax.scatter(x_data, y_data, color='g')
+        for i in range(len(lines_x)):
+            ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
+        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        ax.legend(loc = "lower right")
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
-    def plot(self, events, filename):
+    def plot(self, events, filename, WC94=False):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
-        self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
+        min_mag, max_mag = min(mag_list), max(mag_list)
+        if WC94:
+            scale_x, scale_y = Distributions().wells_coppersmith('area')
+            scale_label = "Wells & Coppersmith 1994"
+            full_x, full_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
+            lines_x = [scale_x, full_x]
+            lines_y = [scale_y, full_y]
+            line_labels = [scale_label, None]
+            line_widths = [2.0, 1.0]
+            line_styles = ['-', '--']
+            colors = ['k', 'k']
+            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+        else:
+            self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
-    def plot(self, events, filename):
+    def plot(self, events, filename, WC94=False):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
-        self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
+        min_mag, max_mag = min(mag_list), max(mag_list)
+        if WC94:
+            scale_x, scale_y = Distributions().wells_coppersmith('slip')
+            scale_label = "Wells & Coppersmith 1994"
+            full_x, full_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
+            lines_x = [scale_x, full_x]
+            lines_y = [scale_y, full_y]
+            line_labels = [scale_label, None]
+            line_widths = [2.0, 1.0]
+            line_styles = ['-', '--']
+            colors = ['k', 'k']
+            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+        else:
+            self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
 
 class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, events, filename, UCERF2 = False, b1 = False):
@@ -1050,15 +1091,15 @@ class FrequencyMagnitudePlot(BasePlotter):
             freq_y.append(float(cum_freq[mag])/year_range)
         if b1:
             add_x = np.linspace(min(freq_x),max(freq_x),10)
-            fit_point = (np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()
+            fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
             add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
             add_label = "b==1"
         if UCERF2:
-            self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
         if b1 and not UCERF2:
-            self.scatter_and_line(True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename)
+            self.scatter_and_line(True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
         if not UCERF2 and not b1:
-            self.create_plot("scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename)
+            self.create_plot("scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -1105,7 +1146,11 @@ class ProbabilityPlot(BasePlotter):
         conditional = {}
         weibull = {}
         max_t0 = int(intervals.max())
-        t0_to_eval = np.linspace(0, max_t0, num=numPoints)
+        t0_to_eval = list(np.linspace(0, max_t0, num=numPoints))
+        t0_to_plot = [int(t) for t in np.linspace(0, int(max_t0/2.0), num=num_t0)]
+        # To get the lines of P(t,t0) evaluated at integer values of t0
+        t0_to_eval = np.sort(t0_to_eval+t0_to_plot)
+        t0_to_plot = np.array(t0_to_plot)
         for t0 in t0_to_eval:
             int_t0 = intervals[np.where( intervals > t0)]
             if int_t0.size != 0:
@@ -1123,9 +1168,6 @@ class ProbabilityPlot(BasePlotter):
             else:
                 conditional[t0] = None
                 weibull[t0] = None
-        t0_to_plot  = np.linspace(0, int(max_t0/2.0), num=num_t0)
-        match_inds  = [np.abs(np.array(t0_to_eval-t0_to_plot[i])).argmin() for i in range(len(t0_to_plot))]
-        t0_to_plot  = np.array([t0_to_eval[k] for k in match_inds])
         x_data_prob = [conditional[t0]['x'] for t0 in t0_to_plot]
         y_data_prob = [conditional[t0]['y'] for t0 in t0_to_plot]
         t0_colors   = [line_colormap(float(t0*.8)/t0_to_plot.max()) for t0 in t0_to_plot]
@@ -1140,13 +1182,13 @@ class ProbabilityPlot(BasePlotter):
             colors = t0_colors + weib_colors
             x_data = x_data_prob + x_data_weib
             y_data = y_data_prob + y_data_weib
-            labels = [round(t0_to_plot[k],2) for k in range(len(t0_to_plot))] + weib_labels
+            labels = [t0 for t0 in t0_to_plot] + weib_labels
             linewidths = prob_lw + weib_lw
         else:
             colors = t0_colors
             x_data = x_data_prob
             y_data = y_data_prob
-            labels = [round(t0_to_plot[k],1) for k in range(len(t0_to_plot))]
+            labels = [t0 for t0 in t0_to_plot]
             linewidths = prob_lw
         legend_string = r't$_0$='
         y_lab         = r'P(t, t$_0$)'
@@ -1166,7 +1208,7 @@ class ProbabilityPlot(BasePlotter):
         # t0_to_eval used to evaluate waiting times with 25/50/75% probability given t0=years_since
         t0_to_eval = np.arange(0, max_t0, 1.0)
         # t0_to_plot is "smoothed" so that the plots aren't as jagged
-        t0_to_plot = np.linspace(0, int(max_t0/2.0), num=5)
+        t0_to_plot = np.linspace(0, int(max_t0), num=10)
         t0_to_plot = [int(t0) for t0 in t0_to_plot]
         t0_dt      = {}
         t0_dt_plot = {}
@@ -1219,6 +1261,24 @@ class Distributions:
         # Return the conditional Weibull distribution at a single point
         return 1-np.exp( (t0/float(tau))**beta - (X/float(tau))**beta)
 
+    def wells_coppersmith(self, type, min_mag=None, max_mag=None, num=5):
+        # Return empirical scaling relations from Wells & Coppersmith 1994
+        log_10 = np.log(10)
+        if type.lower() == 'area':
+            if min_mag is None: min_mag, max_mag = 4.8, 7.9
+            a = -3.49
+            b =  0.91
+        elif type.lower() == 'slip':
+            if min_mag is None: min_mag, max_mag = 5.6, 8.1
+            a = -4.80
+            b =  0.69
+        else:
+            raise "Must specify rupture area or mean slip"
+        x_data = np.linspace(min_mag, max_mag, num=num)
+        y_data = np.array([pow(10,a+b*m) for m in x_data])
+        #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
+        return x_data, y_data
+
 if __name__ == "__main__":
     # Specify arguments
     parser = argparse.ArgumentParser(description="PyVQ.")
@@ -1255,13 +1315,17 @@ if __name__ == "__main__":
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified).")
 
-    # Event plotting arguments
+    # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, type=int,
             help="Generate frequency magnitude plot. 1: Only event data, 2: Plot b=1 Gutenberg-Richter relation, 3: Plot UCERF2 observed seismicity rates, 4: Plot UCERF2 and the b=1 line.")
     parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
             help="Generate magnitude vs rupture area plot.")
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
             help="Generate magnitude vs mean slip plot.")
+    parser.add_argument('--all_stat_plots', required=False, action='store_true',
+            help="Generate frequency-magnitude, magnitude vs rupture area, and magnitude vs mean slip plots.")  
+    parser.add_argument('--wc94', required=False, action='store_true',
+            help="Plot Wells and Coppersmith 1994 scaling relations.")             
 
     # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
@@ -1285,6 +1349,8 @@ if __name__ == "__main__":
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--res', required=False, help="Plot resolution: low, med, hi")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
+    parser.add_argument('--angles', type=float, nargs='+', required=False,
+            help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
 
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
@@ -1297,6 +1363,25 @@ if __name__ == "__main__":
             help="Ensure the mean interevent time for all events is within 2 percent of the specified value.")
 
     args = parser.parse_args()
+    
+    # ------------------------------------------------------------------------
+    # Catch these errors before reading events to save unneeded computation
+    if args.field_plot:
+        if args.model_file is None:
+            raise "Must specify --model_file for field plots"
+        elif args.field_type is None:
+            raise "Must specify --field_type for field plots"
+            
+    # Check that if either beta or tau is given then the other is also given
+    if (args.beta and not args.tau) or (args.tau and not args.beta):
+        raise "Must specify both beta and tau."
+        
+    # Check that field_type is one of the supported types
+    if args.field_type:
+        type = args.field_type.lower()
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
+            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
+    # ------------------------------------------------------------------------
 
     # Read the event and sweeps files
     if args.event_file:
@@ -1309,22 +1394,17 @@ if __name__ == "__main__":
         else:
             geometry = Geometry(model_file=args.model_file)
 
-    # Check that if either beta or tau is given then the other is also given
-    if (args.beta and not args.tau) or (args.tau and not args.beta):
-        raise "Must specify both beta and tau."
-        
-    # Check that field_type is one of the supported types
-    if args.field_type:
-        type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
-            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
-
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
         stress_set = quakelib.ModelStressSet()
         stress_set.read_file_ascii(args.stress_index_file, args.stress_file)
     else:
         stress_set = None
+        
+    if args.all_stat_plots:
+        args.plot_freq_mag = 1
+        args.plot_mag_rupt_area = True
+        args.plot_mag_mean_slip = True
 
     # Set up filters
     event_filters = []
@@ -1338,66 +1418,53 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
     if args.use_sections:
-        event_filters.append(SectionFilter(model, args.use_sections))
+        event_filters.append(SectionFilter(geometry, args.use_sections))
 
     if args.event_file:
         events.set_filters(event_filters)
 
     # Generate plots
     if args.plot_freq_mag:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "freq_mag").filename
+        filename = SaveFile().event_plot(args.event_file, "freq_mag")
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area").filename
-        MagnitudeRuptureAreaPlot().plot(events, filename)
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area")
+        MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_mag_mean_slip:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip").filename
-        MagnitudeMeanSlipPlot().plot(events, filename)
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip")
+        MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_prob_vs_t:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time").filename
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time")
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt").filename
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt")
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t").filename
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t")
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        if not args.event_file or not args.event_file_type:
-            raise "Must specify --event_file and --event_file_type"
-        filename = SaveFile().event_plot(args.event_file, "waiting_times").filename
+        filename = SaveFile().event_plot(args.event_file, "waiting_times")
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
-        if args.model_file is None:
-            raise "Must specify --model_file for field plots"
-        elif args.field_type is None:
-            raise "Must specify --field_type for field plots"
         if not args.res: res = 'low'
         else: res = args.res
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
-        angles = None
+        if args.angles: 
+            if len(args.angles) != 2:
+                raise "Must specify 2 angles"
+            else:
+                angles = np.array(args.angles)*np.pi/180.0
+        else: angles = None
         if args.event_id is None:
             element_ids = geometry.model.getElementIDs()
             ele_slips = {}

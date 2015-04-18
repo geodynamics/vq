@@ -192,7 +192,9 @@ void SimTimer::printAllTimers(std::ostream &out_stream, int world_size, int node
         }
     }
 
-    if (time_recv_buf) delete time_recv_buf;
+    // use delete [] for "new" arrays.
+    // note: this if() syntax is used when the array might otherwise be assigned a NULL value (see above).
+    if (time_recv_buf)  delete [] time_recv_buf;
 
-    if (count_recv_buf) delete count_recv_buf;
+    if (count_recv_buf) delete [] count_recv_buf;
 }

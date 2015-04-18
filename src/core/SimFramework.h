@@ -195,6 +195,7 @@ class SimFramework : public virtual SimTimer {
         // Output related functions
         std::ostream &console(void) const {
             return std::cout;
+            //return std::cerr;
         };
         std::ostream &errConsole(void) const {
             return std::cerr;

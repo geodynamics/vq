@@ -43,6 +43,12 @@ void VCInitBlocks::init(SimFramework *_sim) {
     Simulation            *sim = static_cast<Simulation *>(_sim);
     BlockList::iterator     bit;
 
+    // this assertion can fail if the geometry (faults) file is corrupt. if you see this failing:
+    // 1) check the config file; make sure the right files are selected, etc.
+    // 2) Do the Greens functions being used (if loading from file) match the fault geometry?
+    // 3) the fault geometry might be corrupt; re-create it. you might have to also recalculate the Greens functions.
+    // 4) ??? more like this...
+
     assertThrow(sim->numGlobalBlocks() > 0, "Simulation must include at least 1 block.");
 
     sim->partitionBlocks();

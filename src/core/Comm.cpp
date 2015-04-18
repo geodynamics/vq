@@ -209,25 +209,27 @@ VCComm::VCComm(void) {
 VCComm::~VCComm(void) {
 #ifdef MPI_C_FOUND
 
-    if (updateFieldCounts) delete updateFieldCounts;
+    // these are declared with "new type[]", so use delete []:
+    //
+    if (updateFieldCounts) delete [] updateFieldCounts;
 
-    if (updateFieldDisps) delete updateFieldDisps;
+    if (updateFieldDisps) delete [] updateFieldDisps;
 
-    if (updateFieldSendBuf) delete updateFieldSendBuf;
+    if (updateFieldSendBuf) delete [] updateFieldSendBuf;
 
-    if (updateFieldRecvBuf) delete updateFieldRecvBuf;
+    if (updateFieldRecvBuf) delete [] updateFieldRecvBuf;
 
-    if (updateFieldSendIDs) delete updateFieldSendIDs;
+    if (updateFieldSendIDs) delete [] updateFieldSendIDs;
 
-    if (updateFieldRecvIDs) delete updateFieldRecvIDs;
+    if (updateFieldRecvIDs) delete [] updateFieldRecvIDs;
 
-    if (failBlockSendBuf) delete failBlockSendBuf;
+    if (failBlockSendBuf) delete [] failBlockSendBuf;
 
-    if (failBlockRecvBuf) delete failBlockRecvBuf;
+    if (failBlockRecvBuf) delete [] failBlockRecvBuf;
 
-    if (failBlockCounts) delete failBlockCounts;
+    if (failBlockCounts) delete [] failBlockCounts;
 
-    if (failBlockDisps) delete failBlockDisps;
+    if (failBlockDisps) delete [] failBlockDisps;
 
     MPI_Type_free(&block_val_type);
     MPI_Op_free(&bv_min_op);

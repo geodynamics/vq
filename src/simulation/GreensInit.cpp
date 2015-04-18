@@ -122,17 +122,43 @@ void GreensInit::init(SimFramework *_sim) {
 
 #ifdef MPI_C_FOUND
 
+    //
     if (sim->getWorldSize() > 1) {
-        double global_shear_bytes, global_normal_bytes;
+        //                                                                            // i'm guessing that a seg-fault long since made a mess.
+        // initialize these to suppress memcheck errors:
+        double global_shear_bytes = std::numeric_limits<float>::quiet_NaN();
+        double global_normal_bytes = std::numeric_limits<float>::quiet_NaN();
+        //double global_shear_bytes, global_normal_bytes;
+        //
         MPI_Reduce(&shear_bytes, &global_shear_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(&normal_bytes, &global_normal_bytes, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        int global_shear_ind = (log(global_shear_bytes)/log(2))/10;
-        int global_norm_ind = (log(global_normal_bytes)/log(2))/10;
-        double abbr_global_shear_bytes = global_shear_bytes/pow(2,global_shear_ind*10);
-        double abbr_global_normal_bytes = global_normal_bytes/pow(2,global_norm_ind*10);
-        sim->console() << "# Global Greens shear matrix takes " << abbr_global_shear_bytes << " " << space_vals[global_shear_ind] << "." << std::endl;
-        sim->console() << "# Global Greens normal matrix takes " << abbr_global_normal_bytes << " " << space_vals[global_norm_ind] << "." << std::endl;
+
+        //
+        if (sim->isRootNode()) {
+            int global_shear_ind = (log(global_shear_bytes)/log(2))/10;
+            int global_norm_ind = (log(global_normal_bytes)/log(2))/10;
+
+            double abbr_global_shear_bytes = global_shear_bytes/pow(2,global_shear_ind*10);
+            double abbr_global_normal_bytes = global_normal_bytes/pow(2,global_norm_ind*10);
+            //
+            sim->console() << "# Global Greens shear matrix takes " << abbr_global_shear_bytes << " " << space_vals[global_shear_ind] << "." << std::endl;
+            sim->console() << "# Global Greens normal matrix takes " << abbr_global_normal_bytes << " " << space_vals[global_norm_ind] << "." << std::endl;
+        };
+
     }
 
 #endif
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
