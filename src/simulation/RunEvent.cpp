@@ -247,6 +247,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         delete [] fullx;
         delete [] fullb;
         delete [] fullA;
+        sim->barrier(); //yoder: (debug)
     } else {
         // NOT root_node:
 #ifdef MPI_C_FOUND
@@ -266,6 +267,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         for (i=0; i<num_local_failed; ++i) {
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
+        sim->barrier(); //yoder: (debug)
 
 #else
         assertThrow(false, "Single processor version of code, but processor MPI rank is non-zero.");
