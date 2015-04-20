@@ -24,8 +24,15 @@ try:
     import matplotlib.colorbar as mcolorbar
     import matplotlib.lines as mlines
     import matplotlib.patches as mpatches
-    from PIL import Image #TODO: Move this guy
+    from PIL import Image 
+    #TODO: Move this guy
+
+    # we only want to execute this in the __main__ part of the script, so we can also run plotting scripts interactively.
     #plt.switch_backend('agg') #Required for map plots
+
+    #plt.switch_backend('agg') #Required for map plots
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 except ImportError:
     matplotlib_available = False
 
@@ -36,10 +43,10 @@ except ImportError:
     numpy_available = False
     
 # ----------------- Global constants -------------------------------------------
-MIN_LON_DIFF = 0.118   # corresponds to 10km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = 0.090   # corresponds to 10km at lat,lon = (40.35, -124.85)
+LAT_LON_DIFF_FACTOR = 1.333 
+MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
-G_0          = 9.80665 # value from NIST, via Wikipedia [m/s^2]
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -50,16 +57,41 @@ def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
 
 class SaveFile:
-    def event_plot(self, event_file, plot_type):
-        return plot_type+"_"+event_file.split(".")[0]+".png"
+    def event_plot(self, event_file, plot_type, min_mag):
+        min_mag = str(min_mag)
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
+        if min_mag is not None: 
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                mag = "minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]+"_"
+            else:
+                mag = "minMag_"+min_mag+"_"
+        else:
+            mag = ""
+        return plot_type+"_"+mag+event_file.split(".")[0]+".png"
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
         if uniform_slip is None and event_id is not None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+".png"
         elif uniform_slip is not None and event_id is None:
             return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m.png"
         else:
             raise "Must specify either uniform_slip or event_id"
+            
+    def greens_plot(self, name, field_type, slip):
+        return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m.png"
+            
+    def trace_plot(self, model_file):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
+        return "traces_"+model_file.split(".")[0]+".png"
+    
 
 class MagFilter:
     def __init__(self, min_mag=None, max_mag=None):
@@ -211,21 +243,342 @@ class Events:
         # Get unique section ids by converting to a set, then back to a list for ease of use
         return list(set(sec_ids))
         
+class GreensPlotter:
+    # Plot Okubo Greens functions for a single fault element
+    def __init__(self, field_type, cbar_max=None, levels=None, Nx=690, Ny=422, Xmin=-5000, Xmax=15000, Ymin=-10000, Ymax=10000, L=10000, W=10000, DTTF=1000, slip=5, dip=90, _lambda=3.2e10, _mu=3.0e10, rake=0, g0=None):
+        if g0 is None: self.g0 = 9.80665
+        else: self.g0 = g0
+        self.field_type = field_type.lower()
+        self.block = quakelib.Okada()
+        self.slip = slip
+        self.dip = dip*np.pi/180.0
+        self.C = DTTF + W*np.sin(self.dip)
+        self.cbar_max = cbar_max
+        self.levels = levels
+        self.L = L
+        self.W = W
+        self.rake = rake*np.pi/180.0
+        self.US = slip*np.cos(self.rake)
+        self.UD = slip*np.sin(self.rake)
+        self.UT = 0.0
+        self.X = np.linspace(Xmin,Xmax,num=Nx)
+        self.Y = np.linspace(Ymin,Ymax,num=Ny)
+        self.XX, self.YY = np.meshgrid(self.X, self.Y)
+        self.field = np.zeros(self.XX.shape)
+        self._lambda = _lambda
+        self._mu = _mu
+        self.cmap = plt.get_cmap('seismic')
+        
+    def compute_field(self):
+        if self.field_type == 'gravity':
+            for i in range(self.XX.shape[0]):
+                for j in range(self.XX.shape[1]):
+                    loc       = quakelib.Vec2(self.XX[i][j], self.YY[i][j])
+                    self.field[i][j] = self.block.calc_dg(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)*pow(10,8)
+        elif self.field_type == 'dilat_gravity':
+            for i in range(self.XX.shape[0]):
+                for j in range(self.XX.shape[1]):
+                    loc       = quakelib.Vec2(self.XX[i][j], self.YY[i][j])
+                    self.field[i][j] = self.block.calc_dg_dilat(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)*pow(10,8)
+        elif self.field_type == 'potential':
+            for i in range(self.XX.shape[0]):
+                for j in range(self.XX.shape[1]):
+                    loc       = quakelib.Vec3(self.XX[i][j], self.YY[i][j], 0.0)
+                    self.field[i][j] = self.block.calc_dV(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)
+        elif self.field_type == 'geoid':
+            for i in range(self.XX.shape[0]):
+                for j in range(self.XX.shape[1]):
+                    loc       = quakelib.Vec3(self.XX[i][j], self.YY[i][j], 0.0)
+                    self.field[i][j] = -self.block.calc_dV(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)/self.g0
+        elif self.field_type == 'displacement':
+            for i in range(self.XX.shape[0]):
+                for j in range(self.XX.shape[1]):
+                    loc       = quakelib.Vec3(self.XX[i][j], self.YY[i][j], 0.0)
+                    self.field[i][j] = self.block.calc_displacement_vector(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)[2]
+    
+    def plot_field(self, output_file, no_labels=False, cbar_loc='top', tick_font=12, frame_font=12, x_ticks=True):
+        ticklabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=tick_font)
+        framelabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=frame_font)
+        
+        if self.field_type == 'gravity': cbar_lab = r'total gravity changes $[\mu gal]$'
+        elif self.field_type == 'dilat_gravity': cbar_lab = r'dilat. gravity changes $[\mu gal]$'
+        elif self.field_type == 'displacement': cbar_lab = r'$\Delta h \ [m]$'
+        elif self.field_type == 'potential': cbar_lab = 'Grav. potential changes'
+        elif self.field_type == 'geoid': cbar_lab = r'Geoid height changes $[m]$'
+        else: sys.exit("Field type not supported.")
+        
+        if self.cbar_max is not None:
+            self.norm = mcolor.Normalize(vmin=-self.cbar_max, vmax=self.cbar_max)
+        else:
+            self.norm = None
+        fig = plt.figure()
+        fig_axes = plt.subplot(111)
+        if self.levels is not None:
+            img = plt.contourf(self.field, self.levels, cmap=self.cmap, norm=self.norm, extend='both', extent=[self.X.min()/1000.0,self.X.max()/1000.0,self.Y.min()/1000.0,
+                                 self.Y.max()/1000.0])
+        else:
+            img = plt.imshow(self.field, origin = 'lower',interpolation='nearest',
+                         extent=[self.X.min()/1000.0,self.X.max()/1000.0,self.Y.min()/1000.0,
+                                 self.Y.max()/1000.0], cmap=self.cmap, norm=self.norm)
+        img_ax = fig.gca()
+        if not no_labels:
+            img_ax.set_xlabel(r'along fault [$km$]',labelpad=-1, fontproperties=framelabelfont)
+            img_ax.set_ylabel(r'[$km$]',labelpad=-5, fontproperties=framelabelfont)
+        divider = make_axes_locatable(fig_axes)
+        if cbar_loc=='top':
+            cbar_ax      = divider.append_axes("top", size="5%",pad=0.02)                       
+        else:
+            cbar_ax      = divider.append_axes("bottom", size="5%",pad=0.02)
+        cb = mcolorbar.ColorbarBase(cbar_ax, cmap=self.cmap, norm=self.norm, orientation='horizontal')
+        if not no_labels:
+            cbar_ax.set_xlabel(cbar_lab,labelpad=-40, fontproperties=framelabelfont)
+        if cbar_loc=='bottom':
+            PAD = 2.5 
+            TOP = False
+            BOTTOM = True 
+        else:
+            PAD = -.5        
+            TOP = True
+            BOTTOM = False
+        cbar_ax.tick_params(axis='x',labelbottom=BOTTOM,labeltop=TOP,
+                        bottom='off',top='off',right='off',left='off',pad=PAD)
+        if self.field_type == "gravity" or self.field_type == "dilat_gravity":
+            forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+        else: 
+            forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+        cb_tick_labs    = [str(num) for num in forced_ticks]
+        cb_tick_labs[0] = '<'+cb_tick_labs[0]
+        cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
+        cbar_ax.set_xticklabels(cb_tick_labs)
+        for label in img_ax.xaxis.get_ticklabels()+img_ax.yaxis.get_ticklabels():
+            label.set_fontproperties(framelabelfont)  
+        for label in cbar_ax.xaxis.get_ticklabels()+cbar_ax.yaxis.get_ticklabels():
+            label.set_fontproperties(ticklabelfont)
+        if not x_ticks:
+            plt.setp(img_ax.xaxis.get_ticklabels(),visible=False)
+        W_proj      = self.W*np.cos(self.dip)  #projected width of fault due to dip angle
+        fault_proj  = mpl.patches.Rectangle((0.0,0.0),self.L/1000.0,W_proj/1000.0,
+                                        ec='k',fc='none',fill=False,
+                                        ls='solid',lw=4.0)
+        fig_axes.add_patch(fault_proj)
+        plt.savefig(output_file, dpi=100)
+        print("----Greens function plot saved: "+output_file)
+        plt.clf()
+
+class TracePlotter:
+    # Plot fault traces on a map
+    def __init__(self, geometry, output_file, use_sections=None, small_model=False):
+        self.small_model = small_model
+        plot_height = 768.0
+        max_map_width = 690.0
+        max_map_height = 658.0
+        map_res  = 'i'
+        padding  = 0.08
+        map_proj = 'cyl'
+        # Read elements and slips into the SlippedElementList
+        involved_sections = geometry.model.getSectionIDs()
+        self.elements = quakelib.SlippedElementList()
+        element_ids   = geometry.model.getElementIDs()
+        for ele_id in element_ids:
+            new_ele = geometry.model.create_slipped_element(ele_id)
+            new_ele.set_slip(0.0)
+            self.elements.append(new_ele)
+        # Grab base Lat/Lon from fault model, used for lat/lon <-> xyz conversion
+        base = geometry.model.get_base()
+        self.base_lat = self.min_lat = base[0]
+        self.base_lon = self.min_lon = base[1]
+        self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
+        # Expand lat/lon range in the case of plotting a few elements
+        if self.small_model:
+            self.min_lat = self.min_lat - MIN_LAT_DIFF*10
+            self.max_lat = self.max_lat + MIN_LAT_DIFF*10
+            self.min_lon = self.min_lon - MIN_LON_DIFF*10
+            self.max_lon = self.max_lon + MIN_LON_DIFF*10
+        # Adjust bounds for good framing on plot
+        lon_range = self.max_lon - self.min_lon
+        lat_range = self.max_lat - self.min_lat
+        max_range = max((lon_range, lat_range))
+        self.min_lon = self.min_lon - lon_range*padding
+        self.min_lat = self.min_lat - lat_range*padding
+        self.max_lon = self.max_lon + lon_range*padding
+        self.max_lat = self.max_lat + lat_range*padding
+        self.lat0, self.lon0  = (self.max_lat+self.min_lat)/2.0, (self.max_lon+self.min_lon)/2.0
+        self.llcrnrlat = self.min_lat
+        self.llcrnrlon = self.min_lon
+        self.urcrnrlat = self.max_lat
+        self.urcrnrlon = self.max_lon
+        # We need a map instance to calculate the aspect ratio
+        map = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        # Using the aspect ratio (h/w) to find the actual map width and height in pixels
+        if map.aspect > max_map_height/max_map_width:
+            map_height = max_map_height
+            map_width = max_map_height/map.aspect
+        else:
+            map_width = max_map_width
+            map_height = max_map_width*map.aspect
+        # A conversion instance for doing the lat-lon to x-y conversions
+        base_lld = quakelib.LatLonDepth(self.base_lat, self.base_lon, 0.0)
+        self.convert = quakelib.Conversion(base_lld)
+        self.lons_1d = np.linspace(self.min_lon, self.max_lon, num=int(map_width))
+        self.lats_1d = np.linspace(self.min_lat, self.max_lat, num=int(map_height))
+        _lons_1d = quakelib.FloatList()
+        _lats_1d = quakelib.FloatList()
+        for lon in self.lons_1d:
+            _lons_1d.append(lon)
+        for lat in self.lats_1d:
+            _lats_1d.append(lat)
+        # Set up the points for field evaluation, convert to xyz basis
+        self.grid_1d = self.convert.convertArray2xyz(_lats_1d,_lons_1d)
+        self.fault_traces_latlon = geometry.get_fault_traces()
+        # Font/color presets
+        font = mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='normal')
+        font_bold = mfont.FontProperties(family='Arial', style='normal', variant='normal', weight='bold')
+        cmap = plt.get_cmap('seismic')
+        water_color = '#4eacf4'
+        boundary_color = '#000000'
+        boundary_width = 1.0
+        coastline_color = '#000000'
+        coastline_width = 1.0
+        country_color = '#000000'
+        country_width = 1.0
+        land_color = cmap(0.5)
+        state_color = '#000000'
+        state_width = 1.0
+        river_width = 0.25
+        fault_color = '#000000'
+        event_fault_color = '#ff0000'
+        fault_width = 0.5
+        fault_width_bold = 2.5
+        grid_color = '#000000'
+        grid_width = 0.5
+        num_grid_lines = 5
+        map_resolution = map_res
+        map_projection = map_proj
+        plot_resolution = 72.0
+        map_tick_color = '#000000'
+        map_frame_color = '#000000'
+        map_frame_width = 1
+        map_fontsize = 26.0  # default 12   THIS IS BROKEN
+        #---------------------------------------------------------------------------
+        # m1, fig1 is all of the boundary data plus fault traces.
+        #---------------------------------------------------------------------------
+        self.m1 = Basemap(
+            llcrnrlon=self.llcrnrlon,
+            llcrnrlat=self.llcrnrlat,
+            urcrnrlon=self.urcrnrlon,
+            urcrnrlat=self.urcrnrlat,
+            lat_0=self.lat0, 
+            lon_0=self.lon0,
+            resolution=map_res,
+            projection=map_proj,
+            suppress_ticks=True
+        )
+        mw = self.lons_1d.size
+        mh = self.lats_1d.size
+
+        if mh > mw:
+            ph = 768.0
+            pw = mw + 70.0 + 40.0
+        else:
+            pw = 790.0
+            ph = mh + 70.0 + 40.0
+
+        width_frac = mw/pw
+        height_frac = mh/ph
+        left_frac = 70.0/pw
+        bottom_frac = 70.0/ph
+
+        pwi = pw/plot_resolution
+        phi = ph/plot_resolution
+        
+        #-----------------------------------------------------------------------
+        # Set the map dimensions
+        #-----------------------------------------------------------------------
+        mw = self.lons_1d.size
+        mh = self.lats_1d.size
+        mwi = mw/plot_resolution
+        mhi = mh/plot_resolution
+
+        #-----------------------------------------------------------------------
+        # Fig1 is the background land, ocean, and fault traces.
+        #-----------------------------------------------------------------------
+        fig1 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
+        #self.m1.ax = fig1.add_axes((0,0,1,1))
+        self.m1.ax = fig1.add_axes((left_frac,bottom_frac,width_frac,height_frac))
+
+        self.m1.drawmapboundary(
+            color=boundary_color,
+            linewidth=boundary_width,
+            fill_color=water_color
+        )
+        self.m1.fillcontinents(
+            color=land_color,
+            lake_color=water_color
+        )
+        
+        # draw coastlines, edge of map.
+        self.m1.drawcoastlines(color=coastline_color, linewidth=coastline_width)
+
+        # draw countries
+        self.m1.drawcountries(linewidth=country_width, color=country_color)
+
+        # draw states
+        self.m1.drawstates(linewidth=state_width, color=state_color)
+
+        # draw parallels.
+        parallels = np.linspace(self.lats_1d.min(), self.lats_1d.max(), num_grid_lines+1)
+        m1_parallels = self.m1.drawparallels(parallels, fontsize=map_fontsize, labels=[1,0,0,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10])
+
+        # draw meridians
+        meridians = np.linspace(self.lons_1d.min(), self.lons_1d.max(), num_grid_lines+1)
+        m1_meridians = self.m1.drawmeridians(meridians, fontsize=map_fontsize, labels=[0,0,1,0], color=grid_color, fontproperties=font, fmt='%.2f', linewidth=grid_width, dashes=[1, 10])
+        
+        # Plot faults on lon-lat plot
+        for sid, sec_trace in self.fault_traces_latlon.iteritems():
+            sec_trace_lons = [lat_lon[1] for lat_lon in sec_trace]
+            sec_trace_lats = [lat_lon[0] for lat_lon in sec_trace]
+            
+            trace_Xs, trace_Ys = self.m1(sec_trace_lons, sec_trace_lats)
+            
+            if use_sections is not None:
+                if sid in use_sections:
+                    linewidth = fault_width_bold
+                else:
+                    linewidth = fault_width
+            else:  
+                linewidth = fault_width_bold
+
+            self.m1.plot(trace_Xs, trace_Ys, color=fault_color, linewidth=linewidth, solid_capstyle='round', solid_joinstyle='round')
+
+        fig1.savefig(output_file, format='png', dpi=plot_resolution)
+        sys.stdout.write('Plot saved: {}\n'.format(output_file))
+        sys.stdout.flush()
+        
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
-                cbar_max=None, res='low'):
-                # res is 'low','med','hi'
+                cbar_max=None, levels=None, small_model=False, g0=None):
+        if g0 is None: 
+            self.g0 = 9.80665
+        else:
+            self.g0 = g0
         self.field_type = field_type.lower()
-        self.event_id = None
-        if event_id is not None: self.event_id = event_id
-        if res == 'low': self.res_mult = 1
-        elif res == 'med': self.res_mult = 2
-        elif res == 'hi': self.res_mult = 4
-        plot_height = 768.0*self.res_mult
-        max_map_width = 690.0*self.res_mult
-        max_map_height = 658.0*self.res_mult
+        self.small_model = small_model
+        self.levels = levels
+        self.event_id = event_id
+        plot_height = 768.0
+        max_map_width = 690.0
+        max_map_height = 658.0
         map_res  = 'i'
-        padding  = 0.08*self.res_mult
+        padding  = 0.08
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
@@ -271,7 +624,7 @@ class FieldPlotter:
         self.base_lon = self.min_lon = base[1]
         self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
         # Expand lat/lon range in the case of plotting a few elements
-        if len(self.element_ids) < 10:
+        if self.small_model:
             self.min_lat = self.min_lat - MIN_LAT_DIFF*10
             self.max_lat = self.max_lat + MIN_LAT_DIFF*10
             self.min_lon = self.min_lon - MIN_LON_DIFF*10
@@ -353,7 +706,7 @@ class FieldPlotter:
         #map props
             'map_resolution':       map_res,
             'map_projection':       map_proj,
-            'plot_resolution':      72.0*self.res_mult,
+            'plot_resolution':      72.0,
             'map_tick_color':       '#000000',
             'map_frame_color':      '#000000',
             'map_frame_width':      1,
@@ -361,7 +714,7 @@ class FieldPlotter:
             'map_fontsize':         26.0,   # 12   THIS IS BROKEN
         #cb_fontsize = 12
             'cb_fontcolor':         '#000000',
-            'cb_height':            20.0*self.res_mult,
+            'cb_height':            20.0,
             'cb_margin_t':          2.0, # 10
         }
         # Set field-specific plotting arguments
@@ -382,7 +735,7 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 self.dmc['cb_fontsize'] = 16.0
             elif self.field_type == 'geoid':
-                self.dmc['cb_fontsize'] = 15.0
+                self.dmc['cb_fontsize'] = 16.0
                 
         if self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
@@ -467,7 +820,7 @@ class FieldPlotter:
         sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
         self.fringes = False
         if self.field_type == "gravity":
-            sys.stdout.write(" Computing gravity field at {} points :".format(self.lats_1d.size*self.lons_1d.size))
+            sys.stdout.write(" Computing gravity field :")
             self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             # Reshape field
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
@@ -477,16 +830,15 @@ class FieldPlotter:
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         if self.field_type == "potential":
             sys.stdout.write(" Computing gravitational potential field :")
-            sys.stdout.write(" Potential computation assumes water filling cavitation. (under-sea faults) : ")
             self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         elif self.field_type == "geoid":
             sys.stdout.write(" Computing geoid height change field :")
-            sys.stdout.write(" Potential computation assumes water filling cavitation. (under-sea faults) : ")
             self.field_1d = self.slip_map.potential_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
-            # To convert from potential to geoid height, divide by mean gravity
-            self.field /= -G_0
+            # To convert from potential to geoid height, divide by mean surface gravity
+            self.field /= -1*self.g0
+            sys.stdout.write(" g0 {} :".format(self.g0))
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
                 sys.stdout.write(" Computing displacement field :")
@@ -505,6 +857,7 @@ class FieldPlotter:
                 self.dY[it.multi_index] = disp[it.multi_index][1]
                 self.dZ[it.multi_index] = disp[it.multi_index][2]
                 it.iternext()
+                
         sys.stdout.flush()
         
     def plot_str(self):
@@ -627,7 +980,15 @@ class FieldPlotter:
             # Changed units to microgals (multiply MKS unit by 10^8)
             if self.field_type == 'gravity': self.field_transformed *= float(pow(10,8))
             if self.field_type == 'dilat_gravity': self.field_transformed *= float(pow(10,8))
-            self.m2.imshow(self.field_transformed, cmap=cmap, norm=self.norm)
+            if self.field_type == 'geoid': self.field_transformed *= float(pow(10,2))
+            
+            # Plot the field on the map
+            if self.levels is None:
+                self.m2.imshow(self.field_transformed, cmap=cmap, norm=self.norm)
+            else:
+                map_x, map_y = self.m2(self.lons_1d, self.lats_1d)
+                XX,YY = np.meshgrid(map_x, map_y)
+                self.m2.contourf(XX, YY, self.field_transformed, self.levels, cmap=cmap, norm=self.norm, extend='both')
         #-----------------------------------------------------------------------
         # Composite fig 1 - 2 together
         #-----------------------------------------------------------------------
@@ -661,7 +1022,7 @@ class FieldPlotter:
         gc.collect()
         return im2
 
-    def plot_field(self, output_file=None, angles=None, res='lo'):
+    def plot_field(self, output_file=None, angles=None):
         map_image = self.create_field_image(angles=angles)
         
         sys.stdout.write('map overlay : ')
@@ -725,10 +1086,10 @@ class FieldPlotter:
         mh = self.lats_1d.size
 
         if mh > mw:
-            ph = 768.0*self.res_mult
+            ph = 768.0
             pw = mw + 70.0 + 40.0
         else:
-            pw = 790.0*self.res_mult
+            pw = 790.0
             ph = mh + 70.0 + 40.0
 
         width_frac = mw/pw
@@ -889,7 +1250,7 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
             elif self.field_type == 'geoid':
-                cb_title = 'Geoid height change [m]'
+                cb_title = 'Geoid height change [cm]'
             # Make first and last ticks on colorbar be <MIN and >MAX.
             # Values of colorbar min/max are set in FieldPlotter init.
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
@@ -921,9 +1282,9 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data)
+            ax.scatter(x_data, y_data, color='g')
         elif plot_type == "line":
-            ax.plot(x_data, y_data)
+            ax.plot(x_data, y_data, color='g')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -980,7 +1341,7 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
+    def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, err_label, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -989,7 +1350,7 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data)
-        ax.errorbar(err_x, err_y, yerr = y_error, label="UCERF2", ecolor='r')
+        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
@@ -1006,25 +1367,66 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data)
-        ax.plot(line_x, line_y, label = line_label, c = 'k')
+        ax.scatter(x_data, y_data, color='g')
+        ax.plot(line_x, line_y, label = line_label, ls='--', c = 'k')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         ax.legend(loc = "best")
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+        
+    def scatter_and_multiline(self, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_title(plot_title)
+        if log_y: ax.set_yscale('log')
+        ax.scatter(x_data, y_data, color='g')
+        for i in range(len(lines_x)):
+            ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
+        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        ax.legend(loc = "lower right")
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
-    def plot(self, events, filename):
+    def plot(self, events, filename, WC94=False):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
-        self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
+        min_mag, max_mag = min(mag_list), max(mag_list)
+        if WC94:
+            scale_x, scale_y = Distributions().wells_coppersmith('area')
+            scale_label = "Wells & Coppersmith 1994"
+            full_x, full_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
+            lines_x = [scale_x, full_x]
+            lines_y = [scale_y, full_y]
+            line_labels = [scale_label, None]
+            line_widths = [2.0, 1.0]
+            line_styles = ['-', '--']
+            colors = ['k', 'k']
+            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+        else:
+            self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
-    def plot(self, events, filename):
+    def plot(self, events, filename, WC94=False):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
-        self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
+        min_mag, max_mag = min(mag_list), max(mag_list)
+        if WC94:
+            scale_x, scale_y = Distributions().wells_coppersmith('slip')
+            scale_label = "Wells & Coppersmith 1994"
+            full_x, full_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
+            lines_x = [scale_x, full_x]
+            lines_y = [scale_y, full_y]
+            line_labels = [scale_label, None]
+            line_widths = [2.0, 1.0]
+            line_styles = ['-', '--']
+            colors = ['k', 'k']
+            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+        else:
+            self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
 
 class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, events, filename, UCERF2 = False, b1 = False):
@@ -1050,15 +1452,15 @@ class FrequencyMagnitudePlot(BasePlotter):
             freq_y.append(float(cum_freq[mag])/year_range)
         if b1:
             add_x = np.linspace(min(freq_x),max(freq_x),10)
-            fit_point = (np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()
+            fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
             add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
             add_label = "b==1"
         if UCERF2:
-            self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
         if b1 and not UCERF2:
-            self.scatter_and_line(True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename)
+            self.scatter_and_line(True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
         if not UCERF2 and not b1:
-            self.create_plot("scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "log(# events with mag > M /year)", filename)
+            self.create_plot("scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -1220,6 +1622,24 @@ class Distributions:
         # Return the conditional Weibull distribution at a single point
         return 1-np.exp( (t0/float(tau))**beta - (X/float(tau))**beta)
 
+    def wells_coppersmith(self, type, min_mag=None, max_mag=None, num=5):
+        # Return empirical scaling relations from Wells & Coppersmith 1994
+        log_10 = np.log(10)
+        if type.lower() == 'area':
+            if min_mag is None: min_mag, max_mag = 4.8, 7.9
+            a = -3.49
+            b =  0.91
+        elif type.lower() == 'slip':
+            if min_mag is None: min_mag, max_mag = 5.6, 8.1
+            a = -4.80
+            b =  0.69
+        else:
+            raise "Must specify rupture area or mean slip"
+        x_data = np.linspace(min_mag, max_mag, num=num)
+        y_data = np.array([pow(10,a+b*m) for m in x_data])
+        #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
+        return x_data, y_data
+
 if __name__ == "__main__":
     # yoder:
     # when run as a command-line, switch pyplot to "background" mode, but permit interactive mode for... well, interactive
@@ -1262,13 +1682,17 @@ if __name__ == "__main__":
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified).")
 
-    # Event plotting arguments
+    # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, type=int,
             help="Generate frequency magnitude plot. 1: Only event data, 2: Plot b=1 Gutenberg-Richter relation, 3: Plot UCERF2 observed seismicity rates, 4: Plot UCERF2 and the b=1 line.")
     parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
             help="Generate magnitude vs rupture area plot.")
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
             help="Generate magnitude vs mean slip plot.")
+    parser.add_argument('--all_stat_plots', required=False, action='store_true',
+            help="Generate frequency-magnitude, magnitude vs rupture area, and magnitude vs mean slip plots.")  
+    parser.add_argument('--wc94', required=False, action='store_true',
+            help="Plot Wells and Coppersmith 1994 scaling relations.")             
 
     # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
@@ -1290,11 +1714,32 @@ if __name__ == "__main__":
     parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar, potential, geoid")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
-    parser.add_argument('--res', required=False, help="Plot resolution: low, med, hi")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
-
+    parser.add_argument('--levels', type=float, nargs='+', required=False,
+            help="Levels for contour plot.")
+    parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
+    parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
+    
+    # Greens function plotting arguments
+    parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.")            
+    parser.add_argument('--plot_name', required=False, help="Name for saving the plot to file.")
+    parser.add_argument('--Nx', required=False, type=int, help="Number of points along x axis to evaluate function (default 690).")
+    parser.add_argument('--Ny', required=False, type=int, help="Number of points along y axis to evaluate function. (default 422)")
+    parser.add_argument('--Xmin', required=False, type=float, help="Minimum value of x in meters (along strike direction) for plotting. (default -5km)")
+    parser.add_argument('--Xmax', required=False, type=float, help="Maximum value of x in meters (along strike direction) for plotting. (default 15km)")
+    parser.add_argument('--Ymin', required=False, type=float, help="Minimum value of y in meters (distance from fault direction) for plotting. (default -10km)")
+    parser.add_argument('--Ymax', required=False, type=float, help="Maximum value of y in meters (distance from fault direction) for plotting. (default 10km)")
+    parser.add_argument('--L', required=False, type=float, help="Length of the fault in meters. (default 10km)")
+    parser.add_argument('--W', required=False, type=float, help="Down-dip Width of the fault in meters. (default 10km)")
+    parser.add_argument('--DTTF', required=False, type=float, help="Distance to the top of the fault in meters (i.e. distance below ground that the fault is buried). (default 1km)")
+    parser.add_argument('--dip', required=False, type=float, help="Dip angle of fault in degrees.")
+    parser.add_argument('--rake', required=False, type=float, help="Rake angle of fault in degrees.")
+    parser.add_argument('--g', required=False, type=float, help="Mean surface gravity in meters/s^2, default is 9.81.")
+    parser.add_argument('--_lambda', required=False, type=float, help="Lame's first parameter, default 3.2e10.")
+    parser.add_argument('--mu', required=False, type=float, help="Shear modulus, default 3.0e10.")
+    
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
@@ -1314,6 +1759,10 @@ if __name__ == "__main__":
             raise "Must specify --model_file for field plots"
         elif args.field_type is None:
             raise "Must specify --field_type for field plots"
+            
+    if args.traces:
+        if args.model_file is None:
+            raise "Must specify --model_file for fault trace plots"
             
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
@@ -1343,6 +1792,12 @@ if __name__ == "__main__":
         stress_set.read_file_ascii(args.stress_index_file, args.stress_file)
     else:
         stress_set = None
+        
+    if args.all_stat_plots:
+        args.plot_freq_mag = 3
+        args.plot_mag_rupt_area = True
+        args.plot_mag_mean_slip = True
+        args.wc94 = True
 
     # Set up filters
     event_filters = []
@@ -1363,39 +1818,39 @@ if __name__ == "__main__":
 
     # Generate plots
     if args.plot_freq_mag:
-        filename = SaveFile().event_plot(args.event_file, "freq_mag")
+        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area")
-        MagnitudeRuptureAreaPlot().plot(events, filename)
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude)
+        MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_mag_mean_slip:
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip")
-        MagnitudeMeanSlipPlot().plot(events, filename)
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude)
+        MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time")
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude)
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt")
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude)
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t")
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude)
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile().event_plot(args.event_file, "waiting_times")
+        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
-        if not args.res: res = 'low'
-        else: res = args.res
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
+        if args.levels: levels = args.levels
+        else: levels = None
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
         if args.angles: 
             if len(args.angles) != 2:
@@ -1423,9 +1878,33 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         
-        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, res=res)
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, small_model=args.small_model, g0=args.g)
         FP.compute_field(cutoff=1000)
-        FP.plot_field(output_file=filename, angles=angles, res=res)
+        FP.plot_field(output_file=filename, angles=angles)
+    if args.greens:
+        # Set default values
+        if args.dip is None: sys.exit("Must specify --dip")
+        if args.rake is None: sys.exit("Must specify --rake")
+        if args.Nx is None: args.Nx = 690
+        if args.Ny is None: args.Ny = 422
+        if args.Xmin is None: args.Xmin = -5000
+        if args.Xmax is None: args.Xmax = 15000
+        if args.Ymin is None: args.Ymin = -10000
+        if args.Ymax is None: args.Ymax = 10000
+        if args.L is None: args.L = 10000
+        if args.W is None: args.W = 10000
+        if args.DTTF is None: args.DTTF = 1000
+        if args.g is None: args.g = 9.81
+        if args._lambda is None: args._lambda = 3.2e10
+        if args.mu is None: args.mu = 3.2e10
+        filename = SaveFile().greens_plot(args.plot_name, args.field_type, args.uniform_slip)
+        GP = GreensPlotter(args.field_type, cbar_max=args.colorbar_max, levels=args.levels, Nx=args.Nx, Ny=args.Ny, Xmin=args.Xmin, Xmax=args.Xmax, Ymin=args.Ymin, Ymax=args.Ymax, L=args.L, W=args.W, DTTF=args.DTTF, slip=args.uniform_slip, dip=args.dip, _lambda=args._lambda, _mu=args.mu, rake=args.rake, g0=args.g)
+        GP.compute_field()
+        GP.plot_field(filename)
+    if args.traces:
+        filename = SaveFile().trace_plot(args.model_file)
+        if args.small_model is None: args.small_model = False
+        TP = TracePlotter(geometry, filename, use_sections=args.use_sections, small_model=args.small_model)
 
     # Generate stress plots
     if args.stress_elements:

@@ -84,8 +84,9 @@ void ReadModelFile::init(SimFramework *_sim) {
         new_block.set_lame_lambda(new_element.lame_lambda());
         new_block.set_max_slip(new_element.max_slip());
 
-        // Set VC specific values
-        //new_block.setFaultID(eit->fault_id());
+        // Set VQ specific values
+        // Uncommenting the line setting fault_id (Kasey)
+
         new_block.setFaultID(world.section(eit->section_id()).fault_id());
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
 
