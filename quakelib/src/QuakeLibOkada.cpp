@@ -2950,6 +2950,7 @@ double quakelib::Okada::calc_dg(Vec<2> location, double c, double dip, double L,
     // Everything is in M-K-S units
     double G   = 0.000000000066738; //Big G gravitation constant
     double RHO = 2670.0;   //mean crustal density (rough estimate)
+    double RHO_prime = 0.0;   //density of cavity-filling matter, mean ocean water density  1030
     double B   = 0.00000309; //free-air gravity gradient (taken from Okubo '92)
 
     double _p = p(location[1],0.0,c);
@@ -2987,7 +2988,7 @@ double quakelib::Okada::calc_dg(Vec<2> location, double c, double dip, double L,
 
     double dgFree = B*displace[2];
 
-    return RHO*G*(dgS + dgD + dgT + dgC) - dgFree;
+    return RHO*G*(dgS + dgD + dgT) + (RHO_prime - RHO)*G*dgC - dgFree;
 }
 //
 // double bar evaluation (chinnery)
@@ -3128,8 +3129,8 @@ double quakelib::Okada::calc_dV(Vec<3> location, double c, double dip, double L,
 
     // Everything is in M-K-S units
     double G    = 0.000000000066738; //Big G gravitation constant
-    double RHO  = 2900.0;   //mean ocean crustal density (rough estimate)
-    double RHOw = 1030.0;   //mean ocean water density
+    double RHO  = 2670.0;   //mean ocean crustal density (rough estimate) 2900
+    double RHO_prime =    0.0;   //density of cavity-filling matter, mean ocean water density  1030
     //gravitational potential changes will be evaluated on the seafloor
     //initally so cavities will fill with water (probably irrelevant
     //since I don't think we have any tensile faults)
@@ -3159,7 +3160,7 @@ double quakelib::Okada::calc_dV(Vec<3> location, double c, double dip, double L,
 
     // here displacement vector used to get the height change in the halfspace at (x,y,z)
 
-    return RHO*G*(dvS + dvD + dvT) + G*(RHOw-RHO)*dvC;
+    return RHO*G*(dvS + dvD + dvT) + G*(RHO_prime - RHO)*dvC;
 }
 //
 // double bar evaluation (chinnery)
@@ -3348,6 +3349,7 @@ double quakelib::Okada::calc_dg_dilat(Vec<2> location, double c, double dip, dou
     // Everything is in M-K-S units
     double G   = 0.000000000066738; //Big G gravitation constant
     double RHO = 2670.0;   //mean crustal density (rough estimate)
+    double RHO_prime = 0.0; // density of cavity filling matter
 
     double _p = p(location[1],0.0,c);
     double _q = q(location[1],0.0,c);
@@ -3355,7 +3357,6 @@ double quakelib::Okada::calc_dg_dilat(Vec<2> location, double c, double dip, dou
     double dgD_star= 0.0; //Dip
     double dgT_star= 0.0; //Tensile
     double dgC_star= 0.0; //Cavitation, currently disabled.
-    //To enable, uncomment and specify DENSITY_DIFF
 
     if (US != 0.0) {
         OP_MULT(1);
@@ -3370,8 +3371,8 @@ double quakelib::Okada::calc_dg_dilat(Vec<2> location, double c, double dip, dou
     if (UT != 0.0) {
         OP_MULT(2);
         dgT_star = UT*dTg_star(location[0],_p,_q,L,W);
-        //dgC_star = DENSITY_DIFF*G*UT*dCg(location[0],_p,_q,L,W);
-        //In Okubo, Cg and Cg* are the same
+        dgC_star = (RHO_prime - RHO)*G*UT*dCg(location[0],_p,_q,L,W);
+        //In Okubo 1992, Cg and Cg* are the same
     }
 
     return RHO*G*(dgS_star + dgD_star + dgT_star) + dgC_star;
@@ -3485,6 +3486,7 @@ double quakelib::Okada::I0g(double _R, double eta, double _q) {
 
     return ret_value;
 }
+
 
 
 
