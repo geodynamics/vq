@@ -300,7 +300,7 @@ namespace quakelib {
                 Vec<3> a,b;
                 a=_vert[1]-_vert[0];
                 b=_vert[2]-_vert[0];
-                return b.cross(a).unit_vector();
+                return a.cross(b).unit_vector();
             };
 
             //! Returns the angle of the element relative to north. Positive rotating clockwise from north.
