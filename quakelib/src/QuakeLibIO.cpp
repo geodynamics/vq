@@ -1819,6 +1819,11 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     dx = max_xyz[0]-min_xyz[0];
     dy = max_xyz[1]-min_xyz[1];
     range = fmax(dx, dy) * (1.0/tan(c.deg2rad(30)));
+    
+    // Kasey: Instead of using absolute value of depth and essentially
+    // reflecting the faults across the surface z=0, find max depth
+    // and raise the entire fault model by that amount so it looks right.
+    double max_depth = fabs(min_bound.altitude());
 
     out_file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out_file << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n";
@@ -1867,7 +1872,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
         }
 
         vert = _vertices.find(best_vertex)->second;
-        out_file << "\t\t\t<coordinates>" << vert.lld().lon() << "," << vert.lld().lat() << "," << fabs(vert.lld().altitude()) << "</coordinates>\n";
+        out_file << "\t\t\t<coordinates>" << vert.lld().lon() << "," << vert.lld().lat() << "," << max_depth + vert.lld().altitude() << "</coordinates>\n";
         out_file << "\t\t</Point>\n";
         out_file << "\t</Placemark>\n";
     }
@@ -1919,7 +1924,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                 out_file << "\t\t\t\t\t\t<coordinates>\n";
                 npoints = (eit->second.is_quad() ? 4 : 3);
 
-                for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << fabs(lld[i%npoints].altitude()) << "\n";
+                for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
                 out_file << "\t\t\t\t\t\t</coordinates>\n";
                 out_file << "\t\t\t\t\t</LinearRing>\n";
