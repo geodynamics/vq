@@ -156,6 +156,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // use: global/local_secondary_id_list;
     // Figure out how many failures there were over all processors
     //sim->distributeBlocks(local_id_list, global_id_list);
+    sim->barrier();
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
     sim->barrier();   //yoder: (debug)
 
@@ -653,14 +654,18 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->saveStresses(sim->getGlobalBID(lid));
 
     // If there's a specific block that triggered the event, it's a static stress failure type event
+    sim->barrier();
     if (sim->getCurrentEvent().getEventTrigger() != UNDEFINED_ELEMENT_ID) {
         processStaticFailure(sim);
     } else {
         // Otherwise it's an aftershock
         processAftershock(sim);
     }
+    sim->barrier();
 
-    // Record the stress in the system before and after the event
+    // Record the stress in the system before and after the event. 
+    // yoder: note that recordEventStresses() emloyes a bit of MPI action, so it might be advisable to
+    // add some barrier() blocking (which might have been added above to barrier()-wrap the process_{earthquake type}() call).
     recordEventStresses(sim);
 
     // Update the cumulative slip for this fault
@@ -671,6 +676,8 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 
     // TODO: reinstate this check
     // TODO: currently fails because processors may locally have no failures
+    // TODO: notes to self(s) then: this single line works in SPP mode, or more specifically for a single node, so we can use an MPI_reduce() call to get the max or sum
+    //       of all local sim->getCurrentEvent().size() values.
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
 
     return SIM_STOP_OK;
