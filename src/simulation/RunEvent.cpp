@@ -358,7 +358,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
-        //sim->barrier();    // yoder: (debug)   (we're probably safe without this barrier() ).
+        sim->barrier();    // yoder: (debug)   (we're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
+                           // so let's try it with this in place...
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         sim->barrier(); // yoder: (debug)
         //  
