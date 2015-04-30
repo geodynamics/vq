@@ -269,7 +269,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // fetch x[i] from root (rank 0) node:
         for (i=0; i<num_local_failed; ++i) {
         	// yoder: (debug) note that in at least one instance, i am seeing what appears to be this mpi_recv() command waiting for a send while everything else
-        	//    has apparentlymoved on; it looks like having finished the secondary loop.
+        	//    has apparently moved on; it looks like having finished the secondary loop.
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
         sim->barrier(); //yoder: (debug)
