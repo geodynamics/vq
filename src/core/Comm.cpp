@@ -181,8 +181,13 @@ VCComm::VCComm(void) {
     displacements[1] = sizeof(double);
     datatypes[0] = MPI_DOUBLE;
     datatypes[1] = MPI_INT;
-
-    MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_val_type);
+    //
+    // yoder:
+    // this generates a compilation warning on macOS machine(s):  warning: 'MPI_Type_struct' is deprecated: MPI_Type_struct is superseded by MPI_Type_create_struct in MPI-2.0
+    //  [-Wdeprecated-declarations]
+    // since we're getting odd MPI behavior, let's follow the compiler's suggestion:
+    //MPI_Type_struct(2, block_lengths, displacements, datatypes, &block_val_type);
+    MPI_Type_create_struct(2, block_lengths, displacements, datatypes, &block_val_type);
     MPI_Type_commit(&block_val_type);
 
     // Register BlockVal related operations
@@ -200,8 +205,13 @@ VCComm::VCComm(void) {
     datatypes[0] = MPI_DOUBLE;
     datatypes[1] = MPI_UNSIGNED;
     datatypes[2] = MPI_INT;
-
-    MPI_Type_struct(3, block_lengths, displacements, datatypes, &element_sweep_type);
+    //
+    // yoder:
+    // this generates a compilation warning on macOS machine(s):  warning: 'MPI_Type_struct' is deprecated: MPI_Type_struct is superseded by MPI_Type_create_struct in MPI-2.0
+    //  [-Wdeprecated-declarations]
+    // since we're getting odd MPI behavior, let's follow the compiler's suggestion:
+    //MPI_Type_struct(3, block_lengths, displacements, datatypes, &element_sweep_type);
+    MPI_Type_create_struct(3, block_lengths, displacements, datatypes, &element_sweep_type);
     MPI_Type_commit(&element_sweep_type);
 #endif
 }
