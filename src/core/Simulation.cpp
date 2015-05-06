@@ -628,7 +628,7 @@ void Simulation::distributeUpdateField(void) {
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];		// getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
                                                                 // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
-    // yoder: this may be causing heisen_hang on mac_os systems. what happens if multiple nodes call MPI_Allgather (nerly) simultaneously?
+    // yoder: this may be causing heisen_hang on mac_os systems. what happens if multiple nodes call MPI_Allgather (nearly) simultaneously?
     // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?
     MPI_Allgatherv(updateFieldSendBuf,
                    numLocalBlocks(),
@@ -1056,10 +1056,18 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
     
     // original update code:
+    /*
     //greenShear()->setVal(getLocalInd(r), c, new_green_shear);
     //greenNormal()->setVal(getLocalInd(r), c, new_green_normal);
 
     //
     //if (r == c) setSelfStresses(r, new_green_shear, new_green_normal);
+    */
     if (r == c) setSelfStresses(r, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())), std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+};
+
+// yoder:
+void Simulation::debug_out(std::string str_in) {
+	// simple debug output code; print the inout string plus the process_id, node_rank.
+	printf("**Debug(%d/%d)[ev: %d]: %s", getNodeRank(), getpid(), getCurrentEvent().getEventNumber(), str_in.c_str());
 };
