@@ -158,6 +158,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //sim->distributeBlocks(local_id_list, global_id_list); 
     // can this somehow distribute a block to global_failed_elements twice? (multiple copies of same value?)
     sim->barrier();
+    // yoder (note): after we distributeBlocks(), we can check to see that all items in local_ exist in global_ exactly once.
+    // if not, throw an exception... and then we'll figure out how this is happening.
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
     sim->barrier();   //yoder: (debug)
 
