@@ -24,9 +24,15 @@ try:
     import matplotlib.colorbar as mcolorbar
     import matplotlib.lines as mlines
     import matplotlib.patches as mpatches
-    from PIL import Image #TODO: Move this guy
-    plt.switch_backend('agg') #Required for map plots
+    from PIL import Image 
+    #TODO: Move this guy
+
+    # we only want to execute this in the __main__ part of the script, so we can also run plotting scripts interactively.
+    #plt.switch_backend('agg') #Required for map plots
+
+    #plt.switch_backend('agg') #Required for map plots
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 except ImportError:
     matplotlib_available = False
 
@@ -1635,6 +1641,12 @@ class Distributions:
         return x_data, y_data
 
 if __name__ == "__main__":
+    # yoder:
+    # when run as a command-line, switch pyplot to "background" mode, but permit interactive mode for... well, interactive
+    # mode. needs to be double-checked on all counts.
+    plt.switch_backend('agg') #Required for map plots
+    #
+    #
     # Specify arguments
     parser = argparse.ArgumentParser(description="PyVQ.")
 
