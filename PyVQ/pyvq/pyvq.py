@@ -1845,7 +1845,7 @@ if __name__ == "__main__":
         
     # Print out event summary data if requested
     if args.summary:
-        print("\n"+args.model_file)
+        print("\n"+args.event_file)
         events.largest_event_summary(args.summary)
 
     # Generate plots
