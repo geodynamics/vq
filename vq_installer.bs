@@ -1,11 +1,14 @@
 #!/bin/bash
 # installer shell script for vq.
 
-default_num_processors=4
+default_num_processors=$(nproc)
+#
 default_debug="debug0"
 
 num_processors=${1:-$default_num_processors}
 debug_mode=${2:-$default_debug}
+
+run_tests=${3:-"no_tests"}
 
 #echo "num_proc: "$num_processors
 #echo "debug_mode: "$debug_mode
@@ -28,6 +31,7 @@ then
     CC=mpicc CXX=mpicxx cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
 elif "${debug_mode}" == "debug2" || $debug_mode == "debug" ]
 then
+    # most-debugging, slowest.
     CC=mpicc CXX=mpicxx cmake .. -DCMAKE_BUILD_TYPE=Debug
 else
     CC=mpicc CXX=mpicxx cmake ..
@@ -35,6 +39,14 @@ fi
 
 make -j $num_processors
 cd ..
+
+#if [ "${run_tests}"=="tests" ]
+#then
+#	echo "making tests..."
+#	cd build
+#	make test
+#	cd ..
+#fi
 
 
 ## note on cmake options for debugging -- optimization:

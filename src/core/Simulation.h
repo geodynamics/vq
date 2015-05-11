@@ -89,12 +89,11 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         double getGreenShear(const BlockID &r, const BlockID &c) const {
             return greenShear()->val(getLocalInd(r), c);
         };
-        void setGreens(const BlockID &r, const BlockID &c, const double &new_green_shear, const double &new_green_normal) {
-            greenShear()->setVal(getLocalInd(r), c, new_green_shear);
-            greenNormal()->setVal(getLocalInd(r), c, new_green_normal);
+        // yoder: move content to Simulation.cpp (enforcing min/max values for greens values).
+        void setGreens(const BlockID &r, const BlockID &c, const double &new_green_shear, const double &new_green_normal);
+        // yoder:
+        void debug_out(std::string str_in);
 
-            if (r == c) setSelfStresses(r, new_green_shear, new_green_normal);
-        };
         double getGreenNormal(const BlockID &r, const BlockID &c) const {
             return greenNormal()->val(getLocalInd(r), c);
         };

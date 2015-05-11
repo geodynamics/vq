@@ -625,9 +625,11 @@ void Simulation::distributeUpdateField(void) {
     // Copy the local update field values to the send buffer
     for (i=0; i<numLocalBlocks(); ++i) {
         bid = updateFieldSendIDs[i];
-        updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];
+        updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];		// getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
+                                                                // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
-
+    // yoder: this may be causing heisen_hang on mac_os systems. what happens if multiple nodes call MPI_Allgather (nearly) simultaneously?
+    // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?
     MPI_Allgatherv(updateFieldSendBuf,
                    numLocalBlocks(),
                    MPI_DOUBLE,
@@ -695,7 +697,6 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 
     // Count total, displacement of block IDs
     int total_blocks = 0;
-
     for (i=0; i<world_size; ++i) {
         proc_block_disps[i] = total_blocks;
         total_blocks += proc_block_count[i];
@@ -717,11 +718,11 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 #ifdef DEBUG
     stopTimer(dist_comm_timer);
 #endif
-
+    //
     n = 0;
-
     for (p=0; p<world_size; ++p) {
         for (i=0; i<proc_block_count[p]; ++i) {
+            // global_id_list is a collection of pairs like <block_id, node_rank_id> .
             global_id_list.insert(std::make_pair(block_ids[n], p));
             ++n;
         }
@@ -1029,5 +1030,44 @@ void Simulation::partitionBlocks(void) {
     //
     mult_buffer = NULL;
     decompress_buf = NULL;
-
 }
+
+// yoder:
+void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new_green_shear, const double &new_green_normal) {
+    // TODO:
+    // yoder: add extreme greens-value checking here. see Params.h/.cpp, double getGreensShearMax(void), etc.
+    // looks like we place a condition on the values of {new_green_shear, new_green_normal}
+    // it may also be desirable to distinguish between self-stress (diagonal elements) and off-diagonals. however, if it comes
+    // to that, we'll probably want to use Python/quakelib tools to modify a Greens output file directly and just load those values.
+    //
+    // development, testing, debugging bits:
+    //double gr_shear  = new_green_shear;
+    //double gr_normal = new_green_normal;
+    //printf("**Debug: sh_min: %f, sh_max: %f, nor_min: %f, nor_max: %f\n", getGreenShearMin(), getGreenShearMax(), getGreenNormalMin(), getGreenNormalMax());
+    //printf("pre-gr_shear[%f, %f]: gr_shear: %f, gr_normal: %f\n", new_green_shear, new_green_normal, gr_shear, gr_normal);
+    //
+    //gr_shear  = std::max(getGreenShearMin(),  std::min(new_green_shear,  getGreenShearMax()));
+    //gr_normal = std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax()));
+    //printf("gr_shear[%f, %f]: gr_shear: %f, gr_normal: %f\n\n", new_green_shear, new_green_normal, gr_shear, gr_normal);
+    //////////////////
+    
+    // update code modified to use max/min thresholds for Greens values:
+    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
+    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+    
+    // original update code:
+    /*
+    //greenShear()->setVal(getLocalInd(r), c, new_green_shear);
+    //greenNormal()->setVal(getLocalInd(r), c, new_green_normal);
+
+    //
+    //if (r == c) setSelfStresses(r, new_green_shear, new_green_normal);
+    */
+    if (r == c) setSelfStresses(r, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())), std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+};
+
+// yoder:
+void Simulation::debug_out(std::string str_in) {
+	// simple debug output code; print the inout string plus the process_id, node_rank.
+	printf("**Debug(%d/%d)[ev: %d]: %s", getNodeRank(), getpid(), getCurrentEvent().getEventNumber(), str_in.c_str());
+};
