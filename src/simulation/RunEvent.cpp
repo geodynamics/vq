@@ -353,6 +353,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->setFailed(triggerID, true);
     }
     //
+    // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present),
+    // ... but since it's only the one "all-hands" call, it is not a likely candidate for heisen_hang.  
+    // also note that blocksToFail() involves some bool/int conversions that might warrant further inspection and clarification.  
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
     //
     // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
@@ -518,9 +521,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
         //
         global_failed_elements.clear(); // we are done with these blocks
-        local_failed_elements.clear(); // we are done with these blocks
+        local_failed_elements.clear();  // we are done with these blocks
         //
-        // Find any blocks that fail because of the new stresses
+        // Find any blocks that fail because of the new stresses (all local; no MPI).
         markBlocks2Fail(sim, trigger_fault);
 
         if (final_sweep) {
@@ -685,8 +688,29 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // TODO: currently fails because processors may locally have no failures
     // TODO: notes to self(s) then: this single line works in SPP mode, or more specifically for a single node, so we can use an MPI_reduce() call to get the max or sum
     //       of all local sim->getCurrentEvent().size() values.
+    //
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
-
+    //
+#ifdef MPI_C_FOUND
+    // so let's get the total event size by doing an MPI sum. note this can be an MPI_Reduce() to the root node only, or we can count on all processors.
+    // this should be an equivalent operation (though slower in the latter case); i guess then, if we gather only to the root noode, we do the assert/throw
+    // only on root node.:
+    int local_event_size = sim->getCurrentEvent().size();
+    int global_event_size = 0;
+    // 
+    // aggregate and assert on root node:
+    MPI_Reduce(&local_event_size, &global_event_size, 1, MPI_INT, MPI_SUM, ROOT_NODE_RANK, MPI_COMM_WORLD);
+    if (sim->isRootNode()) {
+        assertThrow(global_event_size > 0, "There was a trigger but no failed blocks.");
+        };
+    //
+    //// aggregate and assert on all nodes:
+    //MPI_Allreduce(&local_event_size, &global_event_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
+#else
+    //global_event_size=local_event_size;
+    assertThrow(global_event_size > 0, "There was a trigger but no failed blocks. (" << getpid() << "/" << sim->getNodeRank() << ")");
+#endif
     return SIM_STOP_OK;
 }
 
