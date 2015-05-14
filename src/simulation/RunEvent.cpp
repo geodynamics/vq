@@ -687,6 +687,9 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // TODO: reinstate this check
     // TODO: currently fails because processors may locally have no failures
     // TODO: notes to self(s) then: this single line works in SPP mode, or more specifically for a single node, so we can use an MPI_reduce() call to get the max or sum
+    // ... and could this be causing heisen_hang? would this create a scenario where a child node would send/receive block data to root
+    // but the root node would not send back anything (block not in list of failed blocks), so that child node would just hang there?
+    // maybe, but i think that by this time, we'd be long since past that point.
     //       of all local sim->getCurrentEvent().size() values.
     //
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
