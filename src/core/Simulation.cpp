@@ -693,6 +693,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 #endif
 
     // Create list of local block IDs
+    // why do we do this? aren't we just copying local_id_list[] to local_block_ids[]? can't we just use local_id_list[] ? same size and everything...
     for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) local_block_ids[i] = *it;
 
     // Count total, displacement of block IDs
