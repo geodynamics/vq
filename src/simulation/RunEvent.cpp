@@ -159,7 +159,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // can this somehow distribute a block to global_failed_elements twice? (multiple copies of same value?)
     sim->barrier();
     // yoder (note): after we distributeBlocks(), we can check to see that all items in local_ exist in global_ exactly once.
-    // if not, throw an exception... and then we'll figure out how this is happening.
+    // if not, throw an exception... and then we'll figure out how this is happening. remember, local_ is like [gid, gig, gid...]
+    // global_ is like [(gid, p_rank), (gid, p_rank)...], and each pair item is accessed like global_[rw_num]->first /->second
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
     sim->barrier();   //yoder: (debug)
 
@@ -238,9 +239,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 #ifdef MPI_C_FOUND
                 // send these values to node-rank jt->second:
                 MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
-                // yoder: (this pair of sim->barrier() statements (below) causes "test run_p4_none" to hang, but not "run_p2_none".
-                // so it's probably indicative of the heisen_hang; it seems we should be able to "barrier()" this send/receive pair.
-                //sim->barrier();
 #else
                 assertThrow(false, "Single processor version of code, but faults mapped to multiple   processors.");
 #endif
@@ -273,12 +271,15 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // regroup (barrier()), then child nodes do their receiving bit:
         sim->barrier();		//yoder: (debug)
         // fetch x[i] from root (rank 0) node:
+      	// yoder (debugging):
+      	// check to see that the local ids exist in the global ids:
+      	//bool loc_glob_ok = true;
+      	//for ( 
+
         for (i=0; i<num_local_failed; ++i) {
         	// yoder: (debug) note that in at least one instance, i am seeing what appears to be this mpi_recv() command waiting for a send while everything else
         	//    has apparently moved on; it looks like having finished the secondary loop.
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // yoder:
-            //sim->barrier();
 
         }
         //sim->barrier(); //yoder: (debug)
