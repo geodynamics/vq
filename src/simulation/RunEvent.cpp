@@ -137,7 +137,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
-        // would a faster way to do this step be to look through the current event_sweeps list? yes, but we're assuming that "original failure" has been processed,
+        // would a faster way to do this step be to look through the current event_sweeps list? 
+        //yes, but we're assuming that "original failure" has been processed,
         // which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
         // another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
         //lid = s_it->_element_id;
@@ -172,7 +173,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     double *A = new double[num_local_failed*num_global_failed];
     double *b = new double[num_local_failed];
     double *x = new double[num_local_failed];
-
     //
     // stress transfer (greens functions) between each local element and all global elements.
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
@@ -192,6 +192,16 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
+    //
+    // yoder (debug):
+    // before we start our loops, let's see that we're all on the same event (and?) sweep.
+    // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
+    // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
+    // use sim->getWorldSize() to get worldsize.
+    int n_procs = sim->getWorldSize();
+    int * process_event_ids[n_procs];
+    int * process_sweep_ids[n_procs];
+    //
     if (sim->isRootNode()) {
         double *fullA = new double[num_global_failed*num_global_failed];
         double *fullb = new double[num_global_failed];
@@ -201,6 +211,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // note: for an empty global_id_list, this list will do nothing, so MPI_Recv() will not execute, and we'll probably end up with a hanging MPI_Send().
         //       can that ever happen? global_secondary_id_list is empty on one node but not on another? maybe between iterations?
         sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==False set.
+        //
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {

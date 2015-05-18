@@ -628,7 +628,6 @@ void Simulation::distributeUpdateField(void) {
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];		// getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
                                                                 // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
-    // yoder: this may be causing heisen_hang on mac_os systems. what happens if multiple nodes call MPI_Allgather (nearly) simultaneously?
     // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?
     MPI_Allgatherv(updateFieldSendBuf,
                    numLocalBlocks(),
