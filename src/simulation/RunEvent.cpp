@@ -204,16 +204,28 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     int process_sweep_ids[n_procs];
     int this_event_id = sim->getCurrentEvent().getEventNumber();
     int this_sweep_id = sweep_num;		// declared on the RunEvent class level. we don't really need to copy it.
-    MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
+    // to test on all processes:
+    //MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
+    //MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
+    // to test on only root_node:
+    MPI_Gather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
     //
-    // now, see that all event,sweep values are the same:
-    for (int j=0; j<n_procs;++j) {
-    	//printf("**Debug(%d/%d/%d): event_id %d/%d :: ", sim->getNodeRank(), getpid(), n_procs, process_event_ids[0], process_event_ids[j]);
-    	assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
-    	};
-    	//printf("\n");
-    for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
+    if (sim->getNodeRank()==0) {
+        // and nominally, this test could also be if (sim->isRootNode() ), but really, any node can be "root" for the purposes of "gather", so we should be specific.
+        // it might be slick to assign events and sweeps to different nodes, but hopefully we'll be removing this bit eventually.
+        // now, see that all event,sweep values are the same:
+        //printf("**Debug(%d/%d/%d):: event_ids: ", sim->getNodeRank(), getpid(), n_procs);
+        for (int j=0; j<n_procs;++j) {
+    	    //
+    	    //printf("(%d/%d), ", process_event_ids[0], process_event_ids[j]);
+    	    assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
+    	    };
+    	    //printf("\n");
+        for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
+    };
+    // and everybody waits until we've evaluated this.
+    //
 #endif
 
     ///////////// 
@@ -259,6 +271,20 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // root node regroups (barrier() ), then does its sending bit:
         sim->barrier();		//yoder: (debug)
         
+        // Debug:
+#ifdef MPI_C_FOUND
+        // how many elements do we expect to send back to processes?
+        //int id_counts[sim->getWorldSize()];
+        int id_counts[n_procs];
+        for (int j=0; j<n_procs; ++j) id_counts[j]=0;	// noting that we initilize our own count,j=0, which we won't use.
+        for (jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt) ++id_counts[jt->second];
+        
+        for (int w=1; w<sim->getWorldSize();++w) {
+        	MPI_Send(&(id_counts[w]), 1, MPI_INT, w, 0, MPI_COMM_WORLD);
+        	}
+#endif
+        // END DEBUG
+        
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
@@ -300,12 +326,23 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // fetch x[i] from root (rank 0) node:
       	// yoder (debugging):
       	// check to see that the local ids exist in the global ids:
+      	// Debugging:
       	//bool loc_glob_ok = true;
-      	//for ( 
-
+      	// start with the count. how many entries does the root_node expect to send?
+      	int expected_recv_count = 0;
+      	MPI_Recv(&expected_recv_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      	if (expected_recv_count!=num_local_failed) {
+      		printf("**ERROR(%d/%d): expected recv_count does not match root node: %d/%d\n", sim->getNodeRank(), getpid(), expected_recv_count, num_local_failed);
+      		assertThrow(0, "send/receive count does not match in secondary blocks.\n");
+      		};
+      	////
+      	//
         for (i=0; i<num_local_failed; ++i) {
         	// yoder: (debug) note that in at least one instance, i am seeing what appears to be this mpi_recv() command waiting for a send while everything else
         	//    has apparently moved on; it looks like having finished the secondary loop.
+        	//    so it seems likely that the problem is that one or more secondary blocks ends up on multiple processors, but is listed only once in the globals (??)
+        	//    so let's try to verify that our list of local_failed blocks is compatible with the root list of gloabal_failed. we might, yet, end up just
+        	//    rewriting this section with MPI_Gatherv()...
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         }
