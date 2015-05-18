@@ -193,14 +193,30 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
     //
+#ifdef MPI_C_FOUND    
     // yoder (debug):
     // before we start our loops, let's see that we're all on the same event (and?) sweep.
     // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
     // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
     // use sim->getWorldSize() to get worldsize.
     int n_procs = sim->getWorldSize();
-    int * process_event_ids[n_procs];
-    int * process_sweep_ids[n_procs];
+    int process_event_ids[n_procs];
+    int process_sweep_ids[n_procs];
+    int this_event_id = sim->getCurrentEvent().getEventNumber();
+    int this_sweep_id = sweep_num;		// declared on the RunEvent class level. we don't really need to copy it.
+    MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
+    //
+    // now, see that all event,sweep values are the same:
+    for (int j=0; j<n_procs;++j) {
+    	//printf("**Debug(%d/%d/%d): event_id %d/%d :: ", sim->getNodeRank(), getpid(), n_procs, process_event_ids[0], process_event_ids[j]);
+    	assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
+    	};
+    	//printf("\n");
+    for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
+#endif
+
+    ///////////// 
     //
     if (sim->isRootNode()) {
         double *fullA = new double[num_global_failed*num_global_failed];
