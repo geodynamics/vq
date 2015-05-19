@@ -193,8 +193,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
     //
+/*
 #ifdef MPI_C_FOUND    
     // yoder (debug):
+    // (but this does not appear to be the problem; this exception is not being thrown, and we're still getting heisen_hang).
     // before we start our loops, let's see that we're all on the same event (and?) sweep.
     // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
     // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
@@ -227,6 +229,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // and everybody waits until we've evaluated this.
     //
 #endif
+*/
 
     ///////////// 
     //
@@ -270,7 +273,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         //
         // root node regroups (barrier() ), then does its sending bit:
         sim->barrier();		//yoder: (debug)
-        
+
+/*
         // Debug:
 #ifdef MPI_C_FOUND
         // how many elements do we expect to send back to processes?
@@ -283,14 +287,16 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         	}
 #endif
         // END DEBUG
-        
+*/        
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
 #ifdef MPI_C_FOUND
                 // send these values to node-rank jt->second:
-                MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                // yoder: try using synchronous send, MPI_Ssend()
+                //MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                MPI_Ssend(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
 #else
                 assertThrow(false, "Single processor version of code, but faults mapped to multiple   processors.");
 #endif
@@ -316,8 +322,11 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==True set.
         for (i=0; i<num_local_failed; ++i) {
             //printf("**Debug[%d/%d]: A[],b MPI_Send child-node blocking...\n", sim->getNodeRank(), getpid());
-            MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-            MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            // yoder: try using synchronous MPI_Ssend()
+            //MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            //MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            MPI_Ssend(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            MPI_Ssend(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
         //
         // regroup (barrier()), then child nodes do their receiving bit:
@@ -325,6 +334,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // fetch x[i] from root (rank 0) node:
       	// yoder (debugging):
       	// check to see that the local ids exist in the global ids:
+      	
+      	/*
       	// Debugging:
       	//bool loc_glob_ok = true;
       	// start with the count. how many entries does the root_node expect to send?
@@ -335,6 +346,8 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
       		assertThrow(0, "send/receive count does not match in secondary blocks.\n");
       		};
       	////
+      	*/
+      	
       	//
         for (i=0; i<num_local_failed; ++i) {
         	// yoder: (debug) this is, apparently, where heisen_hang happens.
