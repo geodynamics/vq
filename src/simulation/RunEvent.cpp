@@ -278,7 +278,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         int id_counts[n_procs];
         for (int j=0; j<n_procs; ++j) id_counts[j]=0;	// noting that we initilize our own count,j=0, which we won't use.
         for (jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt) ++id_counts[jt->second];
-        
         for (int w=1; w<sim->getWorldSize();++w) {
         	MPI_Send(&(id_counts[w]), 1, MPI_INT, w, 0, MPI_COMM_WORLD);
         	}
@@ -338,7 +337,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
       	////
       	//
         for (i=0; i<num_local_failed; ++i) {
-        	// yoder: (debug) note that in at least one instance, i am seeing what appears to be this mpi_recv() command waiting for a send while everything else
+        	// yoder: (debug) this is, apparently, where heisen_hang happens.
         	//    has apparently moved on; it looks like having finished the secondary loop.
         	//    so it seems likely that the problem is that one or more secondary blocks ends up on multiple processors, but is listed only once in the globals (??)
         	//    so let's try to verify that our list of local_failed blocks is compatible with the root list of gloabal_failed. we might, yet, end up just
