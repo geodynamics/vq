@@ -1039,18 +1039,7 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     // looks like we place a condition on the values of {new_green_shear, new_green_normal}
     // it may also be desirable to distinguish between self-stress (diagonal elements) and off-diagonals. however, if it comes
     // to that, we'll probably want to use Python/quakelib tools to modify a Greens output file directly and just load those values.
-    //
-    // development, testing, debugging bits:
-    //double gr_shear  = new_green_shear;
-    //double gr_normal = new_green_normal;
-    //printf("**Debug: sh_min: %f, sh_max: %f, nor_min: %f, nor_max: %f\n", getGreenShearMin(), getGreenShearMax(), getGreenNormalMin(), getGreenNormalMax());
-    //printf("pre-gr_shear[%f, %f]: gr_shear: %f, gr_normal: %f\n", new_green_shear, new_green_normal, gr_shear, gr_normal);
-    //
-    //gr_shear  = std::max(getGreenShearMin(),  std::min(new_green_shear,  getGreenShearMax()));
-    //gr_normal = std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax()));
-    //printf("gr_shear[%f, %f]: gr_shear: %f, gr_normal: %f\n\n", new_green_shear, new_green_normal, gr_shear, gr_normal);
-    //////////////////
-    
+    //    
     // update code modified to use max/min thresholds for Greens values:
     greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
     greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
