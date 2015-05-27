@@ -145,34 +145,28 @@ class PyGreens(object):
 		ax = plt.gca()
 		if do_clf: plt.clf()
 		gr_hist = plt.hist(greens_ary[0], **hist_kwargs)
-		bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
-		bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
 		#
-		max_h = max(gr_hist[0])
-		n_v_lines = 4
-		#plt.vlines(sorted([gr_val_mean + float(j)*gr_val_stdev, gr_val_mean-j*gr_val_stdev] for j in xrange(n_v_lines)), numpy.ones(n_v_lines), max_h*.9*numpy.ones(n_v_lines), lw=1.5, alpha=.8, color='r')
-		# mean value, stdev aren't quite what we're looking for (distribution appears approximately gaussian in the logarithm of the histogram values). what does that mean?
-		# for now, just plot +/- n_v_lines stdev.
-		#plt.vlines([gr_val_mean + 4.*float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
-		#plt.vlines([gr_val_mean + float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines+1)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
-		plt.vlines([gr_val_mean - 4*gr_val_stdev, gr_val_mean + 4*gr_val_stdev], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
-		#
-		# now, get a gaussian fit. we can use this to strip away extraneous values...
+		# now (optionally), get a gaussian fit. we can use this to strip away extraneous values...
 		# ... but this is not as straight forward as it looks; there's some log-scaling, then of course negative numbers, and
 		# generally the fit needs some coersion...
 		#
 		if do_fit:
-			#print "begin fitting to gauss model..."
+			# note: this is a weird fit. we're fitting a gauss distribution to the log of the histogram, so this is the best fit normal distribution of the 
+			# log of the frequency of greens values. whatever that means, we can use it to discriminate extreme values.
+			print "begin fitting to gauss model..."
+			bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
+			bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+			#
 			x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
 			#
-			plt.figure(1)
-			plt.clf()
-			plt.plot(x_hist, y_hist, '-')
+			#plt.figure(fnum+1)
+			#plt.clf()
+			#plt.plot(x_hist, y_hist, '-')
 			
 			#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
 			#return x_hist, y_hist
 			#plt.figure(0)	
-			gauss_p0 = [math.log10(max(y_hist)), 0., 1.0]		# because we treat A like --> 10**log(a), for linearization.
+			gauss_p0 = [math.log10(max(y_hist)), 0., 1.0]		# because we treat A like --> 10**log(a), for linearization., so note this is log(log(y))...
 			# now, guess sigma:
 			for j,y in enumerate(y_hist):
 				if y>.5*gauss_p0[0] and x_hist[j]!=gauss_p0[1]:
@@ -181,33 +175,41 @@ class PyGreens(object):
 			# maybe another guess here?
 			#
 			print "begin fit: A, mu, sigma = ", gauss_p0
-			#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
 			coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
-			#coeff[0]=10**coeff[0]
 			#
-
 			print "fit complete: A, mu, sigma = ", coeff, gauss_p0
 			#
-			#plt.figure(1)
-			#plt.clf()
 			x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
-			hist_fit = gauss_pdf(x_hist_fit, *coeff)
-			#hist_fit = [gauss_pdf(float(x), *coeff) for x in x_hist]
-		
-			#plt.plot(bin_centers, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+			hist_fit = gauss_pdf(x_hist_fit, *coeff)		
+			#
+			'''
 			ax = plt.gca()
-			#ax.set_yscale('log')
-			plt.figure(1)
-			#plt.clf()
-			#ax=plt.gca()
+			plt.figure(fnum+1)
+			#
 			ax.plot(x_hist_fit, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
-			
+			#
+			# and plot the widths:
+			for jw in numpy.arange(1.,3.):
+				my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
+				#print my_x, gauss_pdf(my_x, *coeff)
+				ax.plot(my_x, gauss_pdf(my_x, *coeff), 'r.-')
+			ax.set_xlabel('Greens value $g$')
+			ax.set_ylabel('$N(g)$')
+			'''
+			#
+			# let's have a go at the original figure:
+			plt.figure(fnum)
+			plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+			for jw in numpy.arange(1.,3.):
+				my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
+				print "Greens range for %d sigma: x=%s, log(y)=%s" % (int(jw), my_x, gauss_pdf(my_x, *coeff))
+				plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='x=[%f, %f]' % (my_x[0], my_x[1]))
+		plt.legend(loc=0, numpoints=1)	
 		#
 		# return to original shape.
 		greens_ary.shape=sh_0
 		#
 		return gr_hist
-		#, x_hist, hist_fit
 #
 def gauss_fit_mc(y,x,nits=1000, A=1.0, mu=0.0, sigma=1.0, dy=0.0, dA=None, dmu=None, dsigma=None, ddy=None):
 	
