@@ -182,28 +182,14 @@ class PyGreens(object):
 			x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
 			hist_fit = gauss_pdf(x_hist_fit, *coeff)		
 			#
-			'''
-			ax = plt.gca()
-			plt.figure(fnum+1)
-			#
-			ax.plot(x_hist_fit, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
-			#
-			# and plot the widths:
-			for jw in numpy.arange(1.,3.):
-				my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
-				#print my_x, gauss_pdf(my_x, *coeff)
-				ax.plot(my_x, gauss_pdf(my_x, *coeff), 'r.-')
-			ax.set_xlabel('Greens value $g$')
-			ax.set_ylabel('$N(g)$')
-			'''
-			#
 			# let's have a go at the original figure:
 			plt.figure(fnum)
-			plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+			plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: $A=%f$, $\\mu=%f$, $\\sigma=%f$' % (coeff[0], coeff[1], coeff[2]))
 			for jw in numpy.arange(1.,3.):
 				my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
-				print "Greens range for %d sigma: x=%s, log(y)=%s" % (int(jw), my_x, gauss_pdf(my_x, *coeff))
-				plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='x=[%f, %f]' % (my_x[0], my_x[1]))
+				print "Greens range for %d sigma (mu=%f): x=%s, log(y)=%s" % (int(jw), coeff[1], my_x, gauss_pdf(my_x, *coeff))
+				plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='$x_%d=[%f, %f]$' % (int(jw), my_x[0], my_x[1]))
+		#
 		plt.legend(loc=0, numpoints=1)	
 		#
 		# return to original shape.
