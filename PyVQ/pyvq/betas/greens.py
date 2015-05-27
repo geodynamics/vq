@@ -190,7 +190,8 @@ class PyGreens(object):
 			#
 			#plt.figure(1)
 			#plt.clf()
-			hist_fit = gauss_pdf(numpy.array(x_hist), *coeff)
+			x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
+			hist_fit = gauss_pdf(x_hist_fit, *coeff)
 			#hist_fit = [gauss_pdf(float(x), *coeff) for x in x_hist]
 		
 			#plt.plot(bin_centers, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
@@ -199,7 +200,7 @@ class PyGreens(object):
 			plt.figure(1)
 			#plt.clf()
 			#ax=plt.gca()
-			ax.plot(x_hist, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
+			ax.plot(x_hist_fit, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
 			
 		#
 		# return to original shape.
