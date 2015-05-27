@@ -12,6 +12,7 @@ default_events = 'vq_output_hattonsenvy_3k/events_3000_d.h5'
 events_2 = 'ca_model_hattonsenvy_105yrs_3km/events_3000.hdf5'
 
 def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end=None, m0=7.0):
+	# make some quick figures for preliminary analysis.
 	with h5py.File(vc_data_file) as vc_data:
 		#
 		events = vc_data['events']
@@ -21,8 +22,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		events = events[events_start:events_end]
 		#		
 		print "get magnitudes and then sort..."
-		mags = [m for m in events['event_magnitude']]
-		mags.sort()
+		mags = sorted(events['event_magnitude'].tolist())
 		#
 		print "get delta_ts..."
 		T=events['event_year']
@@ -37,13 +37,14 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		mean_dt_m0 = numpy.mean(zip(*big_mag_dts)[1])
 		std_dt_m0 = numpy.std(zip(*big_mag_dts)[1])
 		print "mean interval (N=%d) for m>%f: %f +/- %f" % (len(big_mags), m0, mean_dt_m0, std_dt_m0)
-		
 		#
 		print "and now plot..."
 		#
 		figs=[]
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		plt.clf()
+		#
+		# first: magnitude distributions
 		f=figs[-1]
 		ax = plt.gca()
 		ax.set_yscale('log')
@@ -55,6 +56,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		plt.legend(loc=0, numpoints=1)
 		plt.title('Magnitudes')
 		#
+		# magnitudes PDF only.
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		f=figs[-1]
 		f.clf()
@@ -63,6 +65,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		ax.hist(mags,bins=200, range=[min(mags), max(mags)], log=dolog)
 		plt.title('Magnitudes (pdf)')
 		#
+		# intervals, magnitudes time series:
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		f=figs[-1]
 		f.clf()
@@ -85,6 +88,20 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		ax_mags.vlines(T,[3.0 for m in mags], events['event_magnitude'], color='g', zorder=3, label='magnitudes')
 		ax_mags.set_ylim(2.0, 9.5)
 		ax_mags.set_ylabel('magnitude')
+		plt.legend(loc=0, numpoints=1)
+		#
+		# big-mag intervals:
+		# big_mag_dts
+		print "... big-mag time-series:"
+		figs+=[plt.figure(len(figs)+fnum_0)]
+		f=figs[-1]
+		f.clf()
+		ax=f.gca()
+		ax.set_yscale('log')
+		ax.plot(zip(*big_mag_dts)[0], zip(*big_mag_dts)[1], '.-', label='$m>%.2f intervals')
+		ax_mags = ax.twinx()
+		#ax.vlines(*(zip(*big_mags)),[3.0 for x in big_mags], color='r')
+		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=2, zorder=5, label='m>%.2f' % m0)
 		plt.legend(loc=0, numpoints=1)
 		#
 		# interval distributions:
@@ -114,6 +131,8 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		
 		
 	return dts
+#
+#def plot_recurrence(
 #
 def shear_stress_sequence(block_id=None, event_number=0, vc_data_file=default_events, do_print=True):
 	sweepses = block_sweep_sequence(block_id=block_id, event_number=event_number, vc_data_file=vc_data_file)
