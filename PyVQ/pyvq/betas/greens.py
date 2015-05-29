@@ -146,13 +146,9 @@ class PyGreens(object):
 		if do_clf: plt.clf()
 		gr_hist = plt.hist(greens_ary[0], **hist_kwargs)
 		#
-		# now (optionally), get a gaussian fit. we can use this to strip away extraneous values...
-		# ... but this is not as straight forward as it looks; there's some log-scaling, then of course negative numbers, and
-		# generally the fit needs some coersion...
+		# now (optionally), get a gaussian fit (actually, gaussian fit to logarithms, so log-normal fit)
 		#
 		if do_fit:
-			# note: this is a weird fit. we're fitting a gauss distribution to the log of the histogram, so this is the best fit normal distribution of the 
-			# log of the frequency of greens values. whatever that means, we can use it to discriminate extreme values.
 			print "begin fitting to gauss model..."
 			bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
 			bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
