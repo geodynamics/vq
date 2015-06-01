@@ -84,7 +84,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		#ax.draw()
 		ax_mags = ax.twinx()
 		#ax.vlines(*(zip(*big_mags)),[3.0 for x in big_mags], color='r')
-		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=2, zorder=5, label='m>%.2f' % m0)
+		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=2, zorder=2, label='m>%.2f' % m0)
 		ax_mags.vlines(T,[3.0 for m in mags], events['event_magnitude'], color='g', zorder=3, label='magnitudes')
 		ax_mags.set_ylim(2.0, 9.5)
 		ax_mags.set_ylabel('magnitude')
@@ -98,11 +98,12 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		f.clf()
 		ax=f.gca()
 		ax.set_yscale('log')
-		ax.plot(zip(*big_mag_dts)[0], zip(*big_mag_dts)[1], '.-', label='$m>%.2f intervals')
-		ax_mags = ax.twinx()
-		#ax.vlines(*(zip(*big_mags)),[3.0 for x in big_mags], color='r')
-		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=2, zorder=5, label='m>%.2f' % m0)
-		plt.legend(loc=0, numpoints=1)
+		ax.set_ylabel('interval $\\Delta t_{m%.2f}$' % m0)
+		ax.plot(zip(*big_mag_dts)[0], zip(*big_mag_dts)[1], 'g.-', zorder=7, lw=1.5, label='$m>%.2f intervals')
+		ax_mags = ax.twinx()		
+		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='m', lw=1, zorder=1, label='m>%.2f' % m0, alpha=.5)
+		#plt.legend(loc=0, numpoints=1)
+		plt.title('big-mag and intervals')
 		#
 		# interval distributions:
 		print "... and interval distribuiton..."

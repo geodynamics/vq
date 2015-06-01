@@ -149,42 +149,46 @@ class PyGreens(object):
 		# now (optionally), get a gaussian fit (actually, gaussian fit to logarithms, so log-normal fit)
 		#
 		if do_fit:
-			print "begin fitting to gauss model..."
-			bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
-			bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-			#
-			x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
-			#
-			#plt.figure(fnum+1)
-			#plt.clf()
-			#plt.plot(x_hist, y_hist, '-')
+			try:
+				print "begin (try()ing to) fitting to gauss model..."
+				bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
+				bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+				#
+				x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
+				#
+				#plt.figure(fnum+1)
+				#plt.clf()
+				#plt.plot(x_hist, y_hist, '-')
 			
-			#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
-			#return x_hist, y_hist
-			#plt.figure(0)	
-			gauss_p0 = [math.log10(max(y_hist)), 0., 1.0]		# because we treat A like --> 10**log(a), for linearization., so note this is log(log(y))...
-			# now, guess sigma:
-			for j,y in enumerate(y_hist):
-				if y>.5*gauss_p0[0] and x_hist[j]!=gauss_p0[1]:
-					gauss_p0[2]=x_hist[j]
-					break
-			# maybe another guess here?
-			#
-			print "begin fit: A, mu, sigma = ", gauss_p0
-			coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
-			#
-			print "fit complete: A, mu, sigma = ", coeff, gauss_p0
-			#
-			x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
-			hist_fit = gauss_pdf(x_hist_fit, *coeff)		
-			#
-			# let's have a go at the original figure:
-			plt.figure(fnum)
-			plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: $A=%f$, $\\mu=%f$, $\\sigma=%f$' % (coeff[0], coeff[1], coeff[2]))
-			for jw in numpy.arange(1.,3.):
-				my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
-				print "Greens range for %d sigma (mu=%f): x=%s, log(y)=%s" % (int(jw), coeff[1], my_x, gauss_pdf(my_x, *coeff))
-				plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='$x_%d=[%f, %f]$' % (int(jw), my_x[0], my_x[1]))
+				#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
+				#return x_hist, y_hist
+				#plt.figure(0)	
+				gauss_p0 = [math.log10(max(y_hist)), 0., 1.0]		# because we treat A like --> 10**log(a), for linearization., so note this is log(log(y))...
+				# now, guess sigma:
+				for j,y in enumerate(y_hist):
+					if y>.5*gauss_p0[0] and x_hist[j]!=gauss_p0[1]:
+						gauss_p0[2]=x_hist[j]
+						break
+				# maybe another guess here?
+				#
+				print "begin fit: A, mu, sigma = ", gauss_p0
+				coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
+				#
+				print "fit complete: A, mu, sigma = ", coeff, gauss_p0
+				#
+				x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
+				hist_fit = gauss_pdf(x_hist_fit, *coeff)		
+				#
+				# let's have a go at the original figure:
+				plt.figure(fnum)
+				plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: $A=%f$, $\\mu=%f$, $\\sigma=%f$' % (coeff[0], coeff[1], coeff[2]))
+				for jw in numpy.arange(1.,3.):
+					my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
+					print "Greens range for %d sigma (mu=%f): x=%s, log(y)=%s" % (int(jw), coeff[1], my_x, gauss_pdf(my_x, *coeff))
+					plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='$x_%d=[%f, %f]$' % (int(jw), my_x[0], my_x[1]))
+				#
+			except:
+				print "fitting attempt failed.: %s" % sys.exec_info()[0]
 		#
 		plt.legend(loc=0, numpoints=1)	
 		#
