@@ -131,10 +131,10 @@ void GreensInit::init(SimFramework *_sim) {
     double shear_offdiag_min, shear_offdiag_max, shear_offdiag_mean, normal_offdiag_min, normal_offdiag_max, normal_offdiag_mean;
     getGreensDiagStats(sim, shear_diag_min, shear_diag_max, shear_diag_mean, normal_diag_min, normal_diag_max, normal_diag_mean, shear_offdiag_min, shear_offdiag_max, shear_offdiag_mean, normal_offdiag_min, normal_offdiag_max, normal_offdiag_mean);
     //
-    sim->console() << "# Greens DiagShear:\n max: " << shear_diag_max << "\n min: " << shear_diag_min << "\n mean: " << shear_diag_mean << std::endl << std::endl;
-    sim->console() << "# Greens DiagNormal:\n max: " << normal_diag_max << "\n min: " << normal_diag_min << "\n mean: " << normal_diag_mean << std::endl << std::endl;
-    sim->console() << "# Greens offDiagShear:\n max: " << shear_offdiag_max << "\n min: " << shear_offdiag_min << "\n mean: " << shear_offdiag_mean << std::endl << std::endl;
-    sim->console() << "# Greens offDiagNormal:\n max: " << normal_offdiag_max << "\n min: " << normal_offdiag_min << "\n mean: " << normal_offdiag_mean << std::endl << std::endl;
+    sim->console() << "# Greens DiagShear:: " << shear_diag_min << " -- " << shear_diag_max << " (" << shear_diag_mean << ")\n"; // << std::endl << std::endl;
+    sim->console() << "# Greens DiagNormal:: " << normal_diag_min << " -- " << normal_diag_max << " (" << normal_diag_mean << ")\n"; // std::endl << std::endl;
+    sim->console() << "# Greens offDiagShear:: " << shear_offdiag_min << " -- " << shear_offdiag_max << " (" << shear_offdiag_mean << ")\n"; // std::endl << std::endl;
+    sim->console() << "# Greens offDiagNormal:: " << normal_offdiag_min << " -- " << normal_offdiag_max << " (" << normal_offdiag_mean << ")\n\n"; //  std::endl << std::endl;
 
 #ifdef MPI_C_FOUND
     //
@@ -272,14 +272,10 @@ void GreensInit::getGreensDiagStats(Simulation *sim, double &shear_diag_min, dou
             if (gid==nt->getBlockID()) {
             	// diagonal elements:
             	//printf("diag: %d, %d:: %f/%f\n", gid, nt->getBlockID(), cur_shear, cur_normal);
-   	            //if (cur_shear<shear_diag_min_l) shear_diag_min_l = cur_shear;
-	            //if (cur_shear>shear_diag_max_l) shear_diag_max_l = cur_shear;
 	            shear_diag_min_l = std::min(shear_diag_min_l, cur_shear);
 	            shear_diag_max_l = std::max(shear_diag_max_l, cur_shear);
 	            shear_diag_sum += cur_shear;
 	            //
-	            //if (cur_normal<normal_diag_min_l) normal_diag_min_l = cur_normal;
-	            //if (cur_normal>normal_diag_max_l) normal_diag_max_l = cur_normal;
 	            normal_diag_min_l = std::min(normal_diag_min_l, cur_normal);
 	            normal_diag_max_l = std::max(normal_diag_max_l, cur_normal);
 	            normal_diag_sum += cur_normal;
@@ -288,15 +284,11 @@ void GreensInit::getGreensDiagStats(Simulation *sim, double &shear_diag_min, dou
             else { 
             	//if (gid!=nt->getBlockID()) {
             	// off-diagonal elements:
-    	        //if (cur_shear<shear_offdiag_min_l) shear_offdiag_min_l = cur_shear;
-    	        //if (cur_shear>shear_offdiag_max_l) shear_offdiag_max_l = cur_shear;
     	        //printf("off-diag: %d, %d:: %f/%f\n", gid, nt->getBlockID(), cur_shear, cur_normal);
     	        shear_offdiag_min_l = std::min(shear_offdiag_min_l, cur_shear);
     	        shear_offdiag_max_l = std::max(shear_offdiag_max_l, cur_shear);
     	        shear_offdiag_sum += cur_shear;
     	        //
-    	        //if (cur_normal<normal_offdiag_min_l) normal_offdiag_min_l = cur_normal;
-    	        //if (cur_normal>normal_offdiag_max_l) normal_offdiag_max_l = cur_normal;
     	        normal_offdiag_min_l = std::min(normal_offdiag_min_l, cur_normal);
     	        normal_offdiag_max_l = std::max(normal_offdiag_max_l, cur_normal);
     	        normal_offdiag_sum += cur_normal;
