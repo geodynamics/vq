@@ -38,6 +38,8 @@ class GreensInit : public SimPlugin {
         //
         // yoder: also get some greens stats:
         void getGreensStats(Simulation *sim, double &shear_min, double &shear_max, double &shear_mean, double &normal_min, double &normal_max, double &normal_mean);
+        void getGreensDiagStats(Simulation *sim, double &shear_diag_min, double &shear_diag_max, double &shear_diag_mean, double &normal_diag_min, double &normal_diag_max, double &normal_diag_mean, double &shear_offdiag_min, double &shear_offdiag_max, double &shear_offdiag_mean, double &normal_offdiag_min, double &normal_offdiag_max, double &normal_offdiag_mean);
+        
 };
 
 #endif

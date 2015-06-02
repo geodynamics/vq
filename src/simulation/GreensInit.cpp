@@ -125,6 +125,16 @@ void GreensInit::init(SimFramework *_sim) {
     getGreensStats(sim, shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean);
     sim->console() << "# Greens Shear:\n max: " << shear_max << "\n min: " << shear_min << "\n mean: " << shear_mean << std::endl << std::endl;
     sim->console() << "# Greens Normal:\n max: " << normal_max << "\n min: " << normal_min << "\n mean: " << normal_mean << std::endl << std::endl;
+    //
+    // yoder: and now, get Greens Stats for (off)diagonal elements separately.
+    double shear_diag_min, shear_diag_max, shear_diag_mean, normal_diag_min, normal_diag_max, normal_diag_mean;
+    double shear_offdiag_min, shear_offdiag_max, shear_offdiag_mean, normal_offdiag_min, normal_offdiag_max, normal_offdiag_mean;
+    getGreensDiagStats(sim, shear_diag_min, shear_diag_max, shear_diag_mean, normal_diag_min, normal_diag_max, normal_diag_mean, shear_offdiag_min, shear_offdiag_max, shear_offdiag_mean, normal_offdiag_min, normal_offdiag_max, normal_offdiag_mean);
+    //
+    sim->console() << "# Greens DiagShear:\n max: " << shear_diag_max << "\n min: " << shear_diag_min << "\n mean: " << shear_diag_mean << std::endl << std::endl;
+    sim->console() << "# Greens DiagNormal:\n max: " << normal_diag_max << "\n min: " << normal_diag_min << "\n mean: " << normal_diag_mean << std::endl << std::endl;
+    sim->console() << "# Greens offDiagShear:\n max: " << shear_offdiag_max << "\n min: " << shear_offdiag_min << "\n mean: " << shear_offdiag_mean << std::endl << std::endl;
+    sim->console() << "# Greens offDiagNormal:\n max: " << normal_offdiag_max << "\n min: " << normal_offdiag_min << "\n mean: " << normal_offdiag_mean << std::endl << std::endl;
 
 #ifdef MPI_C_FOUND
     //
@@ -169,11 +179,9 @@ void GreensInit::getGreensStats(Simulation *sim, double &shear_min, double &shea
     double      shear_sum, normal_sum;
     double      cur_shear, cur_normal;
     BlockList::iterator nt;
-
-    shear_min  = DBL_MAX;
-    normal_min = DBL_MAX;
-    shear_max  = -DBL_MAX;
-    normal_max = -DBL_MAX;
+    //
+    shear_min_l = normal_min_l =  DBL_MAX;
+    shear_max_l = normal_max_l = -DBL_MAX;
     //
     shear_sum = normal_sum = 0;
     
@@ -212,15 +220,6 @@ void GreensInit::getGreensStats(Simulation *sim, double &shear_min, double &shea
     mpi_return = MPI_Allreduce(&normal_max_l, &normal_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     mpi_return = MPI_Allreduce(&normal_sum, &normal_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     
-    //sim->allReduceBlockVal(shear_min_l, shear_min, BLOCK_VAL_MIN);
-    //sim->allReduceBlockVal(shear_max_l, shear_max, BLOCK_VAL_MAX);
-    //
-    //sim->allReduceBlockVal(normal_min_l, normal_min, BLOCK_VAL_MIN);
-    //sim->allReduceBlockVal(normal_max_l, normal_max, BLOCK_VAL_MAX);
-    
-    //sim->allReduceBlockVal(shear_sum, shear_mean, BLOCK_VAL_SUM);
-    //sim->allReduceBlockVal(normal_sum, normal_mean, BLOCK_VAL_SUM);
-    
     #else
     shear_min = shear_min_l;
     shear_max = shear_max_l;
@@ -234,6 +233,121 @@ void GreensInit::getGreensStats(Simulation *sim, double &shear_min, double &shea
     normal_mean /= sim->numGlobalBlocks();
 };
 
+void GreensInit::getGreensDiagStats(Simulation *sim, double &shear_diag_min, double &shear_diag_max, double &shear_diag_mean, double &normal_diag_min, double &normal_diag_max, double &normal_diag_mean, double &shear_offdiag_min, double &shear_offdiag_max, double &shear_offdiag_mean, double &normal_offdiag_min, double &normal_offdiag_max, double &normal_offdiag_mean) {
+	// gather max/min values for greens functions (which we may have defined in the parameter file).
+	// note: we (see ProgressMonitor.cpp/h; we could use BlockVal declarations (is there a GreensVal object? we could create one) to
+	// combine the block_id, or in this case the block_id pair, with the gr_values.
+	// for (off) diagonal elements
+	//
+	int         lid;
+    BlockID     gid;
+    double      shear_diag_min_l, shear_diag_max_l, normal_diag_min_l, normal_diag_max_l;   // local-node copies...
+    double      shear_diag_sum, normal_diag_sum;
+    //
+    double      shear_offdiag_min_l, shear_offdiag_max_l, normal_offdiag_min_l, normal_offdiag_max_l;	// local-node copies
+    double      shear_offdiag_sum, normal_offdiag_sum;
+    //
+    double      cur_shear, cur_normal;
+    //
+    BlockList::iterator nt;
+    //
+    shear_diag_min_l = shear_offdiag_min_l = normal_diag_min_l = normal_offdiag_min_l = DBL_MAX;
+    shear_diag_max_l = shear_offdiag_max_l = normal_diag_max_l = normal_offdiag_max_l = -DBL_MAX;
+    //
+    shear_diag_sum = normal_diag_sum = 0;
+    shear_offdiag_sum = normal_offdiag_sum = 0;
+    
+    //min_val.block_id = max_val.block_id = sum_val.block_id = UNDEFINED_ELEMENT_ID;
+
+    // Get the minimum, maximum and sum CFF values on this node
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+        gid = sim->getGlobalBID(lid);
+        //
+        // now, loop over the sim events to get greens-pair values:
+        for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+            //stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
+            cur_shear  = sim->getGreenShear(gid, nt->getBlockID());
+            cur_normal = sim->getGreenNormal(gid, nt->getBlockID());
+            //
+            if (gid==nt->getBlockID()) {
+            	// diagonal elements:
+            	//printf("diag: %d, %d:: %f/%f\n", gid, nt->getBlockID(), cur_shear, cur_normal);
+   	            //if (cur_shear<shear_diag_min_l) shear_diag_min_l = cur_shear;
+	            //if (cur_shear>shear_diag_max_l) shear_diag_max_l = cur_shear;
+	            shear_diag_min_l = std::min(shear_diag_min_l, cur_shear);
+	            shear_diag_max_l = std::max(shear_diag_max_l, cur_shear);
+	            shear_diag_sum += cur_shear;
+	            //
+	            //if (cur_normal<normal_diag_min_l) normal_diag_min_l = cur_normal;
+	            //if (cur_normal>normal_diag_max_l) normal_diag_max_l = cur_normal;
+	            normal_diag_min_l = std::min(normal_diag_min_l, cur_normal);
+	            normal_diag_max_l = std::max(normal_diag_max_l, cur_normal);
+	            normal_diag_sum += cur_normal;
+            }
+            //
+            else { 
+            	//if (gid!=nt->getBlockID()) {
+            	// off-diagonal elements:
+    	        //if (cur_shear<shear_offdiag_min_l) shear_offdiag_min_l = cur_shear;
+    	        //if (cur_shear>shear_offdiag_max_l) shear_offdiag_max_l = cur_shear;
+    	        //printf("off-diag: %d, %d:: %f/%f\n", gid, nt->getBlockID(), cur_shear, cur_normal);
+    	        shear_offdiag_min_l = std::min(shear_offdiag_min_l, cur_shear);
+    	        shear_offdiag_max_l = std::max(shear_offdiag_max_l, cur_shear);
+    	        shear_offdiag_sum += cur_shear;
+    	        //
+    	        //if (cur_normal<normal_offdiag_min_l) normal_offdiag_min_l = cur_normal;
+    	        //if (cur_normal>normal_offdiag_max_l) normal_offdiag_max_l = cur_normal;
+    	        normal_offdiag_min_l = std::min(normal_offdiag_min_l, cur_normal);
+    	        normal_offdiag_max_l = std::max(normal_offdiag_max_l, cur_normal);
+    	        normal_offdiag_sum += cur_normal;
+    	    };
+        };
+    };
+    
+
+    // Reduce to the min/avg/max over all nodes
+    #ifdef MPI_C_FOUND
+    int mpi_return=0;	// holder variable; mpi_reduce returns an int. maybe we'll have on efor each?
+    // construct MPI_reduce calls here:
+    mpi_return = MPI_Allreduce(&shear_diag_min_l, &shear_diag_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_diag_max_l, &shear_diag_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_diag_sum, &shear_diag_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    mpi_return = MPI_Allreduce(&shear_offdiag_min_l, &shear_offdiag_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_offdiag_max_l, &shear_offdiag_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&shear_offdiag_sum, &shear_offdiag_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    mpi_return = MPI_Allreduce(&normal_diag_min_l, &normal_diag_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_diag_max_l, &normal_diag_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_diag_sum, &normal_diag_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    
+    mpi_return = MPI_Allreduce(&normal_offdiag_min_l, &normal_offdiag_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_offdiag_max_l, &normal_offdiag_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    mpi_return = MPI_Allreduce(&normal_offdiag_sum, &normal_offdiag_mean,  1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        
+    #else
+    shear_diag_min = shear_diag_min_l;
+    shear_diag_max = shear_diag_max_l;
+    shear_diag_mean = shear_diag_sum;
+    
+    shear_offdiag_min = shear_offdiag_min_l;
+    shear_offdiag_max = shear_offdiag_max_l;
+    shear_offdiag_mean = shear_offdiag_sum;
+
+    normal_diag_min = normal_diag_min_l;
+    normal_diag_max = normal_diag_max_l;
+    normal_diag_mean = normal_diag_sum;
+    
+    normal_offdiag_min = normal_offdiag_min_l;
+    normal_offdiag_max = normal_offdiag_max_l;
+    normal_offdiag_mean = normal_offdiag_sum;
+    #endif
+    shear_diag_mean  /= sim->numGlobalBlocks();
+    normal_diag_mean /= sim->numGlobalBlocks();
+    
+    shear_offdiag_mean  /= sim->numGlobalBlocks();
+    normal_offdiag_mean /= sim->numGlobalBlocks();
+};
 
 
 

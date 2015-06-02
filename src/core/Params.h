@@ -181,7 +181,33 @@ class VCParams {
         double getGreenNormalMin(void) const {
             return params.read<double>("sim.greens.normal_min");
         };
-        
+        //
+        // yoder: ... and for (non)diag specific...
+        double getGreenShearDiagMax(void) const {
+            return params.read<double>("sim.greens.shear_diag_max");
+        };        
+        double getGreenShearDiagMin(void) const {
+            return params.read<double>("sim.greens.shear_diag_min");
+        };
+        double getGreenNormalDiagMax(void) const {
+            return params.read<double>("sim.greens.normal_diag_max");
+        };
+        double getGreenNormalDiagMin(void) const {
+            return params.read<double>("sim.greens.normal_diag_min");
+        };
+        //
+        double getGreenShearOffDiagMax(void) const {
+            return params.read<double>("sim.greens.shear_offdiag_max");
+        };        
+        double getGreenShearOffDiagMin(void) const {
+            return params.read<double>("sim.greens.shear_offdiag_min");
+        };
+        double getGreenNormalOffDiagMax(void) const {
+            return params.read<double>("sim.greens.normal_offdiag_max");
+        };
+        double getGreenNormalOffDiagMin(void) const {
+            return params.read<double>("sim.greens.normal_offdiag_min");
+        };
         
 };
 
