@@ -7,6 +7,7 @@ import sys
 import argparse
 import quakelib
 import gc
+import operator
 
 scipy_available = True
 try:
@@ -242,6 +243,30 @@ class Events:
         sec_ids = [geometry.model.element(eid).section_id() for eid in self._events[evnum].getInvolvedElements()]
         # Get unique section ids by converting to a set, then back to a list for ease of use
         return list(set(sec_ids))
+        
+    def get_ids_largest_events(self, num_events):
+        mags = {evnum:self._events[evnum].getMagnitude() for evnum in self._filtered_events if self._events[evnum].getMagnitude() != float("-inf")}
+        # Sort by decreasing magnitude
+        mags_sorted = list(reversed(sorted(mags.items(), key=operator.itemgetter(1))))
+        ev_ids = [mags_sorted[i][0] for i in range(len(mags_sorted))]
+        return ev_ids[:num_events]
+        
+    def event_summary(self, evnums):
+        mags = [self._events[evnum].getMagnitude() for evnum in evnums if self._events[evnum].getMagnitude() != float("-inf")]
+        areas = [self._events[evnum].calcEventRuptureArea() for evnum in evnums]
+        times = [self._events[evnum].getEventYear() for evnum in evnums]
+        slips = [self._events[evnum].calcMeanSlip() for evnum in evnums]
+        print("=======================================================")
+        print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]")
+        print("-------------------------------------------------------")
+        for k in range(len(evnums)):
+            print("{}\t{:.1f}\t\t{:.3f}\t{:.4f}\t{:.4f}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k]))
+        print("-------------------------------------------------------\n")
+            
+    def largest_event_summary(self, num_events):
+        evnums = self.get_ids_largest_events(num_events)
+        self.event_summary(evnums)
+    
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -1665,6 +1690,8 @@ if __name__ == "__main__":
             help="Name of stress index file to use in analysis.")
     parser.add_argument('--stress_file', required=False,
             help="Name of stress file to use in analysis.")
+    parser.add_argument('--summary', type=int, required=False,
+            help="Specify the number of largest magnitude EQs to summarize.")
 
     # Event filtering arguments
     parser.add_argument('--min_magnitude', type=float, required=False,
@@ -1815,6 +1842,11 @@ if __name__ == "__main__":
 
     if args.event_file:
         events.set_filters(event_filters)
+        
+    # Print out event summary data if requested
+    if args.summary:
+        print("\n"+args.event_file)
+        events.largest_event_summary(args.summary)
 
     # Generate plots
     if args.plot_freq_mag:
