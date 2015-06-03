@@ -121,6 +121,7 @@ void GreensInit::init(SimFramework *_sim) {
     sim->console() << "# Greens normal matrix takes " << abbr_normal_bytes << " " << space_vals[norm_ind] << std::endl;
 	//
 	// yoder: print some greens max/min/mean stats:
+	// (and this information becoming less interesting with the introduction of (off)diagonal specific data).
     double shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean;
     getGreensStats(sim, shear_min, shear_max, shear_mean, normal_min, normal_max, normal_mean);
     sim->console() << "# Greens Shear:\n max: " << shear_max << "\n min: " << shear_min << "\n mean: " << shear_mean << std::endl << std::endl;

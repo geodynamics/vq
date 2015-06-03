@@ -25,6 +25,9 @@
  for parameters that are not explicitly specified.
  */
 void VCParams::read_params(const std::string &param_file_name) {
+    // notes: ConfigFile class in ConfigFile.h.  see also Params.h, Params.cpp. if we want to semi-manually modify these values, maybe introduce a logic flow,
+    // for example --> if output_file.ends_with('.h5'): output_file_type='hdf5', etc. use (i think) ConfigFile::add(key, val) and maybe ConfigFile.remove(), etc.
+    //
     params = ConfigFile(param_file_name);
 
     // Call each of the parameter checks to set the default value if it's not already set
@@ -84,13 +87,15 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_stress_type", "");
     //
     // yoder: add parameters to truncate crazy greens function values:
-    params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
-    params.readSet<double>("sim.greens.shear_min",  -std::numeric_limits<double>::max());
-    params.readSet<double>("sim.greens.normal_max", std::numeric_limits<double>::max());
-    params.readSet<double>("sim.greens.normal_min", -std::numeric_limits<double>::max());
+    //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
+    //params.readSet<double>("sim.greens.shear_min",  -std::numeric_limits<double>::max());
+    //params.readSet<double>("sim.greens.normal_max", std::numeric_limits<double>::max());
+    //params.readSet<double>("sim.greens.normal_min", -std::numeric_limits<double>::max());
     //printf("**Debug: greens shear_max=%f, shear_min=%f\n",std::numeric_limits<double>::max(), std::numeric_limits<double>::min() );
     //
     // yoder: 
+    // it does not really make sense to filter the diagonal and off-diagonal elements together. it may not make sense to filter
+    // diag. elements at all. anyway, let's be specific:
     params.readSet<double>("sim.greens.shear_diag_max",  DBL_MAX);
     params.readSet<double>("sim.greens.shear_diag_min",  -DBL_MAX);
     params.readSet<double>("sim.greens.normal_diag_max", DBL_MAX);
@@ -109,3 +114,43 @@ void VCParams::write_params(const std::string &param_file_name) {
 
     param_out_file.close();
 }
+//
+// yoder:
+
+double VCParams::getGreenShearMax(const int block_1, const int block_2) const {
+    // return the appropriate (off)diagonal max/min greens values.
+    if (block_1==block_2) {
+    	return getGreenShearDiagMax();
+    }
+    else {
+    	return getGreenShearOffDiagMax();
+    }
+        };
+double VCParams::getGreenShearMin(const int block_1, const int block_2) const {
+    // return the appropriate (off)diagonal max/min greens values.
+    if (block_1==block_2) {
+    	return getGreenShearDiagMin();
+    }
+    else {
+    	return getGreenShearOffDiagMin();
+    }
+        };
+        
+double VCParams::getGreenNormalMax(const int block_1, const int block_2) const {
+    // return the appropriate (off)diagonal max/min greens values.
+    if (block_1==block_2) {
+    	return getGreenNormalDiagMax();
+    }
+    else {
+    	return getGreenNormalOffDiagMax();
+    }
+        };
+double VCParams::getGreenNormalMin(const int block_1, const int block_2) const {
+    // return the appropriate (off)diagonal max/min greens values.
+    if (block_1==block_2) {
+    	return getGreenNormalDiagMin();
+    }
+    else {
+    	return getGreenNormalOffDiagMin();
+    }
+        };

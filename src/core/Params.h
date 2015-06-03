@@ -169,18 +169,30 @@ class VCParams {
         //
         // yoder: helper functions for greens function max/min values:
         // can we make a (set of) generic pramGetter(str.pram_name) function(s)? then, we can add params at will...
+        // retiring the universal max/min values. BUT, leave these in place and default to the off-diagonal elements.
         double getGreenShearMax(void) const {
-            return params.read<double>("sim.greens.shear_max");
+            //return params.read<double>("sim.greens.shear_max");
+            return params.read<double>("sim.greens.shear_offdiag_max");
         };        
         double getGreenShearMin(void) const {
-            return params.read<double>("sim.greens.shear_min");
+            //return params.read<double>("sim.greens.shear_min");
+            return params.read<double>("sim.greens.shear_offdiag_min");
         };
         double getGreenNormalMax(void) const {
-            return params.read<double>("sim.greens.normal_max");
+            //return params.read<double>("sim.greens.normal_max");
+            return params.read<double>("sim.greens.normal_offdiag_max");
         };
         double getGreenNormalMin(void) const {
-            return params.read<double>("sim.greens.normal_min");
+            //return params.read<double>("sim.greens.normal_min");
+            return params.read<double>("sim.greens.normal_offdiag_min");
         };
+        //
+        // yoder: and overload so we can easily distinguish (off)diagonal elements (defined in GreensInit.cpp)
+        double getGreenShearMax(const int block_1, const int block_2) const;
+        double getGreenShearMin(const int block_1, const int block_2) const;
+        double getGreenNormalMax(const int block_1, const int block_2) const;
+        double getGreenNormalMin(const int block_1, const int block_2) const;
+        
         //
         // yoder: ... and for (non)diag specific...
         double getGreenShearDiagMax(void) const {
