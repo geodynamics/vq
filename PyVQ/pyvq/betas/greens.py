@@ -101,7 +101,7 @@ class PyGreens(object):
 	def plot_shear_hist(self, greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
 		return self.plot_greens_hist(shear_normal='shear', greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
 
-	def plot_greens_hist(self, shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
+	def plot_greens_hist(self, shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, do_fit=False, **hist_kwargs):
 		'''
 		# plot_greens_hist: plot a histogram of greens funciton values. besides giving a histogram, as oppposed to a cumulative type dist.,
 		# this might be useful for really really big data sets that don't plot in memory.
@@ -145,70 +145,57 @@ class PyGreens(object):
 		ax = plt.gca()
 		if do_clf: plt.clf()
 		gr_hist = plt.hist(greens_ary[0], **hist_kwargs)
-		bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
-		bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
 		#
-		max_h = max(gr_hist[0])
-		n_v_lines = 4
-		#plt.vlines(sorted([gr_val_mean + float(j)*gr_val_stdev, gr_val_mean-j*gr_val_stdev] for j in xrange(n_v_lines)), numpy.ones(n_v_lines), max_h*.9*numpy.ones(n_v_lines), lw=1.5, alpha=.8, color='r')
-		plt.vlines([gr_val_mean + 4.*float(j-n_v_lines)*gr_val_stdev for j in xrange(2*n_v_lines)], .9*min([x for x in gr_hist[0] if x!=0]), max_h, lw=1.5, alpha=.8, color='r')
+		# now (optionally), get a gaussian fit (actually, gaussian fit to logarithms, so log-normal fit)
 		#
-		# now, get a gaussian fit. we can use this to strip away extraneous values...
-		# ... but this is not as straight forward as it looks; there's some log-scaling, then of course negative numbers, and
-		# generally the fit needs some coersion...
-		'''
-		#print "begin fitting to gauss model..."
-		#x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
-		x_hist, y_hist = [], []
-		for j,x in enumerate(bin_centers):
-			#
-			if gr_hist[0][j]>0:
-				y_hist += [gr_hist[0][j]]
-			else:
-				if len(y_hist)==0: continue
-				y_hist += [y_hist[-1]]
-			#
-			x_hist += [x]
-		
-		plt.figure(1)
-		plt.clf()
-		plt.plot(x_hist, y_hist, '-')
-		#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
-		#return x_hist, y_hist
-		#plt.figure(0)
-		
-		#gauss_p0 = [numpy.log10(max_h), 0., numpy.std(numpy.log10(gr_hist[0]))]
-		std_0 = numpy.std(y_hist)
-		gauss_p0 = [math.log10(max(y_hist)), 0., 10.*std_0]
-		#gauss_p0 = [1., 0., 1.]
+		if do_fit:
+			try:
+				print "begin (try()ing to) fitting to gauss model..."
+				bin_edges=gr_hist[1]		# contains the left edges + right edge of final entry.
+				bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+				#
+				x_hist, y_hist = zip(*[[x,math.log10(y)] for x,y in zip(bin_centers, gr_hist[0]) if y>0])
+				#
+				#plt.figure(fnum+1)
+				#plt.clf()
+				#plt.plot(x_hist, y_hist, '-')
+			
+				#for j in xrange(len(x_hist)): print "[%f, %f]" % (x_hist[j], y_hist[j])
+				#return x_hist, y_hist
+				#plt.figure(0)	
+				gauss_p0 = [math.log10(max(y_hist)), 0., 1.0]		# because we treat A like --> 10**log(a), for linearization., so note this is log(log(y))...
+				# now, guess sigma:
+				for j,y in enumerate(y_hist):
+					if y>.5*gauss_p0[0] and x_hist[j]!=gauss_p0[1]:
+						gauss_p0[2]=x_hist[j]
+						break
+				# maybe another guess here?
+				#
+				print "begin fit: A, mu, sigma = ", gauss_p0
+				coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
+				#
+				print "fit complete: A, mu, sigma = ", coeff, gauss_p0
+				#
+				x_hist_fit = numpy.arange(min(x_hist), max(x_hist), .5*(max(x_hist)-min(x_hist))/float(n_bins))
+				hist_fit = gauss_pdf(x_hist_fit, *coeff)		
+				#
+				# let's have a go at the original figure:
+				plt.figure(fnum)
+				plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: $A=%f$, $\\mu=%f$, $\\sigma=%f$' % (coeff[0], coeff[1], coeff[2]))
+				for jw in numpy.arange(1.,3.):
+					my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
+					print "Greens range for %d sigma (mu=%f): x=%s, log(y)=%s" % (int(jw), coeff[1], my_x, gauss_pdf(my_x, *coeff))
+					plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='$x_%d=[%f, %f]$' % (int(jw), my_x[0], my_x[1]))
+				#
+			except:
+				print "fitting attempt failed.: %s" % sys.exec_info()[0]
 		#
-		print "begin fit: A, mu, sigma = ", gauss_p0
-		#coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, numpy.array(bin_centers), numpy.array(gr_hist[0]), p0=gauss_p0)
-		coeff, var_matrix = scipy.optimize.curve_fit(gauss_pdf, x_hist, y_hist, p0=gauss_p0)
-		coeff[0]=10**coeff[0]
-		#
-
-		print "fit complete: A, mu, sigma = ", coeff, gauss_p0
-		#
-		#plt.figure(1)
-		#plt.clf()
-		hist_fit = gauss_pdf(numpy.array(x_hist), *coeff)
-		#hist_fit = [gauss_pdf(float(x), *coeff) for x in x_hist]
-		
-		#plt.plot(bin_centers, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
-		ax = plt.gca()
-		#ax.set_yscale('log')
-		plt.figure(2)
-		plt.clf()
-		ax=plt.gca()
-		ax.plot(x_hist, hist_fit, '-', lw=1.5, alpha=.7, label='gauss fit: A=%f, mu=%f, sigma=%f' % (coeff[0], coeff[1], coeff[2]))
-		'''
+		plt.legend(loc=0, numpoints=1)	
 		#
 		# return to original shape.
 		greens_ary.shape=sh_0
 		#
 		return gr_hist
-		#, x_hist, hist_fit
 #
 def gauss_fit_mc(y,x,nits=1000, A=1.0, mu=0.0, sigma=1.0, dy=0.0, dA=None, dmu=None, dsigma=None, ddy=None):
 	
@@ -249,6 +236,8 @@ def gauss_pdf(x, *p):
 #
 def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=0, n_bins=1000, top_n=.95, bottom_n=.95, **hist_kwargs):
 	#
+	# don't think this is working just yet. also, this should be handled carefully, since we probably don't want to repeatedly truncate a set of
+	# greens functions.
 	#
 	#n_bins = hist_kwargs.get('bins', n_bins)
 	hist_kwargs['bins'] = hist_kwargs.get('bins', n_bins)
@@ -388,4 +377,17 @@ def greens_consistency_check(greens_fname='model1_greens_3000.h5', shear_normal=
 	#del(X)
 	del(g_data)
 	return X
+
+def geom_stdev(X_in, r_type='dict'):
+	'''
+	# compute geometric stdev and mean. return either both or just stdev.
+	'''
+	#
+	mu_g = scipy.stats.mstats.gmean(X_in)
+	n=float(len(X_in))
+	sigma_g = numpy.exp(numpy.sqrt(numpy.sum(numpy.log(X_in)/mu_g)/n))
+	#
+	if r_type.lower()=='dict': return {'mu_g': mu_g, 'sigma_g':sigma_g}
+	if r_type.lower()=='list': return [mu_g, sigma_g]
+	if r_type.lower()==None: return sigma_g
 	
