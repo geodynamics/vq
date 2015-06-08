@@ -94,7 +94,7 @@ SimRequest BASSAftershocks::run(SimFramework *_sim) {
 unsigned int BASSAftershocks::generateAftershocks(Simulation *sim, EventAftershock seed) {
     EventAftershock       aftershock;
     quakelib::ElementIDSet::iterator  it;
-    float                   Ms, t, r, theta, seed_x, seed_y;
+    float                   Ms, t, r, theta, phi, seed_x, seed_y, seed_z;
     int                     selected_ind;
 
     Ms = seed.mag;
@@ -126,6 +126,7 @@ unsigned int BASSAftershocks::generateAftershocks(Simulation *sim, EventAftersho
         r = _d*powf(sim->randFloat(), -1.0/(_q-1.0)) - _d;
 
         theta = 2.0 * M_PI * sim->randFloat();
+        phi   = 2.0 * M_PI * sim->randFloat();
 
         // If we're generating daughter events from the initial seed, use a center point
         // randomly selected from along the entire set of ruptured blocks
@@ -135,13 +136,16 @@ unsigned int BASSAftershocks::generateAftershocks(Simulation *sim, EventAftersho
             advance(it, selected_ind);
             seed_x = sim->getBlock(*it).center()[0];
             seed_y = sim->getBlock(*it).center()[1];
+            seed_z = sim->getBlock(*it).center()[2];
         } else {
             seed_x = seed.x;
             seed_y = seed.y;
+            seed_z = seed.z;
         }
 
-        aftershock.x = seed_x + r*cos(theta);
-        aftershock.y = seed_y + r*sin(theta);
+        aftershock.x = seed_x + r*sin(theta)*cos(phi);
+        aftershock.y = seed_y + r*sin(theta)*sin(phi);
+        aftershock.z = seed_z + r*cos(theta);
 
         // Add the aftershock to our list
         events_to_process.push_back(aftershock);

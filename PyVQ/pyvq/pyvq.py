@@ -1652,7 +1652,7 @@ class Distributions:
         log_10 = np.log(10)
         if type.lower() == 'area':
             if min_mag is None: min_mag, max_mag = 4.8, 7.9
-            a = -3.49
+            a = -3.49 
             b =  0.91
         elif type.lower() == 'slip':
             if min_mag is None: min_mag, max_mag = 5.6, 8.1
@@ -1832,7 +1832,7 @@ if __name__ == "__main__":
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
 
     if args.min_year or args.max_year:
-        event_filters.append(YearFilter(min_mag=args.min_year, max_mag=args.max_year))
+        event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
