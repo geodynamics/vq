@@ -1041,8 +1041,13 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     // to that, we'll probably want to use Python/quakelib tools to modify a Greens output file directly and just load those values.
     //    
     // update code modified to use max/min thresholds for Greens values:
-    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
-    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+    //greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
+    //greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+    //
+    // yoder: ... and now, specify blockID values in max/min() to distinguish (off)diag greens elements.
+    //
+    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear, getGreenShearMax(r,c))));
+    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal, getGreenNormalMax(r,c))));
     
     // original update code:
     /*
@@ -1052,7 +1057,8 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     //
     //if (r == c) setSelfStresses(r, new_green_shear, new_green_normal);
     */
-    if (r == c) setSelfStresses(r, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())), std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+    //if (r == c) setSelfStresses(r, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())), std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
+    if (r == c) setSelfStresses(r, std::max(getGreenShearMin(r,c), std::min(new_green_shear, getGreenShearMax(r,c))), std::max(getGreenNormalMin(r,c), std::min(new_green_normal, getGreenNormalMax(r,c))));
 };
 
 // yoder:
