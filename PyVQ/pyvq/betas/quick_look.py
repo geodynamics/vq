@@ -78,8 +78,8 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		
 		ax.plot(T[1:], zip(*dts)[1], marker='.', ls='-', color='b', zorder=8, label='$dt(t)$')
 		ave_len = 100
-		print "plot mean intervals over %d events.(%d)" % (ave_len, len(figs))
-		ax.plot(T[ave_len-1:], [(t-T[j])/float(ave_len) for j,t in enumerate(T[ave_len-1:])], color = 'c', lw=2,zorder=11, label='$<dt(t)>_{%d}$' % ave_len) 
+		print "plot mean intervals over %d intervals(%d events).(%d)" % (ave_len, ave_len+1, len(figs))
+		ax.plot(T[ave_len:], [(t-T[j])/float(ave_len) for j,t in enumerate(T[ave_len:])], color = 'c', lw=2,zorder=11, label='$<dt(t)>_{%d}$' % ave_len) 
 		# set up dt range:
 		dts_sorted = sorted(zip(*dts)[1])
 		#
@@ -111,35 +111,26 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		plt.title('big-mag and intervals')
 		#
 		# interval distributions:
-		'''
-		print "... and interval distribuiton..."
-		figs+=[plt.figure(len(figs)+fnum_0)]
-		f=figs[-1]
-		f.clf()
-		ax=f.gca()
-		ax.set_yscale('log')
-		ax.set_xscale('log')
-		N=len(dts_sorted)
-		ax.plot(dts_sorted, [N-j for j,dt in enumerate(dts_sorted)], '.-')
-		plt.title('intervals distribuiton')
-		plt.xlabel('intervals $\Delta t$')
-		plt.ylabel('N(<dt)')
-		'''
-		
+		#
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		f=figs[-1]
 		f.clf()
 		ax=f.gca()
 		dolog=True
+		normed = False
 		X = numpy.log10(dts_sorted)
-		ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='stepfilled')
-		ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='step', cumulative=True)
+		ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='stepfilled', normed=normed)
+		h_cum = ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='step', cumulative=True, normed=normed)
+		N = float(len(X))
+		if normed: N=1.0
+		ax.plot([.5*(x+h_cum[1][j]) for j,x in enumerate(h_cum[1][1:])], [N-x for x in h_cum[0]], 'c-')
+		#ax.plot([x for j,x in enumerate(h_cum[1][:-1])], h_cum[0], 'c-')
 		plt.title('intervals distribuiton (hist)')
 		plt.xlabel('log intervals $\\log \left( \\Delta t \\right)$')
 		plt.ylabel('N(dt)')
 		
 		
-	return dts
+	return h_cum
 #
 #def plot_recurrence(
 class Sweep(object):
