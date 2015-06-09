@@ -56,6 +56,38 @@ MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b
 #-------------------------------------------------------------------------------
 def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
+    
+def calculate_averages(x,y,log_bin=False):
+    num_bins = math.floor(len(x)/100)
+    if num_bins < 20:
+        num_bins = 20
+    elif num_bins > 100:
+        num_bins = 100
+    x = np.array(x)
+    y = np.array(y)
+    if np.min(x) == 0:
+        bin_min = 1
+    else:
+        if log_bin: bin_min = math.floor(math.log(np.min(x),10))
+        else: bin_min = math.floor(np.min(x))
+    if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
+    else: bin_max = math.ceil(np.max(x))
+    if log_bin: bins = np.logspace(bin_min,bin_max,num=num_bins)
+    else: bins = np.linspace(bin_min,bin_max,num=num_bins)
+    inds = np.digitize(x, bins)
+    binned_data = {}
+    for n, i in enumerate(inds):
+        try:
+            binned_data[i].append(y[n])
+        except KeyError:
+            binned_data[i] = [y[n]]
+    x_ave = []
+    y_ave = []
+    for k in sorted(binned_data.keys()):
+        if k != 0:
+            x_ave.append(0.5*(bins[k-1]+bins[k]))
+            y_ave.append(sum(binned_data[k])/float(len(binned_data[k])))
+    return x_ave, y_ave
 
 class SaveFile:
     def event_plot(self, event_file, plot_type, min_mag):
@@ -92,6 +124,9 @@ class SaveFile:
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
+        
+    def stress_plot(self, event_file, plot_type):
+        return plot_type+"_stress_"+event_file.split(".")[0]+".png"
     
 
 class MagFilter:
@@ -267,6 +302,18 @@ class Events:
         evnums = self.get_ids_largest_events(num_events)
         self.event_summary(evnums)
     
+    def event_initial_shear_stresses(self):
+        return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events]
+
+    def event_final_shear_stresses(self):
+        return [self._events[evnum].getShearStressFinal() for evnum in self._filtered_events]        
+                        
+    def event_initial_normal_stresses(self):
+        return [self._events[evnum].getNormalStressInit() for evnum in self._filtered_events]
+
+    def event_final_normal_stresses(self):
+        return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events]  
+
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -1393,9 +1440,11 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data, color='g')
-        ax.plot(line_x, line_y, label = line_label, ls='--', c = 'k')
-        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        ax.legend(loc = "best")
+        if line_x is not None and line_y is not None:
+            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k')
+            ax.legend(loc = "best")
+        ax.get_xaxis().get_major_formatter().set_useOffset(False)
+        plt.ylim(-100,100)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -1501,6 +1550,27 @@ class StressHistoryPlot(BasePlotter):
         for element in elements:
             print(stress_histories[element])
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
+        
+class EventStressPlot(BasePlotter):
+    def plot_shear_stress_changes(self, events, filename):
+        shear_init = np.array(events.event_initial_shear_stresses())
+        shear_final = np.array(events.event_final_shear_stresses())
+        years = events.event_years()
+        plot_years = np.linspace(min(years),max(years),num=len(shear_init))
+        stress_changes = (shear_final-shear_init)/shear_init
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
+        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        
+    def plot_normal_stress_changes(self, events, filename):
+        normal_init = np.array(events.event_initial_normal_stresses())
+        normal_final = np.array(events.event_final_normal_stresses())
+        years = events.event_years()
+        plot_years = np.linspace(min(years),max(years),num=len(normal_init))
+        stress_changes = (normal_final-normal_init)/normal_init
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
+        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
@@ -1770,6 +1840,10 @@ if __name__ == "__main__":
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
+    parser.add_argument('--event_shear_stress', required=False, action='store_true',
+            help="Plot shear stress changes for events")
+    parser.add_argument('--event_normal_stress', required=False, action='store_true',
+            help="Plot normal stress changes for events")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -1942,6 +2016,12 @@ if __name__ == "__main__":
     if args.stress_elements:
 # TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
+    if args.event_shear_stress:
+        filename = SaveFile().stress_plot(args.event_file, "shear")
+        EventStressPlot().plot_shear_stress_changes(events, filename)
+    if args.event_normal_stress:
+        filename = SaveFile().stress_plot(args.event_file, "normal")
+        EventStressPlot().plot_normal_stress_changes(events, filename)
 
     # Validate data if requested
     err = False
