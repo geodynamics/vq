@@ -181,7 +181,11 @@ class VCParams {
         double getGreenNormalMin(void) const {
             return params.read<double>("sim.greens.normal_min");
         };
-        
+        // Kasey: new parameter for loading specified stress drops (False) or 
+        // computing them from Green's functions (True)
+        bool computeStressDrops(void) const {
+            return params.read<bool>("sim.friction.compute_stress_drops");
+        };
         
 };
 
