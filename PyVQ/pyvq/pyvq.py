@@ -1444,7 +1444,6 @@ class BasePlotter:
             ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k')
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
-        plt.ylim(-100,100)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
