@@ -74,10 +74,8 @@ namespace quakelib {
             double      _lame_mu;
             //! Lame lambda parameter (Pascals)
             double      _lame_lambda;
-            //! Static yield strength (Pascals)
-            double      _static_strength;
-            //! Dynamic sliding strength (Pascals)
-            double      _dynamic_strength;
+            //! Static yield strength, AKA stress drop (Pascals)
+            double      _stress_drop;
             //! Maximum slip distance of this element (meters)
             double      _max_slip;
 
@@ -194,6 +192,13 @@ namespace quakelib {
 
                 _max_slip = new_max_slip;
             }
+            
+            double stress_drop(void) const {
+                return _stress_drop;
+            };
+            void set_stress_drop(const float &stress_drop) {
+                _stress_drop = stress_drop;
+            };
 
             //! Clear all variables for this element.
             void clear(void) {
@@ -203,7 +208,7 @@ namespace quakelib {
                 _is_quad = false;
                 _rake = _slip_rate = _aseis_factor = std::numeric_limits<double>::quiet_NaN();
                 _lame_mu = _lame_lambda = std::numeric_limits<double>::quiet_NaN();
-                _static_strength = _dynamic_strength = _max_slip = std::numeric_limits<double>::quiet_NaN();
+                _stress_drop = _max_slip = std::numeric_limits<double>::quiet_NaN();
             };
 
             //! Returns the dip angle.
