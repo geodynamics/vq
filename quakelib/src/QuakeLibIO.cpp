@@ -250,6 +250,16 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+    
+    field_desc.name = "stress_drop";
+    field_desc.details = "Stress drop for this element, in Pascals.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(ElementData, _stress_drop);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+    
 }
 
 void quakelib::ModelElement::read_data(const ElementData &in_data) {
