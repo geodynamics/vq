@@ -1610,6 +1610,7 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     new_element.set_lame_mu(eit->second.lame_mu());
     new_element.set_lame_lambda(eit->second.lame_lambda());
     new_element.set_max_slip(eit->second.max_slip());
+    new_element.set_stress_drop(eit->second.stress_drop());
 
     return new_element;
 }
@@ -1712,8 +1713,13 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
         }
 
-        // Go through the created elements and assign maximum slip based on fault section area
+        // Go through the created elements and assign maximum slip based on fault section area.
+        // Also set the stress drop from the static strength.
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
+            // Static strengths are saved as positive values, stress_drop = -static_strength
+            // May need to include stress_drop = -(static_strength-dynamic_strength) in future
+            eit->set_stress_drop(-friction_data.get_static_strength(eit->id()));
+        
             // From Table 2A in Wells Coppersmith 1994
             double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
