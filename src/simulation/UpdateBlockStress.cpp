@@ -73,7 +73,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             
         } else {
             sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
-            sim->console() << "loaded stress_drop " << sim->getBlock(gid).stress_drop() << std::endl;
+            sim->console() << "loaded stress_drop:: ele: " << gid << " stress_drop: " << sim->getBlock(gid).stress_drop() << std::endl;
         }
 
         // Initialize element slips to equilibrium position, slip=0

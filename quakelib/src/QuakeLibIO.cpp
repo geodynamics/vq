@@ -286,6 +286,7 @@ void quakelib::ModelElement::read_ascii(std::istream &in_stream) {
     ss >> _data._lame_mu;
     ss >> _data._lame_lambda;
     ss >> _data._max_slip;
+    ss >> _data._stress_drop;
 }
 
 void quakelib::ModelElement::write_ascii(std::ostream &out_stream) const {
