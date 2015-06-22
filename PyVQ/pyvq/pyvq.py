@@ -321,9 +321,11 @@ class GreensPlotter:
                     loc       = quakelib.Vec3(self.XX[i][j], self.YY[i][j], 0.0)
                     self.field[i][j] = self.block.calc_displacement_vector(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)[2]
     
-    def plot_field(self, output_file, no_labels=False, cbar_loc='top', tick_font=12, frame_font=12, x_ticks=True):
+    def plot_field(self, output_file, no_labels=False, cbar_loc='top', tick_font=18, frame_font=18, x_ticks=True):
         ticklabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=tick_font)
         framelabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=frame_font)
+        # PAD 40 for 12pt font, 52 for 18pt
+        PAD = 52
         
         if self.field_type == 'gravity': cbar_lab = r'total gravity changes $[\mu gal]$'
         elif self.field_type == 'dilat_gravity': cbar_lab = r'dilat. gravity changes $[\mu gal]$'
@@ -356,7 +358,7 @@ class GreensPlotter:
             cbar_ax      = divider.append_axes("bottom", size="5%",pad=0.02)
         cb = mcolorbar.ColorbarBase(cbar_ax, cmap=self.cmap, norm=self.norm, orientation='horizontal')
         if not no_labels:
-            cbar_ax.set_xlabel(cbar_lab,labelpad=-40, fontproperties=framelabelfont)
+            cbar_ax.set_xlabel(cbar_lab,labelpad=-PAD, fontproperties=framelabelfont)
         if cbar_loc=='bottom':
             PAD = 2.5 
             TOP = False
@@ -368,9 +370,15 @@ class GreensPlotter:
         cbar_ax.tick_params(axis='x',labelbottom=BOTTOM,labeltop=TOP,
                         bottom='off',top='off',right='off',left='off',pad=PAD)
         if self.field_type == "gravity" or self.field_type == "dilat_gravity":
-            forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
-        else: 
-            forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+            if self.levels is not None:
+                forced_ticks = self.levels
+            else:
+                forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+        else:
+            if self.levels is not None:
+                forced_ticks = self.levels
+            else:
+                forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
         cb_tick_labs    = [str(num) for num in forced_ticks]
         cb_tick_labs[0] = '<'+cb_tick_labs[0]
         cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
@@ -1781,6 +1789,8 @@ if __name__ == "__main__":
     
     # ------------------------------------------------------------------------
     # Catch these errors before reading events to save unneeded computation
+    if float(args.uniform_slip) < 0: raise "Slip must be positive"
+    
     if args.field_plot:
         if args.model_file is None:
             raise "Must specify --model_file for field plots"
