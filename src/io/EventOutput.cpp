@@ -192,16 +192,18 @@ void EventOutput::finish(SimFramework *_sim) {
     // on the root node, so the h5/txt actions will occur only on the head node. in the event that we allow parallel writing,
     // we may need to be more careful about flushing output from chile nodes and closing only from the root node after the child nodes finish.
 #ifdef HDF5_FOUND
-	//
+
+    //
     if (data_file) {
-    	// should this only happen on the root node? is this only called by the root node?
-    	//printf("**Debug(%d/%d): Closing h5 data file.\n", sim->getNodeRank(), getpid());
+        // should this only happen on the root node? is this only called by the root node?
+        //printf("**Debug(%d/%d): Closing h5 data file.\n", sim->getNodeRank(), getpid());
         herr_t res = H5Fclose(data_file);
 
         if (res < 0) exit(-1);
     }
 
 #endif
+
     //
     if (sim->getEventOutfileType() == "text") {
         event_outfile.flush();
@@ -209,5 +211,6 @@ void EventOutput::finish(SimFramework *_sim) {
         sweep_outfile.flush();
         sweep_outfile.close();
     }
+
     //printf("**Debug(%d/%d): Finish EventOuput::finish().\n", sim->getNodeRank(), getpid());
 }

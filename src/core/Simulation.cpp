@@ -625,9 +625,10 @@ void Simulation::distributeUpdateField(void) {
     // Copy the local update field values to the send buffer
     for (i=0; i<numLocalBlocks(); ++i) {
         bid = updateFieldSendIDs[i];
-        updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];		// getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
-                                                                // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
+        updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];       // getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
+        // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
+
     // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?
     MPI_Allgatherv(updateFieldSendBuf,
                    numLocalBlocks(),
@@ -697,6 +698,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 
     // Count total, displacement of block IDs
     int total_blocks = 0;
+
     for (i=0; i<world_size; ++i) {
         proc_block_disps[i] = total_blocks;
         total_blocks += proc_block_count[i];
@@ -720,6 +722,7 @@ void Simulation::distributeBlocks(const quakelib::ElementIDSet &local_id_list, B
 #endif
     //
     n = 0;
+
     for (p=0; p<world_size; ++p) {
         for (i=0; i<proc_block_count[p]; ++i) {
             // global_id_list is a collection of pairs like <block_id, node_rank_id> .
@@ -1039,11 +1042,11 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     // looks like we place a condition on the values of {new_green_shear, new_green_normal}
     // it may also be desirable to distinguish between self-stress (diagonal elements) and off-diagonals. however, if it comes
     // to that, we'll probably want to use Python/quakelib tools to modify a Greens output file directly and just load those values.
-    //    
+    //
     // update code modified to use max/min thresholds for Greens values:
     greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(), std::min(new_green_shear, getGreenShearMax())));
     greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(), std::min(new_green_normal, getGreenNormalMax())));
-    
+
     // original update code:
     /*
     //greenShear()->setVal(getLocalInd(r), c, new_green_shear);
@@ -1057,6 +1060,6 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
 
 // yoder:
 void Simulation::debug_out(std::string str_in) {
-	// simple debug output code; print the inout string plus the process_id, node_rank.
-	printf("**Debug(%d/%d)[ev: %d]: %s", getNodeRank(), getpid(), getCurrentEvent().getEventNumber(), str_in.c_str());
+    // simple debug output code; print the inout string plus the process_id, node_rank.
+    printf("**Debug(%d/%d)[ev: %d]: %s", getNodeRank(), getpid(), getCurrentEvent().getEventNumber(), str_in.c_str());
 };

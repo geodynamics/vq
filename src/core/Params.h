@@ -171,7 +171,7 @@ class VCParams {
         // can we make a (set of) generic pramGetter(str.pram_name) function(s)? then, we can add params at will...
         double getGreenShearMax(void) const {
             return params.read<double>("sim.greens.shear_max");
-        };        
+        };
         double getGreenShearMin(void) const {
             return params.read<double>("sim.greens.shear_min");
         };
@@ -181,12 +181,12 @@ class VCParams {
         double getGreenNormalMin(void) const {
             return params.read<double>("sim.greens.normal_min");
         };
-        // Kasey: new parameter for loading specified stress drops (False) or 
+        // Kasey: new parameter for loading specified stress drops (False) or
         // computing them from Green's functions (True)
         bool computeStressDrops(void) const {
             return params.read<bool>("sim.friction.compute_stress_drops");
         };
-        
+
 };
 
 #endif

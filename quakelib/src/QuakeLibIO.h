@@ -286,7 +286,7 @@ namespace quakelib {
             void set_max_slip(const float &max_slip) {
                 _data._max_slip = max_slip;
             };
-            
+
             float stress_drop(void) const {
                 return _data._stress_drop;
             };

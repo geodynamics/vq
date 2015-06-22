@@ -250,7 +250,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
-    
+
     field_desc.name = "stress_drop";
     field_desc.details = "Stress drop for this element, in Pascals.";
 #ifdef HDF5_FOUND
@@ -259,7 +259,7 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
-    
+
 }
 
 void quakelib::ModelElement::read_data(const ElementData &in_data) {
@@ -1839,7 +1839,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     dx = max_xyz[0]-min_xyz[0];
     dy = max_xyz[1]-min_xyz[1];
     range = fmax(dx, dy) * (1.0/tan(c.deg2rad(30)));
-    
+
     // Kasey: Instead of using absolute value of depth and essentially
     // reflecting the faults across the surface z=0, find max depth
     // and raise the entire fault model by that amount so it looks right.

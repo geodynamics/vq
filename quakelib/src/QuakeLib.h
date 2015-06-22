@@ -192,7 +192,7 @@ namespace quakelib {
 
                 _max_slip = new_max_slip;
             }
-            
+
             double stress_drop(void) const {
                 return _stress_drop;
             };
@@ -313,14 +313,16 @@ namespace quakelib {
                 Vec<3> v, north;
                 north[1] = 1.0;
                 v = _vert[2]-_vert[0];
-                v[2] = 0.0; 
+                v[2] = 0.0;
                 double strike;
+
                 // Handle the case where strike has a westward component
                 if (v[0] < 0.0) {
                     strike = 2*M_PI - north.vector_angle(v);
                 } else {
                     strike = north.vector_angle(v);
                 }
+
                 return (strike);
             };
     };

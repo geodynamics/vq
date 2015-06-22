@@ -55,7 +55,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(gid, sim->getInitShearStress(gid));
         //printf("**Degbug(%d): normal[%d]\n", getpid(), gid);
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
-        
+
         // Set the stress drop based on the Greens function calculations
         if (sim->computeStressDrops()) {
             // TODO: Instead of dividing by the local slip rate as your normalization,
@@ -69,11 +69,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             }
 
             sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);
-            sim->console() << "computed stress_drop " << sim->getBlock(gid).max_slip()*stress_drop << std::endl;
-            
         } else {
             sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
-            sim->console() << "loaded stress_drop:: ele: " << gid << " stress_drop: " << sim->getBlock(gid).stress_drop() << std::endl;
         }
 
         // Initialize element slips to equilibrium position, slip=0
@@ -89,7 +86,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 #ifdef MPI_C_FOUND
 
     // Transfer stress drop values between nodes
-    // also broadcast the rhogd value. 
+    // also broadcast the rhogd value.
     // note that the array rhogd[] is a protected array, so we cannot access it directly (aka, using MPI_Reduce with a custom mpi funciton to
     // gather/add/whatever, but handle nan), but since this only runs once at the sim initialization, it's not a huge problem.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
@@ -102,10 +99,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             //
             tmp_rhogd = sim->getRhogd(gid);
         }
+
         //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+
         //
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
@@ -235,6 +234,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
+
     //
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;

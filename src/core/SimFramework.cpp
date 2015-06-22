@@ -319,6 +319,7 @@ void SimFramework::init(void) {
     // Do the dry run or normal initialization
     for (it=ordered_plugins.begin(); it!=ordered_plugins.end(); ++it) {
         cur_plugin = plugin_objs[*it];
+
         //
         if (dry_run) {
             cur_plugin->dryRun(this);

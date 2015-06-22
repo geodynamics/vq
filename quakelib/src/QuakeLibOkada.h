@@ -573,8 +573,8 @@ namespace quakelib {
             double Cv(double xi, double eta, double _q);
             double I0v(double _R, double eta, double _q);
             double I1v(double _R, double xi, double eta, double _q);
-            
-            
+
+
             //
             // dg test (dg2)
             // components
@@ -588,7 +588,7 @@ namespace quakelib {
             double I1h(double _R, double xi, double eta, double _q);
             double I4h(double _R, double xi, double eta, double _q);
             double I5h(double _R, double xi, double eta, double _q);
-            
+
     };
 }
 
