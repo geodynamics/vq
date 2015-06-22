@@ -250,6 +250,16 @@ void quakelib::ModelElement::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+    
+    field_desc.name = "stress_drop";
+    field_desc.details = "Stress drop for this element, in Pascals.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(ElementData, _stress_drop);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+    
 }
 
 void quakelib::ModelElement::read_data(const ElementData &in_data) {
@@ -292,7 +302,8 @@ void quakelib::ModelElement::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._rake << " ";
     out_stream << _data._lame_mu << " ";
     out_stream << _data._lame_lambda << " ";
-    out_stream << _data._max_slip;
+    out_stream << _data._max_slip << " ";
+    out_stream << _data._stress_drop;
 
     next_line(out_stream);
 }
@@ -1600,6 +1611,7 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     new_element.set_lame_mu(eit->second.lame_mu());
     new_element.set_lame_lambda(eit->second.lame_lambda());
     new_element.set_max_slip(eit->second.max_slip());
+    new_element.set_stress_drop(eit->second.stress_drop());
 
     return new_element;
 }
@@ -1686,6 +1698,9 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             quakelib::ModelElement   new_element;
             unsigned int             i;
 
+            // Kasey: Note, creating the elements one by one while reading each line enforces
+            // that the element id's match the index in the EQSim files. So that new_element.id()
+            // corresponds to the index (or EQSim element number) which is it->second.index()
             new_element = it->second.create_model_element();
             new_element.set_section_id(sit->second.sid());
 
@@ -1695,6 +1710,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             new_element.set_lame_mu(friction_data.get_lame_mu());
             new_element.set_max_slip(0);    // Set a temporary maximum slip of 0 (this will be changed below)
 
+            // Static strengths are saved as positive values, stress_drop = -static_strength
+            // May need to include stress_drop = -(static_strength-dynamic_strength) in future
+            new_element.set_stress_drop(-friction_data.get_static_strength(new_element.id()));
+
             // Insert partially finished element into the eqsim_world
             eqsim_world.insert(new_element);
 
@@ -1702,7 +1721,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
         }
 
-        // Go through the created elements and assign maximum slip based on fault section area
+        // Go through the created elements and assign maximum slip based on fault section area.
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
             // From Table 2A in Wells Coppersmith 1994
             double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));

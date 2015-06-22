@@ -193,6 +193,7 @@ namespace quakelib {
         float               _lame_mu;
         float               _lame_lambda;
         float               _max_slip;
+        float               _stress_drop;
     };
 
     class ModelElement : public ModelIO {
@@ -207,7 +208,7 @@ namespace quakelib {
 
                 _data._is_quad = false;
                 _data._slip_rate = _data._aseismic = _data._rake = std::numeric_limits<float>::quiet_NaN();
-                _data._lame_mu = _data._lame_lambda = _data._max_slip = std::numeric_limits<float>::quiet_NaN();
+                _data._lame_mu = _data._lame_lambda = _data._max_slip = _data._stress_drop = std::numeric_limits<float>::quiet_NaN();
             };
 
             ElementData data(void) const {
@@ -284,6 +285,13 @@ namespace quakelib {
             };
             void set_max_slip(const float &max_slip) {
                 _data._max_slip = max_slip;
+            };
+            
+            float stress_drop(void) const {
+                return _data._stress_drop;
+            };
+            void set_stress_drop(const float &stress_drop) {
+                _data._stress_drop = stress_drop;
             };
 
 #ifdef HDF5_FOUND

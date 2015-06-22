@@ -129,9 +129,12 @@ void VCComm::allReduceBlockVal(BlockVal &in_val, BlockVal &out_val, const BlockV
  Returns the number of nodes with blocks to fail.
  */
 int VCComm::blocksToFail(const bool &local_fail) {
-    int     global_fail, my_fail;
+    //int     global_fail, my_fail;
+    // yoder: initialize these, in case we're getting some weird latent memory garbage problem.
+    int global_fail = 0;
+    int my_fail = local_fail;
 
-    my_fail = local_fail;
+    //my_fail = local_fail;
 #ifdef MPI_C_FOUND
 #ifdef DEBUG
     startTimer(fail_comm_timer);
