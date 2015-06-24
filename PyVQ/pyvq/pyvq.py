@@ -125,8 +125,8 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def stress_plot(self, event_file, plot_type):
-        return plot_type+"_stress_"+event_file.split(".")[0]+".png"
+    def diagnostic_plot(self, event_file, plot_type):
+        return plot_type+"_diagnostic_"+event_file.split(".")[0]+".png"
     
 
 class MagFilter:
@@ -313,6 +313,9 @@ class Events:
 
     def event_final_normal_stresses(self):
         return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events]  
+        
+    def number_of_sweeps(self):
+        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events] 
 
         
 class GreensPlotter:
@@ -1558,26 +1561,31 @@ class StressHistoryPlot(BasePlotter):
             print(stress_histories[element])
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
         
-class EventStressPlot(BasePlotter):
+class DiagnosticPlot(BasePlotter):
     def plot_shear_stress_changes(self, events, filename):
         shear_init = np.array(events.event_initial_shear_stresses())
         shear_final = np.array(events.event_final_shear_stresses())
         years = events.event_years()
-        plot_years = np.linspace(min(years),max(years),num=len(shear_init))
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
-        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False)
+        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
         normal_final = np.array(events.event_final_normal_stresses())
         years = events.event_years()
-        plot_years = np.linspace(min(years),max(years),num=len(normal_init))
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
-        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False)
+        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        
+    def plot_number_of_sweeps(self, events, filename):
+        num_sweeps = np.array(events.number_of_sweeps())
+        years = events.event_years()
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False)
+        self.scatter_and_line(False, years, num_sweeps, x_ave, y_ave, "binned average", "Number of event sweeps", "simulation time [years]", " ", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
@@ -1847,10 +1855,16 @@ if __name__ == "__main__":
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
+            
+    # Diagnostic plots
+    parser.add_argument('--num_sweeps', required=False, action='store_true',
+            help="Plot the number of sweeps for events")
     parser.add_argument('--event_shear_stress', required=False, action='store_true',
             help="Plot shear stress changes for events")
     parser.add_argument('--event_normal_stress', required=False, action='store_true',
             help="Plot normal stress changes for events")
+    parser.add_argument('--diagnostics', required=False, action='store_true',
+            help="Plot all diagnostic plots")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -1862,7 +1876,8 @@ if __name__ == "__main__":
     
     # ------------------------------------------------------------------------
     # Catch these errors before reading events to save unneeded computation
-    if float(args.uniform_slip) < 0: raise "Slip must be positive"
+    if args.uniform_slip:
+        if float(args.uniform_slip) < 0: raise "Slip must be positive"
     
     if args.field_plot:
         if args.model_file is None:
@@ -2025,12 +2040,21 @@ if __name__ == "__main__":
     if args.stress_elements:
 # TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
+        
+    # Generate the diagnostic plots
+    if args.diagnostics:
+        args.num_sweeps = True
+        args.event_shear_stress = True
+        args.event_normal_stress = True
+    if args.num_sweeps:
+        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
+        DiagnosticPlot().plot_number_of_sweeps(events, filename)
     if args.event_shear_stress:
-        filename = SaveFile().stress_plot(args.event_file, "shear")
-        EventStressPlot().plot_shear_stress_changes(events, filename)
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress")
+        DiagnosticPlot().plot_shear_stress_changes(events, filename)
     if args.event_normal_stress:
-        filename = SaveFile().stress_plot(args.event_file, "normal")
-        EventStressPlot().plot_normal_stress_changes(events, filename)
+        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress")
+        DiagnosticPlot().plot_normal_stress_changes(events, filename)
 
     # Validate data if requested
     err = False
