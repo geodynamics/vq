@@ -13,7 +13,7 @@ events_2 = 'ca_model_hattonsenvy_105yrs_3km/events_3000.hdf5'
 
 def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end=None, m0=7.0):
 	# make some quick figures for preliminary analysis.
-	with h5py.File(vc_data_file) as vc_data:
+	with h5py.File(vc_data_file, 'r') as vc_data:
 		#
 		events = vc_data['events']
 		#
@@ -57,6 +57,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		plt.title('Magnitudes')
 		#
 		# magnitudes PDF only.
+		'''
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		f=figs[-1]
 		f.clf()
@@ -64,6 +65,7 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		dolog=True
 		ax.hist(mags,bins=200, range=[min(mags), max(mags)], log=dolog)
 		plt.title('Magnitudes (pdf)')
+		'''
 		#
 		# intervals, magnitudes time series:
 		figs+=[plt.figure(len(figs)+fnum_0)]
@@ -73,18 +75,21 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		ldT = numpy.log10(zip(*dts)[1])
 		ax.set_yscale('log')
 		#ax.plot(T[1:], ldT, marker='.', ls='-', color='b', label='dt(t)')
-		ax.plot(T[1:], zip(*dts)[1], marker='.', ls='-', color='b', label='dt(t)')
+		
+		ax.plot(T[1:], zip(*dts)[1], marker='.', ls='-', color='b', zorder=8, label='$dt(t)$')
+		ave_len = 100
+		print "plot mean intervals over %d intervals(%d events).(%d)" % (ave_len, ave_len+1, len(figs))
+		ax.plot(T[ave_len:], [(t-T[j])/float(ave_len) for j,t in enumerate(T[ave_len:])], color = 'c', lw=2,zorder=11, label='$<dt(t)>_{%d}$' % ave_len) 
 		# set up dt range:
 		dts_sorted = sorted(zip(*dts)[1])
-		#dt_max = 1.1*dts_sorted[int(.9995*len(dts_sorted))]
-		#dt_max = dts_sorted[-4]
+		#
 		#print "dt_max at: %f (%d)" % (dt_max, int(.9*len(dts_sorted)))
 		ax.set_ylim(.9*min(zip(*dts)[1]), 1.1*max(zip(*dts)[1]))
 		ax.set_ylabel('Intervals $\\Delta t$')
 		#ax.draw()
 		ax_mags = ax.twinx()
 		#ax.vlines(*(zip(*big_mags)),[3.0 for x in big_mags], color='r')
-		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=2, zorder=2, label='m>%.2f' % m0)
+		ax_mags.vlines(*(zip(*big_mags)), ymax=[3.0 for x in big_mags], color='r', lw=1.25, zorder=2, label='m>%.2f' % m0)
 		ax_mags.vlines(T,[3.0 for m in mags], events['event_magnitude'], color='g', zorder=3, label='magnitudes')
 		ax_mags.set_ylim(2.0, 9.5)
 		ax_mags.set_ylabel('magnitude')
@@ -106,32 +111,26 @@ def quick_figs(vc_data_file=default_events, fnum_0=0, events_start=0, events_end
 		plt.title('big-mag and intervals')
 		#
 		# interval distributions:
-		print "... and interval distribuiton..."
-		figs+=[plt.figure(len(figs)+fnum_0)]
-		f=figs[-1]
-		f.clf()
-		ax=f.gca()
-		ax.set_yscale('log')
-		ax.set_xscale('log')
-		N=len(dts_sorted)
-		ax.plot(dts_sorted, [N-j for j,dt in enumerate(dts_sorted)], '.-')
-		plt.title('intervals distribuiton')
-		plt.xlabel('intervals $\Delta t$')
-		plt.ylabel('N(<dt)')
-		
+		#
 		figs+=[plt.figure(len(figs)+fnum_0)]
 		f=figs[-1]
 		f.clf()
 		ax=f.gca()
 		dolog=True
+		normed = False
 		X = numpy.log10(dts_sorted)
-		ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='stepfilled')
+		ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='stepfilled', normed=normed)
+		h_cum = ax.hist(X, bins=200, range=[min(X), max(X)], log=dolog, histtype='step', cumulative=True, normed=normed)
+		N = float(len(X))
+		if normed: N=1.0
+		ax.plot([.5*(x+h_cum[1][j]) for j,x in enumerate(h_cum[1][1:])], [N-x for x in h_cum[0]], 'c-')
+		#ax.plot([x for j,x in enumerate(h_cum[1][:-1])], h_cum[0], 'c-')
 		plt.title('intervals distribuiton (hist)')
 		plt.xlabel('log intervals $\\log \left( \\Delta t \\right)$')
 		plt.ylabel('N(dt)')
 		
 		
-	return dts
+	return h_cum
 #
 #def plot_recurrence(
 class Sweep(object):
@@ -149,7 +148,7 @@ class Sweep(object):
 		#if block_ids==None: block_ids=self.block_ids.keys()
 		#if isinstance(block_ids, float): block_ids=[int(block_ids)]
 		#if isinstance(block_ids, int): block_ids = [block_ids]
-		block_ids = self.check_block_ids_list(block_ids)
+		if block_ids==None: block_ids = self.check_block_ids_list(block_ids)
 		#
 		plt.figure(fignum)
 		plt.clf()
@@ -180,7 +179,7 @@ class Sweep(object):
 	def plot_stress(self, block_ids=None, fignum=0):
 		block_ids = self.check_block_ids_list(block_ids)
 		#
-		plt.figure(fignum+1)
+		plt.figure(fignum)
 		ax1=plt.gca()
 		plt.clf()
 		plt.figure(fignum)

@@ -18,6 +18,8 @@ import itertools
 import scipy.optimize
 from scipy.stats import norm
 
+import sys
+
 
 class PyGreens(object):
 	# class to manage, analyze, modify greent functions. might eventually try to code this up as a quakelib class.
@@ -39,6 +41,9 @@ class PyGreens(object):
 		#
 		self.ary_shear  = None
 		self.ary_normal = None
+		#
+		if not isinstance(greens_fname, str): return None
+		if not os.path.isfile(greens_fname): return None
 		#
 		if do_shear:  self.ary_shear  = get_h5_greens_array(greens_fname=greens_fname, shear_normal='shear')
 		if do_normal: self.ary_normal = get_h5_greens_array(greens_fname=greens_fname, shear_normal='normal')
@@ -100,7 +105,7 @@ class PyGreens(object):
 		return self.plot_greens_hist(shear_normal='normal', greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
 	def plot_shear_hist(self, greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
 		return self.plot_greens_hist(shear_normal='shear', greens_ary=greens_ary, fnum=fnum, do_clf=do_clf, n_bins=n_bins, **hist_kwargs)
-
+	
 	def plot_greens_hist(self, shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, do_fit=False, **hist_kwargs):
 		'''
 		# plot_greens_hist: plot a histogram of greens funciton values. besides giving a histogram, as oppposed to a cumulative type dist.,
@@ -115,6 +120,8 @@ class PyGreens(object):
 			print "shear_normal (translated): ", shear_normal
 			if shear_normal=='greens_shear':  greens_ary = self.get_shear()
 			if shear_normal=='greens_normal': greens_ary = self.get_normal()
+		#
+		greens_ary = numpy.array(greens_ary)
 		#
 		#n_bins = hist_kwargs.get('bins', n_bins)
 		hist_kwargs['bins'] = hist_kwargs.get('bins', n_bins)
@@ -182,13 +189,17 @@ class PyGreens(object):
 				# let's have a go at the original figure:
 				plt.figure(fnum)
 				plt.plot(x_hist_fit, numpy.power(10., hist_fit), 'r-', lw=1.5, alpha=.7, label='gauss fit: $A=%f$, $\\mu=%f$, $\\sigma=%f$' % (coeff[0], coeff[1], coeff[2]))
-				for jw in numpy.arange(1.,3.):
+				#for jw in numpy.arange(1.,3.):
+				for jw in [1., 2., 2.5, 3.]:
 					my_x = numpy.array([coeff[1]-jw*coeff[2], coeff[1]+jw*coeff[2]])
 					print "Greens range for %d sigma (mu=%f): x=%s, log(y)=%s" % (int(jw), coeff[1], my_x, gauss_pdf(my_x, *coeff))
 					plt.plot(my_x, numpy.power(10., gauss_pdf(my_x, *coeff)), 'r.--', label='$x_%d=[%f, %f]$' % (int(jw), my_x[0], my_x[1]))
 				#
 			except:
-				print "fitting attempt failed.: %s" % sys.exec_info()[0]
+				try:
+					print "fitting attempt failed.: %s" % sys.exec_info()[0]
+				except:
+					print "fitting attempt failed for an un-printed reason."
 		#
 		plt.legend(loc=0, numpoints=1)	
 		#
@@ -297,6 +308,35 @@ def cap_greens(greens_fname='model1_greens_3000.h5', shear_normal='shear', fnum=
 ##########################
 # Module level functions (helper functions, scripts, etc.)
 #######
+
+def plot_greens_hists(greens_fname='model1_greens_3000.h5', shear_normal='shear', greens_ary=None, fnum=0, do_clf=True,  **hist_kwargs):
+	# plot greens hists for diag and off-diag separately (but together). these files can be big, so try to do this in a memory footprint sensitive way.
+	# first, get greens object. then go ahead and plot the hist.
+	#str_shr_norm = shear_normal_aliases(shear_normal=shear_normal)
+	#print "plot hist for %s array" % str_shr_norm
+	#
+	# we need to handle this semi-manually, for memory management:
+	shear_normal = shear_normal_aliases(shear_normal=shear_normal)
+	diags = []
+	offdiags = []
+	obj_gr = PyGreens(greens_fname=None)
+	
+	with h5py.File(greens_fname, 'r') as f:
+		#diags = numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j==k])
+		#offdiags = numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j!=k])
+		n_bins = 1 + len(f[shear_normal][0])/50
+		gr_hist_diag = obj_gr.plot_greens_hist(shear_normal=None, greens_ary=numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j==k]), fnum=fnum, do_clf=do_clf, n_bins=n_bins, do_fit=False, **hist_kwargs)
+	#
+	print "plot diagonal greens elements:"
+	#gr_hist_diag = obj_gr.plot_greens_hist(shear_normal=None, greens_ary=diags, fnum=fnum, do_clf=True, n_bins=1+len(diags)/50, do_fit=False, **hist_kwargs)
+	#
+	print "plot and fit off-diagonal elements:"
+	with h5py.File(greens_fname, 'r') as f:
+		#diags = numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j==k])
+		#offdiags = numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j!=k])
+		#
+		n_bins = 1 + len(f[shear_normal][0])
+		gr_hist_offdiag = obj_gr.plot_greens_hist(shear_normal=None, greens_ary=numpy.array([x for k,rw in enumerate(f[shear_normal]) for j,x in enumerate(rw) if j!=k]), fnum=fnum, do_clf=False, n_bins=n_bins, do_fit=True, **hist_kwargs)
 
 def plot_greens_hist(greens_fname='model1_greens_3000.h5', shear_normal='shear', greens_ary=None, fnum=0, do_clf=True, n_bins=1000, **hist_kwargs):
 	str_shr_norm = shear_normal_aliases(shear_normal=shear_normal)
