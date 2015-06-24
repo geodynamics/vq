@@ -1585,7 +1585,14 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False)
-        self.scatter_and_line(False, years, num_sweeps, x_ave, y_ave, "binned average", "Number of event sweeps", "simulation time [years]", " ", filename)
+        self.scatter_and_line(False, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        
+    def plot_mean_slip(self, events, filename):
+        slips = np.array(events.event_mean_slip())
+        years = events.event_years()
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(years,slips,log_bin=False)
+        self.scatter_and_line(False, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
@@ -1857,14 +1864,16 @@ if __name__ == "__main__":
             help="List of elements to plot stress history for.")
             
     # Diagnostic plots
+    parser.add_argument('--diagnostics', required=False, action='store_true',
+            help="Plot all diagnostic plots")
     parser.add_argument('--num_sweeps', required=False, action='store_true',
             help="Plot the number of sweeps for events")
     parser.add_argument('--event_shear_stress', required=False, action='store_true',
             help="Plot shear stress changes for events")
     parser.add_argument('--event_normal_stress', required=False, action='store_true',
             help="Plot normal stress changes for events")
-    parser.add_argument('--diagnostics', required=False, action='store_true',
-            help="Plot all diagnostic plots")
+    parser.add_argument('--event_mean_slip', required=False, action='store_true',
+            help="Plot the mean slip for events")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -2046,6 +2055,7 @@ if __name__ == "__main__":
         args.num_sweeps = True
         args.event_shear_stress = True
         args.event_normal_stress = True
+        args.event_mean_slip = True
     if args.num_sweeps:
         filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
         DiagnosticPlot().plot_number_of_sweeps(events, filename)
@@ -2055,6 +2065,9 @@ if __name__ == "__main__":
     if args.event_normal_stress:
         filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress")
         DiagnosticPlot().plot_normal_stress_changes(events, filename)
+    if args.event_mean_slip:
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip")
+        DiagnosticPlot().plot_mean_slip(events, filename)
 
     # Validate data if requested
     err = False
