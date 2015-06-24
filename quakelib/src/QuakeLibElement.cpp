@@ -248,7 +248,7 @@ quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points,
 
         xp3 = involved_elements[ele_id].implicit_vert()[0];
         yp3 = involved_elements[ele_id].implicit_vert()[1];
-        
+
         /*
         std::cout << "v1: <" << involved_elements[ele_id].vert(0)[0] << ", " << involved_elements[ele_id].vert(0)[1] << ", " << involved_elements[ele_id].vert(0)[2] << ">" << std::endl;
         std::cout << "v2: <" << involved_elements[ele_id].vert(1)[0] << ", " << involved_elements[ele_id].vert(1)[1] << ", " << involved_elements[ele_id].vert(1)[2] << ">" << std::endl;

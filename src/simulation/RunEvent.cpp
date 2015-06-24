@@ -118,13 +118,13 @@ void solve_it(int n, double *x, double *A, double *b) {
 }
 
 void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps) {
-	// yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
-	// logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
-	// 1) first, distribute the A,B arrays (an array and a vector) between the nodes.
-	// 2) then, multiply, etc.
-	// 3) then redistribute the result back to the various nodes.
-	// basically move the second part of the isRoot() (don't recall how the not isRoot() block looks) outside the send/recv block.
-	//
+    // yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
+    // logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
+    // 1) first, distribute the A,B arrays (an array and a vector) between the nodes.
+    // 2) then, multiply, etc.
+    // 3) then redistribute the result back to the various nodes.
+    // basically move the second part of the isRoot() (don't recall how the not isRoot() block looks) outside the send/recv block.
+    //
     int             lid;
     BlockID         gid;
     unsigned int    i, n;
@@ -137,7 +137,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         //for (quakelib::ModelSweeps::iterator s_it=sweeps.begin(); s_it!=sweeps.end(); ++s_it) {
-        // would a faster way to do this step be to look through the current event_sweeps list? 
+        // would a faster way to do this step be to look through the current event_sweeps list?
         //yes, but we're assuming that "original failure" has been processed,
         // which i think is a pretty safe bet. BUT, let's leave the original looping code in comment, to facilitate an easy recovery if this is a mistake.
         // another possible concern is keepting track of local/global blocks. for now, let's leave this alone. it is a (relatively) small matter of optimization.
@@ -156,7 +156,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //
     // use: global/local_secondary_id_list;
     // Figure out how many failures there were over all processors
-    //sim->distributeBlocks(local_id_list, global_id_list); 
+    //sim->distributeBlocks(local_id_list, global_id_list);
     // can this somehow distribute a block to global_failed_elements twice? (multiple copies of same value?)
     //sim->barrier();
     // yoder (note): after we distributeBlocks(), we can check to see that all items in local_ exist in global_ exactly once.
@@ -173,6 +173,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     double *A = new double[num_local_failed*num_global_failed];
     double *b = new double[num_local_failed];
     double *x = new double[num_local_failed];
+
     //
     // stress transfer (greens functions) between each local element and all global elements.
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
@@ -186,6 +187,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
         b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
     }
+
     //
     // heisenbug/heisen_hang likely candidate...
     //sim->barrier();     // yoder: (debug)
@@ -193,45 +195,45 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
     //
-/*
-#ifdef MPI_C_FOUND    
-    // yoder (debug):
-    // (but this does not appear to be the problem; this exception is not being thrown, and we're still getting heisen_hang).
-    // before we start our loops, let's see that we're all on the same event (and?) sweep.
-    // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
-    // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
-    // use sim->getWorldSize() to get worldsize.
-    int n_procs = sim->getWorldSize();
-    int process_event_ids[n_procs];
-    int process_sweep_ids[n_procs];
-    int this_event_id = sim->getCurrentEvent().getEventNumber();
-    int this_sweep_id = sweep_num;		// declared on the RunEvent class level. we don't really need to copy it.
-    // to test on all processes:
-    //MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
-    //MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
-    // to test on only root_node:
-    MPI_Gather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Gather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    //
-    if (sim->getNodeRank()==0) {
-        // and nominally, this test could also be if (sim->isRootNode() ), but really, any node can be "root" for the purposes of "gather", so we should be specific.
-        // it might be slick to assign events and sweeps to different nodes, but hopefully we'll be removing this bit eventually.
-        // now, see that all event,sweep values are the same:
-        //printf("**Debug(%d/%d/%d):: event_ids: ", sim->getNodeRank(), getpid(), n_procs);
-        for (int j=0; j<n_procs;++j) {
-    	    //
-    	    //printf("(%d/%d), ", process_event_ids[0], process_event_ids[j]);
-    	    assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
-    	    };
-    	    //printf("\n");
-        for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
-    };
-    // and everybody waits until we've evaluated this.
-    //
-#endif
-*/
+    /*
+    #ifdef MPI_C_FOUND
+        // yoder (debug):
+        // (but this does not appear to be the problem; this exception is not being thrown, and we're still getting heisen_hang).
+        // before we start our loops, let's see that we're all on the same event (and?) sweep.
+        // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
+        // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
+        // use sim->getWorldSize() to get worldsize.
+        int n_procs = sim->getWorldSize();
+        int process_event_ids[n_procs];
+        int process_sweep_ids[n_procs];
+        int this_event_id = sim->getCurrentEvent().getEventNumber();
+        int this_sweep_id = sweep_num;      // declared on the RunEvent class level. we don't really need to copy it.
+        // to test on all processes:
+        //MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
+        //MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
+        // to test on only root_node:
+        MPI_Gather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Gather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        //
+        if (sim->getNodeRank()==0) {
+            // and nominally, this test could also be if (sim->isRootNode() ), but really, any node can be "root" for the purposes of "gather", so we should be specific.
+            // it might be slick to assign events and sweeps to different nodes, but hopefully we'll be removing this bit eventually.
+            // now, see that all event,sweep values are the same:
+            //printf("**Debug(%d/%d/%d):: event_ids: ", sim->getNodeRank(), getpid(), n_procs);
+            for (int j=0; j<n_procs;++j) {
+                //
+                //printf("(%d/%d), ", process_event_ids[0], process_event_ids[j]);
+                assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
+                };
+                //printf("\n");
+            for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
+        };
+        // and everybody waits until we've evaluated this.
+        //
+    #endif
+    */
 
-    ///////////// 
+    /////////////
     //
     if (sim->isRootNode()) {
         double *fullA = new double[num_global_failed*num_global_failed];
@@ -241,7 +243,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // Fill in the A matrix and b vector from the various processes
         // note: for an empty global_id_list, this list will do nothing, so MPI_Recv() will not execute, and we'll probably end up with a hanging MPI_Send().
         //       can that ever happen? global_secondary_id_list is empty on one node but not on another? maybe between iterations?
-        //sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==False set.
+        //sim->barrier();       //yoder: (debug)        note: this (and the other one too... sim->barrier() is paried with an ifRoot==False set.
         //
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
@@ -272,22 +274,22 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         solve_it(num_global_failed, fullx, fullA, fullb);
         //
         // root node regroups (barrier() ), then does its sending bit:
-        //sim->barrier();		//yoder: (debug)
+        //sim->barrier();       //yoder: (debug)
 
-/*
-        // Debug:
-#ifdef MPI_C_FOUND
-        // how many elements do we expect to send back to processes?
-        //int id_counts[sim->getWorldSize()];
-        int id_counts[n_procs];
-        for (int j=0; j<n_procs; ++j) id_counts[j]=0;	// noting that we initilize our own count,j=0, which we won't use.
-        for (jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt) ++id_counts[jt->second];
-        for (int w=1; w<sim->getWorldSize();++w) {
-        	MPI_Send(&(id_counts[w]), 1, MPI_INT, w, 0, MPI_COMM_WORLD);
-        	}
-#endif
-        // END DEBUG
-*/        
+        /*
+                // Debug:
+        #ifdef MPI_C_FOUND
+                // how many elements do we expect to send back to processes?
+                //int id_counts[sim->getWorldSize()];
+                int id_counts[n_procs];
+                for (int j=0; j<n_procs; ++j) id_counts[j]=0;   // noting that we initilize our own count,j=0, which we won't use.
+                for (jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt) ++id_counts[jt->second];
+                for (int w=1; w<sim->getWorldSize();++w) {
+                    MPI_Send(&(id_counts[w]), 1, MPI_INT, w, 0, MPI_COMM_WORLD);
+                    }
+        #endif
+                // END DEBUG
+        */
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
@@ -307,6 +309,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 n++;
             }
         }
+
         //
         // Delete the memory arrays created (use delete [] for arrays)
         delete [] fullx;
@@ -318,7 +321,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // send these values to root (rank 0) node:
         // ... and note that if there are no local failures, these MPI_Send() commands will not execute. do we end up with a hanging send/receive pair?
         // Child Nodes do their sending bit:
-        //sim->barrier();		//yoder: (debug)		note: this (and the other one too... sim->barrier() is paried with an ifRoot==True set.
+        //sim->barrier();       //yoder: (debug)        note: this (and the other one too... sim->barrier() is paried with an ifRoot==True set.
         for (i=0; i<num_local_failed; ++i) {
             //printf("**Debug[%d/%d]: A[],b MPI_Send child-node blocking...\n", sim->getNodeRank(), getpid());
             // yoder: try using synchronous MPI_Ssend()
@@ -327,33 +330,34 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             MPI_Ssend(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Ssend(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
+
         //
         // regroup (barrier()), then child nodes do their receiving bit:
-        //sim->barrier();		//yoder: (debug)
+        //sim->barrier();       //yoder: (debug)
         // fetch x[i] from root (rank 0) node:
-      	// yoder (debugging):
-      	// check to see that the local ids exist in the global ids:
-      	
-      	/*
-      	// Debugging:
-      	//bool loc_glob_ok = true;
-      	// start with the count. how many entries does the root_node expect to send?
-      	int expected_recv_count = 0;
-      	MPI_Recv(&expected_recv_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      	if (expected_recv_count!=num_local_failed) {
-      		printf("**ERROR(%d/%d): expected recv_count does not match root node: %d/%d\n", sim->getNodeRank(), getpid(), expected_recv_count, num_local_failed);
-      		assertThrow(0, "send/receive count does not match in secondary blocks.\n");
-      		};
-      	////
-      	*/
-      	
-      	//
+        // yoder (debugging):
+        // check to see that the local ids exist in the global ids:
+
+        /*
+        // Debugging:
+        //bool loc_glob_ok = true;
+        // start with the count. how many entries does the root_node expect to send?
+        int expected_recv_count = 0;
+        MPI_Recv(&expected_recv_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if (expected_recv_count!=num_local_failed) {
+            printf("**ERROR(%d/%d): expected recv_count does not match root node: %d/%d\n", sim->getNodeRank(), getpid(), expected_recv_count, num_local_failed);
+            assertThrow(0, "send/receive count does not match in secondary blocks.\n");
+            };
+        ////
+        */
+
+        //
         for (i=0; i<num_local_failed; ++i) {
-        	// yoder: (debug) this is, apparently, where heisen_hang happens.
-        	//    has apparently moved on; it looks like having finished the secondary loop.
-        	//    so it seems likely that the problem is that one or more secondary blocks ends up on multiple processors, but is listed only once in the globals (??)
-        	//    so let's try to verify that our list of local_failed blocks is compatible with the root list of gloabal_failed. we might, yet, end up just
-        	//    rewriting this section with MPI_Gatherv()...
+            // yoder: (debug) this is, apparently, where heisen_hang happens.
+            //    has apparently moved on; it looks like having finished the secondary loop.
+            //    so it seems likely that the problem is that one or more secondary blocks ends up on multiple processors, but is listed only once in the globals (??)
+            //    so let's try to verify that our list of local_failed blocks is compatible with the root list of gloabal_failed. we might, yet, end up just
+            //    rewriting this section with MPI_Gatherv()...
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         }
@@ -423,20 +427,23 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
+
     //
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         loose_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
+
     //
     // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present),
-    // ... but since it's only the one "all-hands" call, it is not a likely candidate for heisen_hang.  
-    // also note that blocksToFail() involves some bool/int conversions that might warrant further inspection and clarification.  
+    // ... but since it's only the one "all-hands" call, it is not a likely candidate for heisen_hang.
+    // also note that blocksToFail() involves some bool/int conversions that might warrant further inspection and clarification.
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
     //
     // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
     unsigned int event_sweeps_pos = 0;
+
     //
     // While there are still failed blocks to handle
     //sim->barrier();
@@ -447,10 +454,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         //sim->barrier();    // yoder: (debug)   (we're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
-                           // so let's try it with this in place...
+        // so let's try it with this in place...
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         //sim->barrier(); // yoder: (debug)
-        //  
+        //
         // Process the blocks that failed.
         // note: setInitStresses() called in processBlocksOrigFail().
         // note: processBlocksOrigFail() is entirely local (no MPI).
@@ -522,12 +529,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
         }
+
         //
         //
-        // could we be getting MPI conflicts here? if one process is trying to distribute original failures (using update_field), and another process is already 
+        // could we be getting MPI conflicts here? if one process is trying to distribute original failures (using update_field), and another process is already
         // trying to distribute secondary failures, this could (???) cause a conflict and hang???
         // let's try an MPI_Barrier here (i think we've got this wrapped up in an ifmpi block somewhere...):
-        // 
+        //
         //sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
         //sim->barrier();    // yoder: (debug)
@@ -537,6 +545,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
                                        true);
+
         //
         if (sim->doNormalStress()) {
             sim->matrixVectorMultiplyAccum(sim->getNormalStressPtr(),
@@ -544,11 +553,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                                            sim->getUpdateFieldPtr(),
                                            true);
         }
+
         //
         sim->computeCFFs();
         //
         // Record the final stresses of blocks that failed during this sweep
         BlockIDProcMapping::iterator        fit;
+
         //
         // yoder: there are a  couple ways to see that we loop over all the necessary elements. here's an approach that starts with the original code.
         // i recommend leaving these comments in place for a revision or two, just until we make a final decision about how we're going to do this
@@ -596,6 +607,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
             }
         }
+
         //
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear();  // we are done with these blocks
@@ -662,7 +674,7 @@ void RunEvent::processAftershock(Simulation *sim) {
         }
 
         // Determine the target rupture area given the aftershock magnitude
-        // TODO: 
+        // TODO:
         // user_defined_constants (flag this for later revisions in which we move these contant definitions to a parameters file).
         double rupture_area = pow(10, -3.49+0.91*as.mag);
         double selected_rupture_area = 0;
@@ -748,9 +760,10 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         // Otherwise it's an aftershock
         processAftershock(sim);
     }
+
     //sim->barrier();
 
-    // Record the stress in the system before and after the event. 
+    // Record the stress in the system before and after the event.
     // yoder: note that recordEventStresses() emloyes a bit of MPI action, so it might be advisable to
     // add some barrier() blocking (which might have been added above to barrier()-wrap the process_{earthquake type}() call).
     recordEventStresses(sim);
@@ -777,12 +790,14 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // only on root node.:
     int local_event_size = sim->getCurrentEvent().size();
     int global_event_size = 0;
-    // 
+    //
     // aggregate and assert on root node:
     MPI_Reduce(&local_event_size, &global_event_size, 1, MPI_INT, MPI_SUM, ROOT_NODE_RANK, MPI_COMM_WORLD);
+
     if (sim->isRootNode()) {
         assertThrow(global_event_size > 0, "There was a trigger but no failed blocks.");
-        };
+    };
+
     //
     //// aggregate and assert on all nodes:
     //MPI_Allreduce(&local_event_size, &global_event_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -790,6 +805,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
 #else
     //global_event_size=local_event_size;
     assertThrow(global_event_size > 0, "There was a trigger but no failed blocks. (" << getpid() << "/" << sim->getNodeRank() << ")");
+
 #endif
     return SIM_STOP_OK;
 }

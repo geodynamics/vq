@@ -123,7 +123,7 @@ int main (int argc, char **argv) {
     // ** Initialize and run the simulation
     // ************************************************************
     vc_sim->init();
-    
+
 
     vc_sim->run();
     vc_sim->finish();

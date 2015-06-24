@@ -29,7 +29,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     int                 lid;
     double              stress_drop, norm_velocity;
-    double rho = 5.515e3;      // density of rock in kg m^-3
+    double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
     double depth = 0.0;         //
 
@@ -41,7 +41,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
         //
-        depth = -sim->getBlock(gid).center()[2];  // depth of block center in m
+        // TODO: check if this negative sign is warranted and not double counted
+        depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
         //printf("**Degbug(%d): setting rhogd[%d/%dg], %f, %f, %f ==> %f\n", getpid(), lid, gid, rho, g, depth, sim->getRhogd(gid));
@@ -56,16 +57,23 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
 
         // Set the stress drop based on the Greens function calculations
-        stress_drop = 0;
-        norm_velocity = sim->getBlock(gid).slip_rate();
+        if (sim->computeStressDrops()) {
+            // TODO: Instead of dividing by the local slip rate as your normalization,
+            //       we need to have some minimum or mean normalization constant to
+            //       handle zero slip rates that lead to stress_drop = NaN.
+            stress_drop = 0;
+            norm_velocity = sim->getBlock(gid).slip_rate();
 
-        for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-            stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
+            for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+                stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
+            }
+
+            sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);
+        } else {
+            sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
         }
 
-        sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);
-
-        // noise in the range [1-a, 1+a)
+        // Initialize element slips to equilibrium position, slip=0
         sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
@@ -78,7 +86,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 #ifdef MPI_C_FOUND
 
     // Transfer stress drop values between nodes
-    // also broadcast the rhogd value. 
+    // also broadcast the rhogd value.
     // note that the array rhogd[] is a protected array, so we cannot access it directly (aka, using MPI_Reduce with a custom mpi funciton to
     // gather/add/whatever, but handle nan), but since this only runs once at the sim initialization, it's not a huge problem.
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
@@ -91,10 +99,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             //
             tmp_rhogd = sim->getRhogd(gid);
         }
+
         //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+
         //
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
@@ -224,6 +234,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
                                        sim->getUpdateFieldPtr(),
                                        true);
     }
+
     //
     // Go through the blocks and find which one will fail first
     next_static_fail.val = DBL_MAX;

@@ -87,7 +87,7 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_stress_type", "");
     //
     // yoder: add parameters to truncate crazy greens function values:
-    //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
+    //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());        
     //params.readSet<double>("sim.greens.shear_min",  -std::numeric_limits<double>::max());
     //params.readSet<double>("sim.greens.normal_max", std::numeric_limits<double>::max());
     //params.readSet<double>("sim.greens.normal_min", -std::numeric_limits<double>::max());
@@ -107,6 +107,10 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<double>("sim.greens.normal_offdiag_min", -DBL_MAX);
     //
     //printf("greens limits: %f, %f, %f, %f, %f, %f, %f, %f", params.read<double>("sim.greens.shear_diag_max"), params.read<double>("sim.greens.shear_diag_min"), params.read<double>("sim.greens.shear_offdiag_max"), params.read<double>("sim.greens.shear_offdiag_min"), params.read<double>("sim.greens.normal_diag_max"), params.read<double>("sim.greens.normal_diag_min"), params.read<double>("sim.greens.normal_offdiag_max"), params.read<double>("sim.greens.normal_offdiag_min"));
+    //
+    // Kasey: parameter to either read in stress drops from file or compute them
+    params.readSet<bool>("sim.friction.compute_stress_drops", false);
+
 }
 
 void VCParams::write_params(const std::string &param_file_name) {

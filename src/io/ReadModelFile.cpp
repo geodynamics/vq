@@ -83,6 +83,7 @@ void ReadModelFile::init(SimFramework *_sim) {
         new_block.set_lame_mu(new_element.lame_mu());
         new_block.set_lame_lambda(new_element.lame_lambda());
         new_block.set_max_slip(new_element.max_slip());
+        new_block.set_stress_drop(new_element.stress_drop());
 
         // Set VQ specific values
         // Uncommenting the line setting fault_id (Kasey)

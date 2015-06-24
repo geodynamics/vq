@@ -186,6 +186,13 @@ class VCParams {
             //return params.read<double>("sim.greens.normal_min");
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
+
+        // Kasey: new parameter for loading specified stress drops (False) or
+        // computing them from Green's functions (True)
+        bool computeStressDrops(void) const {
+            return params.read<bool>("sim.friction.compute_stress_drops");
+        };
+
         //
         // yoder: and overload so we can easily distinguish (off)diagonal elements (defined in GreensInit.cpp)
         double getGreenShearMax(const int block_1, const int block_2) const;
