@@ -57,19 +57,20 @@ MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b
 def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
     
-def calculate_averages(x,y,log_bin=False):
-    num_bins = math.floor(len(x)/100)
-    if num_bins < 20:
-        num_bins = 20
-    elif num_bins > 100:
-        num_bins = 100
+def calculate_averages(x,y,log_bin=False,num_bins=None):
+    if num_bins is None:
+        num_bins = math.floor(len(x)/100)
+        if num_bins < 20:
+            num_bins = 20
+        elif num_bins > 100:
+            num_bins = 100
     x = np.array(x)
     y = np.array(y)
-    if np.min(x) == 0:
-        bin_min = 1
-    else:
-        if log_bin: bin_min = math.floor(math.log(np.min(x),10))
-        else: bin_min = math.floor(np.min(x))
+    #if np.min(x) == 0:
+    #    bin_min = 1
+    #else:
+    if log_bin: bin_min = math.floor(math.log(np.min(x),10))
+    else: bin_min = math.floor(np.min(x))
     if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
     else: bin_max = math.ceil(np.max(x))
     if log_bin: bins = np.logspace(bin_min,bin_max,num=num_bins)
@@ -126,6 +127,9 @@ class SaveFile:
         return "traces_"+model_file.split(".")[0]+".png"
         
     def diagnostic_plot(self, event_file, plot_type):
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
         return plot_type+"_diagnostic_"+event_file.split(".")[0]+".png"
     
 
@@ -1452,7 +1456,7 @@ class BasePlotter:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data, color='g')
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k')
+            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
@@ -1568,8 +1572,8 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False)
-        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
@@ -1577,22 +1581,22 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
         self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_number_of_sweeps(self, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
         years = events.event_years()
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False)
-        self.scatter_and_line(False, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
         
     def plot_mean_slip(self, events, filename):
         slips = np.array(events.event_mean_slip())
         years = events.event_years()
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,slips,log_bin=False)
-        self.scatter_and_line(False, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
+        x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
