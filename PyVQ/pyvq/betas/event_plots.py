@@ -105,7 +105,7 @@ class Sweeps(object):
         plt.xticks(ticks,[str(tick) for tick in ticks])
         plt.xlim(min_sweep, max_sweep)
     #
-    def plot_stress_drop(self, block_ids=None, fignum=0, shear=True):
+    def plot_stress_changes(self, block_ids=None, fignum=0, shear=True,log=False,max_val=None):
         block_ids = self.check_block_ids_list(block_ids)
         #
         plt.figure(fignum)
@@ -114,17 +114,32 @@ class Sweeps(object):
         for block_id in block_ids:
             rws = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id']==block_id, self.sweep_data)), dtype=self.sweep_data.dtype)
             if shear: 
-                plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
             else: 
-                plt.plot(rws['sweep_number'], rws['normal_change'], '.-', label='block_id: %d' % block_id)
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
 		plt.plot([min(self.sweep_data['sweep_number']), max(self.sweep_data['sweep_number'])], [0., 0.], 'k-')
-		plt.legend(loc=0, numpoints=1)
+        if len(block_ids) <= 10:
+            plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
         if shear: 
-            plt.title('Block shear_stress drop sequences')
+            plt.title('Event {} (M={:.2f}) shear stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
         else: 
-            plt.title('Block normal_stress drop sequences')
+            plt.title('Event {} (M={:.2f}) normal stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
         plt.xlabel('sweep number')
         plt.ylabel('fractional stress change')
+        min_sweep = 0
+        max_sweep = int(max(self.sweep_data['sweep_number']))
+        if max(self.sweep_data['sweep_number']) < 3:
+            max_sweep += 1
+        ticks = range(max_sweep+1)
+        plt.xticks(ticks,[str(tick) for tick in ticks])
+        plt.xlim(min_sweep, max_sweep)
+        if max_val is not None: plt.ylim(-max_val,max_val)
     #    
     def check_block_ids_list(self, block_ids):
         # Make sure the block_ids are a list
@@ -146,22 +161,17 @@ class Events(object):
 
 # TODO: Change this to a small sim and add it to github
 SIM_FILE = "../../../../Desktop/RUNNING/UCERF2/events_ALLCAL2_VQmeshed_3km_EQSim_StressDrops_1600yr_22June2015.h5"
-EVENT_NUM = 504
+EVENT_NUM = 1541 #13, 948, 504, 1541
 BLOCK_IDS = None
 sim_sweeps = Sweeps(SIM_FILE, event_number=EVENT_NUM, block_ids=BLOCK_IDS)
+# ---- plot slips ---------
+"""
 sim_sweeps.plot_event_block_slips()
 savename = "../../../../VQScripts/event_{}_slips{}.png".format(sim_sweeps.event_number,SIM_FILE.split("/")[-1].split(".")[0].split("events")[-1])
 plt.savefig(savename,dpi=100)
-
-
-
-
-
-
-
-
-
-
-
-
+"""
+# ---- plot stresses ---------
+sim_sweeps.plot_stress_changes()
+savename = "../../../../VQScripts/event_{}_shear_changes{}.png".format(sim_sweeps.event_number,SIM_FILE.split("/")[-1].split(".")[0].split("events")[-1])
+plt.savefig(savename,dpi=100)
 
