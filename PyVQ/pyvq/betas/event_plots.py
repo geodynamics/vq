@@ -31,9 +31,8 @@ except ImportError:
     h5py_available = False
 # ----------------------         -------------------
 
-
-# ======= SINGLE EVENT I/O ============================================
-def read_events(sim_file, event_numbers=None):
+# ======= h5py I/O ============================================
+def read_events_h5(sim_file, event_numbers=None):
     # TODO: Add event filters
     with h5py.File(sim_file) as vq_data:
         events = vq_data['events'][()]
@@ -43,11 +42,10 @@ def read_events(sim_file, event_numbers=None):
         if isinstance(event_numbers, int): 
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
         else:
-            d_type = events.dtype
-            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=d_type)	
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
 	return events
 
-def read_sweeps(sim_file, event_number=0, block_ids=None):
+def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
 	# Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
 	with h5py.File(sim_file) as vq_data:
 		sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
@@ -59,9 +57,9 @@ def read_sweeps(sim_file, event_number=0, block_ids=None):
 		sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
 	return sweeps
 
-def parse_sweeps(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
+def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
-	if sweeps is None: sweeps = read_sweeps(sim_file, block_id=block_id, event_number=event_number)
+	if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
 	# Grab data
 	data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
              rw['shear_final'], rw['normal_init'],rw['normal_final'], 
@@ -75,12 +73,19 @@ def parse_sweeps(sim_file=None, block_id=None, event_number=0, do_print=True, sw
 
 
 # ======= SIM DATA CLASSES ===========================================
-class Sweeps(object):
+class Events:
+    def __init__(self, sim_file):
+        # TODO: Add event filters
+        self.events = read_events_h5(sim_file)
+        print("Reading events from {}".format(sim_file))
+
+
+class Sweeps:
     def __init__(self, sim_file, event_number=0, block_ids=None):
-        self.sweeps = read_sweeps(sim_file, event_number=event_number, block_ids=block_ids)
-        self.sweep_data = parse_sweeps(sweeps=self.sweeps, do_print=False)
+        self.sweeps = read_sweeps_h5(sim_file, event_number=event_number, block_ids=block_ids)
+        self.sweep_data = parse_sweeps_h5(sweeps=self.sweeps, do_print=False)
         self.block_ids = self.sweep_data['block_id'].tolist()
-        self.mag = read_events(sim_file,event_numbers=event_number)['event_magnitude'][0]
+        self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
         self.event_number = event_number
         print("Read event {} sweeps from {}".format(event_number,sim_file))
         # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
@@ -147,31 +152,23 @@ class Sweeps(object):
         if isinstance(block_ids, float): block_ids=[int(block_ids)]
         if isinstance(block_ids, int): block_ids = [block_ids]
         return block_ids
-    #
-class Events(object):
-    def __init__(self, sim_file):
-        # TODO: Add event filters
-        self.events = read_events(sim_file)
-        self.block_ids = self.sweep_data['block_id'].tolist()
-        print("Reading event {} sweeps from {}".format(event_number,sim_file))
-        # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
 
 
 # ============================ TEMP. RUNNER ===================
-
-# TODO: Change this to a small sim and add it to github
+# Example usage below
+"""
 SIM_FILE = "../../../../Desktop/RUNNING/UCERF2/events_ALLCAL2_VQmeshed_3km_EQSim_StressDrops_1600yr_22June2015.h5"
 EVENT_NUM = 1541 #13, 948, 504, 1541
 BLOCK_IDS = None
 sim_sweeps = Sweeps(SIM_FILE, event_number=EVENT_NUM, block_ids=BLOCK_IDS)
 # ---- plot slips ---------
-"""
+
 sim_sweeps.plot_event_block_slips()
 savename = "../../../../VQScripts/event_{}_slips{}.png".format(sim_sweeps.event_number,SIM_FILE.split("/")[-1].split(".")[0].split("events")[-1])
 plt.savefig(savename,dpi=100)
-"""
+
 # ---- plot stresses ---------
 sim_sweeps.plot_stress_changes()
 savename = "../../../../VQScripts/event_{}_shear_changes{}.png".format(sim_sweeps.event_number,SIM_FILE.split("/")[-1].split(".")[0].split("events")[-1])
 plt.savefig(savename,dpi=100)
-
+"""
