@@ -43,11 +43,18 @@ try:
 except ImportError:
     numpy_available = False
     
+h5py_available = True
+try:
+    import h5py
+except ImportError:
+    h5py_available = False
+    
 # ----------------- Global constants -------------------------------------------
-LAT_LON_DIFF_FACTOR = 1.333 
-MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
+# Kasey: These are only relevent for few-element field plots
+#LAT_LON_DIFF_FACTOR = 1.333 
+#MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+#MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+#MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -228,12 +235,63 @@ class Geometry:
                     #break
         return traces_lat_lon
 
+# ======= h5py I/O ============================================
+def read_events_h5(sim_file, event_numbers=None):
+    # TODO: Add event filters
+    with h5py.File(sim_file) as vq_data:
+        events = vq_data['events'][()]
+    # If event_numbers specified, only return those events
+    if event_numbers is not None:
+        if isinstance(event_numbers, int): 
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
+        else:
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
+	return events
+
+def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
+	# Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
+	with h5py.File(sim_file) as vq_data:
+		sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
+                       vq_data['events'][event_number]['end_sweep_rec']]
+		sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
+	# If block_id specified, only return those sweeps for that block
+	if block_ids is not None:
+		d_type = sweeps.dtype
+		sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+	return sweeps
+
+def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
+    # Read sweep data if not provided
+	if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
+	# Grab data
+	data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+             rw['shear_final'], rw['normal_init'],rw['normal_final'], 
+             (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
+             (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
+	if do_print:
+		for rw in data: print(rw)
+	cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
+            'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
+	return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
+    
+    
 class Events:
-    def __init__(self, event_file, event_file_type, sweep_file = None):
-        self._events = quakelib.ModelEventSet()
+    def __init__(self, event_file, sweep_file = None):
+        filetype = event_file.split('.')[-1].lower()
+        event_file_type = "text" # default
+        if filetype == 'h5' or filetype == 'hdf5': event_file_type = "hdf5"
         if event_file_type == "hdf5":
-            self._events.read_file_hdf5(event_file)
+            # Reading in via QuakeLib
+            if not h5py_available:
+                self._events = quakelib.ModelEventSet()
+                self._events.read_file_hdf5(event_file)
+                print("Read in events via QuakeLib from {}".format(sim_file))
+            # Reading via h5py
+            else:
+                self._events = read_events_h5(sim_file)
+                print("Read in events via h5py from {}".format(sim_file))
         elif event_file_type == "text" and sweep_file != None:
+            self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
         else:
             raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
@@ -270,9 +328,6 @@ class Events:
 
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
-        
-    def read_sweeps(self, event_id):
-        self._sweeps 
         
     def get_event_element_slips(self, evnum):
         element_ids = self._events[evnum].getInvolvedElements()
@@ -321,6 +376,79 @@ class Events:
     def number_of_sweeps(self):
         return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events] 
 
+class Sweeps:
+    # A class for reading/analyzing data from the event sweeps
+    def __init__(self, sim_file, event_number=0, block_ids=None):
+        self.sweeps = read_sweeps_h5(sim_file, event_number=event_number, block_ids=block_ids)
+        self.sweep_data = parse_sweeps_h5(sweeps=self.sweeps, do_print=False)
+        self.block_ids = self.sweep_data['block_id'].tolist()
+        self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
+        self.event_number = event_number
+        print("Read event {} sweeps from {}".format(event_number,sim_file))
+        # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
+    #
+    def plot_event_block_slips(self, block_ids=None, fignum=0):
+        block_ids = self.check_block_ids_list(block_ids)
+        plt.figure(fignum)
+        plt.clf()
+        for block_id in block_ids:
+            rws = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id']==block_id, self.sweep_data)), dtype=self.sweep_data.dtype)
+            plt.semilogy(rws['sweep_number'], rws['block_slip'], '.-', label=block_id)
+        if len(block_ids) <= 10:
+            plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
+        plt.title('Event {} (M={:.2f}) slips for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        plt.xlabel('sweep number')
+        plt.ylabel('slip [m]')
+        min_sweep = 0
+        max_sweep = int(max(self.sweep_data['sweep_number']))
+        if max(self.sweep_data['sweep_number']) < 3:
+            max_sweep += 1
+        ticks = range(max_sweep+1)
+        plt.xticks(ticks,[str(tick) for tick in ticks])
+        plt.xlim(min_sweep, max_sweep)
+    #
+    def plot_stress_changes(self, block_ids=None, fignum=0, shear=True,log=False,max_val=None):
+        block_ids = self.check_block_ids_list(block_ids)
+        #
+        plt.figure(fignum)
+        plt.clf()
+        #
+        for block_id in block_ids:
+            rws = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id']==block_id, self.sweep_data)), dtype=self.sweep_data.dtype)
+            if shear: 
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+            else: 
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+		plt.plot([min(self.sweep_data['sweep_number']), max(self.sweep_data['sweep_number'])], [0., 0.], 'k-')
+        if len(block_ids) <= 10:
+            plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
+        if shear: 
+            plt.title('Event {} (M={:.2f}) shear stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        else: 
+            plt.title('Event {} (M={:.2f}) normal stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        plt.xlabel('sweep number')
+        plt.ylabel('fractional stress change')
+        min_sweep = 0
+        max_sweep = int(max(self.sweep_data['sweep_number']))
+        if max(self.sweep_data['sweep_number']) < 3:
+            max_sweep += 1
+        ticks = range(max_sweep+1)
+        plt.xticks(ticks,[str(tick) for tick in ticks])
+        plt.xlim(min_sweep, max_sweep)
+        if max_val is not None: plt.ylim(-max_val,max_val)
+    #    
+    def check_block_ids_list(self, block_ids):
+        # Make sure the block_ids are a list
+        if block_ids is None: block_ids=self.block_ids
+        if isinstance(block_ids, float): block_ids=[int(block_ids)]
+        if isinstance(block_ids, int): block_ids = [block_ids]
+        return block_ids
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -1774,8 +1902,6 @@ if __name__ == "__main__":
     # Event/model file arguments
     parser.add_argument('--event_file', required=False,
             help="Name of event file to analyze.")
-    parser.add_argument('--event_file_type', required=False,
-            help="Event file type, either hdf5 or text.")
     parser.add_argument('--sweep_file', required=False,
             help="Name of sweep file to analyze.")
     parser.add_argument('--model_file', required=False,
@@ -1915,7 +2041,7 @@ if __name__ == "__main__":
 
     # Read the event and sweeps files
     if args.event_file:
-        events = Events(args.event_file, args.event_file_type, args.sweep_file)
+        events = Events(args.event_file, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
