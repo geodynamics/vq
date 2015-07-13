@@ -194,12 +194,12 @@ class SectionFilter:
         event_elements = event.getInvolvedElements()
         for elem_num in event_elements:
             elem_section = self._elem_to_section_map[elem_num]
-            if not elem_section in self._section_list: return True
+            if elem_section in self._section_list: return True
 
         return False
 
     def plot_str(self):
-        return "my_string"
+        return ""
         
 class Geometry:
     def __init__(self, model_file=None, model_file_type=None):
@@ -282,14 +282,14 @@ class Events:
         if filetype == 'h5' or filetype == 'hdf5': event_file_type = "hdf5"
         if event_file_type == "hdf5":
             # Reading in via QuakeLib
-            if not h5py_available:
-                self._events = quakelib.ModelEventSet()
-                self._events.read_file_hdf5(event_file)
-                print("Read in events via QuakeLib from {}".format(sim_file))
+            #if not h5py_available:
+            self._events = quakelib.ModelEventSet()
+            self._events.read_file_hdf5(event_file)
+            print("Read in events via QuakeLib from {}".format(event_file))
             # Reading via h5py
-            else:
-                self._events = read_events_h5(sim_file)
-                print("Read in events via h5py from {}".format(sim_file))
+            #else:
+            #    self._events = read_events_h5(event_file)
+            #    print("Read in events via h5py from {}".format(event_file))
         elif event_file_type == "text" and sweep_file != None:
             self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
@@ -2075,6 +2075,8 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
     if args.use_sections:
+        if not args.model_file:
+            raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
 
     if args.event_file:
