@@ -43,11 +43,18 @@ try:
 except ImportError:
     numpy_available = False
     
+h5py_available = True
+try:
+    import h5py
+except ImportError:
+    h5py_available = False
+    
 # ----------------- Global constants -------------------------------------------
-LAT_LON_DIFF_FACTOR = 1.333 
-MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
+# Kasey: These are only relevent for few-element field plots
+#LAT_LON_DIFF_FACTOR = 1.333 
+#MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+#MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+#MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -57,19 +64,20 @@ MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b
 def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
     
-def calculate_averages(x,y,log_bin=False):
-    num_bins = math.floor(len(x)/100)
-    if num_bins < 20:
-        num_bins = 20
-    elif num_bins > 100:
-        num_bins = 100
+def calculate_averages(x,y,log_bin=False,num_bins=None):
+    if num_bins is None:
+        num_bins = math.floor(len(x)/100)
+        if num_bins < 20:
+            num_bins = 20
+        elif num_bins > 100:
+            num_bins = 100
     x = np.array(x)
     y = np.array(y)
-    if np.min(x) == 0:
-        bin_min = 1
-    else:
-        if log_bin: bin_min = math.floor(math.log(np.min(x),10))
-        else: bin_min = math.floor(np.min(x))
+    #if np.min(x) == 0:
+    #    bin_min = 1
+    #else:
+    if log_bin: bin_min = math.floor(math.log(np.min(x),10))
+    else: bin_min = math.floor(np.min(x))
     if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
     else: bin_max = math.ceil(np.max(x))
     if log_bin: bins = np.logspace(bin_min,bin_max,num=num_bins)
@@ -125,8 +133,11 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def stress_plot(self, event_file, plot_type):
-        return plot_type+"_stress_"+event_file.split(".")[0]+".png"
+    def diagnostic_plot(self, event_file, plot_type):
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        return plot_type+"_diagnostic_"+event_file.split(".")[0]+".png"
     
 
 class MagFilter:
@@ -183,12 +194,12 @@ class SectionFilter:
         event_elements = event.getInvolvedElements()
         for elem_num in event_elements:
             elem_section = self._elem_to_section_map[elem_num]
-            if not elem_section in self._section_list: return True
+            if elem_section in self._section_list: return True
 
         return False
 
     def plot_str(self):
-        return "my_string"
+        return ""
         
 class Geometry:
     def __init__(self, model_file=None, model_file_type=None):
@@ -224,12 +235,63 @@ class Geometry:
                     #break
         return traces_lat_lon
 
+# ======= h5py I/O ============================================
+def read_events_h5(sim_file, event_numbers=None):
+    # TODO: Add event filters
+    with h5py.File(sim_file) as vq_data:
+        events = vq_data['events'][()]
+    # If event_numbers specified, only return those events
+    if event_numbers is not None:
+        if isinstance(event_numbers, int): 
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
+        else:
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
+	return events
+
+def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
+	# Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
+	with h5py.File(sim_file) as vq_data:
+		sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
+                       vq_data['events'][event_number]['end_sweep_rec']]
+		sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
+	# If block_id specified, only return those sweeps for that block
+	if block_ids is not None:
+		d_type = sweeps.dtype
+		sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+	return sweeps
+
+def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
+    # Read sweep data if not provided
+	if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
+	# Grab data
+	data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+             rw['shear_final'], rw['normal_init'],rw['normal_final'], 
+             (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
+             (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
+	if do_print:
+		for rw in data: print(rw)
+	cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
+            'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
+	return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
+    
+    
 class Events:
-    def __init__(self, event_file, event_file_type, sweep_file = None):
-        self._events = quakelib.ModelEventSet()
+    def __init__(self, event_file, sweep_file = None):
+        filetype = event_file.split('.')[-1].lower()
+        event_file_type = "text" # default
+        if filetype == 'h5' or filetype == 'hdf5': event_file_type = "hdf5"
         if event_file_type == "hdf5":
+            # Reading in via QuakeLib
+            #if not h5py_available:
+            self._events = quakelib.ModelEventSet()
             self._events.read_file_hdf5(event_file)
+            print("Read in events via QuakeLib from {}".format(event_file))
+            # Reading via h5py
+            #else:
+            #    self._events = read_events_h5(event_file)
+            #    print("Read in events via h5py from {}".format(event_file))
         elif event_file_type == "text" and sweep_file != None:
+            self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
         else:
             raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
@@ -266,9 +328,6 @@ class Events:
 
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
-        
-    def read_sweeps(self, event_id):
-        self._sweeps 
         
     def get_event_element_slips(self, evnum):
         element_ids = self._events[evnum].getInvolvedElements()
@@ -313,7 +372,83 @@ class Events:
 
     def event_final_normal_stresses(self):
         return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events]  
+        
+    def number_of_sweeps(self):
+        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events] 
 
+class Sweeps:
+    # A class for reading/analyzing data from the event sweeps
+    def __init__(self, sim_file, event_number=0, block_ids=None):
+        self.sweeps = read_sweeps_h5(sim_file, event_number=event_number, block_ids=block_ids)
+        self.sweep_data = parse_sweeps_h5(sweeps=self.sweeps, do_print=False)
+        self.block_ids = self.sweep_data['block_id'].tolist()
+        self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
+        self.event_number = event_number
+        print("Read event {} sweeps from {}".format(event_number,sim_file))
+        # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
+    #
+    def plot_event_block_slips(self, block_ids=None, fignum=0):
+        block_ids = self.check_block_ids_list(block_ids)
+        plt.figure(fignum)
+        plt.clf()
+        for block_id in block_ids:
+            rws = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id']==block_id, self.sweep_data)), dtype=self.sweep_data.dtype)
+            plt.semilogy(rws['sweep_number'], rws['block_slip'], '.-', label=block_id)
+        if len(block_ids) <= 10:
+            plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
+        plt.title('Event {} (M={:.2f}) slips for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        plt.xlabel('sweep number')
+        plt.ylabel('slip [m]')
+        min_sweep = 0
+        max_sweep = int(max(self.sweep_data['sweep_number']))
+        if max(self.sweep_data['sweep_number']) < 3:
+            max_sweep += 1
+        ticks = range(max_sweep+1)
+        plt.xticks(ticks,[str(tick) for tick in ticks])
+        plt.xlim(min_sweep, max_sweep)
+    #
+    def plot_stress_changes(self, block_ids=None, fignum=0, shear=True,log=False,max_val=None):
+        block_ids = self.check_block_ids_list(block_ids)
+        #
+        plt.figure(fignum)
+        plt.clf()
+        #
+        for block_id in block_ids:
+            rws = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id']==block_id, self.sweep_data)), dtype=self.sweep_data.dtype)
+            if shear: 
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+            else: 
+                if not log:
+                    plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+                else:
+                    plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
+		plt.plot([min(self.sweep_data['sweep_number']), max(self.sweep_data['sweep_number'])], [0., 0.], 'k-')
+        if len(block_ids) <= 10:
+            plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
+        if shear: 
+            plt.title('Event {} (M={:.2f}) shear stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        else: 
+            plt.title('Event {} (M={:.2f}) normal stress changes for {} blocks'.format(self.event_number,self.mag,len(block_ids)))
+        plt.xlabel('sweep number')
+        plt.ylabel('fractional stress change')
+        min_sweep = 0
+        max_sweep = int(max(self.sweep_data['sweep_number']))
+        if max(self.sweep_data['sweep_number']) < 3:
+            max_sweep += 1
+        ticks = range(max_sweep+1)
+        plt.xticks(ticks,[str(tick) for tick in ticks])
+        plt.xlim(min_sweep, max_sweep)
+        if max_val is not None: plt.ylim(-max_val,max_val)
+    #    
+    def check_block_ids_list(self, block_ids):
+        # Make sure the block_ids are a list
+        if block_ids is None: block_ids=self.block_ids
+        if isinstance(block_ids, float): block_ids=[int(block_ids)]
+        if isinstance(block_ids, int): block_ids = [block_ids]
+        return block_ids
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -1449,7 +1584,7 @@ class BasePlotter:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data, color='g')
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k')
+            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
@@ -1558,26 +1693,38 @@ class StressHistoryPlot(BasePlotter):
             print(stress_histories[element])
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
         
-class EventStressPlot(BasePlotter):
+class DiagnosticPlot(BasePlotter):
     def plot_shear_stress_changes(self, events, filename):
         shear_init = np.array(events.event_initial_shear_stresses())
         shear_final = np.array(events.event_final_shear_stresses())
         years = events.event_years()
-        plot_years = np.linspace(min(years),max(years),num=len(shear_init))
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
-        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
         normal_final = np.array(events.event_final_normal_stresses())
         years = events.event_years()
-        plot_years = np.linspace(min(years),max(years),num=len(normal_init))
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(plot_years,stress_changes,log_bin=False)
-        self.scatter_and_line(False, plot_years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        
+    def plot_number_of_sweeps(self, events, filename):
+        num_sweeps = np.array(events.number_of_sweeps())
+        years = events.event_years()
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        
+    def plot_mean_slip(self, events, filename):
+        slips = np.array(events.event_mean_slip())
+        years = events.event_years()
+        # Generate the binned averages too
+        x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
+        self.scatter_and_line(True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, events, filename):
@@ -1755,8 +1902,6 @@ if __name__ == "__main__":
     # Event/model file arguments
     parser.add_argument('--event_file', required=False,
             help="Name of event file to analyze.")
-    parser.add_argument('--event_file_type', required=False,
-            help="Event file type, either hdf5 or text.")
     parser.add_argument('--sweep_file', required=False,
             help="Name of sweep file to analyze.")
     parser.add_argument('--model_file', required=False,
@@ -1847,10 +1992,18 @@ if __name__ == "__main__":
     # Stress plotting arguments
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
+            
+    # Diagnostic plots
+    parser.add_argument('--diagnostics', required=False, action='store_true',
+            help="Plot all diagnostic plots")
+    parser.add_argument('--num_sweeps', required=False, action='store_true',
+            help="Plot the number of sweeps for events")
     parser.add_argument('--event_shear_stress', required=False, action='store_true',
             help="Plot shear stress changes for events")
     parser.add_argument('--event_normal_stress', required=False, action='store_true',
             help="Plot normal stress changes for events")
+    parser.add_argument('--event_mean_slip', required=False, action='store_true',
+            help="Plot the mean slip for events")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -1862,7 +2015,8 @@ if __name__ == "__main__":
     
     # ------------------------------------------------------------------------
     # Catch these errors before reading events to save unneeded computation
-    if float(args.uniform_slip) < 0: raise "Slip must be positive"
+    if args.uniform_slip:
+        if float(args.uniform_slip) < 0: raise "Slip must be positive"
     
     if args.field_plot:
         if args.model_file is None:
@@ -1887,7 +2041,7 @@ if __name__ == "__main__":
 
     # Read the event and sweeps files
     if args.event_file:
-        events = Events(args.event_file, args.event_file_type, args.sweep_file)
+        events = Events(args.event_file, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
@@ -1921,6 +2075,8 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
     if args.use_sections:
+        if not args.model_file:
+            raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
 
     if args.event_file:
@@ -2025,12 +2181,25 @@ if __name__ == "__main__":
     if args.stress_elements:
 # TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
+        
+    # Generate the diagnostic plots
+    if args.diagnostics:
+        args.num_sweeps = True
+        args.event_shear_stress = True
+        args.event_normal_stress = True
+        args.event_mean_slip = True
+    if args.num_sweeps:
+        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
+        DiagnosticPlot().plot_number_of_sweeps(events, filename)
     if args.event_shear_stress:
-        filename = SaveFile().stress_plot(args.event_file, "shear")
-        EventStressPlot().plot_shear_stress_changes(events, filename)
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress")
+        DiagnosticPlot().plot_shear_stress_changes(events, filename)
     if args.event_normal_stress:
-        filename = SaveFile().stress_plot(args.event_file, "normal")
-        EventStressPlot().plot_normal_stress_changes(events, filename)
+        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress")
+        DiagnosticPlot().plot_normal_stress_changes(events, filename)
+    if args.event_mean_slip:
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip")
+        DiagnosticPlot().plot_mean_slip(events, filename)
 
     # Validate data if requested
     err = False
