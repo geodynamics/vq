@@ -1486,6 +1486,56 @@ class FieldPlotter:
         sys.stdout.write('\nPlot saved: {}'.format(output_file))
         sys.stdout.write('\ndone\n')
         sys.stdout.flush()
+        
+        
+        
+
+
+# Evaluate an event field at specified lat/lon coords
+# Currently only for displacement field
+class FieldEvaluator:
+    def __init__(self, geometry, event_id, event, element_slips, LLD_file):
+        # LLD file contains columns of lat/lon/depth for the points we wish to evaluate
+        self.LLDdata = np.genfromtxt(LLD_file, dtype=[('lat','f8'),('lon','f8'), ('z','f8')],skip_header=4)
+        # Set field and event data
+        self.event_id = event_id
+        self.LLD_file = LLD_file
+        self.elements = quakelib.SlippedElementList()
+        self.element_ids = element_slips.keys()    
+        self.slip_map = quakelib.SlipMap()
+        # Assign the slips from element_slips
+        for ele_id in self.element_ids:
+            new_ele = geometry.model.create_slipped_element(ele_id)
+            new_ele.set_slip(element_slips[ele_id])
+            self.elements.append(new_ele)
+        # Add the elements to the slip map
+        self.slip_map.add_elements(self.elements)
+        # A conversion instance for doing the lat-lon to x-y conversions
+        base = geometry.model.get_base()
+        base_lld = quakelib.LatLonDepth(base[0], base[1], 0.0)
+        self.convert = quakelib.Conversion(base_lld)
+        _lons_1d = quakelib.FloatList()
+        _lats_1d = quakelib.FloatList()
+        self.lons_1d = self.LLDdata['lon']
+        self.lats_1d = self.LLDdata['lat']
+        # Set up the points for field evaluation, convert to xyz basis
+        self.grid_1d = quakelib.VectorList()
+        for i in range(len(self.lons_1d)):
+            self.grid_1d.append(self.convert.convert2xyz(quakelib.LatLonDepth(self.lats_1d[i],self.lons_1d[i])))
+    #            
+    def compute_field(self):        
+        self.lame_lambda = 3.2e10
+        self.lame_mu     = 3.0e10
+        self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
+        outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)+".txt"
+        outfile = open(outname,'w')
+        for i in range(len(self.field_1d)):
+            outfile.write("{}\t{}\t{}\n".format(self.lons_1d[i], self.lats_1d[i], self.field_1d[i][2]))
+        outfile.close()
+        sys.stdout.write("\n---> Event displacements written to "+outname)
+        sys.stdout.write("\n")
+
+
 
 class BasePlotter:
     def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
@@ -1970,6 +2020,8 @@ if __name__ == "__main__":
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
     parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
+    parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
+    parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
     # Greens function plotting arguments
     parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.")            
@@ -2152,6 +2204,18 @@ if __name__ == "__main__":
         FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, small_model=args.small_model, g0=args.g)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles)
+    if args.field_eval:
+        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id)
+        sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events._events[args.event_id].getMagnitude()))
+        ele_slips = events.get_event_element_slips(args.event_id)
+        event = events._events[args.event_id]
+        if len(ele_slips.keys()) == 0:
+            raise "Error in processing slips."
+        else:
+            sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
+        sys.stdout.flush()
+        FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
+        FE.compute_field()
     if args.greens:
         # Set default values
         if args.dip is None: sys.exit("Must specify --dip")
