@@ -200,6 +200,21 @@ class SectionFilter:
 
     def plot_str(self):
         return ""
+
+class TriggerSectionFilter:
+    def __init__(self, geometry, section_list):
+        self._section_list = section_list
+        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
+
+    def test_event(self, event):
+        triggerID = event.getEventTrigger()
+        elem_section = self._elem_to_section_map[triggerID]
+        if elem_section in self._section_list: return True
+
+        return False
+
+    def plot_str(self):
+        return ""
         
 class Geometry:
     def __init__(self, model_file=None, model_file_type=None):
@@ -1534,7 +1549,7 @@ class FieldEvaluator:
         outfile.write("{}\n".format(len(self.field_1d)))
         outfile.write("##########################\n")
         for i in range(len(self.field_1d)):
-            outfile.write("{}\t{}\t{}\n".format(self.lons_1d[i], self.lats_1d[i], self.field_1d[i][2]))
+            outfile.write("{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2]))
         outfile.close()
         sys.stdout.write("\n---> Event displacements written to "+outname)
         sys.stdout.write("\n")
@@ -1984,6 +1999,8 @@ if __name__ == "__main__":
             help="Maximum event number of events to process.")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified).")
+    parser.add_argument('--use_trigger_sections', type=int, nargs='+', required=False,
+            help="List of model triggering sections to use for subsetting events.")
 
     # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, type=int,
@@ -2134,6 +2151,11 @@ if __name__ == "__main__":
         if not args.model_file:
             raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
+        
+    if args.use_trigger_sections:
+        if not args.model_file:
+            raise "Must specify --model_file for --use_trigger_sections to work."
+        event_filters.append(TriggerSectionFilter(geometry, args.use_trigger_sections))
 
     if args.event_file:
         events.set_filters(event_filters)
