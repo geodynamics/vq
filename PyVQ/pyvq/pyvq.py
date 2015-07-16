@@ -1529,6 +1529,10 @@ class FieldEvaluator:
         self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
         outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)+".txt"
         outfile = open(outname,'w')
+        # Write the header with the number of points
+        outfile.write("#### number of points ####\n")
+        outfile.write("{}\n".format(len(self.field_1d)))
+        outfile.write("##########################\n")
         for i in range(len(self.field_1d)):
             outfile.write("{}\t{}\t{}\n".format(self.lons_1d[i], self.lats_1d[i], self.field_1d[i][2]))
         outfile.close()
