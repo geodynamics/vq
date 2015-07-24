@@ -970,7 +970,10 @@ class FieldPlotter:
         if self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
             self.dmc['coastline_color_f'] = '#ffffff'
-            self.dmc['cmap'] = plt.get_cmap('YlOrRd')
+            if self.levels is None:
+                self.dmc['cmap'] = plt.get_cmap('YlOrRd')
+            else:
+                self.dmc['cmap'] = plt.get_cmap('seismic')
             self.dmc['cmap_f'] = plt.get_cmap('jet')
             self.dmc['country_color_f'] = '#ffffff'
             self.dmc['state_color_f'] = '#ffffff'
@@ -984,6 +987,9 @@ class FieldPlotter:
             self.dmc['cb_fontcolor_f'] = '#000000'
             self.dmc['cb_margin_t'] = 4.0
             self.dmc['cb_fontsize'] = 20.0
+            if self.levels:
+                self.dmc['cbar_min'] = -cbar_max
+                self.dmc['cbar_max'] = cbar_max
         #-----------------------------------------------------------------------
         # m1, fig1 is the oceans and the continents. This will lie behind the
         # masked data image.
@@ -1182,24 +1188,31 @@ class FieldPlotter:
                 self.m2.imshow(self.insar, interpolation='spline36')
             else:
                 # Prepare the displacement plot
-                self.insar = np.empty(self.field_transformed.shape)
-                non_zeros = self.field_transformed.nonzero()
-                self.insar.fill(5e-4)
-                self.insar[non_zeros] = np.fabs(self.field_transformed[non_zeros])
-                vmax = np.amax(self.insar)
-                if vmax <= 1:
-                    mod_vmax = 1
-                elif vmax > 1 and vmax <= 10:
-                    mod_vmax = 10
-                elif vmax > 10 and vmax <= 100:
-                    mod_vmax = 100
-                elif vmax > 100 and vmax <= 1000:
-                    mod_vmax = 1000
-                elif vmax > 1000:
-                    mod_vmax = 1000
-                if self.norm is None:
-                    self.norm = mcolor.LogNorm(vmin=5e-4, vmax=mod_vmax, clip=True)
-                self.m2.imshow(self.insar, cmap=cmap, norm=self.norm)            
+                if self.levels is None:
+                    self.insar = np.empty(self.field_transformed.shape)
+                    non_zeros = self.field_transformed.nonzero()
+                    self.insar.fill(5e-4)
+                    self.insar[non_zeros] = np.fabs(self.field_transformed[non_zeros])
+                    vmax = np.amax(self.insar)
+                    if vmax <= 1:
+                        mod_vmax = 1
+                    elif vmax > 1 and vmax <= 10:
+                        mod_vmax = 10
+                    elif vmax > 10 and vmax <= 100:
+                        mod_vmax = 100
+                    elif vmax > 100 and vmax <= 1000:
+                        mod_vmax = 1000
+                    elif vmax > 1000:
+                        mod_vmax = 1000
+                    if self.norm is None:
+                        self.norm = mcolor.LogNorm(vmin=5e-4, vmax=mod_vmax, clip=True)
+                    self.m2.imshow(self.insar, cmap=cmap, norm=self.norm)
+                else:
+                    map_x, map_y = self.m2(self.lons_1d, self.lats_1d)
+                    XX,YY = np.meshgrid(map_x, map_y)
+                    self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
+                    self.m2.contourf(XX, YY, self.field_transformed, self.levels, cmap=cmap, norm=self.norm, extend='both')
+        
         else:
             # make sure the values are located at the correct location on the map
             self.field_transformed = self.m2.transform_scalar(self.field, self.lons_1d, self.lats_1d, self.lons_1d.size, self.lats_1d.size)
@@ -1474,6 +1487,14 @@ class FieldPlotter:
                 cb_title = 'Displacement [m]'
             else:
                 cb_title = 'Total displacement [m]'
+                if self.levels:
+                    # Make first and last ticks on colorbar be <MIN and >MAX.
+                    # Values of colorbar min/max are set in FieldPlotter init.
+                    cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
+                    cb_tick_labs[0] = '<'+cb_tick_labs[0]
+                    cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
+                    cb_ax.set_xticklabels(cb_tick_labs)
+    
         else:
             if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
                 cb_title = r'Gravity changes [$\mu gal$]'
