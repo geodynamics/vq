@@ -109,7 +109,7 @@ void VCParams::read_params(const std::string &param_file_name) {
     //printf("greens limits: %f, %f, %f, %f, %f, %f, %f, %f", params.read<double>("sim.greens.shear_diag_max"), params.read<double>("sim.greens.shear_diag_min"), params.read<double>("sim.greens.shear_offdiag_max"), params.read<double>("sim.greens.shear_offdiag_min"), params.read<double>("sim.greens.normal_diag_max"), params.read<double>("sim.greens.normal_diag_min"), params.read<double>("sim.greens.normal_offdiag_max"), params.read<double>("sim.greens.normal_offdiag_min"));
     //
     // Kasey: parameter to either read in stress drops from file or compute them
-    params.readSet<bool>("sim.friction.compute_stress_drops", false);
+    params.readSet<bool>("sim.friction.compute_stress_drops", true);
 
 }
 
