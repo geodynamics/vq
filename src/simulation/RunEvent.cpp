@@ -483,7 +483,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
 
             // Add block neighbors if the block has slipped
-            if (sim->getUpdateField(gid) > 0) {
+            if (sim->getUpdateField(gid) == 0) {
                 nbr_start_end = sim->getNeighbors(gid);
 
                 for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
