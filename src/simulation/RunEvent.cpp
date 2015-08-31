@@ -63,10 +63,14 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             Block &b = sim->getBlock(*fit);
             //
             // calculate the drop in stress from the failure
-            stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
+            //stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
+            //if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
-            if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-
+            ///// Schultz:
+            // Avoid the scenario that CFF is slightly changed due to other failed blocks,
+            //  so that we never satisfy the condition if (!stress_drop)
+            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            
             // Slip is in m
             slip = (stress_drop/sim->getSelfStresses(gid));
 
@@ -186,6 +190,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         }
 
         b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
+        ////// Schultz:
+        // Need to incorporate stress drop here somehow, we need secondary
+        // rupture physics to be same as primary.
     }
 
     //
@@ -375,6 +382,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         double slip = x[i] - sim->getSlipDeficit(*it);
 
         //
+        ////// Schultz:
+        // We may be destabilizing the system here if the solution includes negative slipped elements.
+        // We cannot solve the whole system then throw out a few elements.
         if (slip > 0) {
             // Record how much the block slipped in this sweep and initial stresse
             sweeps.setSlipAndArea(sweep_num,
@@ -470,6 +480,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setNormalStress(gid, sim->getRhogd(gid));
             sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+
+            ////////// Schultz:
+            // We need to ensure our slip economics books are balanced. I suspect we need here
+            // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
+            // the current slip of all elements, or else we throw away the slip information from primary ruptures.
         }
 
         // Distribute the update field values to other processors
@@ -528,6 +543,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // if this is a current/original failure, then 0 else...
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
+            ////////// Schultz:
+            // We need to ensure our slip economics books are balanced. I suspect we need here
+            // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
+            // the current slip of all elements, or else we throw away the slip information from failed elements.
         }
 
         //
