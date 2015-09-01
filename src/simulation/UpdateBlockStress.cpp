@@ -32,9 +32,17 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
     double depth = 0.0;         //
+    double mean_slip_rate = 0.0;
 
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
+    
+    /////// Schultz: First we compute the mean slip rate to avoid NaN's
+    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+        mean_slip_rate += nt->slip_rate();
+    }
+    // Normalize by number of blocks
+    mean_slip_rate /= sim->numGlobalBlocks();
 
     // All processes need the friction values for all blocks, so we set rhogd here
     // and transfer stress drop values between nodes later
@@ -61,11 +69,13 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             // TODO: Instead of dividing by the local slip rate as your normalization,
             //       we need to have some minimum or mean normalization constant to
             //       handle zero slip rates that lead to stress_drop = NaN.
+            
+            // Now compute weighted stress drops from slip rates and shear interactions
             stress_drop = 0;
             norm_velocity = sim->getBlock(gid).slip_rate();
 
             for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-                stress_drop += (nt->slip_rate()/norm_velocity)*sim->getGreenShear(gid, nt->getBlockID());
+                stress_drop += ((nt->slip_rate() + mean_slip_rate)/(norm_velocity + mean_slip_rate))*sim->getGreenShear(gid, nt->getBlockID());
             }
 
             sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);

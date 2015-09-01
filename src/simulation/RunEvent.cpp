@@ -62,14 +62,16 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
             //
-            // calculate the drop in stress from the failure
-            //stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
-            //if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
             ///// Schultz:
             // Avoid the scenario that CFF is slightly changed due to other failed blocks,
-            //  so that we never satisfy the condition if (!stress_drop)
-            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            //  so that we never satisfy the condition if (!stress_drop). Must check this
+            //  in the future.
+            
+            // calculate the drop in stress from the failure
+            stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
+            
+            if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
             
             // Slip is in m
             slip = (stress_drop/sim->getSelfStresses(gid));
