@@ -488,13 +488,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
 
             ////////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slip information from primary ruptures.
-            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
         }
 
         // Distribute the update field values to other processors
