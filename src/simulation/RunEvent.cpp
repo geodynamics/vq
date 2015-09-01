@@ -76,7 +76,10 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             // Slip is in m
             slip = (stress_drop/sim->getSelfStresses(gid));
 
-            if (slip < 0) slip = 0;
+            ////// Schultz:
+            // Relaxing the restriction on negative slip for now. We will investigate the cause/effect
+            // of negative slips in the future.
+            //if (slip < 0) slip = 0;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
@@ -387,20 +390,24 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         ////// Schultz:
         // We may be destabilizing the system here if the solution includes negative slipped elements.
         // We cannot solve the whole system then throw out a few elements.
-        if (slip > 0) {
-            // Record how much the block slipped in this sweep and initial stresse
-            sweeps.setSlipAndArea(sweep_num,
-                                  *it,
-                                  slip,
-                                  block.area(),
-                                  block.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   *it,
-                                   sim->getShearStress(*it),
-                                   sim->getNormalStress(*it));
-            //
-            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
-        }
+        
+        ////// Schultz:
+        // Relaxing the restriction on negative slip for now. We will investigate the cause/effect
+        // of negative slips in the future.
+        //if (slip > 0) {
+        // Record how much the block slipped in this sweep and initial stresse
+        sweeps.setSlipAndArea(sweep_num,
+                              *it,
+                              slip,
+                              block.area(),
+                              block.lame_mu());
+        sweeps.setInitStresses(sweep_num,
+                               *it,
+                               sim->getShearStress(*it),
+                               sim->getNormalStress(*it));
+        //
+        sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
+        //}
     }
 
     //
