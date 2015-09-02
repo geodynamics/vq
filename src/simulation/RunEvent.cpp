@@ -488,8 +488,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
-            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
 
             ////////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
@@ -499,10 +499,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         // Distribute the update field values to other processors
-        // (possible) MPI operations:
-        //sim->barrier();    // yoder: (debug)
         sim->distributeUpdateField();
-        //sim->barrier();    // yoder: (debug)
 
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
         for (it=sim->begin(); it!=sim->end(); ++it) {
@@ -537,12 +534,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->computeCFFs();
         //
         // For each block that has failed already, calculate the slip from the movement of blocks that just failed
-        // yoder: (debug)
-        //sim->barrier();
         //
         processBlocksSecondaryFailures(sim, event_sweeps);
-        // yoder: (debug)
-        //sim->barrier();
         //
 
         // Set the update field to the slip of all blocks
@@ -552,12 +545,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //
             // if this is a current/original failure, then 0 else...
-            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
-            //////// Schultz: trying this
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
-            
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
-            ////////// Schultz:
+            
+            //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
+            sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));            
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slip information from failed elements.
@@ -802,7 +794,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // add some barrier() blocking (which might have been added above to barrier()-wrap the process_{earthquake type}() call).
     recordEventStresses(sim);
 
-    // Update the cumulative slip for this fault
+    // Reset the failed status for each local block
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         BlockID gid = sim->getGlobalBID(lid);
         sim->setFailed(gid, false);
