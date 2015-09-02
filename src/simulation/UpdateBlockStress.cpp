@@ -78,7 +78,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
                 stress_drop += ((nt->slip_rate() + mean_slip_rate)/(norm_velocity + mean_slip_rate))*sim->getGreenShear(gid, nt->getBlockID());
             }
 
-            sim->setStressDrop(gid, sim->getBlock(gid).max_slip()*stress_drop);
+            stress_drop *= sim->getBlock(gid).max_slip();
+            /////// Schultz: All stress drops must be negative
+            if (stress_drop > 0) stress_drop = -1.0*fabs(stress_drop);
+            sim->setStressDrop(gid, stress_drop);
+            
         } else {
             sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
         }
