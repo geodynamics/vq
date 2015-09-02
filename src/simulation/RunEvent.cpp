@@ -194,10 +194,11 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             }
         }
 
-        b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
+        //b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
         ////// Schultz:
         // Need to incorporate stress drop here somehow, we need secondary
         // rupture physics to be same as primary.
+        b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
     }
 
     //
