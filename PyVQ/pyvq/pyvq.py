@@ -8,6 +8,7 @@ import argparse
 import quakelib
 import gc
 import operator
+import os
 
 scipy_available = True
 try:
@@ -2149,7 +2150,10 @@ if __name__ == "__main__":
 
     # Read the event and sweeps files
     if args.event_file:
-        events = Events(args.event_file, args.sweep_file)
+        if not os.path.isfile(args.event_file):
+            raise "Event file does not exist: "+args.event_file
+        else:
+            events = Events(args.event_file, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
