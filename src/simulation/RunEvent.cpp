@@ -79,9 +79,9 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             slip = (stress_drop/sim->getSelfStresses(gid));
 
             ////// Schultz:
-            // Relaxing the restriction on negative slip for now. We will investigate the cause/effect
-            // of negative slips in the future.
-            //if (slip < 0) slip = 0;
+            // The only reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
+            // So if stress_drop > 0, the element shouldn't be slipping.
+            if (slip < 0) slip = 0;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
