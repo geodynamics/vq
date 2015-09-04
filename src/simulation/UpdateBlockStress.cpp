@@ -81,6 +81,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             stress_drop *= sim->getBlock(gid).max_slip();
             /////// Schultz: All stress drops must be negative
             if (stress_drop > 0) stress_drop = -1.0*fabs(stress_drop);
+            
+            /////// Schultz: Hack #2, multiply the stress drops by 2.7 to get closer to the prescribed VC stress drop values
+            stress_drop *= 2.7;
             sim->setStressDrop(gid, stress_drop);
             
         } else {
@@ -131,6 +134,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
+
 }
 
 /*!

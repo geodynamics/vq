@@ -2184,6 +2184,8 @@ if __name__ == "__main__":
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     if args.min_slip or args.max_slip:
+        # Setting default lower limit on mean slip of 1cm
+        if args.min_slip is None: args.min_slip = 0.01
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
 
     if args.min_event_num or args.max_event_num:
