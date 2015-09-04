@@ -218,7 +218,7 @@ class TriggerSectionFilter:
         return ""
         
 class SlipFilter:
-    def __init__(self, geometry, min_slip=None, max_slip=None):
+    def __init__(self, min_slip=None, max_slip=None):
         self._min_slip = min_slip if min_slip is not None else -float("inf")
         self._max_slip = max_slip if max_slip is not None else float("inf")
 
@@ -344,21 +344,21 @@ class Events:
             raise "No events matching filters found!"
 
     def interevent_times(self):
-        event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events]
+        event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         return [event_times[i+1]-event_times[i] for i in xrange(len(event_times)-1)]
 
     def event_years(self):
-        return [self._events[evnum].getEventYear() for evnum in self._filtered_events]
+        return [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_rupture_areas(self):
-        return [self._events[evnum].calcEventRuptureArea() for evnum in self._filtered_events]
+        return [self._events[evnum].calcEventRuptureArea() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_magnitudes(self):
-        return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if (self._events[evnum].getMagnitude() != float("-inf") or np.isnan(self._events[evnum].getMagnitude()))]
-# TODO: Handle -infinity or NaN magnitudes on the C++ side
+        return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
+# TODO: Handle  NaN magnitudes on the C++ side
 
     def event_mean_slip(self):
-        return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
+        return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         
     def get_event_element_slips(self, evnum):
         element_ids = self._events[evnum].getInvolvedElements()
@@ -393,19 +393,19 @@ class Events:
         self.event_summary(evnums)
     
     def event_initial_shear_stresses(self):
-        return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events]
+        return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_final_shear_stresses(self):
-        return [self._events[evnum].getShearStressFinal() for evnum in self._filtered_events]        
+        return [self._events[evnum].getShearStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]        
                         
     def event_initial_normal_stresses(self):
-        return [self._events[evnum].getNormalStressInit() for evnum in self._filtered_events]
+        return [self._events[evnum].getNormalStressInit() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_final_normal_stresses(self):
-        return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events]  
+        return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]  
         
     def number_of_sweeps(self):
-        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events] 
+        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
