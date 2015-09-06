@@ -82,8 +82,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             /////// Schultz: All stress drops must be negative
             if (stress_drop > 0) stress_drop = -1.0*fabs(stress_drop);
             
-            /////// Schultz: Hack #2, multiply the stress drops by 2.7 to get closer to the prescribed VC stress drop values
-            stress_drop *= 2.7;
+            /////// Schultz: Hack #2, multiply the stress drops by 5.0 to get closer to the prescribed VC stress drop values
+            // TODO: Make this a parameter
+            stress_drop *= 5.0;
             sim->setStressDrop(gid, stress_drop);
             
         } else {
