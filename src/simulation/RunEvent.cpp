@@ -79,7 +79,7 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             slip = (stress_drop/sim->getSelfStresses(gid));
 
             ////// Schultz:
-            // The only reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
+            // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
             // So if stress_drop > 0, the element shouldn't be slipping.
             if (slip < 0) slip = 0;
 
@@ -551,7 +551,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //
             // if this is a current/original failure, then 0 else...
-            sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
             
             //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
@@ -559,7 +559,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slip information from failed elements.
-            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
         }
 
         //
@@ -629,6 +629,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
             //
             // yoder: as per request by KS, change isnan() --> std::isnan(); isnan() appears to throw an error on some platforms.
+            // Eric: Probably don't need this if check
             if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
                 // note: the stress entries are initialized with nan values, but if there are cases where non nan values need to be updated,
                 // this logic should be revisited.
