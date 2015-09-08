@@ -67,14 +67,14 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             // Avoid the scenario that CFF is slightly changed due to other failed blocks,
             //  so that we never satisfy the condition if (!stress_drop). Must check this
             //  in the future.
-            
+
             // calculate the drop in stress from the failure
             //stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
             //if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-            
+
             ////// Schultz
             stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-            
+
             // Slip is in m
             slip = (stress_drop/sim->getSelfStresses(gid));
 
@@ -397,7 +397,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         ////// Schultz:
         // We may be destabilizing the system here if the solution includes negative slipped elements.
         // We cannot solve the whole system then throw out a few elements.
-        
+
         ////// Schultz:
         // Relaxing the restriction on negative slip for now. We will investigate the cause/effect
         // of negative slips in the future.
@@ -553,9 +553,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // if this is a current/original failure, then 0 else...
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
-            
+
             //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
-            //sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));            
+            //sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slip information from failed elements.

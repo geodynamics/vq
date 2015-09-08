@@ -75,7 +75,7 @@ void ReadModelFile::init(SimFramework *_sim) {
 
         // Set SimElement values
         for (unsigned int i=0; i<3; ++i) new_block.set_vert(i, new_element.vert(i));
-        
+
         // We also need distance along strike data for computing section length for computing stress drops
         for (unsigned int i=0; i<3; ++i) new_block.set_das(i, new_element.das(i));
 

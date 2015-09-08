@@ -173,7 +173,7 @@ class VCParams {
         double getGreenShearMax(void) const {
             //return params.read<double>("sim.greens.shear_max");
             return params.read<double>("sim.greens.shear_offdiag_max");
-        };        
+        };
         double getGreenShearMin(void) const {
             //return params.read<double>("sim.greens.shear_min");
             return params.read<double>("sim.greens.shear_offdiag_min");
@@ -192,9 +192,9 @@ class VCParams {
         bool computeStressDrops(void) const {
             return params.read<bool>("sim.friction.compute_stress_drops");
         };
-        
+
         // The constant adjustment to the stress drops, should be between 0.3 and 0.5 globally
-        //     with tuning the larger faults may need 0.6 to 0.8. The larger the number, the larger 
+        //     with tuning the larger faults may need 0.6 to 0.8. The larger the number, the larger
         //     the stress drops. Currently it's a global constant
         double stressDropFactor(void) const {
             return params.read<double>("sim.friction.stress_drop_factor");
@@ -206,12 +206,12 @@ class VCParams {
         double getGreenShearMin(const int block_1, const int block_2) const;
         double getGreenNormalMax(const int block_1, const int block_2) const;
         double getGreenNormalMin(const int block_1, const int block_2) const;
-        
+
         //
         // yoder: ... and for (non)diag specific...
         double getGreenShearDiagMax(void) const {
             return params.read<double>("sim.greens.shear_diag_max");
-        };        
+        };
         double getGreenShearDiagMin(void) const {
             return params.read<double>("sim.greens.shear_diag_min");
         };
@@ -224,7 +224,7 @@ class VCParams {
         //
         double getGreenShearOffDiagMax(void) const {
             return params.read<double>("sim.greens.shear_offdiag_max");
-        };        
+        };
         double getGreenShearOffDiagMin(void) const {
             return params.read<double>("sim.greens.shear_offdiag_min");
         };
@@ -234,7 +234,7 @@ class VCParams {
         double getGreenNormalOffDiagMin(void) const {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
-        
+
 };
 
 #endif

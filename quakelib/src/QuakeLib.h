@@ -115,7 +115,7 @@ namespace quakelib {
 
                 return _vert[vert];
             };
-            
+
             //! Set the distance along strike of a vertex.
             void set_das(const unsigned int &vert, const double &new_das) throw(std::out_of_range) {
                 if (vert>=3) throw std::out_of_range("quakelib::Element::set_vert");
@@ -128,13 +128,13 @@ namespace quakelib {
 
                 return _das[vert];
             };
-            
+
             //! Get the maximum distance along strike of a vertex.
             double max_das(void) {
                 return std::max(_das[0], std::max(_das[1], _das[2]));
             };
-            
-            
+
+
             // For quadrilateral elements, calculate the implicit 4th point
             Vec<3> implicit_vert(void) const throw(std::out_of_range) {
                 if (!_is_quad) throw std::out_of_range("quakelib::Element::implicit_vert");
@@ -293,14 +293,6 @@ namespace quakelib {
             //! Returns length along largest dimension
             double largest_dimension(void) const {
                 return fmax((_vert[2]-_vert[0]).mag(),(_vert[1]-_vert[0]).mag());
-            };
-            
-            double length(void) const {
-                return (_vert[2]-_vert[0]).mag();
-            };
-            
-            double width(void) const {
-                return (_vert[1]-_vert[0]).mag();
             };
 
             //! Determine minimum depth of this block.
