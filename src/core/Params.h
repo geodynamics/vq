@@ -192,6 +192,13 @@ class VCParams {
         bool computeStressDrops(void) const {
             return params.read<bool>("sim.friction.compute_stress_drops");
         };
+        
+        // The constant adjustment to the stress drops, should be between 0.3 and 0.5 globally
+        //     with tuning the larger faults may need 0.6 to 0.8. The larger the number, the larger 
+        //     the stress drops. Currently it's a global constant
+        double stressDropFactor(void) const {
+            return params.read<double>("sim.friction.stress_drop_factor");
+        };
 
         //
         // yoder: and overload so we can easily distinguish (off)diagonal elements (defined in GreensInit.cpp)
