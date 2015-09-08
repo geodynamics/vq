@@ -269,6 +269,14 @@ namespace quakelib {
             double largest_dimension(void) const {
                 return fmax((_vert[2]-_vert[0]).mag(),(_vert[1]-_vert[0]).mag());
             };
+            
+            double length(void) const {
+                return (_vert[2]-_vert[0]).mag();
+            };
+            
+            double width(void) const {
+                return (_vert[1]-_vert[0]).mag();
+            };
 
             //! Determine minimum depth of this block.
             //! Note that depth is negative, so max depth returns the most negative point and min depth the least negative
