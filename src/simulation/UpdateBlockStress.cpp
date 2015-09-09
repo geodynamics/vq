@@ -139,7 +139,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             nu = 0.5*sim->getBlock(gid).lame_lambda()/(sim->getBlock(gid).lame_mu() + sim->getBlock(gid).lame_lambda());
             R  = sqrt(fault_width*fault_width + fault_length*fault_length);
 
-            stress_drop = -2*sim->getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_width/fault_length + fault_length/fault_width )/( (1-nu)*M_PI*R ) ;
+            stress_drop = -2*sim->getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R ) ;
 
             sim->setStressDrop(gid, stress_drop);
 
