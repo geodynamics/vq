@@ -265,6 +265,62 @@ class Geometry:
                         traces_lat_lon[sid] = [(lat,lon)]
                     #break
         return traces_lat_lon
+        
+    def get_slip_rates(self, elements):
+        # Convert slip rates from meters/second to meters/(decimal year)
+        CONVERSION = 3.15576*pow(10,7) 
+        return {id:self.model.element(id).slip_rate()*CONVERSION for id in elements}
+        
+    def get_slip_time_series(self, events, elements=None, min_year=None, max_year=None, DT=None):
+        # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
+        # Get slip rates for the elements
+        slip_rates = self.get_slip_rates(elements)
+        #Initialize blocks with 0.0 slip at time t=0.0
+        slip_time_series  = {id:[0.0] for id in elements}
+        # Grab the events data
+        event_years = events.event_years()
+        event_numbers = events.event_numbers()
+        #Initialize time steps to evaluate slip    
+        time_values = np.arange(min_year+DT, max_year+DT, DT)
+        for k in range(len(time_values)):
+            if k>0:
+                # current time in simulation
+                right_now = time_values[k]
+                # back slip all elements by subtracting the slip_rate*dt
+                for block_id in slip_time_series.keys():
+                    last_slip = slip_time_series[block_id][k-1]
+                    this_slip = slip_rates[block_id]*DT
+                    slip_time_series[block_id].append(last_slip-this_slip)
+                # check if any elements slip as part of simulated event in the window of simulation time
+                # between (current time - DT, current time), add event slips to the slip at current time 
+                # for elements involved
+                for j in range(len(event_numbers)):
+                    evid    = event_numbers[j]
+                    ev_year = event_years[j]
+                    if right_now-DT < ev_year <= right_now:
+                        event_element_slips = events.get_event_element_slips(evid)
+                        for block_id in event_element_slips.keys():
+                            try:
+                                slip_time_series[block_id][k] += event_element_slips[block_id]
+                            except KeyError:
+                                pass # Ignore event elements that we are not asked for (in elements)
+                                # When faults within the specified section_filter have events that produce slip on elements
+                                #   outside the section_filter, the slip history for the external elements
+                                #   is added to the slip_time_series and only includes backslip plus any
+                                #   co-seismic slips from events selected with the current 
+                                #   section/magnitude_filter/event_range.
+                                #slip_time_series[block_id] = [0.0]
+                                #slip_rates[block_id] = self.get_slip_rates(block_id)[block_id]
+                                
+                                # Include the historical backslip up to this point
+                                #for l in range(k):
+                                #    last_slip = slip_time_series[block_id][l]
+                                #    this_slip = slip_rates[block_id]*DT
+                                #    slip_time_series[block_id].append(last_slip-this_slip)
+                                # Include the slip from this current event
+                                #slip_time_series[block_id][k] += event_element_slips[block_id]                            
+        return slip_time_series
+
 
 # ======= h5py I/O ============================================
 def read_events_h5(sim_file, event_numbers=None):
@@ -355,8 +411,11 @@ class Events:
 
     def event_magnitudes(self):
         return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
-# TODO: Handle  NaN magnitudes on the C++ side
+    # TODO: Handle  NaN magnitudes on the C++ side
 
+    def event_numbers(self):
+        return [evnum for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
+        
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         
@@ -1604,16 +1663,23 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def multi_line_plot(self, x_data, y_data, colors, labels, linewidths, plot_title, x_label, y_label, legend_str, filename):
+    def multi_line_plot(self, x_data, y_data, labels, linewidths, plot_title, x_label, y_label, legend_str, filename, colors=None, linestyles=None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
-        ax.set_title(plot_title)
-        if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
-            raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
-        for i in range(len(x_data)):
-            ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
+        if linestyles is None: linestyles = ["-" for each in x_data]
+        fig.suptitle(plot_title, fontsize=10)
+        if colors is not None:
+            if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
+                raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
+            for i in range(len(x_data)):
+                ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
+        else:
+            if not (len(x_data) == len(y_data) and len(x_data) == len(labels) and len(linewidths) == len(y_data)):
+                raise "These lists must be the same length: x_data, y_data, labels, linewidths."
+            for i in range(len(x_data)):
+                ax.plot(x_data[i], y_data[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         ax.legend(title=legend_str, loc='best')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
@@ -1905,7 +1971,7 @@ class ProbabilityPlot(BasePlotter):
         y_lab         = r'P(t, t$_0$)'
         x_lab         = r't = t$_0$ + $\Delta$t [years]'
         plot_title    = ""
-        self.multi_line_plot(x_data, y_data, colors, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename)
+        self.multi_line_plot(x_data, y_data, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename, colors=colors)
 
     def plot_dt_vs_t0(self, events, filename, years_since=None):
         # Plot the waiting times corresponding to 25/50/75% conditional probabilities
@@ -2113,6 +2179,15 @@ if __name__ == "__main__":
             help="Plot normal stress changes for events")
     parser.add_argument('--event_mean_slip', required=False, action='store_true',
             help="Plot the mean slip for events")
+            
+    # Geometry
+    parser.add_argument('--slip_rates', required=False, action='store_true',
+            help="Print element id and slip rate for all elements.")
+    parser.add_argument('--elements', type=int, nargs='+', required=False,
+            help="List of elements for filtering.")
+    parser.add_argument('--slip_time_series', required=False, action='store_true',
+            help="Return the slip time series for all specified --elements.")
+    parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -2161,6 +2236,27 @@ if __name__ == "__main__":
             geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
         else:
             geometry = Geometry(model_file=args.model_file)
+            
+    if args.slip_rates:
+        if args.elements is None: args.elements = geometry.model.getElementIDs()
+        slip_rates = geometry.get_slip_rates(args.elements)
+        for id in slip_rates.keys():
+            sys.stdout.write("{}  {}\n".format(id,slip_rates[id]))
+            
+    if args.slip_time_series:
+        if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
+        if args.min_year is None: args.min_year = 0.0
+        if args.max_year is None: args.max_year = 20.0
+        if args.dt is None: args.dt = 0.5  # Unit is decimal years
+        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        labels = time_series.keys()+[""]
+        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
+        linewidths = [0.8 for key in time_series.keys()]+[1]
+        styles = ["-" for key in time_series.keys()]+["--"]
+        y_data = time_series.values()+[[0,0]]
+        plot_title = "Slip time series from years {} to {} with step {}\n{}".format(args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series")
+        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
