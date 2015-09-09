@@ -1051,7 +1051,7 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     //
     greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear, getGreenShearMax(r,c))));
     greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal, getGreenNormalMax(r,c))));
-    
+
     // original update code:
     /*
     //greenShear()->setVal(getLocalInd(r), c, new_green_shear);

@@ -87,13 +87,13 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_stress_type", "");
     //
     // yoder: add parameters to truncate crazy greens function values:
-    //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());        
+    //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
     //params.readSet<double>("sim.greens.shear_min",  -std::numeric_limits<double>::max());
     //params.readSet<double>("sim.greens.normal_max", std::numeric_limits<double>::max());
     //params.readSet<double>("sim.greens.normal_min", -std::numeric_limits<double>::max());
     //printf("**Debug: greens shear_max=%f, shear_min=%f\n",std::numeric_limits<double>::max(), std::numeric_limits<double>::min() );
     //
-    // yoder: 
+    // yoder:
     // it does not really make sense to filter the diagonal and off-diagonal elements together. it may not make sense to filter
     // diag. elements at all. anyway, let's be specific:
     params.readSet<double>("sim.greens.shear_diag_max",  DBL_MAX);
@@ -111,6 +111,8 @@ void VCParams::read_params(const std::string &param_file_name) {
     // Kasey: parameter to either read in stress drops from file or compute them
     params.readSet<bool>("sim.friction.compute_stress_drops", true);
 
+    params.readSet<double>("sim.friction.stress_drop_factor", 0.3);
+
 }
 
 void VCParams::write_params(const std::string &param_file_name) {
@@ -125,37 +127,33 @@ void VCParams::write_params(const std::string &param_file_name) {
 double VCParams::getGreenShearMax(const int block_1, const int block_2) const {
     // return the appropriate (off)diagonal max/min greens values.
     if (block_1==block_2) {
-    	return getGreenShearDiagMax();
+        return getGreenShearDiagMax();
+    } else {
+        return getGreenShearOffDiagMax();
     }
-    else {
-    	return getGreenShearOffDiagMax();
-    }
-        };
+};
 double VCParams::getGreenShearMin(const int block_1, const int block_2) const {
     // return the appropriate (off)diagonal max/min greens values.
     if (block_1==block_2) {
-    	return getGreenShearDiagMin();
+        return getGreenShearDiagMin();
+    } else {
+        return getGreenShearOffDiagMin();
     }
-    else {
-    	return getGreenShearOffDiagMin();
-    }
-        };
-        
+};
+
 double VCParams::getGreenNormalMax(const int block_1, const int block_2) const {
     // return the appropriate (off)diagonal max/min greens values.
     if (block_1==block_2) {
-    	return getGreenNormalDiagMax();
+        return getGreenNormalDiagMax();
+    } else {
+        return getGreenNormalOffDiagMax();
     }
-    else {
-    	return getGreenNormalOffDiagMax();
-    }
-        };
+};
 double VCParams::getGreenNormalMin(const int block_1, const int block_2) const {
     // return the appropriate (off)diagonal max/min greens values.
     if (block_1==block_2) {
-    	return getGreenNormalDiagMin();
+        return getGreenNormalDiagMin();
+    } else {
+        return getGreenNormalOffDiagMin();
     }
-    else {
-    	return getGreenNormalOffDiagMin();
-    }
-        };
+};

@@ -62,6 +62,8 @@ namespace quakelib {
         protected:
             //! Coordinates of element vertices in meters
             Vec<3>      _vert[3];
+            //! Distance along strike for each vertex in meters
+            double      _das[3];
             //! Whether the vertices describe a triangle (false) or parallelogram (quadrilateral) (true)
             bool        _is_quad;
             //! Rake angle (radians, 0.0 = left lateral, PI/2 = positive side moves up)
@@ -113,6 +115,26 @@ namespace quakelib {
 
                 return _vert[vert];
             };
+
+            //! Set the distance along strike of a vertex.
+            void set_das(const unsigned int &vert, const double &new_das) throw(std::out_of_range) {
+                if (vert>=3) throw std::out_of_range("quakelib::Element::set_vert");
+
+                _das[vert] = new_das;
+            };
+            //! Get the distance along strike of a vertex.
+            double das(const unsigned int &vert) const throw(std::out_of_range) {
+                if (vert>=3) throw std::out_of_range("quakelib::Element::vert");
+
+                return _das[vert];
+            };
+
+            //! Get the maximum distance along strike of a vertex.
+            double max_das(void) {
+                return std::max(_das[0], std::max(_das[1], _das[2]));
+            };
+
+
             // For quadrilateral elements, calculate the implicit 4th point
             Vec<3> implicit_vert(void) const throw(std::out_of_range) {
                 if (!_is_quad) throw std::out_of_range("quakelib::Element::implicit_vert");
@@ -205,6 +227,9 @@ namespace quakelib {
                 _vert[0] = Vec<3>::nan_vec();
                 _vert[1] = Vec<3>::nan_vec();
                 _vert[2] = Vec<3>::nan_vec();
+                _das[0] = std::numeric_limits<double>::quiet_NaN();
+                _das[1] = std::numeric_limits<double>::quiet_NaN();
+                _das[2] = std::numeric_limits<double>::quiet_NaN();
                 _is_quad = false;
                 _rake = _slip_rate = _aseis_factor = std::numeric_limits<double>::quiet_NaN();
                 _lame_mu = _lame_lambda = std::numeric_limits<double>::quiet_NaN();

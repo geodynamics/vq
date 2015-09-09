@@ -8,6 +8,7 @@ import argparse
 import quakelib
 import gc
 import operator
+import os
 
 scipy_available = True
 try:
@@ -102,7 +103,7 @@ class SaveFile:
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
-            model_file = model_file.split("/")[-1]
+            event_file = event_file.split("/")[-1]
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
             if len(min_mag.split(".")) > 1:
@@ -216,6 +217,21 @@ class TriggerSectionFilter:
     def plot_str(self):
         return ""
         
+class SlipFilter:
+    def __init__(self, min_slip=None, max_slip=None):
+        self._min_slip = min_slip if min_slip is not None else -float("inf")
+        self._max_slip = max_slip if max_slip is not None else float("inf")
+
+    def test_event(self, event):
+        return (event.calcMeanSlip() >= self._min_slip and event.calcMeanSlip() <= self._max_slip)
+
+    def plot_str(self):
+        label_str = ""
+# TODO: change to <= character
+        if self._min_slip != -float("inf"): label_str += str(self._min_slip)+"<"
+        if self._max_slip != float("inf"): label_str += "year<"+str(self._max_slip)
+        return label_str
+        
 class Geometry:
     def __init__(self, model_file=None, model_file_type=None):
         if model_file is not None:
@@ -328,21 +344,21 @@ class Events:
             raise "No events matching filters found!"
 
     def interevent_times(self):
-        event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events]
+        event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         return [event_times[i+1]-event_times[i] for i in xrange(len(event_times)-1)]
 
     def event_years(self):
-        return [self._events[evnum].getEventYear() for evnum in self._filtered_events]
+        return [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_rupture_areas(self):
-        return [self._events[evnum].calcEventRuptureArea() for evnum in self._filtered_events]
+        return [self._events[evnum].calcEventRuptureArea() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_magnitudes(self):
-        return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if self._events[evnum].getMagnitude() != float("-inf")]
-# TODO: Handle -infinity magnitudes on the C++ side
+        return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
+# TODO: Handle  NaN magnitudes on the C++ side
 
     def event_mean_slip(self):
-        return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events]
+        return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         
     def get_event_element_slips(self, evnum):
         element_ids = self._events[evnum].getInvolvedElements()
@@ -377,19 +393,19 @@ class Events:
         self.event_summary(evnums)
     
     def event_initial_shear_stresses(self):
-        return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events]
+        return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_final_shear_stresses(self):
-        return [self._events[evnum].getShearStressFinal() for evnum in self._filtered_events]        
+        return [self._events[evnum].getShearStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]        
                         
     def event_initial_normal_stresses(self):
-        return [self._events[evnum].getNormalStressInit() for evnum in self._filtered_events]
+        return [self._events[evnum].getNormalStressInit() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
 
     def event_final_normal_stresses(self):
-        return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events]  
+        return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]  
         
     def number_of_sweeps(self):
-        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events] 
+        return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
@@ -567,15 +583,9 @@ class GreensPlotter:
         cbar_ax.tick_params(axis='x',labelbottom=BOTTOM,labeltop=TOP,
                         bottom='off',top='off',right='off',left='off',pad=PAD)
         if self.field_type == "gravity" or self.field_type == "dilat_gravity":
-            if self.levels is not None:
-                forced_ticks = self.levels
-            else:
-                forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+            forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, len(cbar_ax.xaxis.get_ticklabels()))]
         else:
-            if self.levels is not None:
-                forced_ticks = self.levels
-            else:
-                forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, 11)]
+            forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, len(cbar_ax.xaxis.get_ticklabels()))]
         cb_tick_labs    = [str(num) for num in forced_ticks]
         cb_tick_labs[0] = '<'+cb_tick_labs[0]
         cb_tick_labs[-1]= '>'+cb_tick_labs[-1]
@@ -1677,6 +1687,7 @@ class BasePlotter:
             ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
+        
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -1791,7 +1802,7 @@ class DiagnosticPlot(BasePlotter):
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(True, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
@@ -2014,6 +2025,10 @@ if __name__ == "__main__":
             help="Minimum year of events to process.")
     parser.add_argument('--max_year', type=float, required=False,
             help="Maximum year of events to process.")
+    parser.add_argument('--min_slip', type=float, required=False,
+            help="Minimum mean slip of events to process.")
+    parser.add_argument('--max_slip', type=float, required=False,
+            help="Maximum mean slip of events to process.")
     parser.add_argument('--min_event_num', type=float, required=False,
             help="Minimum event number of events to process.")
     parser.add_argument('--max_event_num', type=float, required=False,
@@ -2135,7 +2150,10 @@ if __name__ == "__main__":
 
     # Read the event and sweeps files
     if args.event_file:
-        events = Events(args.event_file, args.sweep_file)
+        if not os.path.isfile(args.event_file):
+            raise "Event file does not exist: "+args.event_file
+        else:
+            events = Events(args.event_file, args.sweep_file)
 
     # Read the geometry model if specified
     if args.model_file:
@@ -2165,6 +2183,11 @@ if __name__ == "__main__":
     if args.min_year or args.max_year:
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
+    if args.min_slip or args.max_slip:
+        # Setting default lower limit on mean slip of 1cm
+        if args.min_slip is None: args.min_slip = 0.01
+        event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
+
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
@@ -2187,6 +2210,15 @@ if __name__ == "__main__":
         events.largest_event_summary(args.summary)
 
     # Generate plots
+    if args.diagnostics:
+        args.num_sweeps = True
+        args.event_shear_stress = True
+        args.event_normal_stress = True
+        args.event_mean_slip = True
+        args.plot_freq_mag = 3
+        args.plot_mag_mean_slip = True
+        args.plot_mag_rupt_area = True
+        args.wc94 = True
     if args.plot_freq_mag:
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
@@ -2293,12 +2325,6 @@ if __name__ == "__main__":
 # TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
         
-    # Generate the diagnostic plots
-    if args.diagnostics:
-        args.num_sweeps = True
-        args.event_shear_stress = True
-        args.event_normal_stress = True
-        args.event_mean_slip = True
     if args.num_sweeps:
         filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
         DiagnosticPlot().plot_number_of_sweeps(events, filename)

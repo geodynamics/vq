@@ -18,7 +18,7 @@ import itertools
 import scipy.optimize
 from scipy.stats import norm
 
-import sys
+import sys, os
 
 
 class PyGreens(object):

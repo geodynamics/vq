@@ -1603,6 +1603,7 @@ quakelib::SimElement quakelib::ModelWorld::create_sim_element(const UIndex &elem
     for (i=0; i<3; ++i) {
         vit = _vertices.find(eit->second.vertex(i));
         new_element.set_vert(i, vit->second.xyz());
+        new_element.set_das(i, vit->second.das());
     }
 
     new_element.set_is_quad(eit->second.is_quad());

@@ -160,11 +160,13 @@ xcuserdata
 xcode/
 doc/#vc.lyx#
 doc/vc.lyx~
+VQ.xcodeproj/
 
 examples/ca_model/all_cal*
 examples/ca_model/events*
 examples/ca_model/sweeps*
 
+examples/ca_model/gen_norcal_model.sh
 
 doc/*.log
 
@@ -182,6 +184,7 @@ doc/*.bbl
 
 doc/*.blg
 
+doc/*.pdf
 
 *.h5
 
