@@ -64,15 +64,6 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             //
 
             ///// Schultz:
-            // Avoid the scenario that CFF is slightly changed due to other failed blocks,
-            //  so that we never satisfy the condition if (!stress_drop). Must check this
-            //  in the future.
-
-            // calculate the drop in stress from the failure
-            //stress_drop = sim->getCFF0(gid) - sim->getCFF(gid);
-            //if (!stress_drop) stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-
-            ////// Schultz
             stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
             // Slip is in m
@@ -80,8 +71,9 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
 
             ////// Schultz:
             // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
-            // So if stress_drop > 0, the element shouldn't be slipping.
-            if (slip < 0) slip = 0;
+            // So if stress_drop > 0, the element shouldn't be slipping. We must allow it to happen if it does.
+            // Perhaps the system needs this due to element loading thru interactions.
+            //if (slip < 0) slip = 0;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
