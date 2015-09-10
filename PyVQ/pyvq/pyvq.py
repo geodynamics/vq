@@ -104,15 +104,21 @@ class SaveFile:
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if args.use_sections is not None:
+            for sec in args.use_sections:
+                add+="_"+geometry.model.section(sec).name()
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
             if len(min_mag.split(".")) > 1:
-                mag = "minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]+"_"
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
             else:
-                mag = "minMag_"+min_mag+"_"
-        else:
-            mag = ""
-        return plot_type+"_"+mag+event_file.split(".")[0]+".png"
+                add += "_minMag_"+min_mag
+
+        return plot_type+add+"_"+event_file.split(".")[0]+".png"
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
         # Remove any folders in front of model_file name
@@ -140,7 +146,11 @@ class SaveFile:
             event_file = event_file.split("/")[-1]
         add=""
         if min_year is not None: add+="_yearMin"+str(int(min_year))    
-        if max_year is not None: add+="_yearMax"+str(int(max_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if args.use_sections is not None:
+            for sec in args.use_sections:
+                add+="_"+geometry.model.section(sec).name()
+            
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
     
 
@@ -1744,6 +1754,8 @@ class BasePlotter:
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
+        if args.zoom: plt.ylim(-5,5)
+        
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -2169,6 +2181,8 @@ if __name__ == "__main__":
             help="Plot normal stress changes for events")
     parser.add_argument('--event_mean_slip', required=False, action='store_true',
             help="Plot the mean slip for events")
+    parser.add_argument('--zoom', required=False, action='store_true',
+            help="Force zoomed bounds on scatter and line plots")
             
     # Geometry
     parser.add_argument('--slip_rates', required=False, action='store_true',
@@ -2226,30 +2240,6 @@ if __name__ == "__main__":
             geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
         else:
             geometry = Geometry(model_file=args.model_file)
-            
-    if args.slip_rates:
-        if args.elements is None: args.elements = geometry.model.getElementIDs()
-        slip_rates = geometry.get_slip_rates(args.elements)
-        for id in slip_rates.keys():
-            sys.stdout.write("{}  {}\n".format(id,slip_rates[id]))
-            
-    if args.slip_time_series:
-        if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
-        if args.min_year is None: args.min_year = 0.0
-        if args.max_year is None: args.max_year = 20.0
-        if args.dt is None: args.dt = 0.5  # Unit is decimal years
-        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
-        if len(time_series.keys()) < 10: 
-            labels = time_series.keys()+[""]
-        else:
-            labels = [None for each in range(len(time_series.keys())+1)]
-        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
-        linewidths = [0.8 for key in time_series.keys()]+[1]
-        styles = ["-" for key in time_series.keys()]+["--"]
-        y_data = time_series.values()+[[0,0]]
-        plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
-        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year)
-        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -2284,6 +2274,10 @@ if __name__ == "__main__":
         if not args.model_file:
             raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
+        # Also grab all the elements from this section in case this is being used to grab element ids
+        if args.elements is None:
+            args.elements = [elem_num for elem_num in range(geometry.model.num_elements()) if geometry.model.element(elem_num).section_id() in args.use_sections]
+        
         
     if args.use_trigger_sections:
         if not args.model_file:
@@ -2408,6 +2402,40 @@ if __name__ == "__main__":
         filename = SaveFile().trace_plot(args.model_file)
         if args.small_model is None: args.small_model = False
         TP = TracePlotter(geometry, filename, use_sections=args.use_sections, small_model=args.small_model)
+
+    if args.slip_rates:
+        if args.elements is None: args.elements = geometry.model.getElementIDs()
+        slip_rates = geometry.get_slip_rates(args.elements)
+        for id in slip_rates.keys():
+            sys.stdout.write("{}  {}\n".format(id,slip_rates[id]))
+            
+    if args.slip_time_series:
+        if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
+        if args.min_year is None: args.min_year = 0.0
+        if args.max_year is None: args.max_year = 20.0
+        if args.dt is None: args.dt = 0.5  # Unit is decimal years
+        if args.use_sections is not None:
+            if len(args.use_sections) > 1:
+                section_name = ""
+                for sec in args.use_sections:
+                    section_name += geometry.model.section(sec).name()+", "
+            else:
+                section_name = geometry.model.section(args.use_sections[0]).name()+", "
+        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        if len(time_series.keys()) < 10: 
+            labels = time_series.keys()+[""]
+        else:
+            labels = [None for each in range(len(time_series.keys())+1)]
+        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
+        linewidths = [0.8 for key in time_series.keys()]+[1]
+        styles = ["-" for key in time_series.keys()]+["--"]
+        y_data = time_series.values()+[[0,0]]
+        if args.use_sections is not None:
+            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        else:
+            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year)
+        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     # Generate stress plots
     if args.stress_elements:
