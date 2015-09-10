@@ -1901,6 +1901,21 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     out_file << "</Folder>\n";
     out_file << "<Folder id=\"faults\">\n";
 
+
+    // Loop thru elements to compute min/max slip rates for color bounds
+    double max_rate = 0;
+    double min_rate = 0;
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        max_rate = fmax( max_rate, eit->second.slip_rate());
+        min_rate = fmin( min_rate, eit->second.slip_rate());
+    }
+    
+    /////// Bounds for color in blue to red range, white in the middle
+    double y_min = 0;
+    double y_max = 255;
+    double x_min = min_rate;
+    double x_max = max_rate;
+
     // Go through the sections
     for (fit=_sections.begin(); fit!=_sections.end(); ++fit) {
         // And output the elements for each section
@@ -1927,7 +1942,22 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                     lld[3] = lld[2];
                     lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
                 }
-
+                
+                // Compute blue to red color (RGB)
+                // Keep red scale (min is white, max is red) so red=255
+                // Blue and green are equal and vary from (255 for min vals to 0 for max vals)
+                int blue, green;
+                int red = y_max;
+                if (eit->second.slip_rate() == 0) {
+                    blue = 0;
+                    green = 0;
+                    red = 0;
+                } else {
+                    int interp_color = (int) linear_interp(eit->second.slip_rate(), x_min, x_max, y_min, y_max);
+                    blue = y_max - interp_color;
+                    green = blue;
+                }
+                
                 // Output the KML format polygon for this element
                 out_file << "\t\t<Placemark>\n";
                 out_file << "\t\t<description>\n";
@@ -1937,7 +1967,16 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                 out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
                 out_file << "Aseismic: " << eit->second.aseismic() << "\n";
                 out_file << "\t\t</description>\n";
-                out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
+                out_file << "\t\t\t<Style>\n";
+                out_file << "\t\t\t\t<LineStyle>\n";
+                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+                out_file << "\t\t\t\t\t<width>1</width>\n"; 
+                out_file << "\t\t\t\t</LineStyle>\n";
+                out_file << "\t\t\t\t<PolyStyle>\n";
+                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+                out_file << "\t\t\t\t</PolyStyle>\n";
+                out_file << "\t\t\t</Style>\n";
+                //out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
                 out_file << "\t\t\t<Polygon>\n";
                 out_file << "\t\t\t\t<extrude>0</extrude>\n";
                 out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
@@ -1966,6 +2005,21 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     out_file.close();
 
     return 0;
+}
+
+// Schultz: Using these functions for color interpolation and RGB to HEX color conversions
+double quakelib::ModelWorld::linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const {
+    return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min;
+}
+
+char* quakelib::ModelWorld::rgb2hex(const int r, const int g, const int b) const {
+    // Returning ABGR to work with KML format
+    char *buf;
+    size_t sz;
+    sz = snprintf(NULL, 0, "FF%02X%02X%02X", b,g,r);
+    buf = (char *)malloc(sz + 1);
+    snprintf(buf, sz+1, "FF%02X%02X%02X",  b,g,r);
+    return buf;
 }
 
 void quakelib::ModelSection::apply_remap(const ModelRemapping &remap) {
