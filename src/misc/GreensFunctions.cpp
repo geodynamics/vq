@@ -84,7 +84,12 @@ void GreensFuncCalcStandard::CalculateGreens(Simulation *sim) {
     for (int r=0; r<sim->numLocalBlocks(); ++r) {
         for (int c=0; c<num_blocks; ++c) {
             int global_r = sim->getGlobalBID(r);
-            sim->setGreens(global_r, c, ssh[global_r][c], snorm[global_r][c]);
+            //// Schultz, excluding zero slip rate elements from sim by setting Greens to zero
+            if (sim->getBlock(global_r).slip_rate()==0  ||  sim->getBlock(c).slip_rate()==0) {
+                sim->setGreens(global_r, c, 0, 0);
+            } else {
+                sim->setGreens(global_r, c, ssh[global_r][c], snorm[global_r][c]);
+            }
         }
     }
 }
@@ -157,7 +162,12 @@ void GreensFuncFileParse::CalculateGreens(Simulation *sim) {
         greens_file_reader->getGreensVals(gid, in_shear_green, in_normal_green);
 
         for (j=0; j<num_global_blocks; ++j) {
-            sim->setGreens(gid, j, in_shear_green[j], in_normal_green[j]);
+            //// Schultz, excluding zero slip rate elements from sim by setting Greens to zero
+            if (sim->getBlock(gid).slip_rate()==0  ||  sim->getBlock(j).slip_rate()==0) {
+                sim->setGreens(gid, j, 0, 0);
+            } else {
+                sim->setGreens(gid, j, in_shear_green[j], in_normal_green[j]);
+            }
         }
     }
 
