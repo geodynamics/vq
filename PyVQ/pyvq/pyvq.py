@@ -134,11 +134,14 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def diagnostic_plot(self, event_file, plot_type):
+    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None):
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
-        return plot_type+"_diagnostic_"+event_file.split(".")[0]+".png"
+        add=""
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))    
+        return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
     
 
 class MagFilter:
@@ -302,23 +305,10 @@ class Geometry:
                         for block_id in event_element_slips.keys():
                             try:
                                 slip_time_series[block_id][k] += event_element_slips[block_id]
+                                #sys.stdout.write("element {} slips {} in event {}\n".format(block_id,event_element_slips[block_id],evid))
+                                #sys.stdout.flush()
                             except KeyError:
-                                pass # Ignore event elements that we are not asked for (in elements)
-                                # When faults within the specified section_filter have events that produce slip on elements
-                                #   outside the section_filter, the slip history for the external elements
-                                #   is added to the slip_time_series and only includes backslip plus any
-                                #   co-seismic slips from events selected with the current 
-                                #   section/magnitude_filter/event_range.
-                                #slip_time_series[block_id] = [0.0]
-                                #slip_rates[block_id] = self.get_slip_rates(block_id)[block_id]
-                                
-                                # Include the historical backslip up to this point
-                                #for l in range(k):
-                                #    last_slip = slip_time_series[block_id][l]
-                                #    this_slip = slip_rates[block_id]*DT
-                                #    slip_time_series[block_id].append(last_slip-this_slip)
-                                # Include the slip from this current event
-                                #slip_time_series[block_id][k] += event_element_slips[block_id]                            
+                                pass # Ignore event elements that we are not asked for (in elements)                            
         return slip_time_series
 
 
@@ -2249,13 +2239,16 @@ if __name__ == "__main__":
         if args.max_year is None: args.max_year = 20.0
         if args.dt is None: args.dt = 0.5  # Unit is decimal years
         time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
-        labels = time_series.keys()+[""]
+        if len(time_series.keys()) < 10: 
+            labels = time_series.keys()+[""]
+        else:
+            labels = [None for each in range(len(time_series.keys())+1)]
         x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
         linewidths = [0.8 for key in time_series.keys()]+[1]
         styles = ["-" for key in time_series.keys()]+["--"]
         y_data = time_series.values()+[[0,0]]
-        plot_title = "Slip time series from years {} to {} with step {}\n{}".format(args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
-        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series")
+        plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year)
         BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     # Read the stress files if specified
@@ -2281,7 +2274,7 @@ if __name__ == "__main__":
 
     if args.min_slip or args.max_slip:
         # Setting default lower limit on mean slip of 1cm
-        if args.min_slip is None: args.min_slip = 0.01
+        #if args.min_slip is None: args.min_slip = 0.01
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
 
     if args.min_event_num or args.max_event_num:
@@ -2422,16 +2415,16 @@ if __name__ == "__main__":
         StressHistoryPlot().plot(stress_set, args.stress_elements)
         
     if args.num_sweeps:
-        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
+        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps", min_year=args.min_year, max_year=args.max_year)
         DiagnosticPlot().plot_number_of_sweeps(events, filename)
     if args.event_shear_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress")
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress", min_year=args.min_year, max_year=args.max_year)
         DiagnosticPlot().plot_shear_stress_changes(events, filename)
     if args.event_normal_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress")
+        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year)
         DiagnosticPlot().plot_normal_stress_changes(events, filename)
     if args.event_mean_slip:
-        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip")
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year)
         DiagnosticPlot().plot_mean_slip(events, filename)
 
     # Validate data if requested
