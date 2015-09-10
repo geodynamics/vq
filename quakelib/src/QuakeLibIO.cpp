@@ -1928,10 +1928,11 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                     lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
                 }
 
-                // Output the KML format polygon for this section
+                // Output the KML format polygon for this element
                 out_file << "\t\t<Placemark>\n";
                 out_file << "\t\t<description>\n";
                 out_file << "Fault name: " << fit->second.name() << "\n";
+                out_file << "Element #: " << eit->second.id() << "\n";
                 out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
                 out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
                 out_file << "Aseismic: " << eit->second.aseismic() << "\n";
