@@ -2022,6 +2022,183 @@ char* quakelib::ModelWorld::rgb2hex(const int r, const int g, const int b) const
     return buf;
 }
 
+int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const quakelib::ModelEvent &event) {
+    std::ofstream                                   out_file;
+    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    LatLonDepth                                     min_bound, max_bound, center;
+    Vec<3>                                          min_xyz, max_xyz;
+    double                                          dx, dy, range, mag, mean_slip, ev_year;
+    unsigned int                                    i, trigger, ev_num;
+    ElementIDSet                                    involved_elements;
+    ElementIDSet::iterator                          it;
+
+    out_file.open(file_name.c_str());
+
+    get_bounds(min_bound, max_bound);
+    center = LatLonDepth(max_bound.lat() - (max_bound.lat()-min_bound.lat())/2,
+                         max_bound.lon() - (max_bound.lon()-min_bound.lon())/2);
+    Conversion c(center);
+    min_xyz = c.convert2xyz(min_bound);
+    max_xyz = c.convert2xyz(max_bound);
+    dx = max_xyz[0]-min_xyz[0];
+    dy = max_xyz[1]-min_xyz[1];
+    range = fmax(dx, dy) * (1.0/tan(c.deg2rad(30)));
+    
+    double max_depth = fabs(min_bound.altitude());
+
+    out_file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    out_file << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n";
+    out_file << "<Document>\n";
+    out_file << "<LookAt>\n";
+    out_file << "\t<latitude>" << center.lat() << "</latitude>\n";
+    out_file << "\t<longitude>" << center.lon() << "</longitude>\n";
+    out_file << "\t<altitude>0</altitude>\n";
+    out_file << "\t<range>" << range << "</range>\n";
+    out_file << "\t<tilt>0</tilt>\n";
+    out_file << "\t<heading>0</heading>\n";
+    out_file << "\t<altitudeMode>absolute</altitudeMode>\n";
+    out_file << "</LookAt>\n";
+    out_file << "<Style id=\"sectionLabel\">\n";
+    out_file << "\t<IconStyle>\n";
+    out_file << "\t\t<Icon>\n";
+    out_file << "\t\t\t<href>http://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href>\n";
+    out_file << "\t\t</Icon>\n";
+    out_file << "\t</IconStyle>\n";
+    out_file << "</Style>\n";
+
+    //// Get relevant event info
+    involved_elements = event.getInvolvedElements();
+    trigger = event.getEventTrigger();
+    mean_slip = event.calcMeanSlip();
+    ev_year = event.getEventYear();
+    ev_num = event.getEventNumber();
+
+    // Write event info above triggering element
+    out_file << "\t<Placemark id=\"Event_" << ev_num << "_label\">\n";
+    out_file << "\t\t<name>" << "Event "<< ev_num << "</name>\n";
+    out_file << "\t\t<description>\n";
+    out_file << "Trigger: Element #"<< trigger << " \n";
+    out_file << "Mean slip [m] "<< mean_slip << " \n";
+    out_file << "Event year "<< ev_year << " \n";
+    out_file << "\t\t</description>\n";
+    out_file << "\t\t<styleUrl>#sectionLabel</styleUrl>\n";
+    out_file << "\t\t<Point>\n";
+    out_file << "\t\t\t<extrude>1</extrude>\n";
+    out_file << "\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+    // Find the deepest element for this section
+    UIndex          best_vertex;
+    double          min_altitude = DBL_MAX, cur_alt;
+    ModelVertex     vert;
+
+    eit = _elements.find(trigger);
+    for (i=0; i<3; ++i) {
+        cur_alt = _vertices.find(eit->second.vertex(i))->second.lld().altitude();
+        if (cur_alt < min_altitude) {
+            min_altitude = cur_alt;
+            best_vertex = eit->second.vertex(i);
+        }
+    }
+
+    vert = _vertices.find(best_vertex)->second;
+    out_file << "\t\t\t<coordinates>" << vert.lld().lon() << "," << vert.lld().lat() << "," << max_depth + vert.lld().altitude() << "</coordinates>\n";
+    out_file << "\t\t</Point>\n";
+    out_file << "\t</Placemark>\n";
+
+
+    // Loop thru elements to compute min/max slip rates for color bounds
+    double max_slip = -DBL_MAX;
+    double min_slip = DBL_MAX;
+    for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
+        max_slip = fmax( max_slip, event.getEventSlip(*it));
+        min_slip = fmin( min_slip, event.getEventSlip(*it));
+    }
+    
+    /////// Bounds for color in blue to red range, white in the middle
+    double y_min = -255;
+    double y_max = 255;
+    double x_max = fmax(fabs(max_slip), fabs(min_slip));
+    double x_min = -x_max;
+
+    out_file << "<Folder id=\"elements\">\n";
+    // Go through the involved elements
+    for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
+        LatLonDepth         lld[4];
+        unsigned int        i, npoints;
+
+        for (i=0; i<3; ++i) {
+            std::map<UIndex, ModelVertex>::const_iterator   vit;
+            vit = _vertices.find( _elements.find(*it)->second.vertex(i) );
+            lld[i] = vit->second.lld();
+        }
+
+        // If this is a quad element, calculate the 4th implicit point
+        if (eit->second.is_quad()) {
+            Vec<3>              xyz[3];
+
+            for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
+
+            lld[3] = lld[2];
+            lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
+        }
+        
+        // Compute blue to red color (RGB)
+        int blue, green, red;
+        int interp_color = (int) linear_interp(event.getEventSlip(*it), x_min, x_max, y_min, y_max);
+        if (interp_color > 0) {
+            // More red
+            red = y_max;
+            blue = y_max - interp_color;
+            green = blue;
+        } else {
+            blue = y_max;
+            red = y_max - fabs(interp_color);
+            green = red;
+        }
+
+        // Output the KML format polygon for this element
+        out_file << "\t\t<Placemark>\n";
+        out_file << "\t\t<description>\n";
+        out_file << "Element #: " << *it << "\n";
+        out_file << "Event slip [m]: " << event.getEventSlip(*it) << "\n";
+        out_file << "\t\t</description>\n";
+        out_file << "\t\t\t<Style>\n";
+        out_file << "\t\t\t\t<LineStyle>\n";
+        out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+        out_file << "\t\t\t\t\t<width>1</width>\n"; 
+        out_file << "\t\t\t\t</LineStyle>\n";
+        out_file << "\t\t\t\t<PolyStyle>\n";
+        out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+        out_file << "\t\t\t\t</PolyStyle>\n";
+        out_file << "\t\t\t</Style>\n";
+        out_file << "\t\t\t<Polygon>\n";
+        out_file << "\t\t\t\t<extrude>0</extrude>\n";
+        out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+        out_file << "\t\t\t\t<outerBoundaryIs>\n";
+        out_file << "\t\t\t\t\t<LinearRing>\n";
+        out_file << "\t\t\t\t\t\t<coordinates>\n";
+        npoints = (eit->second.is_quad() ? 4 : 3);
+
+        for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+
+        out_file << "\t\t\t\t\t\t</coordinates>\n";
+        out_file << "\t\t\t\t\t</LinearRing>\n";
+        out_file << "\t\t\t\t</outerBoundaryIs>\n";
+        out_file << "\t\t\t</Polygon>\n";
+        out_file << "\t\t</Placemark>\n";
+        
+    }
+
+    out_file << "</Folder>\n";
+    out_file << "</Document>\n";
+    out_file << "</kml>\n";
+
+    out_file.close();
+
+    return 0;
+}
+
+
 void quakelib::ModelSection::apply_remap(const ModelRemapping &remap) {
     _data._id = remap.get_section_id(_data._id);
 }

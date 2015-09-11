@@ -153,6 +153,12 @@ class SaveFile:
             
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
     
+    def event_kml_plot(self, event_file, event_id):
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        event_file = event_file.split("events")[-1]
+        return "event_"+str(event_id)+event_file.split(".")[0]+".kml"
+    
 
 class MagFilter:
     def __init__(self, min_mag=None, max_mag=None):
@@ -2192,6 +2198,8 @@ if __name__ == "__main__":
     parser.add_argument('--slip_time_series', required=False, action='store_true',
             help="Return the slip time series for all specified --elements.")
     parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
+    parser.add_argument('--event_kml', required=False, action='store_true',
+            help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -2436,6 +2444,14 @@ if __name__ == "__main__":
             plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
         filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year)
         BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+
+    if args.event_kml:
+        if args.event_id is None or args.event_file is None or args.model_file is None:
+            raise "Must specify an event to plot with --event_id and provide an --event_file and a --model_file."
+        else:
+            event = events._events[args.event_id]
+            filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
+            geometry.model.write_event_kml(filename, event)
 
     # Generate stress plots
     if args.stress_elements:
