@@ -99,7 +99,7 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     return x_ave, y_ave
 
 class SaveFile:
-    def event_plot(self, event_file, plot_type, min_mag):
+    def event_plot(self, event_file, plot_type, min_mag, min_year, max_year):
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
@@ -140,7 +140,7 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None):
+    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None):
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
@@ -150,6 +150,13 @@ class SaveFile:
         if args.use_sections is not None:
             for sec in args.use_sections:
                 add+="_"+geometry.model.section(sec).name()
+        if min_mag is not None:
+            min_mag = str(min_mag)
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
+            else:
+                add += "_minMag_"+min_mag
             
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
     
@@ -2311,32 +2318,32 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.wc94 = True
     if args.plot_freq_mag:
-        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year)
         MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_mag_mean_slip:
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year)
         MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year)
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
         type = args.field_type.lower()
@@ -2442,7 +2449,7 @@ if __name__ == "__main__":
             plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
         else:
             plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
-        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year)
+        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     if args.event_kml:
@@ -2459,16 +2466,16 @@ if __name__ == "__main__":
         StressHistoryPlot().plot(stress_set, args.stress_elements)
         
     if args.num_sweeps:
-        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps", min_year=args.min_year, max_year=args.max_year)
+        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_number_of_sweeps(events, filename)
     if args.event_shear_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress", min_year=args.min_year, max_year=args.max_year)
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_shear_stress_changes(events, filename)
     if args.event_normal_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year)
+        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_normal_stress_changes(events, filename)
     if args.event_mean_slip:
-        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year)
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_mean_slip(events, filename)
 
     # Validate data if requested
