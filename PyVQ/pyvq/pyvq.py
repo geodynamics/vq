@@ -2269,10 +2269,15 @@ if __name__ == "__main__":
         args.plot_mag_mean_slip = True
         args.wc94 = True
 
+    # Set a default lower magnitude limit of 5
+    if args.min_magnitude is None:
+        args.min_magnitude = 5
     # Set up filters
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
+
+
 
     if args.min_year or args.max_year:
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
@@ -2313,7 +2318,7 @@ if __name__ == "__main__":
         args.event_shear_stress = True
         args.event_normal_stress = True
         args.event_mean_slip = True
-        args.plot_freq_mag = 3
+        args.plot_freq_mag = 1
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.wc94 = True

@@ -41,8 +41,8 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual Quake User Manual}
-\author{Eric M. Heien\\Michael K. Sachs\\Kasey W. Schultz\\Donald L. Turcotte\\John B. Rundle\\\\ \copyright University of California, Davis\\
-Version 1.1.0}
+\author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\Donald L. Turcotte\\John B. Rundle\\\\ \copyright University of California, Davis\\
+Version 1.2.0}
 %\date{\noindent \today}
 
 
@@ -105,7 +105,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.1}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.2}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -115,7 +115,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: author list
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
-Eric M. Heien~~~Michael K. Sachs~~~Kasey W. Schultz\\Donald L. Turcotte~~~John B. Rundle\\
+Kasey W. Schultz~~~Eric M. Heien~~~Michael K. Sachs\\Mark R. Yoder~~~Donald L. Turcotte~~~John B. Rundle\\
 }
 {\fontfamily{\sfdefault}\selectfont www.geodynamics.org}
 
@@ -1236,15 +1236,15 @@ and properties.
 \subsection{Tuning Parameters\label{sec:tuning_parameters}}
 
 Fault simulations must initially be tuned to correctly simulate actual
-earthquakes. The primary tuning parameter in Virtual Quake is
+earthquakes. The primary tuning parameters in Virtual Quake are
 the dynamic triggering factor $\eta$,
-defined in Section \ref{sec:Event_Model}. The dynamic triggering
+defined in Section \ref{sec:Event_Model}, and the stress drop factor defined in Section \ref{sec:stress_drops}. The dynamic triggering
 factor is used to encourage rupture propagation during a simulated
 earthquake. This parameter acts to tune the rupture and
 slipping properties of faults without requiring field measurements
 of each fault's physical properties, a result of VQ's abstraction
 and generality. Currently, this parameter is set globally for the
-fault model.
+fault model. For parameter usage, see Section \ref{sec:friction_params}.
 %Figure \ref{fig:tuning_parameters} shows a comparison
 %of simulation results for a range of these parameter values.
 %
@@ -1507,6 +1507,7 @@ The main simulation input file is the parameter file. This file tells
 the simulator where the fault model files are located, sets various
 simulation variables, and specifies the output of the simulation.
 An example parameter file template is located in \texttt{examples/}.
+For all possible simulation parameters, see Appendix \ref{cha:Appendix-A:-Input}.
 
 
 \subsection{Producing a Fault Model\label{sec:Using-Mesher}}
@@ -1563,6 +1564,40 @@ FILE EXPORT
 
 Copy the \texttt{example\_params.d} file into the same folder as the mesher generated model.
 Edit the parameter file so the simulation parameters are set correctly for the current run. 
+
+
+\subsection{Bounding the Greens Functions}
+In some cases, the mesher produces elements that have some small percentage of overlap. This overlap can cause the Greens functions (interaction coefficients) to take on extreme/non-physical values. If your simulation is producing anomalous earthquakes, or behaving oddly, try the following.
+
+After using a test simulation to save your Greens functions to a file (e.g. ``greens\_values.h5"), you can use the script in vq/PyVQ/pyvq/betas/ called greens.py. Open a \textbf{python environment} from this directory, or in a python script execute the following to fit a Gaussian profile to the Greens functions, plot the distribution of values, and return the 1 standard deviation bounds. The values shown in example output below are the 1 standard deviation bounds (max, min) for the Greens functions. Issue the plt.show() command to reveal the plot of the Greens functions and the best fit Gaussian, as shown in Figure \ref{fig:greens_fit}.
+
+\begin{verbatim}
+	$ python
+	Python 2.7.9 (default, Dec 13 2014, 15:13:49) 
+	[GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.56)] on darwin
+	Type "help", "copyright", "credits" or "license" for more information.
+	>>> from matplotlib import pyplot as plt
+	>>> import greens
+	>>> greens.plot_greens_hists(greens_fname="path/to/greens_values.h5", shear_normal="shear")
+	       [....some output omitted...]
+	       Greens range for 1 sigma ... x=[ 3661623.85  -831572.04]  ...
+	>>> plt.show()
+	>>> greens.plot_greens_hists(greens_fname="path/to/greens_values.h5", shear_normal="normal")
+	       [....some output omitted...]
+	       Greens range for 1 sigma ... x=[ 61623.85  -31572.04] ...
+	>>> plt.show()
+\end{verbatim}
+
+To implement these bounds for the shear stress Greens functions, in your simulation parameter file set the \\ \texttt{sim.greens.shear\_offdiag\_max} equal the the 1 standard deviation maximum value given by greens.py (3661623.85 in the example above), and set \texttt{sim.greens.shear\_offdiag\_min} equal the the 1 standard deviation minimum value (-831572.04 in the example above). You can do the same for the normal stress bounds, setting \texttt{sim.greens.normal\_offdiag\_max} and \texttt{sim.greens.normal\_offdiag\_min}. All parameters are given in Appendix \ref{sec:greens_parameters}.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{graphics/greens_fitting.png}
+	\caption{Example histogram of shear stress Greens function values with best fit Gaussian and bounds.}
+	\label{fig:greens_fit} 
+\end{figure}
+	
 
 
 \section{Single Element Tutorial\label{sec:Tutorial_single}}
@@ -2265,7 +2300,7 @@ undefined or \textless{}= 0, simulation progress will not be displayed.\tabularn
 \end{tabular}
 
 
-\subsection{Friction parameters}
+\subsection{Friction parameters \label{sec:friction_params}}
 
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
@@ -2281,7 +2316,7 @@ are less likely to propagate and result in smaller earthquakes.\tabularnewline
 \end{tabular}
 
 
-\subsection{Green's function parameters}
+\subsection{Green's function parameters \label{sec:greens_parameters}}
 
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
