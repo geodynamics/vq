@@ -99,20 +99,26 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     return x_ave, y_ave
 
 class SaveFile:
-    def event_plot(self, event_file, plot_type, min_mag):
+    def event_plot(self, event_file, plot_type, min_mag, min_year, max_year):
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if args.use_sections is not None:
+            for sec in args.use_sections:
+                add+="_"+geometry.model.section(sec).name()
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
             if len(min_mag.split(".")) > 1:
-                mag = "minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]+"_"
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
             else:
-                mag = "minMag_"+min_mag+"_"
-        else:
-            mag = ""
-        return plot_type+"_"+mag+event_file.split(".")[0]+".png"
+                add += "_minMag_"+min_mag
+
+        return plot_type+add+"_"+event_file.split(".")[0]+".png"
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
         # Remove any folders in front of model_file name
@@ -134,11 +140,31 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def diagnostic_plot(self, event_file, plot_type):
+    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None):
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
-        return plot_type+"_diagnostic_"+event_file.split(".")[0]+".png"
+        add=""
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if args.use_sections is not None:
+            for sec in args.use_sections:
+                add+="_"+geometry.model.section(sec).name()
+        if min_mag is not None:
+            min_mag = str(min_mag)
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
+            else:
+                add += "_minMag_"+min_mag
+            
+        return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
+    
+    def event_kml_plot(self, event_file, event_id):
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        event_file = event_file.split("events")[-1]
+        return "event_"+str(event_id)+event_file.split(".")[0]+".kml"
     
 
 class MagFilter:
@@ -265,6 +291,49 @@ class Geometry:
                         traces_lat_lon[sid] = [(lat,lon)]
                     #break
         return traces_lat_lon
+        
+    def get_slip_rates(self, elements):
+        # Convert slip rates from meters/second to meters/(decimal year)
+        CONVERSION = 3.15576*pow(10,7) 
+        return {id:self.model.element(id).slip_rate()*CONVERSION for id in elements}
+        
+    def get_slip_time_series(self, events, elements=None, min_year=None, max_year=None, DT=None):
+        # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
+        # Get slip rates for the elements
+        slip_rates = self.get_slip_rates(elements)
+        #Initialize blocks with 0.0 slip at time t=0.0
+        slip_time_series  = {id:[0.0] for id in elements}
+        # Grab the events data
+        event_years = events.event_years()
+        event_numbers = events.event_numbers()
+        #Initialize time steps to evaluate slip    
+        time_values = np.arange(min_year+DT, max_year+DT, DT)
+        for k in range(len(time_values)):
+            if k>0:
+                # current time in simulation
+                right_now = time_values[k]
+                # back slip all elements by subtracting the slip_rate*dt
+                for block_id in slip_time_series.keys():
+                    last_slip = slip_time_series[block_id][k-1]
+                    this_slip = slip_rates[block_id]*DT
+                    slip_time_series[block_id].append(last_slip-this_slip)
+                # check if any elements slip as part of simulated event in the window of simulation time
+                # between (current time - DT, current time), add event slips to the slip at current time 
+                # for elements involved
+                for j in range(len(event_numbers)):
+                    evid    = event_numbers[j]
+                    ev_year = event_years[j]
+                    if right_now-DT < ev_year <= right_now:
+                        event_element_slips = events.get_event_element_slips(evid)
+                        for block_id in event_element_slips.keys():
+                            try:
+                                slip_time_series[block_id][k] += event_element_slips[block_id]
+                                #sys.stdout.write("element {} slips {} in event {}\n".format(block_id,event_element_slips[block_id],evid))
+                                #sys.stdout.flush()
+                            except KeyError:
+                                pass # Ignore event elements that we are not asked for (in elements)                            
+        return slip_time_series
+
 
 # ======= h5py I/O ============================================
 def read_events_h5(sim_file, event_numbers=None):
@@ -355,8 +424,11 @@ class Events:
 
     def event_magnitudes(self):
         return [self._events[evnum].getMagnitude() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
-# TODO: Handle  NaN magnitudes on the C++ side
+    # TODO: Handle  NaN magnitudes on the C++ side
 
+    def event_numbers(self):
+        return [evnum for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
+        
     def event_mean_slip(self):
         return [self._events[evnum].calcMeanSlip() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
         
@@ -1604,16 +1676,23 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def multi_line_plot(self, x_data, y_data, colors, labels, linewidths, plot_title, x_label, y_label, legend_str, filename):
+    def multi_line_plot(self, x_data, y_data, labels, linewidths, plot_title, x_label, y_label, legend_str, filename, colors=None, linestyles=None):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
-        ax.set_title(plot_title)
-        if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
-            raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
-        for i in range(len(x_data)):
-            ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i])
+        if linestyles is None: linestyles = ["-" for each in x_data]
+        fig.suptitle(plot_title, fontsize=10)
+        if colors is not None:
+            if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
+                raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
+            for i in range(len(x_data)):
+                ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
+        else:
+            if not (len(x_data) == len(y_data) and len(x_data) == len(labels) and len(linewidths) == len(y_data)):
+                raise "These lists must be the same length: x_data, y_data, labels, linewidths."
+            for i in range(len(x_data)):
+                ax.plot(x_data[i], y_data[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         ax.legend(title=legend_str, loc='best')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
@@ -1687,6 +1766,8 @@ class BasePlotter:
             ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
             ax.legend(loc = "best")
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
+        
+        if args.zoom: plt.ylim(-5,5)
         
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -1905,7 +1986,7 @@ class ProbabilityPlot(BasePlotter):
         y_lab         = r'P(t, t$_0$)'
         x_lab         = r't = t$_0$ + $\Delta$t [years]'
         plot_title    = ""
-        self.multi_line_plot(x_data, y_data, colors, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename)
+        self.multi_line_plot(x_data, y_data, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename, colors=colors)
 
     def plot_dt_vs_t0(self, events, filename, years_since=None):
         # Plot the waiting times corresponding to 25/50/75% conditional probabilities
@@ -2113,6 +2194,19 @@ if __name__ == "__main__":
             help="Plot normal stress changes for events")
     parser.add_argument('--event_mean_slip', required=False, action='store_true',
             help="Plot the mean slip for events")
+    parser.add_argument('--zoom', required=False, action='store_true',
+            help="Force zoomed bounds on scatter and line plots")
+            
+    # Geometry
+    parser.add_argument('--slip_rates', required=False, action='store_true',
+            help="Print element id and slip rate for all elements.")
+    parser.add_argument('--elements', type=int, nargs='+', required=False,
+            help="List of elements for filtering.")
+    parser.add_argument('--slip_time_series', required=False, action='store_true',
+            help="Return the slip time series for all specified --elements.")
+    parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
+    parser.add_argument('--event_kml', required=False, action='store_true',
+            help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -2175,17 +2269,22 @@ if __name__ == "__main__":
         args.plot_mag_mean_slip = True
         args.wc94 = True
 
+    # Set a default lower magnitude limit of 5
+    if args.min_magnitude is None:
+        args.min_magnitude = 5
     # Set up filters
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
+
+
 
     if args.min_year or args.max_year:
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     if args.min_slip or args.max_slip:
         # Setting default lower limit on mean slip of 1cm
-        if args.min_slip is None: args.min_slip = 0.01
+        #if args.min_slip is None: args.min_slip = 0.01
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
 
     if args.min_event_num or args.max_event_num:
@@ -2195,6 +2294,10 @@ if __name__ == "__main__":
         if not args.model_file:
             raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
+        # Also grab all the elements from this section in case this is being used to grab element ids
+        if args.elements is None:
+            args.elements = [elem_num for elem_num in range(geometry.model.num_elements()) if geometry.model.element(elem_num).section_id() in args.use_sections]
+        
         
     if args.use_trigger_sections:
         if not args.model_file:
@@ -2215,37 +2318,37 @@ if __name__ == "__main__":
         args.event_shear_stress = True
         args.event_normal_stress = True
         args.event_mean_slip = True
-        args.plot_freq_mag = 3
+        args.plot_freq_mag = 1
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.wc94 = True
     if args.plot_freq_mag:
-        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year)
         MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_mag_mean_slip:
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year)
         MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
     if args.plot_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year)
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude)
+        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.field_plot:
         type = args.field_type.lower()
@@ -2320,22 +2423,64 @@ if __name__ == "__main__":
         if args.small_model is None: args.small_model = False
         TP = TracePlotter(geometry, filename, use_sections=args.use_sections, small_model=args.small_model)
 
+    if args.slip_rates:
+        if args.elements is None: args.elements = geometry.model.getElementIDs()
+        slip_rates = geometry.get_slip_rates(args.elements)
+        for id in slip_rates.keys():
+            sys.stdout.write("{}  {}\n".format(id,slip_rates[id]))
+            
+    if args.slip_time_series:
+        if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
+        if args.min_year is None: args.min_year = 0.0
+        if args.max_year is None: args.max_year = 20.0
+        if args.dt is None: args.dt = 0.5  # Unit is decimal years
+        if args.use_sections is not None:
+            if len(args.use_sections) > 1:
+                section_name = ""
+                for sec in args.use_sections:
+                    section_name += geometry.model.section(sec).name()+", "
+            else:
+                section_name = geometry.model.section(args.use_sections[0]).name()+", "
+        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        if len(time_series.keys()) < 10: 
+            labels = time_series.keys()+[""]
+        else:
+            labels = [None for each in range(len(time_series.keys())+1)]
+        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
+        linewidths = [0.8 for key in time_series.keys()]+[1]
+        styles = ["-" for key in time_series.keys()]+["--"]
+        y_data = time_series.values()+[[0,0]]
+        if args.use_sections is not None:
+            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        else:
+            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+
+    if args.event_kml:
+        if args.event_id is None or args.event_file is None or args.model_file is None:
+            raise "Must specify an event to plot with --event_id and provide an --event_file and a --model_file."
+        else:
+            event = events._events[args.event_id]
+            filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
+            geometry.model.write_event_kml(filename, event)
+
     # Generate stress plots
     if args.stress_elements:
 # TODO: check that stress_set is valid
         StressHistoryPlot().plot(stress_set, args.stress_elements)
         
     if args.num_sweeps:
-        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps")
+        filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_number_of_sweeps(events, filename)
     if args.event_shear_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress")
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_shear_stress_changes(events, filename)
     if args.event_normal_stress:
-        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress")
+        filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_normal_stress_changes(events, filename)
     if args.event_mean_slip:
-        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip")
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_mean_slip(events, filename)
 
     # Validate data if requested

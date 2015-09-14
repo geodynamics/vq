@@ -506,129 +506,6 @@ namespace quakelib {
 
     typedef std::set<UIndex> ElementIDSet;
 
-    class ModelWorld : public ModelIO {
-        private:
-            std::map<UIndex, ModelVertex>   _vertices;
-            std::map<UIndex, ModelElement>  _elements;
-            std::map<UIndex, ModelSection>  _sections;
-            LatLonDepth _base;
-            double _min_lat, _max_lat, _min_lon, _max_lon;
-
-#ifdef HDF5_FOUND
-            void read_section_hdf5(const hid_t &data_file);
-            void read_element_hdf5(const hid_t &data_file);
-            void read_vertex_hdf5(const hid_t &data_file);
-
-            void write_section_hdf5(const hid_t &data_file) const;
-            void write_element_hdf5(const hid_t &data_file) const;
-            void write_vertex_hdf5(const hid_t &data_file) const;
-#endif
-
-        public:
-            ModelSection &new_section(void);
-            ModelElement &new_element(void);
-            ModelVertex &new_vertex(void);
-
-            ModelSection &section(const UIndex &ind) throw(std::domain_error);
-            ModelElement &element(const UIndex &ind) throw(std::domain_error);
-            ModelVertex &vertex(const UIndex &ind) throw(std::domain_error);
-
-            siterator begin_section(void) {
-                return siterator(&_sections, _sections.begin());
-            };
-            siterator end_section(void) {
-                return siterator(&_sections, _sections.end());
-            };
-
-            eiterator begin_element(const UIndex &fid=INVALID_INDEX) {
-                return eiterator(&_elements, _elements.begin(), fid);
-            };
-            eiterator end_element(const UIndex &fid=INVALID_INDEX) {
-                return eiterator(&_elements, _elements.end(), fid);
-            };
-
-            UIndex next_section_index(void) const {
-                if (_sections.size()) return _sections.rbegin()->first+1;
-                else return 0;
-            };
-            UIndex next_element_index(void) const {
-                if (_elements.size()) return _elements.rbegin()->first+1;
-                else return 0;
-            };
-            UIndex next_vertex_index(void) const {
-                if (_vertices.size()) return _vertices.rbegin()->first+1;
-                else return 0;
-            };
-
-            size_t num_sections(void) const;
-            size_t num_faults(void) const;
-            size_t num_elements(const UIndex &fid=INVALID_INDEX) const;
-            size_t num_vertices(const UIndex &fid=INVALID_INDEX) const;
-
-            LatLonDepth min_bound(const UIndex &fid=INVALID_INDEX) const;
-            LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
-
-            Vec<3> get_base(void) const {
-                return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
-            }
-
-            std::vector<double> get_latlon_bounds(void) const {
-                std::vector<double> bounds(4);
-                bounds[0] = _min_lat;
-                bounds[1] = _max_lat;
-                bounds[2] = _min_lon;
-                bounds[3] = _max_lon;
-                return bounds;
-            }
-
-            void insert(const ModelWorld &other_world);
-            void insert(const ModelSection &new_section);
-            void insert(const ModelElement &new_element);
-            void insert(const ModelVertex &new_vertex);
-
-            void get_bounds(LatLonDepth &minimum, LatLonDepth &maximum) const;
-
-            SimElement create_sim_element(const UIndex &element_id) const;
-            SlippedElement create_slipped_element(const UIndex &element_id) const;
-
-            ElementIDSet getElementIDs(void) const;
-            ElementIDSet getVertexIDs(void) const;
-            ElementIDSet getSectionIDs(void) const;
-
-            bool overwrite(const ModelRemapping &remap);
-            void apply_remap(const ModelRemapping &remap);
-            ModelRemapping remap_indices_contiguous(const UIndex &start_section_index,
-                                                    const UIndex &start_element_index,
-                                                    const UIndex &start_vertex_index) const;
-            ModelRemapping remove_duplicate_vertices_remap(void) const;
-            void clear(void);
-
-            void reset_base_coord(const LatLonDepth &new_base);
-
-            void create_section(std::vector<unsigned int> &unused_trace_segments,
-                                const std::vector<FaultTracePoint> &trace,
-                                const LatLonDepth &base_coord,
-                                const UIndex &fault_id,
-                                const float &element_size,
-                                const std::string &section_name,
-                                const std::string &taper_method,
-                                const bool resize_trace_elements);
-
-            int read_file_ascii(const std::string &file_name);
-            int write_file_ascii(const std::string &file_name) const;
-
-            int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements);
-            int write_file_trace_latlon(const std::string &file_name, const float &depth_along_dip);
-
-            int read_file_hdf5(const std::string &file_name);
-            int write_file_hdf5(const std::string &file_name) const;
-
-            int write_file_kml(const std::string &file_name);
-
-            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
-            int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
-    };
-
     // Class recording data associated with a block that slipped during an event
     // mu is static, but we retain it for use in calculating magnitude.
     struct SweepData {
@@ -1248,6 +1125,134 @@ namespace quakelib {
 
             int read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name);
     };
+
+    class ModelWorld : public ModelIO {
+        private:
+            std::map<UIndex, ModelVertex>   _vertices;
+            std::map<UIndex, ModelElement>  _elements;
+            std::map<UIndex, ModelSection>  _sections;
+            LatLonDepth _base;
+            double _min_lat, _max_lat, _min_lon, _max_lon;
+
+#ifdef HDF5_FOUND
+            void read_section_hdf5(const hid_t &data_file);
+            void read_element_hdf5(const hid_t &data_file);
+            void read_vertex_hdf5(const hid_t &data_file);
+
+            void write_section_hdf5(const hid_t &data_file) const;
+            void write_element_hdf5(const hid_t &data_file) const;
+            void write_vertex_hdf5(const hid_t &data_file) const;
+#endif
+
+        public:
+            ModelSection &new_section(void);
+            ModelElement &new_element(void);
+            ModelVertex &new_vertex(void);
+
+            ModelSection &section(const UIndex &ind) throw(std::domain_error);
+            ModelElement &element(const UIndex &ind) throw(std::domain_error);
+            ModelVertex &vertex(const UIndex &ind) throw(std::domain_error);
+
+            siterator begin_section(void) {
+                return siterator(&_sections, _sections.begin());
+            };
+            siterator end_section(void) {
+                return siterator(&_sections, _sections.end());
+            };
+
+            eiterator begin_element(const UIndex &fid=INVALID_INDEX) {
+                return eiterator(&_elements, _elements.begin(), fid);
+            };
+            eiterator end_element(const UIndex &fid=INVALID_INDEX) {
+                return eiterator(&_elements, _elements.end(), fid);
+            };
+
+            UIndex next_section_index(void) const {
+                if (_sections.size()) return _sections.rbegin()->first+1;
+                else return 0;
+            };
+            UIndex next_element_index(void) const {
+                if (_elements.size()) return _elements.rbegin()->first+1;
+                else return 0;
+            };
+            UIndex next_vertex_index(void) const {
+                if (_vertices.size()) return _vertices.rbegin()->first+1;
+                else return 0;
+            };
+
+            size_t num_sections(void) const;
+            size_t num_faults(void) const;
+            size_t num_elements(const UIndex &fid=INVALID_INDEX) const;
+            size_t num_vertices(const UIndex &fid=INVALID_INDEX) const;
+
+            LatLonDepth min_bound(const UIndex &fid=INVALID_INDEX) const;
+            LatLonDepth max_bound(const UIndex &fid=INVALID_INDEX) const;
+
+            Vec<3> get_base(void) const {
+                return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
+            }
+
+            std::vector<double> get_latlon_bounds(void) const {
+                std::vector<double> bounds(4);
+                bounds[0] = _min_lat;
+                bounds[1] = _max_lat;
+                bounds[2] = _min_lon;
+                bounds[3] = _max_lon;
+                return bounds;
+            }
+
+            void insert(const ModelWorld &other_world);
+            void insert(const ModelSection &new_section);
+            void insert(const ModelElement &new_element);
+            void insert(const ModelVertex &new_vertex);
+
+            void get_bounds(LatLonDepth &minimum, LatLonDepth &maximum) const;
+
+            SimElement create_sim_element(const UIndex &element_id) const;
+            SlippedElement create_slipped_element(const UIndex &element_id) const;
+
+            ElementIDSet getElementIDs(void) const;
+            ElementIDSet getVertexIDs(void) const;
+            ElementIDSet getSectionIDs(void) const;
+
+            bool overwrite(const ModelRemapping &remap);
+            void apply_remap(const ModelRemapping &remap);
+            ModelRemapping remap_indices_contiguous(const UIndex &start_section_index,
+                                                    const UIndex &start_element_index,
+                                                    const UIndex &start_vertex_index) const;
+            ModelRemapping remove_duplicate_vertices_remap(void) const;
+            void clear(void);
+
+            void reset_base_coord(const LatLonDepth &new_base);
+
+            void create_section(std::vector<unsigned int> &unused_trace_segments,
+                                const std::vector<FaultTracePoint> &trace,
+                                const LatLonDepth &base_coord,
+                                const UIndex &fault_id,
+                                const float &element_size,
+                                const std::string &section_name,
+                                const std::string &taper_method,
+                                const bool resize_trace_elements);
+
+            int read_file_ascii(const std::string &file_name);
+            int write_file_ascii(const std::string &file_name) const;
+
+            int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements);
+            int write_file_trace_latlon(const std::string &file_name, const float &depth_along_dip);
+
+            int read_file_hdf5(const std::string &file_name);
+            int write_file_hdf5(const std::string &file_name) const;
+
+            int write_file_kml(const std::string &file_name);
+            int write_event_kml(const std::string &file_name, const ModelEvent &event);
+
+            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
+            int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
+            
+            double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
+            char* rgb2hex(const int r, const int g, const int b) const;
+    };
+
 }
 
 #endif
