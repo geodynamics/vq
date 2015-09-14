@@ -40,8 +40,8 @@ FOREACH(NPROC ${NUM_PROCS})
 
     FOREACH(TAPER_IND RANGE ${NUM_TAPER})
         LIST(GET TAPER_METHODS ${TAPER_IND} TAPER)
-        LIST(GET METHOD_MEANSLIP ${TAPER_IND} MEANSLIP)
-        LIST(GET METHOD_INTEREVENT ${TAPER_IND} INTEREVENT)
+        #LIST(GET METHOD_MEANSLIP ${TAPER_IND} MEANSLIP)
+        #LIST(GET METHOD_INTEREVENT ${TAPER_IND} INTEREVENT)
         FOREACH(RES ${RESOLUTIONS})
             SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/PROCS${NPROC}/${TAPER}/)
             FILE(MAKE_DIRECTORY ${TEST_DIR})
@@ -84,23 +84,24 @@ FOREACH(NPROC ${NUM_PROCS})
                 ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
 
             # Check that the mean slip is near our expectations
-            IF (NOT ${MEANSLIP} EQUAL 0)
-                ADD_TEST(NAME test_slip_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
-                SET_TESTS_PROPERTIES (test_slip_P${NPROC}_${TAPER}_${RES} PROPERTIES
-                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
-                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
-            ENDIF (NOT ${MEANSLIP} EQUAL 0)
+            # Schultz: For now removing until we come up with better tests
+            #IF (NOT ${MEANSLIP} EQUAL 0)
+            #    ADD_TEST(NAME test_slip_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
+            #    SET_TESTS_PROPERTIES (test_slip_P${NPROC}_${TAPER}_${RES} PROPERTIES
+            #        DEPENDS run_P${NPROC}_${TAPER}_${RES}
+            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            #ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
             # Check that the mean interevent time is near our expectations
-            IF (NOT ${INTEREVENT} EQUAL 0)
-
-                ADD_TEST(NAME test_interevent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
-                SET_TESTS_PROPERTIES (test_interevent_P${NPROC}_${TAPER}_${RES} PROPERTIES
-                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
-                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
-            ENDIF(NOT ${INTEREVENT} EQUAL 0) 
+            # Schultz: For now removing until we come up with better tests
+            #IF (NOT ${INTEREVENT} EQUAL 0)
+            #    ADD_TEST(NAME test_interevent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+            #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
+            #    SET_TESTS_PROPERTIES (test_interevent_P${NPROC}_${TAPER}_${RES} PROPERTIES
+            #        DEPENDS run_P${NPROC}_${TAPER}_${RES}
+            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            #ENDIF(NOT ${INTEREVENT} EQUAL 0) 
         ENDFOREACH(RES ${RESOLUTIONS})
     ENDFOREACH(TAPER_IND RANGE ${NUM_TAPER})
 ENDFOREACH(NPROC ${NUM_PROCS})

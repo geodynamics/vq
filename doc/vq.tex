@@ -41,8 +41,8 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual Quake User Manual}
-\author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\Donald L. Turcotte\\John B. Rundle\\\\ \copyright University of California, Davis\\
-Version 1.2.0}
+\author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\John B. Rundle\\Donald L. Turcotte\\\\ \copyright University of California, Davis\\
+Version 2.0.0}
 %\date{\noindent \today}
 
 
@@ -76,27 +76,29 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 
 %COLOR AND CODENAME BLOCK%
 \begin{center}
-\resizebox{\textwidth}{!}{\colorbox
-% FILL: color of code name text box
-% e.g. blue
-{blue}{\fontfamily{\rmdefault}\selectfont \textcolor{white} {
-% FILL: name of the code
-% You may want to add \hspace to both sides of the codename to better center it, such as:
-% \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
-\hspace{0.02in}Virtual Quake\hspace{0.0in}
-}}}
+%\resizebox{\textwidth}{!}{\colorbox
+%% FILL: color of code name text box
+%% e.g. blue
+%{blue}{\fontfamily{\rmdefault}\selectfont \textcolor{white} {
+%% FILL: name of the code
+%% You may want to add \hspace to both sides of the codename to better center it, such as:
+%% \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
+%\hspace{0.02in}Virtual Quake\hspace{0.0in}
+%}}}
+\includegraphics[width=\textwidth]{graphics/VQ_Logo_fancy.png}
 \end{center}
 
 %MAIN PICTURE%
-\begin{textblock*}{0in}(0.8in,-0.05in)
+\begin{textblock*}{0in}(0.0in,-0.0in)
 % FILL: image height
 % e.g. height=6.5in
 \begin{center}
-\vspace{.5in}
-\includegraphics[height=5.0in]
+\vspace{.8in}
+\includegraphics[height=4.52in]
 % FILL: image file name
 % e.g. cover_image.png
-{graphics/overlay_fields_109382.png}
+%{graphics/overlay_fields_109382.png}
+{graphics/4406_cover.jpg}
 \end{center}
 \end{textblock*}
 
@@ -105,7 +107,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.2}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.0}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -115,7 +117,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: author list
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
-Kasey W. Schultz~~~Eric M. Heien~~~Michael K. Sachs\\Mark R. Yoder~~~Donald L. Turcotte~~~John B. Rundle\\
+Kasey W. Schultz~~~Eric M. Heien~~~Michael K. Sachs\\Mark R. Yoder~~~John B. Rundle~~~Donald L. Turcotte\\
 }
 {\fontfamily{\sfdefault}\selectfont www.geodynamics.org}
 
@@ -599,7 +601,7 @@ where $\mu_{s}^{A}$ is the static coefficient of friction on element
 $A$ based on model element strengths. During long term stress accumulation,
 an element is defined to fail at time $t_{f}$ when $CFF^{A}(t_{f})=0$,
 which is referred to as static failure. At this point the simulation
-changes to the rupture event model described below.
+changes to the rupture model described below.
 
 Given the change in stress over time it is relatively straightforward
 to calculate the time to failure for an element. Since effective long
@@ -624,7 +626,7 @@ and \ref{eq:cff_change} allow us to analytically solve for the time
 when the next element will fail.
 
 
-\section{Rupture Event Model\label{sec:Event_Model}}
+\section{Rupture Model\label{sec:Event_Model}}
 
 A rupture event in VQ is comprised of multiple sweeps.  During each sweep one or more elements fail and one or more elements slip.  The sweeps continue as long as there are elements that fail - once no more elements fail the event is complete.
 
@@ -723,6 +725,13 @@ where $\nu$ is the Poisson ratio of the elastic half space, $W$ is the down-dip 
 \begin{eqnarray}
 	R = \sqrt{L^2 + W^2} .
 \end{eqnarray}
+
+
+\subsection{ETAS Aftershock Model}
+
+We include an Epidemic Type Aftershock Model in Virtual Quake, specifically the BASS variant of the model described in \cite{Turcotte2007up}. By setting the simulation parameter \texttt{sim.bass.max\_generations = 1} you can turn on the aftershock model. The aftershock model draws location from a prescribed Omori-type distribution, is mapped onto the closest simulation element to the randomly drawn location, and the aftershock is processed as a regular simulated earthquake and changes the local stress field accordingly. The aftershocks parameters are described in Section \ref{sec:etas_params}.
+
+
 
 \section{Simulation Flow}
 
@@ -2408,7 +2417,7 @@ not be recorded.\tabularnewline
 %\end{tabular}
 
 
-\subsection{BASS (Branching Aftershock Sequence) model parameters}
+\subsection{BASS (Branching Aftershock Sequence) model parameters \label{sec:etas_params}}
 
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
@@ -2429,7 +2438,7 @@ If this is 0 then the BASS aftershock model will not be used.\tabularnewline
 
 \texttt{\small{sim.bass.d = 300}}{\small \par}
 
-\texttt{\small{sim.bass.q = 1.35}} & Different parameters for BASS model. See paper \cite{Turcotte:2007up}
+\texttt{\small{sim.bass.q = 1.35}} & Different parameters for BASS model. See paper \cite{Turcotte2007up}
 for details.
 
 Mm: minimum magnitude
