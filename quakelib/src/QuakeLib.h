@@ -134,6 +134,12 @@ namespace quakelib {
                 return std::max(_das[0], std::max(_das[1], _das[2]));
             };
 
+        
+            //! Get the maximum distance along strike of a vertex.
+            double min_das(void) {
+                return std::min(_das[0], std::min(_das[1], _das[2]));
+            };
+
 
             // For quadrilateral elements, calculate the implicit 4th point
             Vec<3> implicit_vert(void) const throw(std::out_of_range) {

@@ -38,22 +38,46 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::map<SectionID, double> section_lengths;
     std::map<SectionID, double> section_areas;
     std::map<SectionID, double>::iterator sit;
-
+    std::map<SectionID, double> section_min_das;
+    std::map<SectionID, double>::iterator ssit;
+    
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
 
+    // Determine section minimum distance along strike (required since das is defined along
+    // faults and doesn't reset to 0 when entering a new section of the same fault.
+    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+        sid = nt->getSectionID();
+        
+        if (section_min_das.count(sid)) {
+            sit = section_min_das.find(sid);
+            // Replace the current max length with this element's distance along strike if it's smaller
+            // Trying to find the lower bound for the fault
+            sit->second = std::min(sit->second, nt->min_das());
+            
+        } else {
+            // If it's not already in here, add this section
+            section_min_das.insert(std::make_pair(sid, nt->min_das()));
+        }
+        
+    }
+    
     // Determine section lengths and add up the areas
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
         sid = nt->getSectionID();
 
         if (section_lengths.count(sid)) {
             sit = section_lengths.find(sid);
+            ssit = section_min_das.find(sid);
+            double min_das = ssit->second;
             // Replace the current max length with this element's distance along strike if it's larger
-            sit->second = std::max(sit->second, nt->max_das());
+            sit->second = std::max(sit->second, nt->max_das()-min_das);
 
         } else {
+            ssit = section_min_das.find(sid);
+            double min_das = ssit->second;
             // If it's not already in here, add this section
-            section_lengths.insert(std::make_pair(sid, nt->max_das()));
+            section_lengths.insert(std::make_pair(sid, nt->max_das()-min_das));
         }
 
         if (section_areas.count(sid)) {
@@ -68,6 +92,10 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     }
 
+    for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
+        std::cout << sit->first << "   " << sit->second << std::endl ;
+    }
+    
     /*
     /////// Schultz: First we compute the mean slip rate to avoid NaN's
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
@@ -192,10 +220,10 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // Compute initial stress on all blocks
     stressRecompute();
 
-    // printing
-    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-        std::cout << nt->stress_drop() << std::endl;
-    }
+    // printing for debug
+    //for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+    //    std::cout << nt->stress_drop() << std::endl;
+    //}
 
 }
 
