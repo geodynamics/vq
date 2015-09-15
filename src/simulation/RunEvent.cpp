@@ -64,10 +64,10 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             //
 
             ///// Schultz:
-            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            //stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
             // Slip is in m
-            slip = (stress_drop/sim->getSelfStresses(gid));
+            slip = (sim->getStressDrop(gid)/sim->getSelfStresses(gid));
 
             ////// Schultz:
             // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
@@ -189,14 +189,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         }
 
         //b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
-        ////// Schultz:
-        // Need to incorporate stress drop here somehow, we need secondary
-        // rupture physics to be same as primary. This incorporates the physics that
-        // for static failure (CFF=0) the amount of stress to release is the stress drop.
-        // For dynamic failure this amount of stress is reduced by however much stress is still
-        // needed to reach static failure. Or if the element has accumulated a ton of stress (CFF>0)
-        // then this adds that extra amount to the stress needed to be released.
-        b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
+        //b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
+        // We must only use stress drops here, that is the definition
+        b[i] = sim->getStressDrop(*it);
     }
 
     //
