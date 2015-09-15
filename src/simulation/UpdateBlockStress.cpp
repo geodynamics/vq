@@ -91,10 +91,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
     }
-
-    for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
-        std::cout << sit->first << "   " << sit->second << std::endl ;
-    }
     
     /*
     /////// Schultz: First we compute the mean slip rate to avoid NaN's
