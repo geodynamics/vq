@@ -64,10 +64,10 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             //
 
             ///// Schultz:
-            //stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
 
             // Slip is in m
-            slip = (sim->getStressDrop(gid)/sim->getSelfStresses(gid));
+            slip = (stress_drop/sim->getSelfStresses(gid));
 
             ////// Schultz:
             // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
@@ -189,9 +189,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         }
 
         //b[i] = sim->getCFF(*it)+sim->getFriction(*it)*sim->getRhogd(*it);
-        //b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
-        // We must only use stress drops here, that is the definition
-        b[i] = sim->getStressDrop(*it);
+        b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
+        // We must only use stress drops here, that is the definition.
+        // Must be verified first
+        //b[i] = sim->getStressDrop(*it);
     }
 
     //
