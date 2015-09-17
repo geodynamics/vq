@@ -2028,9 +2028,11 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     std::map<UIndex, ModelElement>::const_iterator  eit;
     LatLonDepth                                     min_bound, max_bound, center;
     Vec<3>                                          min_xyz, max_xyz;
-    double                                          dx, dy, range, mag, mean_slip, ev_year;
+    double                                          dx, dy, range, mean_slip, ev_year;
     unsigned int                                    i, trigger, ev_num;
     ElementIDSet                                    involved_elements;
+    ElementIDSet                                    involved_sections;
+    ElementIDSet                                    all_elements;
     ElementIDSet::iterator                          it;
 
     out_file.open(file_name.c_str());
@@ -2046,13 +2048,21 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     range = fmax(dx, dy) * (1.0/tan(c.deg2rad(30)));
     
     double max_depth = fabs(min_bound.altitude());
+    
+    //// Get relevant event info
+    involved_elements = event.getInvolvedElements();
+    trigger = event.getEventTrigger();
+    mean_slip = event.calcMeanSlip();
+    ev_year = event.getEventYear();
+    ev_num = event.getEventNumber();
+    LatLonDepth trigger_lld = _vertices.find(_elements.find(trigger)->second.vertex(0))->second.lld();
 
     out_file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out_file << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n";
     out_file << "<Document>\n";
     out_file << "<LookAt>\n";
-    out_file << "\t<latitude>" << center.lat() << "</latitude>\n";
-    out_file << "\t<longitude>" << center.lon() << "</longitude>\n";
+    out_file << "\t<latitude>" << trigger_lld.lat() << "</latitude>\n";
+    out_file << "\t<longitude>" << trigger_lld.lon() << "</longitude>\n";
     out_file << "\t<altitude>0</altitude>\n";
     out_file << "\t<range>" << range << "</range>\n";
     out_file << "\t<tilt>0</tilt>\n";
@@ -2066,13 +2076,6 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     out_file << "\t\t</Icon>\n";
     out_file << "\t</IconStyle>\n";
     out_file << "</Style>\n";
-
-    //// Get relevant event info
-    involved_elements = event.getInvolvedElements();
-    trigger = event.getEventTrigger();
-    mean_slip = event.calcMeanSlip();
-    ev_year = event.getEventYear();
-    ev_num = event.getEventNumber();
 
     // Write event info above triggering element
     out_file << "\t<Placemark id=\"Event_" << ev_num << "_label\">\n";
@@ -2112,6 +2115,16 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
         max_slip = fmax( max_slip, event.getEventSlip(*it));
         min_slip = fmin( min_slip, event.getEventSlip(*it));
+        involved_sections.insert(_elements.find(*it)->second.section_id());
+    }
+
+    // Add all the elements from the involved sections, regardless if they 
+    // actually slipped in the event. The ones with no slip will fill out the 
+    // faults and be nearly transparent.
+    for (eit=_elements.begin();eit!=_elements.end(); ++eit) {
+        if (involved_sections.count(eit->second.section_id())) {
+            all_elements.insert(eit->first);
+        }
     }
     
     /////// Bounds for color in blue to red range, white in the middle
@@ -2122,7 +2135,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
 
     out_file << "<Folder id=\"elements\">\n";
     // Go through the involved elements
-    for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
+    for (it=all_elements.begin(); it!=all_elements.end(); ++it) {
         LatLonDepth         lld[4];
         unsigned int        i, npoints;
 
@@ -2142,51 +2155,84 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
         }
         
+        // If the element is involved in the event..
         // Compute blue to red color (RGB)
-        int blue, green, red;
-        int interp_color = (int) linear_interp(event.getEventSlip(*it), x_min, x_max, y_min, y_max);
-        if (interp_color > 0) {
-            // More red
-            red = y_max;
-            blue = y_max - interp_color;
-            green = blue;
+        if (involved_elements.count(*it)) {
+            int blue, green, red;
+            int interp_color = (int) linear_interp(event.getEventSlip(*it), x_min, x_max, y_min, y_max);
+            if (interp_color > 0) {
+                // More red
+                red = y_max;
+                blue = y_max - interp_color;
+                green = blue;
+            } else {
+                blue = y_max;
+                red = y_max - fabs(interp_color);
+                green = red;
+            }
+            
+            // Output the KML format polygon for this element
+            out_file << "\t\t<Placemark>\n";
+            out_file << "\t\t<description>\n";
+            out_file << "Element #: " << *it << "\n";
+            out_file << "Event slip [m]: " << event.getEventSlip(*it) << "\n";
+            out_file << "\t\t</description>\n";
+            out_file << "\t\t\t<Style>\n";
+            out_file << "\t\t\t\t<LineStyle>\n";
+            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+            out_file << "\t\t\t\t\t<width>1</width>\n"; 
+            out_file << "\t\t\t\t</LineStyle>\n";
+            out_file << "\t\t\t\t<PolyStyle>\n";
+            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+            out_file << "\t\t\t\t</PolyStyle>\n";
+            out_file << "\t\t\t</Style>\n";
+            out_file << "\t\t\t<Polygon>\n";
+            out_file << "\t\t\t\t<extrude>0</extrude>\n";
+            out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+            out_file << "\t\t\t\t<outerBoundaryIs>\n";
+            out_file << "\t\t\t\t\t<LinearRing>\n";
+            out_file << "\t\t\t\t\t\t<coordinates>\n";
+            npoints = (eit->second.is_quad() ? 4 : 3);
+
+            for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+
+            out_file << "\t\t\t\t\t\t</coordinates>\n";
+            out_file << "\t\t\t\t\t</LinearRing>\n";
+            out_file << "\t\t\t\t</outerBoundaryIs>\n";
+            out_file << "\t\t\t</Polygon>\n";
+            out_file << "\t\t</Placemark>\n";
         } else {
-            blue = y_max;
-            red = y_max - fabs(interp_color);
-            green = red;
+        // If this element wasn't involved in the event and is included to fill out the fault
+            // Output the KML format polygon for this element
+            out_file << "\t\t<Placemark>\n";
+            out_file << "\t\t<description>\n";
+            out_file << "Element #: " << *it << "\n";
+            out_file << "\t\t</description>\n";
+            out_file << "\t\t\t<Style>\n";
+            out_file << "\t\t\t\t<LineStyle>\n";
+            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n"; 
+            out_file << "\t\t\t\t\t<width>1</width>\n"; 
+            out_file << "\t\t\t\t</LineStyle>\n";
+            out_file << "\t\t\t\t<PolyStyle>\n";
+            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n"; 
+            out_file << "\t\t\t\t</PolyStyle>\n";
+            out_file << "\t\t\t</Style>\n";
+            out_file << "\t\t\t<Polygon>\n";
+            out_file << "\t\t\t\t<extrude>0</extrude>\n";
+            out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+            out_file << "\t\t\t\t<outerBoundaryIs>\n";
+            out_file << "\t\t\t\t\t<LinearRing>\n";
+            out_file << "\t\t\t\t\t\t<coordinates>\n";
+            npoints = (eit->second.is_quad() ? 4 : 3);
+
+            for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+
+            out_file << "\t\t\t\t\t\t</coordinates>\n";
+            out_file << "\t\t\t\t\t</LinearRing>\n";
+            out_file << "\t\t\t\t</outerBoundaryIs>\n";
+            out_file << "\t\t\t</Polygon>\n";
+            out_file << "\t\t</Placemark>\n";
         }
-
-        // Output the KML format polygon for this element
-        out_file << "\t\t<Placemark>\n";
-        out_file << "\t\t<description>\n";
-        out_file << "Element #: " << *it << "\n";
-        out_file << "Event slip [m]: " << event.getEventSlip(*it) << "\n";
-        out_file << "\t\t</description>\n";
-        out_file << "\t\t\t<Style>\n";
-        out_file << "\t\t\t\t<LineStyle>\n";
-        out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
-        out_file << "\t\t\t\t\t<width>1</width>\n"; 
-        out_file << "\t\t\t\t</LineStyle>\n";
-        out_file << "\t\t\t\t<PolyStyle>\n";
-        out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
-        out_file << "\t\t\t\t</PolyStyle>\n";
-        out_file << "\t\t\t</Style>\n";
-        out_file << "\t\t\t<Polygon>\n";
-        out_file << "\t\t\t\t<extrude>0</extrude>\n";
-        out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
-        out_file << "\t\t\t\t<outerBoundaryIs>\n";
-        out_file << "\t\t\t\t\t<LinearRing>\n";
-        out_file << "\t\t\t\t\t\t<coordinates>\n";
-        npoints = (eit->second.is_quad() ? 4 : 3);
-
-        for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
-
-        out_file << "\t\t\t\t\t\t</coordinates>\n";
-        out_file << "\t\t\t\t\t</LinearRing>\n";
-        out_file << "\t\t\t\t</outerBoundaryIs>\n";
-        out_file << "\t\t\t</Polygon>\n";
-        out_file << "\t\t</Placemark>\n";
-        
     }
 
     out_file << "</Folder>\n";
