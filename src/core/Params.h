@@ -193,6 +193,12 @@ class VCParams {
             return params.read<bool>("sim.friction.compute_stress_drops");
         };
 
+        // Kasey: new parameter. Compute dynamic stress drops (True) or
+        // computing from standard method (False)
+        bool doDynamicStressDrops(void) const {
+            return params.read<bool>("sim.friction.dynamic_stress_drops");
+        };
+
         // The constant adjustment to the stress drops, should be between 0.3 and 0.5 globally
         //     with tuning the larger faults may need 0.6 to 0.8. The larger the number, the larger
         //     the stress drops. Currently it's a global constant

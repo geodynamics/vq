@@ -190,12 +190,59 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         double getSelfStresses(const BlockID gid) const {
             return self_shear[gid] - friction[gid]*self_normal[gid];
         };
+        
+        //! Get the area for the section in square meters.
+        double getSectionArea(const SectionID sid) const {
+            return section_areas.find(sid)->second;
+        };
+        //! Set the area for the section in square meters.
+        void setSectionArea(const SectionID sid, const double new_area) {
+            if (section_areas.count(sid)) {
+                section_areas.find(sid)->second = new_area;
+            } else {
+                section_areas.insert(std::make_pair(sid, new_area));
+            }
+        };
+        
+        //! Compute the dynamic stress drop from the current event size for element gid.
+        double computeDynamicStressDrop(const BlockID gid, const double current_event_area) const {
+            double fault_area, fault_length, fault_width, char_slip;
+            double char_magnitude, R, nu, dynamicStressDrop;
+            
+            // Fault wise data
+            fault_area = getSectionArea(getBlock(gid).getSectionID());
+            fault_length = getSectionLength(getBlock(gid).getSectionID());
+            fault_width = fault_area/fault_length;
+            R = sqrt(fault_length*fault_length + fault_width*fault_width);
+            nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
+            
+            // Get current expected slip from the current event area
+            char_magnitude = 4.07+0.98*log10(current_event_area*1e-6) + stressDropFactor();
+            char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*getBlock(gid).lame_mu()*current_event_area);
+            
+            dynamicStressDrop = -2*getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
+            
+            return dynamicStressDrop;
+        };
+        
+        //! Get the length for the section in meters.
+        double getSectionLength(const SectionID sid) const {
+            return section_lengths.find(sid)->second;
+        };
+        //! Set the length for the section in meters.
+        void setSectionLength(const SectionID sid, const double new_length) {
+            if (section_lengths.count(sid)) {
+                section_lengths.find(sid)->second = new_length;
+            } else {
+                section_lengths.insert(std::make_pair(sid, new_length));
+            }
+        };
 
-        //! Get the stress drop for this block in bars.
+        //! Get the stress drop for this block in Pascals.
         double getStressDrop(const BlockID gid) const {
             return stress_drop[gid];
         };
-        //! Set the stress drop for this block in bars.
+        //! Set the stress drop for this block in Pascals.
         void setStressDrop(const BlockID gid, const double new_stress_drop) {
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);

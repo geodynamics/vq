@@ -29,11 +29,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     SectionID           sid;
     int                 lid;
-    double              stress_drop, norm_velocity;
+    double              stress_drop;
     double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
     double depth = 0.0;         //
-    double mean_slip_rate = 0.0;
+    //double mean_slip_rate = 0.0;
+    //double norm_velocity;
     double char_magnitude, char_slip, fault_length, fault_area, fault_width, nu, R;
     std::map<SectionID, double> section_lengths;
     std::map<SectionID, double> section_areas;
@@ -92,6 +93,17 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     }
     
+    // Set the simulation section areas now that we computed them
+    for (sit=section_areas.begin(); sit!=section_areas.end(); ++sit) {
+        sim->setSectionArea(sit->first, sit->second);
+    }
+    
+    // Set the simulation section lengths now that we computed them
+    for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
+        sim->setSectionLength(sit->first, sit->second);
+    }
+    
+    
     /*
     /////// Schultz: First we compute the mean slip rate to avoid NaN's
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
@@ -149,11 +161,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             // Get the section id, sid
             sid = sim->getBlock(gid).getSectionID();
             // Get fault area and length (we will compute the width)
-            sit = section_areas.find(sid);
-            fault_area = sit->second;
-            sit = section_lengths.find(sid);
-            fault_length = sit->second;
-            fault_width = fault_area/fault_length;
+            fault_area = sim->getSectionArea(sid);
+            fault_length = sim->getSectionLength(sid);
+            fault_width = fault_area/fault_length; // This way we get the mean width
 
             // Use Wells & Coppersmith scaling to find the characteristic magnitude and slip given the fault geometry
             char_magnitude = 4.07+0.98*log10(fault_area*1e-6) + sim->stressDropFactor();
@@ -217,9 +227,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     stressRecompute();
 
     // printing for debug
-    //for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-    //    std::cout << nt->stress_drop() << std::endl;
-    //}
+    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
+        std::cout << nt->stress_drop() << std::endl;
+    }
 
 }
 
