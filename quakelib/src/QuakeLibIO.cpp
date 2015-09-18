@@ -2571,8 +2571,10 @@ double quakelib::ModelWorld::section_length(const quakelib::UIndex &sec_id) cons
     double min_das = DBL_MAX;
     double max_das = -DBL_MAX;
     for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-        min_das = fmin(min_das, create_sim_element(eit->first).min_das());
-        max_das = fmax(max_das, create_sim_element(eit->first).max_das());
+        if (eit->second.section_id() == sec_id) {
+            min_das = fmin(min_das, create_sim_element(eit->first).min_das());
+            max_das = fmax(max_das, create_sim_element(eit->first).max_das());
+        }
     }
     return max_das-min_das;
 }
