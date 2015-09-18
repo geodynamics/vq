@@ -1251,6 +1251,7 @@ namespace quakelib {
             
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
             char* rgb2hex(const int r, const int g, const int b) const;
+            double section_length(const UIndex &sec_id) const;
     };
 
 }

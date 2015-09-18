@@ -2566,6 +2566,18 @@ void quakelib::ModelWorld::insert(const quakelib::ModelVertex &new_vertex) {
     _vertices.insert(std::make_pair(new_vertex.id(), new_vertex));
 }
 
+double quakelib::ModelWorld::section_length(const quakelib::UIndex &sec_id) const {
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    double min_das = DBL_MAX;
+    double max_das = -DBL_MAX;
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        min_das = fmin(min_das, create_sim_element(eit->first).min_das());
+        max_das = fmax(max_das, create_sim_element(eit->first).max_das());
+    }
+    return max_das-min_das;
+}
+
+
 size_t quakelib::ModelWorld::num_sections(void) const {
     return _sections.size();
 }
