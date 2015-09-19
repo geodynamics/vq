@@ -2579,6 +2579,16 @@ double quakelib::ModelWorld::section_length(const quakelib::UIndex &sec_id) cons
     return max_das-min_das;
 }
 
+double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) const {
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    double max_depth = DBL_MAX;
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        if (eit->second.section_id() == sec_id) {
+            max_depth = fmin(max_depth, create_sim_element(eit->first).max_depth());
+        }
+    }
+    return max_depth;
+}
 
 size_t quakelib::ModelWorld::num_sections(void) const {
     return _sections.size();
