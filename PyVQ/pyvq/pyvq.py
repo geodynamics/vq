@@ -19,6 +19,7 @@ except ImportError:
 matplotlib_available = True
 try:
     import matplotlib as mpl
+    mpl.use("Agg")
     import matplotlib.pyplot as plt
     from mpl_toolkits.basemap import Basemap
     import matplotlib.font_manager as mfont
@@ -27,6 +28,7 @@ try:
     import matplotlib.lines as mlines
     import matplotlib.patches as mpatches
     from PIL import Image 
+    import matplotlib.animation as manimation
     #TODO: Move this guy
 
     # we only want to execute this in the __main__ part of the script, so we can also run plotting scripts interactively.
@@ -159,6 +161,12 @@ class SaveFile:
                 add += "_minMag_"+min_mag
             
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
+
+    def event_movie(self, event_file, event_id):
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        return "movie_event_{}_{}.mp4".format(event_id, event_file.split(".")[0])
     
     def event_kml_plot(self, event_file, event_id):
         if len(event_file.split("/")) > 1:
@@ -453,12 +461,21 @@ class Events:
         areas = [self._events[evnum].calcEventRuptureArea() for evnum in evnums]
         times = [self._events[evnum].getEventYear() for evnum in evnums]
         slips = [self._events[evnum].calcMeanSlip() for evnum in evnums]
-        print("=======================================================")
-        print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]")
-        print("-------------------------------------------------------")
-        for k in range(len(evnums)):
-            print("{}\t{:.1f}\t\t{:.3f}\t{:.4f}\t{:.4f}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k]))
-        print("-------------------------------------------------------\n")
+        triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
+        if min(slips) > 1e-4:
+            print("=======================================================")
+            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger")
+            print("-------------------------------------------------------")
+            for k in range(len(evnums)):
+                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k]))
+            print("-------------------------------------------------------\n")
+        else:
+            print("=======================================================")
+            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger")
+            print("-------------------------------------------------------")
+            for k in range(len(evnums)):
+                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k]))
+            print("-------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events):
         evnums = self.get_ids_largest_events(num_events)
@@ -479,11 +496,14 @@ class Events:
     def number_of_sweeps(self):
         return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
+    def get_num_sweeps(self, evnum):
+        return self._events[evnum].getNumRecordedSweeps()
+
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
     def __init__(self, sim_file, event_number=0, block_ids=None):
         self.sweeps = read_sweeps_h5(sim_file, event_number=event_number, block_ids=block_ids)
-        self.sweep_data = parse_sweeps_h5(sweeps=self.sweeps, do_print=False)
+        self.sweep_data = parse_sweeps_h5(sweeps=self.sweeps, do_print=False, event_number=event_number)
         self.block_ids = self.sweep_data['block_id'].tolist()
         self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
         self.event_number = event_number
@@ -552,6 +572,77 @@ class Sweeps:
         if isinstance(block_ids, float): block_ids=[int(block_ids)]
         if isinstance(block_ids, int): block_ids = [block_ids]
         return block_ids
+        
+    def event_movie(self, geometry, savefile, FPS=3, DPI=100):
+        # Currently only works for perfectly rectangular faults
+        # Currently only plotting the elements on the triggering section
+        triggerID = int(self.sweep_data[ np.where(self.sweep_data['sweep_number']==0) ]['block_id'][0])
+        num_sweeps = max([sweep_num for sweep_num in self.sweep_data['sweep_number'] ])+1
+        sectionID = geometry.model.element(triggerID).section_id()
+        ele_length = np.sqrt(geometry.model.create_sim_element(triggerID).area())
+        triggerSecElements = [id for id in range(geometry.model.num_elements()) if geometry.model.element(id).section_id() == sectionID]
+        sec_name = geometry.model.section(sectionID).name()
+        min_id    = triggerSecElements[0]
+        magnitude = events._events[self.event_number].getMagnitude()
+        mean_slip = events._events[self.event_number].calcMeanSlip()
+        ele_slips = events.get_event_element_slips(self.event_number)
+        max_slip = max(ele_slips.values())
+        min_slip = min(ele_slips.values())
+        section_length = geometry.model.section_length(sectionID)
+        section_depth = abs(geometry.model.section_max_depth(sectionID))
+        num_elements_down = int(round(section_depth/ele_length))
+        num_elements_across = int(round(section_length/ele_length))
+        assert(len(triggerSecElements) == num_elements_across*num_elements_down)
+        element_grid = np.zeros((num_elements_down,num_elements_across))
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if min_slip > 0:
+            cmap = plt.get_cmap('Reds')
+            norm = mcolor.Normalize(vmin=0, vmax=max_slip)
+        else: 
+            cmap = plt.get_cmap('seismic')
+            norm = mcolor.Normalize(vmin=-max_slip, vmax=max_slip)
+        
+        # Initialize movie writing stuff
+        FFMpegWriter = manimation.writers['ffmpeg']
+        metadata = dict(title='VQ event {}'.format(self.event_number), artist='Matplotlib',comment='Testing.')
+        writer = FFMpegWriter(fps=FPS, metadata=metadata)
+        
+        plt.xlabel("along strike")
+        plt.ylabel("down dip")
+        plt.title("Virtual Quake Event {}, M={:.2f}, Fault: {}\n mean slip = {:.2f}m, max slip = {:.2f}m".format(self.event_number,magnitude,sec_name,mean_slip,max_slip),fontsize=11)
+        plt.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+        plt.tick_params(axis='y', which='both', left='off', right='off', labelleft='off')
+        plt.figtext(0.95, 0.6, r'cumulative slip $[m]$', rotation='vertical')
+        
+        # Colorbar
+        divider = make_axes_locatable(ax)
+        cbar_ax = divider.append_axes("right", size="5%",pad=0.1)
+        cb = mcolorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm)
+
+        with writer.saving(fig, savefile, DPI):
+            # Create the first frame of zero slip
+            this_plot = ax.imshow(element_grid, cmap=cmap,origin='upper',interpolation='none',norm=norm)
+            writer.grab_frame()
+            for sweep_num in range(num_sweeps):
+                if sweep_num == 0: sys.stdout.write("Generating frames...")
+                if sweep_num%int(num_sweeps/10.0)==0: sys.stdout.write("...{:.1f}%".format(100*sweep_num/float(num_sweeps-1)))
+                sys.stdout.flush()
+                # Using here the fact that VQ element numbering goes from top (near surface) to bottom,
+                #   then makes a step down the strike (length) once you reach the bottom.
+                this_sweep = self.sweep_data[ np.where(self.sweep_data['sweep_number']==sweep_num) ]
+                for row in this_sweep:
+                    ele_id = row['block_id']
+                    grid_row = int((ele_id-min_id)%num_elements_down)
+                    grid_col = int((ele_id-min_id)/num_elements_down)
+                    element_grid[grid_row,grid_col] += row['block_slip']
+                
+                plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
+                this_plot.set_data(element_grid)
+                writer.grab_frame()
+        sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
+
+    
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -2186,6 +2277,8 @@ if __name__ == "__main__":
     # Diagnostic plots
     parser.add_argument('--diagnostics', required=False, action='store_true',
             help="Plot all diagnostic plots")
+    parser.add_argument('--event_elements', required=False, action='store_true',
+            help="Print the involved elements, must specify event id.")
     parser.add_argument('--num_sweeps', required=False, action='store_true',
             help="Plot the number of sweeps for events")
     parser.add_argument('--event_shear_stress', required=False, action='store_true',
@@ -2207,6 +2300,10 @@ if __name__ == "__main__":
     parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
     parser.add_argument('--event_kml', required=False, action='store_true',
             help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
+            
+    # Event movies
+    parser.add_argument('--event_movie', required=False, action='store_true',
+            help="Make a movie of a specified event, must use --event_id.")
 
     # Validation/testing arguments
     parser.add_argument('--validate_slip_sum', required=False,
@@ -2270,17 +2367,18 @@ if __name__ == "__main__":
         args.wc94 = True
 
     # Set a default lower magnitude limit of 5
-    if args.min_magnitude is None:
-        args.min_magnitude = 5
+    #if args.min_magnitude is None:
+    #    args.min_magnitude = 5
     # Set up filters
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
 
-
-
     if args.min_year or args.max_year:
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
+
+    # Detectability threshold, min slip 1cm
+    #if args.min_slip is None: args.min_slip = 0.01
 
     if args.min_slip or args.max_slip:
         # Setting default lower limit on mean slip of 1cm
@@ -2312,13 +2410,19 @@ if __name__ == "__main__":
         print("\n"+args.event_file)
         events.largest_event_summary(args.summary)
 
+    if args.event_elements:
+        if args.event_id is None:
+            raise "Must specify --event_id"
+        print("\nEvent {}\n".format(args.event_id))
+        print([each for each in events._events[args.event_id].getInvolvedElements()])
+
     # Generate plots
     if args.diagnostics:
         args.num_sweeps = True
         args.event_shear_stress = True
         args.event_normal_stress = True
         args.event_mean_slip = True
-        args.plot_freq_mag = 1
+        args.plot_freq_mag = 3
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.wc94 = True
@@ -2482,6 +2586,13 @@ if __name__ == "__main__":
     if args.event_mean_slip:
         filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_mean_slip(events, filename)
+        
+    if args.event_movie:
+        if args.event_file is None or args.event_id is None:
+            raise "Must specify event file and event id."
+        sim_sweeps = Sweeps(args.event_file, event_number=args.event_id)
+        save_file = SaveFile().event_movie(args.event_file, args.event_id)
+        sim_sweeps.event_movie(geometry, save_file)
 
     # Validate data if requested
     err = False
