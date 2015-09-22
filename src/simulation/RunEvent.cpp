@@ -529,7 +529,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
             sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
 
             ////////// Schultz:
@@ -587,7 +587,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             //
             // if this is a current/original failure, then 0 else...
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
-            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
 
             //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
             //sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));
@@ -663,9 +663,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
             //
-            // yoder: as per request by KS, change isnan() --> std::isnan(); isnan() appears to throw an error on some platforms.
+            // yoder: as per request by KS, change isnan() --> isnan(); isnan() appears to throw an error on some platforms.
             // Eric: Probably don't need this if check
-            if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
+            if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
                 // note: the stress entries are initialized with nan values, but if there are cases where non nan values need to be updated,
                 // this logic should be revisited.
                 event_sweeps.setFinalStresses(sweep_num,
