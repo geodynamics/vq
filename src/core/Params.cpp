@@ -111,7 +111,7 @@ void VCParams::read_params(const std::string &param_file_name) {
     // Kasey: parameter to either read in stress drops from file or compute them
     params.readSet<bool>("sim.friction.compute_stress_drops", true);
 
-    params.readSet<double>("sim.friction.stress_drop_factor", 0.3);
+    params.readSet<double>("sim.friction.stress_drop_factor", 0.5);
     
     params.readSet<bool>("sim.friction.dynamic_stress_drops", false);
 
