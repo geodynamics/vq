@@ -266,6 +266,22 @@ class SlipFilter:
         if self._max_slip != float("inf"): label_str += "year<"+str(self._max_slip)
         return label_str
         
+class AreaFilter:
+    def __init__(self, min_area=None, max_area=None):
+        # Convert from the input km^2 to the unit of calcEventRuptureArea() which is m^2
+        self._min_area = quakelib.Conversion().sqkm2sqm(min_area) if min_area is not None else -float("inf")
+        self._max_area = quakelib.Conversion().sqkm2sqm(max_area) if max_area is not None else float("inf")
+
+    def test_event(self, event):
+        return (event.calcEventRuptureArea() >= self._min_area and event.calcEventRuptureArea() <= self._max_area)
+
+    def plot_str(self):
+        label_str = ""
+# TODO: change to <= character
+        if self._min_area != -float("inf"): label_str += str(self._min_area)+"<"
+        if self._max_area != float("inf"): label_str += "year<"+str(self._max_area)
+        return label_str
+        
 class Geometry:
     def __init__(self, model_file=None, model_file_type=None):
         if model_file is not None:
@@ -456,30 +472,31 @@ class Events:
         ev_ids = [mags_sorted[i][0] for i in range(len(mags_sorted))]
         return ev_ids[:num_events]
         
-    def event_summary(self, evnums):
+    def event_summary(self, evnums, geometry):
         mags = [self._events[evnum].getMagnitude() for evnum in evnums if self._events[evnum].getMagnitude() != float("-inf")]
         areas = [self._events[evnum].calcEventRuptureArea() for evnum in evnums]
         times = [self._events[evnum].getEventYear() for evnum in evnums]
         slips = [self._events[evnum].calcMeanSlip() for evnum in evnums]
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
+        trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
         if min(slips) > 1e-4:
-            print("=======================================================")
-            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger")
-            print("-------------------------------------------------------")
+            print("==============================================================================")
+            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
+            print("------------------------------------------------------------------------------")
             for k in range(len(evnums)):
-                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k]))
-            print("-------------------------------------------------------\n")
+                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+            print("------------------------------------------------------------------------------\n")
         else:
-            print("=======================================================")
-            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger")
-            print("-------------------------------------------------------")
+            print("==============================================================================")
+            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
+            print("------------------------------------------------------------------------------")
             for k in range(len(evnums)):
-                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k]))
-            print("-------------------------------------------------------\n")
+                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+            print("------------------------------------------------------------------------------\n")
             
-    def largest_event_summary(self, num_events):
+    def largest_event_summary(self, num_events, geometry):
         evnums = self.get_ids_largest_events(num_events)
-        self.event_summary(evnums)
+        self.event_summary(evnums, geometry)
     
     def event_initial_shear_stresses(self):
         return [self._events[evnum].getShearStressInit() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
@@ -613,7 +630,7 @@ class Sweeps:
         plt.title("Virtual Quake Event {}, M={:.2f}, Fault: {}\n mean slip = {:.2f}m, max slip = {:.2f}m".format(self.event_number,magnitude,sec_name,mean_slip,max_slip),fontsize=11)
         plt.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
         plt.tick_params(axis='y', which='both', left='off', right='off', labelleft='off')
-        plt.figtext(0.95, 0.6, r'cumulative slip $[m]$', rotation='vertical')
+        plt.figtext(0.96, 0.6, r'cumulative slip $[m]$', rotation='vertical')
         
         # Colorbar
         divider = make_axes_locatable(ax)
@@ -626,19 +643,25 @@ class Sweeps:
             writer.grab_frame()
             for sweep_num in range(num_sweeps):
                 if sweep_num == 0: sys.stdout.write("Generating frames...")
-                if sweep_num%int(num_sweeps/10.0)==0: sys.stdout.write("...{:.1f}%".format(100*sweep_num/float(num_sweeps-1)))
+                if num_sweeps>10: 
+                    if sweep_num%int(num_sweeps/10.0)==0: sys.stdout.write("...{:.1f}%".format(100*sweep_num/float(num_sweeps-1)))
                 sys.stdout.flush()
                 # Using here the fact that VQ element numbering goes from top (near surface) to bottom,
                 #   then makes a step down the strike (length) once you reach the bottom.
                 this_sweep = self.sweep_data[ np.where(self.sweep_data['sweep_number']==sweep_num) ]
                 for row in this_sweep:
-                    ele_id = row['block_id']
-                    grid_row = int((ele_id-min_id)%num_elements_down)
-                    grid_col = int((ele_id-min_id)/num_elements_down)
-                    element_grid[grid_row,grid_col] += row['block_slip']
-                
-                plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
+                    ele_id = int(row['block_id'])
+                    # Only plotting the elements on the triggering fault
+                    if geometry.model.element(ele_id).section_id() == sectionID:
+                        grid_row = int((ele_id-min_id)%num_elements_down)
+                        grid_col = int((ele_id-min_id)/num_elements_down)
+                        element_grid[grid_row,grid_col] += row['block_slip']
+                    else:
+                        sys.stdout.write("\nElement {} involved but not on triggering fault.".format(ele_id))
+                # Update the colors
                 this_plot.set_data(element_grid)
+                # Time stamp
+                plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
                 writer.grab_frame()
         sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
 
@@ -2201,6 +2224,10 @@ if __name__ == "__main__":
             help="Minimum mean slip of events to process.")
     parser.add_argument('--max_slip', type=float, required=False,
             help="Maximum mean slip of events to process.")
+    parser.add_argument('--min_area', type=float, required=False,
+            help="Minimum rupture area of events to process (in km^2).")
+    parser.add_argument('--max_area', type=float, required=False,
+            help="Maximum rupture area of events to process (in km^2).")
     parser.add_argument('--min_event_num', type=float, required=False,
             help="Minimum event number of events to process.")
     parser.add_argument('--max_event_num', type=float, required=False,
@@ -2365,10 +2392,7 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.plot_mag_mean_slip = True
         args.wc94 = True
-
-    # Set a default lower magnitude limit of 5
-    #if args.min_magnitude is None:
-    #    args.min_magnitude = 5
+    
     # Set up filters
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
@@ -2378,19 +2402,21 @@ if __name__ == "__main__":
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     # Detectability threshold, min slip 1cm
-    #if args.min_slip is None: args.min_slip = 0.01
+    if args.min_slip is None: 
+        args.min_slip = 0.01
+        sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< ")
 
     if args.min_slip or args.max_slip:
-        # Setting default lower limit on mean slip of 1cm
-        #if args.min_slip is None: args.min_slip = 0.01
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
+        
+    if args.min_area or args.max_area:
+        event_filters.append(AreaFilter(min_area=args.min_area, max_area=args.max_area))
 
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
 
     if args.use_sections:
-        if not args.model_file:
-            raise "Must specify --model_file for --use_sections to work."
+        if not args.model_file: raise "Must specify --model_file for --use_sections to work."
         event_filters.append(SectionFilter(geometry, args.use_sections))
         # Also grab all the elements from this section in case this is being used to grab element ids
         if args.elements is None:
@@ -2398,8 +2424,7 @@ if __name__ == "__main__":
         
         
     if args.use_trigger_sections:
-        if not args.model_file:
-            raise "Must specify --model_file for --use_trigger_sections to work."
+        if not args.model_file: raise "Must specify --model_file for --use_trigger_sections to work."
         event_filters.append(TriggerSectionFilter(geometry, args.use_trigger_sections))
 
     if args.event_file:
@@ -2407,12 +2432,12 @@ if __name__ == "__main__":
         
     # Print out event summary data if requested
     if args.summary:
-        print("\n"+args.event_file)
-        events.largest_event_summary(args.summary)
+        if args.model_file is None: raise "Must specify --model_file for summary."
+        print("\n Event summary for: "+args.event_file)
+        events.largest_event_summary(args.summary, geometry)
 
     if args.event_elements:
-        if args.event_id is None:
-            raise "Must specify --event_id"
+        if args.event_id is None: raise "Must specify --event_id"
         print("\nEvent {}\n".format(args.event_id))
         print([each for each in events._events[args.event_id].getInvolvedElements()])
 
