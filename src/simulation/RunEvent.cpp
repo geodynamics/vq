@@ -226,15 +226,15 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         //    than the element's section area. Don't forget stress drops are negative!
         if (sim->doDynamicStressDrops()) {
             // If the current event area is bigger than the section area, use the full stress drop
-            if (current_event_area >= sim->getSectionArea(sim->getBlock(gid).getSectionID())) {
-                stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            if (current_event_area >= sim->getSectionArea(sim->getBlock(*it).getSectionID())) {
+                stress_drop = sim->getStressDrop(*it) - sim->getCFF(*it);
             } else {
                 // If the current area is smaller than the section area, scale the stress drop
-                dynamicStressDrop = sim->computeDynamicStressDrop(gid, current_event_area);
-                stress_drop = dynamicStressDrop - sim->getCFF(gid);
+                dynamicStressDrop = sim->computeDynamicStressDrop(*it, current_event_area);
+                stress_drop = dynamicStressDrop - sim->getCFF(*it);
             }
         } else {
-            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            stress_drop = sim->getStressDrop(*it) - sim->getCFF(*it);
         }
         
         //b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
@@ -509,7 +509,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //sim->barrier();
     while (more_blocks_to_fail || final_sweep) {
         // write stress, slip, etc. to events and sweeps output (text or hdf5).
-        sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+        //sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
