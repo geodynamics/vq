@@ -176,9 +176,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             stress_drop = -2*sim->getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R ) ;
 
             sim->setStressDrop(gid, stress_drop);
+            sim->setMaxStressDrop(gid, stress_drop);
 
         } else {
             sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
+            sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
         }
 
         // Initialize element slips to equilibrium position, slip=0
