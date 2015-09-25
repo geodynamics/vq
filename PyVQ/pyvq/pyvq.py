@@ -1898,16 +1898,21 @@ class BasePlotter:
             ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         ax.legend(loc = "lower right")
+
+        y_label_words = [s.lower() for s in y_label.split(" ")]
+        if "slip" in y_label_words: plt.ylim(1e-2,1e1)
+        if "area" in y_label_words and max(y_data) < 2e4 : plt.ylim(1,1e4)
+        
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
-    def plot(self, events, filename, WC94=False):
+    def plot(self, events, filename, WC94=False, leonard=False):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
         min_mag, max_mag = min(mag_list), max(mag_list)
-        if WC94:
+        if WC94 and not leonard:
             scale_x, scale_y = Distributions().wells_coppersmith('area')
             scale_label = "Wells & Coppersmith 1994"
             full_x, full_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
@@ -1918,15 +1923,37 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_styles = ['-', '--']
             colors = ['k', 'k']
             self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+        elif leonard and not WC94:
+            scale_label = "Leonard 2010"
+            full_x, full_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
+            lines_x = full_x
+            lines_y = full_y
+            line_labels = scale_label
+            line_widths = 2.0
+            line_styles = '-'
+            colors = 'k'
+            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+        elif leonard and WC94:
+            wc_x, wc_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
+            wc_label = "Wells & Coppersmith 1994"
+            leo_x, leo_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
+            leo_label = "Leonard 2010"
+            lines_x = [wc_x, leo_x]
+            lines_y = [wc_y, leo_y]
+            line_labels = [wc_label, leo_label]
+            line_widths = [2.0, 2.0]
+            line_styles = ['-', '-']
+            colors = ['k', 'r']
+            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
         else:
             self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
-    def plot(self, events, filename, WC94=False):
+    def plot(self, events, filename, WC94=False, leonard=False):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
         min_mag, max_mag = min(mag_list), max(mag_list)
-        if WC94:
+        if WC94 and not leonard:
             scale_x, scale_y = Distributions().wells_coppersmith('slip')
             scale_label = "Wells & Coppersmith 1994"
             full_x, full_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
@@ -1936,6 +1963,28 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
+            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+        elif leonard and not WC94:
+            scale_label = "Leonard 2010"
+            full_x, full_y = Distributions().leonard_2010('slip', min_mag=min_mag, max_mag=max_mag)
+            lines_x = full_x
+            lines_y = full_y
+            line_labels = scale_label
+            line_widths = 2.0
+            line_styles = '-'
+            colors = 'k'
+            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+        elif leonard and WC94:
+            wc_x, wc_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
+            wc_label = "Wells & Coppersmith 1994"
+            leo_x, leo_y = Distributions().leonard_2010('slip', min_mag=min_mag, max_mag=max_mag)
+            leo_label = "Leonard 2010"
+            lines_x = [wc_x, leo_x]
+            lines_y = [wc_y, leo_y]
+            line_labels = [wc_label, leo_label]
+            line_widths = [2.0, 2.0]
+            line_styles = ['-', '-']
+            colors = ['k', 'r']
             self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
         else:
             self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
@@ -2182,6 +2231,20 @@ class Distributions:
             raise "Must specify rupture area or mean slip"
         x_data = np.linspace(min_mag, max_mag, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
+        return x_data, y_data
+        
+    def leonard_2010(self, type, min_mag, max_mag, num=5):
+        # Return empirical scaling relations from Mark Leonard 2010 BSSA
+        if type.lower() == 'area':
+            a = -4.0 
+            b =  1.0
+        elif type.lower() == 'slip':
+            a = -3.417
+            b =  0.499
+        else:
+            raise "Must specify rupture area or mean slip"
+        x_data = np.linspace(min_mag, max_mag, num=num)
+        y_data = np.array([pow(10,a+b*m) for m in x_data])
         #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
         return x_data, y_data
 
@@ -2247,7 +2310,9 @@ if __name__ == "__main__":
     parser.add_argument('--all_stat_plots', required=False, action='store_true',
             help="Generate frequency-magnitude, magnitude vs rupture area, and magnitude vs mean slip plots.")  
     parser.add_argument('--wc94', required=False, action='store_true',
-            help="Plot Wells and Coppersmith 1994 scaling relations.")             
+            help="Plot Wells and Coppersmith 1994 scaling relations.")
+    parser.add_argument('--leonard', required=False, action='store_true',
+            help="Plot Leonard 2010 scaling relations.")
 
     # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
@@ -2392,6 +2457,7 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.plot_mag_mean_slip = True
         args.wc94 = True
+        args.leonard = True
     
     # Set up filters
     event_filters = []
@@ -2460,10 +2526,10 @@ if __name__ == "__main__":
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
         filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year)
-        MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94)
+        MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
     if args.plot_mag_mean_slip:
         filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year)
-        MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94)
+        MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
     if args.plot_prob_vs_t:
         filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_p_of_t(events, filename)
