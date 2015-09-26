@@ -495,7 +495,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     sweep_num = 0;
     //
     // Clear the list of "loose" (can dynamically fail) blocks
-    loose_elements.clear();
+    //loose_elements.clear();
     //
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
