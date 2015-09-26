@@ -37,10 +37,12 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         if (sim->getFailed(gid)) continue;
 
         // Add this block if it has a static CFF failure
-        add = sim->cffFailure(gid);
+        add = sim->cffFailure(gid) ||  sim->dynamicFailure(gid, trigger_fault);
 
+        // Schultz: Restoring the dynamic triggering check to be the same as VC.
+        // add = sim->cffFailure(gid)
         // Allow dynamic failure if the block is "loose" (next to a previously failed block)
-        if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
+        //if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
         if (add) {
             sim->setFailed(gid, true);
@@ -501,7 +503,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
-        loose_elements.insert(triggerID);
+        //loose_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
 
@@ -580,19 +582,23 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
 
+        /////////////
+        // Schultz:: VC did not use this extra check for dynamic triggering.
+        //     I am removing this for now. 
+        ////////////
         // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
-        for (it=sim->begin(); it!=sim->end(); ++it) {
-            BlockID gid = it->getBlockID();
-
-            // Add block neighbors if the block has slipped
-            if (sim->getFailed(gid)) {
-                nbr_start_end = sim->getNeighbors(gid);
-
-                for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
-                    loose_elements.insert(*nit);
-                }
-            }
-        }
+//        for (it=sim->begin(); it!=sim->end(); ++it) {
+//            BlockID gid = it->getBlockID();
+//
+//            // Add block neighbors if the block has slipped
+//            if (sim->getFailed(gid)) {
+//                nbr_start_end = sim->getNeighbors(gid);
+//
+//                for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
+//                    loose_elements.insert(*nit);
+//                }
+//            }
+//        }
 
         //
         // Calculate the CFFs based on the stuck blocks
