@@ -184,10 +184,11 @@ class MagFilter:
         return (event.getMagnitude() >= self._min_mag and event.getMagnitude() <= self._max_mag)
 
     def plot_str(self):
-        label_str = ""
+        label_str = "  "
 # TODO: change to <= character
         if self._min_mag != -float("inf"): label_str += str(self._min_mag)+"<"
-        if self._max_mag != float("inf"): label_str += "M<"+str(self._max_mag)
+        label_str += "M"
+        if self._max_mag != float("inf"): label_str += "<"+str(self._max_mag)
         return label_str
 
 class YearFilter:
@@ -199,10 +200,11 @@ class YearFilter:
         return (event.getEventYear() >= self._min_year and event.getEventYear() <= self._max_year)
 
     def plot_str(self):
-        label_str = ""
+        label_str = "  "
 # TODO: change to <= character
         if self._min_year != -float("inf"): label_str += str(self._min_year)+"<"
-        if self._max_year != float("inf"): label_str += "year<"+str(self._max_year)
+        label_str += "year"
+        if self._max_year != float("inf"): label_str += "<"+str(self._max_year)
         return label_str
 
 class EventNumFilter:
@@ -234,7 +236,10 @@ class SectionFilter:
         return False
 
     def plot_str(self):
-        return ""
+        label_stre = "  Slip on Sections"
+        for sec in section_list:
+            label_str += "-"+str(sec)
+        return label_str
 
 class TriggerSectionFilter:
     def __init__(self, geometry, section_list):
@@ -249,7 +254,11 @@ class TriggerSectionFilter:
         return False
 
     def plot_str(self):
-        return ""
+        label_stre = "  triggerSections"
+        for sec in section_list:
+            label_str += "-"+str(sec)
+        return label_str
+
         
 class SlipFilter:
     def __init__(self, min_slip=None, max_slip=None):
@@ -260,10 +269,11 @@ class SlipFilter:
         return (event.calcMeanSlip() >= self._min_slip and event.calcMeanSlip() <= self._max_slip)
 
     def plot_str(self):
-        label_str = ""
+        label_str = "   "
 # TODO: change to <= character
         if self._min_slip != -float("inf"): label_str += str(self._min_slip)+"<"
-        if self._max_slip != float("inf"): label_str += "year<"+str(self._max_slip)
+        label_str += "slip"
+        if self._max_slip != float("inf"): label_str += "<"+str(self._max_slip)
         return label_str
         
 class AreaFilter:
@@ -276,10 +286,11 @@ class AreaFilter:
         return (event.calcEventRuptureArea() >= self._min_area and event.calcEventRuptureArea() <= self._max_area)
 
     def plot_str(self):
-        label_str = ""
+        label_str = "  "
 # TODO: change to <= character
         if self._min_area != -float("inf"): label_str += str(self._min_area)+"<"
-        if self._max_area != float("inf"): label_str += "year<"+str(self._max_area)
+        label_str+="area"
+        if self._max_area != float("inf"): label_str += "<++str(self._max_area)
         return label_str
         
 class Geometry:
@@ -1922,17 +1933,14 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
-            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, events.pl,   "Magnitude", "Rupture Area (square km)", filename)
         elif leonard and not WC94:
             scale_label = "Leonard 2010"
             full_x, full_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            line_widths = 2.0
-            line_styles = '-'
-            colors = 'k'
-            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+            self.scatter_and_line(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Rupture Area (square km)", filename)
         elif leonard and WC94:
             wc_x, wc_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
@@ -1970,10 +1978,7 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            line_widths = 2.0
-            line_styles = '-'
-            colors = 'k'
-            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+            self.scatter_and_line(True, mag_list, slip_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Mean Slip (meters)", filename)
         elif leonard and WC94:
             wc_x, wc_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
