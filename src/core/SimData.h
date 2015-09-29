@@ -47,6 +47,7 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         double                  *slip_deficit;
         double                  *rhogd;
         double                  *stress_drop;
+        double                  *max_stress_drop;
         double                  *cff;
         double                  *friction;
         double                  *cff0;
@@ -64,7 +65,7 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
     public:
         VCSimData(void) : global_size(0), local_size(0), green_shear(NULL), green_normal(NULL),
             shear_stress(NULL), normal_stress(NULL), update_field(NULL), slip_deficit(NULL),
-            rhogd(NULL), stress_drop(NULL), cff(NULL), friction(NULL), cff0(NULL),
+            rhogd(NULL), stress_drop(NULL), max_stress_drop(NULL), cff(NULL), friction(NULL), cff0(NULL),
             self_shear(NULL), self_normal(NULL), shear_stress0(NULL), normal_stress0(NULL),
             dynamic_val(NULL), failed(NULL) {};
 

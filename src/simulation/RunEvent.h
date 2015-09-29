@@ -32,7 +32,8 @@ class RunEvent : public SimPlugin {
     private:
         quakelib::ElementIDSet  local_failed_elements;
         BlockIDProcMapping      global_failed_elements;
-        quakelib::ElementIDSet  loose_elements;
+        // Schultz: Removing this for now, VC did not use this.
+        //quakelib::ElementIDSet  loose_elements;
         unsigned int            sweep_num;
         //
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);

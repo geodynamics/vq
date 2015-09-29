@@ -66,6 +66,8 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
     assertThrow(rhogd, "Not enough memory to allocate rhogd array.");
     stress_drop = (double *)malloc(sizeof(double)*global_size);
     assertThrow(stress_drop, "Not enough memory to allocate stress drop array.");
+    max_stress_drop = (double *)malloc(sizeof(double)*global_size);
+    assertThrow(max_stress_drop, "Not enough memory to allocate max stress drop array.");
     cff = (double *)malloc(sizeof(double)*global_size);
     assertThrow(cff, "Not enough memory to allocate cff array.");
     friction = (double *)malloc(sizeof(double)*global_size);
@@ -88,7 +90,7 @@ void VCSimData::setupArrays(const unsigned int &global_sys_size,
     for (BlockID i=0; i<global_size; ++i) {
         shear_stress[i] = normal_stress[i] = std::numeric_limits<float>::quiet_NaN();
         update_field[i] = slip_deficit[i] = std::numeric_limits<float>::quiet_NaN();
-        rhogd[i] = stress_drop[i] = cff[i] = std::numeric_limits<float>::quiet_NaN();
+        rhogd[i] = stress_drop[i] = max_stress_drop[i] = cff[i] = std::numeric_limits<float>::quiet_NaN();
         friction[i] = cff0[i] = self_shear[i] = self_normal[i] = std::numeric_limits<float>::quiet_NaN();
         shear_stress0[i] = normal_stress0[i] = dynamic_val[i] = std::numeric_limits<float>::quiet_NaN();
         failed[i] = false;
@@ -129,6 +131,8 @@ void VCSimData::deallocateArrays(void) {
     if (rhogd) free(rhogd);
 
     if (stress_drop) free(stress_drop);
+    
+    if (max_stress_drop) free(max_stress_drop);
 
     if (cff) free(cff);
 
@@ -150,7 +154,7 @@ void VCSimData::deallocateArrays(void) {
 
     green_shear = green_normal = NULL;
     shear_stress = normal_stress = update_field = NULL;
-    slip_deficit = rhogd = stress_drop = cff = friction = NULL;
+    slip_deficit = rhogd = stress_drop = max_stress_drop = cff = friction = NULL;
     cff0 = self_shear = self_normal = shear_stress0 = normal_stress0 = dynamic_val = NULL;
     failed = NULL;
 }

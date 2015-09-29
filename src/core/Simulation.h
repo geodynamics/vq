@@ -171,8 +171,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         bool dynamicFailure(const BlockID gid, const FaultID event_fault) const {
             return (getBlock(gid).getFaultID() == event_fault &&
                     cff[gid] > cff0[gid] &&
-                    //state.cff > getStressDrop() &&
-                    fabs((cff0[gid]-cff[gid])/cff0[gid]) > dynamic_val[gid]);
+                    // Schultz: Removing this absolute value, we only want to allow dynamic failure
+                    //   for stress increases.
+                    (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
         }
 
         //! Calculate the expected recurrence of this block in years.
@@ -246,6 +247,15 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         void setStressDrop(const BlockID gid, const double new_stress_drop) {
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
+        };
+        
+        //! Get the max stress drop for this block in Pascals.
+        double getMaxStressDrop(const BlockID gid) const {
+            return max_stress_drop[gid];
+        };
+        //! Set the max stress drop for this block in Pascals.
+        void setMaxStressDrop(const BlockID gid, const double new_stress_drop) {
+            max_stress_drop[gid] = new_stress_drop;
         };
 
         double getRhogd(const BlockID gid) {

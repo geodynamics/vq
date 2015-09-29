@@ -176,9 +176,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             stress_drop = -2*sim->getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R ) ;
 
             sim->setStressDrop(gid, stress_drop);
+            sim->setMaxStressDrop(gid, stress_drop);
 
         } else {
             sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
+            sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
         }
 
         // Initialize element slips to equilibrium position, slip=0
@@ -200,22 +202,26 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         // initialize these to avoid memcheck errors:
         double       stress_drop=std::numeric_limits<float>::quiet_NaN();
+        double       max_stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       tmp_rhogd = std::numeric_limits<float>::quiet_NaN();
 
         if (sim->isLocalBlockID(gid)) {
             stress_drop = sim->getStressDrop(gid);
+            max_stress_drop = sim->getMaxStressDrop(gid);
             //
             tmp_rhogd = sim->getRhogd(gid);
         }
 
         //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        MPI_Bcast(&max_stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
 
         //
         if (!sim->isLocalBlockID(gid)) {
             sim->setStressDrop(gid, stress_drop);
+            sim->setMaxStressDrop(gid, max_stress_drop);
             //
             sim->setRhogd(gid, tmp_rhogd);
         }
