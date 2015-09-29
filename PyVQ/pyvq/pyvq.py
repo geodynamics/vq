@@ -1941,7 +1941,7 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             lines_x = [wc_x, leo_x]
             lines_y = [wc_y, leo_y]
             line_labels = [wc_label, leo_label]
-            line_widths = [2.0, 2.0]
+            line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
             self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
@@ -1982,7 +1982,7 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             lines_x = [wc_x, leo_x]
             lines_y = [wc_y, leo_y]
             line_labels = [wc_label, leo_label]
-            line_widths = [2.0, 2.0]
+            line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
             self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
@@ -2456,7 +2456,6 @@ if __name__ == "__main__":
         args.plot_freq_mag = 3
         args.plot_mag_rupt_area = True
         args.plot_mag_mean_slip = True
-        args.wc94 = True
         args.leonard = True
     
     # Set up filters
@@ -2516,7 +2515,7 @@ if __name__ == "__main__":
         args.plot_freq_mag = 3
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
-        args.wc94 = True
+        args.leonard = True
     if args.plot_freq_mag:
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
