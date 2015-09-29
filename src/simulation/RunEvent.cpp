@@ -502,11 +502,14 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     //sim->barrier();
     while (more_blocks_to_fail || final_sweep) {
         // write stress, slip, etc. to events and sweeps output (text or hdf5).
-        //sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+        // TODO: connect this to the checkpoint # events to safe
+        if (sim->getCurrentEvent().getEventNumber() == 8 && final_sweep) {
+            if (sim->isRootNode()) sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+        }
 
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
-        //sim->barrier();    // yoder: (debug)   (we're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
+        //sim->barrier();    // yoder: (debug)   (fwe're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
         // so let's try it with this in place...
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         //sim->barrier(); // yoder: (debug)
@@ -550,7 +553,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
             sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
 
             ////////// Schultz:
@@ -612,7 +615,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             //
             // if this is a current/original failure, then 0 else...
             //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
-            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
 
             //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
             //sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));
@@ -688,9 +691,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
             //
-            // yoder: as per request by KS, change isnan() --> isnan(); isnan() appears to throw an error on some platforms.
+            // yoder: as per request by KS, change std::isnan() --> std::isnan(); std::isnan() appears to throw an error on some platforms.
             // Eric: Probably don't need this if check
-            if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
+            if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
                 // note: the stress entries are initialized with nan values, but if there are cases where non nan values need to be updated,
                 // this logic should be revisited.
                 event_sweeps.setFinalStresses(sweep_num,
@@ -721,7 +724,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
     //
     // output_stress() for final item in list.
-    sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
+    //sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
 
     // Set the completed list as the sweep list for the entire event
     sim->collectEventSweep(event_sweeps);
