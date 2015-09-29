@@ -290,7 +290,7 @@ class AreaFilter:
 # TODO: change to <= character
         if self._min_area != -float("inf"): label_str += str(self._min_area)+"<"
         label_str+="area"
-        if self._max_area != float("inf"): label_str += "<++str(self._max_area)
+        if self._max_area != float("inf"): label_str += "<"+str(self._max_area)
         return label_str
         
 class Geometry:
@@ -1878,7 +1878,7 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def scatter_and_line(self, log_y, x_data, y_data, line_x, line_y, line_label, plot_title, x_label, y_label, filename):
+    def scatter_and_line(self, log_y, x_data, y_data, line_x, line_y, line_label, plot_title, x_label, y_label, filename, legend_loc ='upper left'):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -1889,7 +1889,7 @@ class BasePlotter:
         ax.scatter(x_data, y_data, color='g')
         if line_x is not None and line_y is not None:
             ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
-            ax.legend(loc = "best")
+            ax.legend(loc = legend_loc)
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
         if args.zoom: plt.ylim(-5,5)
@@ -1897,7 +1897,7 @@ class BasePlotter:
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
-    def scatter_and_multiline(self, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename):
+    def scatter_and_multiline(self, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename, legend_loc='upper left'):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel(x_label)
@@ -1908,11 +1908,11 @@ class BasePlotter:
         for i in range(len(lines_x)):
             ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        ax.legend(loc = "lower right")
+        ax.legend(loc = legend_loc)
 
         y_label_words = [s.lower() for s in y_label.split(" ")]
-        if "slip" in y_label_words: plt.ylim(1e-2,1e1)
-        if "area" in y_label_words and max(y_data) < 2e4 : plt.ylim(1,1e4)
+        if "slip" in y_label_words and min(y_data) > 0.95e-2 and max(y_data) < 1.05e1: plt.ylim(1e-2,1e1)
+        if "area" in y_label_words and max(y_data) < 2e4 and max(y_data) < 1.05e4: plt.ylim(1,1e4)
         
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
