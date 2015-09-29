@@ -948,7 +948,7 @@ namespace quakelib {
         UIndex          _element_id;
 
         //! Shear and normal stress on the element at this time
-        float          _shear_stress, _normal_stress;
+        float          _shear_stress, _normal_stress, _slip_deficit;
     };
 
     /*!
@@ -967,11 +967,12 @@ namespace quakelib {
                 _data.clear();
             }
 
-            void add_stress_entry(UIndex element_id, float shear_stress, float normal_stress) {
+            void add_stress_entry(UIndex element_id, float shear_stress, float normal_stress, float slip_deficit) {
                 StressData new_entry;
                 new_entry._element_id = element_id;
                 new_entry._shear_stress = shear_stress;
                 new_entry._normal_stress = normal_stress;
+                new_entry._slip_deficit = slip_deficit;
                 _data.push_back(new_entry);
             }
 #ifdef HDF5_FOUND

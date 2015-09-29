@@ -29,6 +29,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockID             gid;
     SectionID           sid;
     int                 lid;
+    bool                err;
     double              stress_drop;
     double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
@@ -41,9 +42,46 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::map<SectionID, double>::iterator sit;
     std::map<SectionID, double> section_min_das;
     std::map<SectionID, double>::iterator ssit;
+    quakelib::ModelStressSet    stress_set;
+    quakelib::ModelStress       stress;
     
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
+    
+    // Read the stress input file for initial stress conditions
+    std::string stress_file_type = sim->getStressInfileType();
+    std::string stress_filename = sim->getStressInfile();
+    std::string stress_index_filename = sim->getStressIndexInfile();
+    
+    if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "") {
+        
+        if (stress_file_type == "text") {
+            err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+        } else if (stress_file_type == "hdf5") {
+            // TODO: Schultz, add hdf5 reading
+            sim->errConsole() << "ERROR: only text files supported right now " << stress_file_type << std::endl;
+            return;
+        } else {
+            sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
+            return;
+        }
+        
+        // Schultz: Currently we only support a single stress state. We may want to keep writing stress
+        // states every N events, then just load the last event saved in the stress state file.
+        // Grab the stress values of the first (only) stress state
+        stress = stress_set[0].stresses();
+        // Also set the sim year to the year the stresses were saved
+        sim->setYear(stress_set[0].getYear());
+        sim->console() << "--- Setting intial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
+    
+        // If given an initial stress state, set those stresses
+        for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
+            gid = sim->getGlobalBID(lid);
+            assert(stress[gid]._element_id == gid);
+            sim->setInitShearNormalStress(gid, stress[gid]._shear_stress, stress[gid]._normal_stress);
+            sim->setSlipDeficit(gid, stress[gid]._slip_deficit);
+        }
+    }
 
     // Determine section minimum distance along strike (required since das is defined along
     // faults and doesn't reset to 0 when entering a new section of the same fault.
@@ -132,6 +170,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(gid, sim->getInitShearStress(gid));
         //printf("**Degbug(%d): normal[%d]\n", getpid(), gid);
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
+        std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) <<std::endl;
 
         // Set the stress drop based on the Greens function calculations
         if (sim->computeStressDrops()) {
@@ -166,7 +205,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             fault_width = fault_area/fault_length; // This way we get the mean width
 
             // Use Wells & Coppersmith scaling to find the characteristic magnitude and slip given the fault geometry
-            char_magnitude = 4.07+0.98*log10(fault_area*1e-6) + sim->stressDropFactor();
+            char_magnitude = 4.0+log10(fault_area*1e-6) + sim->stressDropFactor();
             char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*sim->getBlock(gid).lame_mu()*fault_area);
 
             // Compute stress drop from geometry and expected slip/mag
@@ -184,7 +223,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
         // Initialize element slips to equilibrium position, slip=0
-        sim->setSlipDeficit(gid, 0);
+        // Unless we are reading in a stress input file, then we have already set the slip deficit in ReadModelFile.cpp
+        if (sim->getStressInfile() == "" && sim->getStressIndexInfile() == "") sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);
@@ -204,17 +244,20 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         double       stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       max_stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       tmp_rhogd = std::numeric_limits<float>::quiet_NaN();
+        double       slip_deficit = std::numeric_limits<float>::quiet_NaN();
 
         if (sim->isLocalBlockID(gid)) {
             stress_drop = sim->getStressDrop(gid);
             max_stress_drop = sim->getMaxStressDrop(gid);
             //
             tmp_rhogd = sim->getRhogd(gid);
+            slip_deficit = sim->getSlipDeficit(gid);
         }
 
         //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         MPI_Bcast(&max_stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        MPI_Bcast(&slip_deficit, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
 
@@ -224,6 +267,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             sim->setMaxStressDrop(gid, max_stress_drop);
             //
             sim->setRhogd(gid, tmp_rhogd);
+            sim->setSlipDeficit(gid, slip_deficit);
         }
     }
 
@@ -231,6 +275,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
+    
+    if (sim->isRootNode()) {
+        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+        }
+    }
 
 }
 

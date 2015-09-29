@@ -68,7 +68,7 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     }
 }
 
-void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num) {
+void Simulation::output_stress(quakelib::UIndex event_num) {
     quakelib::ModelStress       stress;
     quakelib::ModelStressState  stress_state;
 
@@ -81,7 +81,7 @@ void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex swee
 
     // Store stress values
     for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
-        stress.add_stress_entry(i, shear_stress[i], normal_stress[i]);
+        stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
     }
 
     num_stress_recs += numGlobalBlocks();

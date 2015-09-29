@@ -501,12 +501,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     // While there are still failed blocks to handle
     //sim->barrier();
     while (more_blocks_to_fail || final_sweep) {
-        // write stress, slip, etc. to events and sweeps output (text or hdf5).
-        // TODO: connect this to the checkpoint # events to safe
-        if (sim->getCurrentEvent().getEventNumber() == 8 && final_sweep) {
-            if (sim->isRootNode()) sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
-        }
-
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         //sim->barrier();    // yoder: (debug)   (fwe're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
@@ -738,6 +732,16 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setStressDrop(gid, sim->getMaxStressDrop(gid));
         }
     }
+    
+    
+    // Write stress state to the stress output file if we're
+    // at a multiple of N_events = sim->getStressOutInterval().
+    unsigned int evnum = sim->getCurrentEvent().getEventNumber();
+    if (evnum >= sim->getStressOutInterval() && evnum%sim->getStressOutInterval() == 0 && sim->isRootNode()) {
+        sim->output_stress(sim->getCurrentEvent().getEventNumber());
+        sim->console() << std::endl << "--- Writing sim stress state to file ---" << std::endl << std::flush;
+    }
+    
 }
 
 /*!

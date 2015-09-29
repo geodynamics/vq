@@ -660,7 +660,10 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Go through the created elements and assign maximum slip based on the total fault area
     // From Table 2A in Wells Coppersmith 1994
-    double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
+    //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
+    
+    // Schultz: Updating these to a newer paper. From Leonard 2010
+    double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area));
 
     for (unsigned int i=0; i<elem_ids.size(); ++i) {
         double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*element(elem_ids[i]).lame_mu()*fault_area);
@@ -1726,7 +1729,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         // Go through the created elements and assign maximum slip based on fault section area.
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
             // From Table 2A in Wells Coppersmith 1994
-            double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+            //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+
+            // Schultz: Updating these to a newer paper. From Leonard 2010
+            double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
             // Need to document where this scaling law comes from
             double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
@@ -3435,6 +3441,7 @@ void quakelib::ModelStress::read_ascii(std::istream &in_stream, const unsigned i
         ss >> new_stress_rec._element_id;
         ss >> new_stress_rec._shear_stress;
         ss >> new_stress_rec._normal_stress;
+        ss >> new_stress_rec._slip_deficit;
         // Put the stress record on the list
         _data.push_back(new_stress_rec);
     }
@@ -3446,7 +3453,8 @@ void quakelib::ModelStress::write_ascii(std::ostream &out_stream) const {
     for (it=_data.begin(); it!=_data.end(); ++it) {
         out_stream << it->_element_id << " ";
         out_stream << it->_shear_stress << " ";
-        out_stream << it->_normal_stress;
+        out_stream << it->_normal_stress << " ";
+        out_stream << it->_slip_deficit;
 
         next_line(out_stream);
     }
@@ -3616,6 +3624,15 @@ void quakelib::ModelStress::get_field_descs(std::vector<quakelib::FieldDesc> &de
     field_desc.details = "Normal stress on the element (Pascals).";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(StressData, _normal_stress);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+    
+    field_desc.name = "slip_deficit";
+    field_desc.details = "Slip deficit for the element (meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressData, _slip_deficit);
     field_desc.type = H5T_NATIVE_FLOAT;
     field_desc.size = sizeof(float);
 #endif
@@ -3854,7 +3871,8 @@ int quakelib::ModelStressSet::read_file_ascii(const std::string &stress_index_fi
     // Close the files
     stress_ind_file.close();
     stress_file.close();
-
+    
+    std::cout << "==== Read stress state from file ====" << std::endl;
     return 0;
 }
 

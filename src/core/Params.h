@@ -167,6 +167,10 @@ class VCParams {
             return params.read<string>("sim.file.output_stress_type");
         };
     
+        int getStressOutInterval(void) const {
+            return params.read<unsigned int>("sim.file.output_stress_num_events");
+        };
+    
         std::string getStressInfile(void) const {
             return params.read<string>("sim.file.input_stress");
         };
