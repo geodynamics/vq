@@ -65,5 +65,6 @@ void VCInitBlocks::init(SimFramework *_sim) {
     sim->setYear(sim->getSimStart());
 
     // Determine neighbors of blocks
-    sim->determineBlockNeighbors();
+    // Schultz: Removing this for now, we don't use these anymore in dynamic failure check
+    //sim->determineBlockNeighbors();
 }
