@@ -2167,7 +2167,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
                 green = blue;
             } else {
                 blue = y_max;
-                red = y_max - fabs(interp_color);
+                red = y_max - abs(interp_color);
                 green = red;
             }
             
@@ -3675,7 +3675,7 @@ void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file)
 
     blank_data._year = std::numeric_limits<float>::quiet_NaN();
     blank_data._event_num = UNDEFINED_EVENT_ID;
-    blank_data._sweep_num = UNDEFINED_EVENT_ID;
+    //blank_data._sweep_num = UNDEFINED_EVENT_ID;
     blank_data._end_rec = UNDEFINED_ELEMENT_ID;
     blank_data._start_rec = UNDEFINED_ELEMENT_ID;
 
@@ -3753,11 +3753,14 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
 }
 #endif
 
+
+// Schultz: For the first version of the stress in/out, lets not write mid-event.
+// If we write between events, then we don't need sweep info.
 void quakelib::ModelStressState::read_ascii(std::istream &in_stream) {
     std::stringstream   ss(next_line(in_stream));
     ss >> _times._year;
     ss >> _times._event_num;
-    ss >> _times._sweep_num;
+    //ss >> _times._sweep_num;
     ss >> _times._start_rec;
     ss >> _times._end_rec;
 }
@@ -3765,7 +3768,7 @@ void quakelib::ModelStressState::read_ascii(std::istream &in_stream) {
 void quakelib::ModelStressState::write_ascii(std::ostream &out_stream) const {
     out_stream << _times._year << " ";
     out_stream << _times._event_num << " ";
-    out_stream << _times._sweep_num << " ";
+    //out_stream << _times._sweep_num << " ";
     out_stream << _times._start_rec << " ";
     out_stream << _times._end_rec;
 
@@ -3794,14 +3797,14 @@ void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc
 #endif
     descs.push_back(field_desc);
 
-    field_desc.name = "sweep_num";
-    field_desc.details = "Sweep number this stress state corresponds to.";
-#ifdef HDF5_FOUND
-    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
-    field_desc.type = H5T_NATIVE_UINT;
-    field_desc.size = sizeof(unsigned int);
-#endif
-    descs.push_back(field_desc);
+//    field_desc.name = "sweep_num";
+//    field_desc.details = "Sweep number this stress state corresponds to.";
+//#ifdef HDF5_FOUND
+//    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
+//    field_desc.type = H5T_NATIVE_UINT;
+//    field_desc.size = sizeof(unsigned int);
+//#endif
+//    descs.push_back(field_desc);
 
     field_desc.name = "start_rec";
     field_desc.details = "Starting record of stress values for this time.";

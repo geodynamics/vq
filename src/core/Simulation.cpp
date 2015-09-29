@@ -76,7 +76,7 @@ void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex swee
 
     stress_state.setYear(getYear());
     stress_state.setEventNum(event_num);
-    stress_state.setSweepNum(sweep_num);
+    //stress_state.setSweepNum(sweep_num);
     stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
 
     // Store stress values

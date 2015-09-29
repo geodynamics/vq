@@ -1011,7 +1011,7 @@ namespace quakelib {
         float           _year;
 
         //! The event and sweep of the stress data (if applicable)
-        UIndex          _event_num, _sweep_num;
+        UIndex          _event_num;// _sweep_num;
 
         //! Starting and ending index of the actual stress entries
         UIndex          _start_rec, _end_rec;
@@ -1035,7 +1035,7 @@ namespace quakelib {
                 _stress.clear();
                 _times._year = std::numeric_limits<float>::quiet_NaN();
                 _times._event_num = UNDEFINED_EVENT_ID;
-                _times._sweep_num = UNDEFINED_EVENT_ID;
+                //_times._sweep_num = UNDEFINED_EVENT_ID;
                 _times._start_rec = UNDEFINED_EVENT_ID;
                 _times._end_rec = UNDEFINED_EVENT_ID;
             }
@@ -1072,12 +1072,16 @@ namespace quakelib {
             UIndex getEventNum(void) const {
                 return _times._event_num;
             }
-            void setSweepNum(const UIndex sweep_num) {
-                _times._sweep_num = sweep_num;
-            }
-            UIndex getSweepNum(void) const {
-                return _times._sweep_num;
-            }
+        
+            // Schultz: For the first version of the stress in/out, lets not write mid-event.
+            // If we write between events, then we don't need sweep info.
+        
+            //void setSweepNum(const UIndex sweep_num) {
+            //    _times._sweep_num = sweep_num;
+            //}
+            //UIndex getSweepNum(void) const {
+            //    return _times._sweep_num;
+            //}
             void setStartEndRecNums(const unsigned int start_rec, const unsigned int end_rec) {
                 _times._start_rec = start_rec;
                 _times._end_rec = end_rec;
