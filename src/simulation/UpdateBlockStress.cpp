@@ -52,7 +52,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::string stress_file_type = sim->getStressInfileType();
     std::string stress_filename = sim->getStressInfile();
     std::string stress_index_filename = sim->getStressIndexInfile();
-    
+
     if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "") {
         
         if (stress_file_type == "text") {
@@ -75,8 +75,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->console() << "--- Setting intial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
     
         // If given an initial stress state, set those stresses
-        for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-            gid = sim->getGlobalBID(lid);
+        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             assert(stress[gid]._element_id == gid);
             sim->setInitShearNormalStress(gid, stress[gid]._shear_stress, stress[gid]._normal_stress);
             sim->setSlipDeficit(gid, stress[gid]._slip_deficit);
@@ -170,7 +169,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setShearStress(gid, sim->getInitShearStress(gid));
         //printf("**Degbug(%d): normal[%d]\n", getpid(), gid);
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
-        std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) <<std::endl;
 
         // Set the stress drop based on the Greens function calculations
         if (sim->computeStressDrops()) {

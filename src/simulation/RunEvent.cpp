@@ -737,9 +737,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     // Write stress state to the stress output file if we're
     // at a multiple of N_events = sim->getStressOutInterval().
     unsigned int evnum = sim->getCurrentEvent().getEventNumber();
-    if (evnum >= sim->getStressOutInterval() && evnum%sim->getStressOutInterval() == 0 && sim->isRootNode()) {
+    if (evnum >= sim->getStressOutInterval() && evnum%sim->getStressOutInterval() == 0) {
         sim->output_stress(sim->getCurrentEvent().getEventNumber());
-        sim->console() << std::endl << "--- Writing sim stress state to file ---" << std::endl << std::flush;
+        if (sim->isRootNode()) {
+        sim->console() << std::endl << "--- Writing sim stress state to file after event " << sim->getCurrentEvent().getEventNumber() << " ---" << std::endl << std::flush;
+        }
     }
     
 }
