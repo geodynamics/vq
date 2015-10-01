@@ -68,10 +68,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         
         // Schultz: Currently we only support a single stress state. We may want to keep writing stress
         // states every N events, then just load the last event saved in the stress state file.
-        // Grab the stress values of the first (only) stress state
-        stress = stress_set[0].stresses();
+        stress = stress_set[stress_set.size()-1].stresses();
         // Also set the sim year to the year the stresses were saved
-        sim->setYear(stress_set[0].getYear());
+        sim->setYear(stress_set[stress_set.size()-1].getYear());
         sim->console() << "--- Setting intial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
     
         // If given an initial stress state, set those stresses

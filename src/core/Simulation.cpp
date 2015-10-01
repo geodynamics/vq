@@ -81,7 +81,10 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
 
     // Store stress values
     for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
-        stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
+        // TODO: Figure this out for multi-proc
+        if (isLocalBlockID(i)) {
+            stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
+        }
     }
 
     num_stress_recs += numGlobalBlocks();

@@ -3770,6 +3770,39 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
 }
 #endif
 
+int quakelib::ModelStressSet::read_file_hdf5(const std::string &file_name) {
+#ifdef HDF5_FOUND
+    hid_t       plist_id, data_file;
+    herr_t      res;
+
+    if (!H5Fis_hdf5(file_name.c_str())) return -1;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+    data_file = H5Fopen(file_name.c_str(), H5F_ACC_RDONLY, plist_id);
+
+    if (data_file < 0) exit(-1);
+
+    read_state_hdf5(data_file);
+    read_stress_hdf5(data_file);
+
+    // Release HDF5 handles
+    res = H5Pclose(plist_id);
+
+    if (res < 0) exit(-1);
+
+    res = H5Fclose(data_file);
+
+    if (res < 0) exit(-1);
+
+#else
+    // TODO: Error out
+#endif
+    return 0;
+}
+
 
 // Schultz: For the first version of the stress in/out, lets not write mid-event.
 // If we write between events, then we don't need sweep info.
@@ -3844,7 +3877,6 @@ void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc
 
 int quakelib::ModelStressSet::read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name) {
     std::ifstream   stress_ind_file, stress_file;
-    ModelSweeps     file_sweeps;
 
     // Try to open the stress index file
     stress_ind_file.open(stress_index_file_name.c_str());

@@ -1100,6 +1100,11 @@ namespace quakelib {
     class ModelStressSet {
         private:
             std::vector<ModelStressState>   _states;
+            
+#ifdef HDF5_FOUND
+            void read_state_hdf5(const hid_t &data_file);
+            void read_stress_hdf5(const hid_t &data_file);
+#endif
 
         public:
             typedef std::vector<ModelStressState>::iterator         iterator;
@@ -1129,6 +1134,7 @@ namespace quakelib {
             };
 
             int read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name);
+            int read_file_hdf5(const std::string &file_name);
     };
 
     class ModelWorld : public ModelIO {
