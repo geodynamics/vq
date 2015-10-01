@@ -216,10 +216,11 @@ class EventNumFilter:
         return (event.getEventNumber() >= self._min_event_num and event.getEventNumber() <= self._max_event_num)
 
     def plot_str(self):
-        label_str = ""
+        label_str = "  "
 # TODO: change to <= character
         if self._min_event_num != -sys.maxint: label_str += str(self._min_event_num)+"<"
-        if self._max_event_num != sys.maxint: label_str += "event num<"+str(self._max_event_num)
+        label_str += "event num"
+        if self._max_event_num != sys.maxint: label_str += "<"+str(self._max_event_num)
         return label_str
 
 class SectionFilter:
@@ -2483,7 +2484,7 @@ if __name__ == "__main__":
         event_filters.append(AreaFilter(min_area=args.min_area, max_area=args.max_area))
 
     if args.min_event_num or args.max_event_num:
-        event_filters.append(EventNumFilter(min_mag=args.min_event_num, max_mag=args.max_event_num))
+        event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
 
     if args.use_sections:
         if not args.model_file: raise "Must specify --model_file for --use_sections to work."
