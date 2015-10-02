@@ -223,6 +223,22 @@ class EventNumFilter:
         if self._max_event_num != sys.maxint: label_str += "<"+str(self._max_event_num)
         return label_str
 
+class NumElementsFilter:
+    def __init__(self, min_num_elements=None, max_num_elements=None):
+        self._min_num_elements = min_num_elements if min_num_elements is not None else 0
+        self._max_num_elements = max_num_elements if max_num_elements is not None else sys.maxint
+    
+    def test_event(self, event):
+        return (len(event.getInvolvedElements()) >= self._min_num_elements and len(event.getInvolvedElements()) <= self._max_num_elements)
+    
+    def plot_str(self):
+        label_str = "  "
+        # TODO: change to <= character
+        if self._min_num_elements != 0: label_str += str(self._min_num_elements)+"<"
+        label_str += "num elements"
+        if self._max_num_elements != sys.maxint: label_str += "<"+str(self._max_num_elements)
+        return label_str
+
 class SectionFilter:
     def __init__(self, geometry, section_list):
         self._section_list = section_list
@@ -2301,6 +2317,10 @@ if __name__ == "__main__":
             help="Minimum event number of events to process.")
     parser.add_argument('--max_event_num', type=float, required=False,
             help="Maximum event number of events to process.")
+    parser.add_argument('--min_num_elements', type=float, required=False,
+                        help="Minimum number of elements involved in an event")
+    parser.add_argument('--max_num_elements', type=float, required=False,
+                        help="Maximum number of elements involved in an event")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified).")
     parser.add_argument('--use_trigger_sections', type=int, nargs='+', required=False,
@@ -2468,6 +2488,9 @@ if __name__ == "__main__":
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
+
+    if args.min_num_elements or args.max_num_elements:
+        event_filters.append(NumElementsFilter(min_num_elements=args.min_num_elements, max_num_elements=args.max_num_elements))
 
     if args.min_year or args.max_year:
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
