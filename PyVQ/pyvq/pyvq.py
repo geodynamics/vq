@@ -1814,6 +1814,8 @@ class BasePlotter:
             ax.scatter(x_data, y_data, color='g')
         elif plot_type == "line":
             ax.plot(x_data, y_data, color='g')
+        elif plot_type == "hist":
+            ax.hist(x_data, bins=100)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2339,6 +2341,8 @@ if __name__ == "__main__":
             help="Plot Wells and Coppersmith 1994 scaling relations.")
     parser.add_argument('--leonard', required=False, action='store_true',
             help="Plot Leonard 2010 scaling relations.")
+    parser.add_argument('--plot_recurrence', required=False, action='store_true',
+            help="Plot distribution of recurrence intervals.")
 
     # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
@@ -2573,6 +2577,11 @@ if __name__ == "__main__":
     if args.plot_waiting_times:
         filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
+    if args.plot_recurrence:
+        times = events.interevent_times()
+        filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year)
+        BasePlotter().create_plot("hist", False, times, None, "Recurrence Times", "interevent time [years]", "", filename)
+
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
