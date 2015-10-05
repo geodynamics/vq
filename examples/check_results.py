@@ -18,15 +18,19 @@ def check_self_consistent(events):
     for event in events:
         elements = event.getInvolvedElements()
         element_sweep_slip_sums = {}
+        element_mu = {}
+        element_area = {}
         for elem_id in elements: element_sweep_slip_sums[elem_id] = 0
         summed_moment = 0
         for sweep in event.getSweeps():
             element_sweep_slip_sums[sweep._element_id] += sweep._slip
-            summed_moment += sweep._slip*sweep._area*sweep._mu
+            element_mu[sweep._element_id] = sweep._mu
+            element_area[sweep._element_id] = sweep._area
 
         total_slips = {}
         for elem_num in elements:
             total_slips[elem_num] = event.getEventSlip(elem_num)
+            summed_moment += element_sweep_slip_sums[elem_num]*element_area[elem_num]*element_mu[elem_num]
 
         # Confirm that the sum of sweep slips is equal to the total slip
         for elem_num in total_slips:
