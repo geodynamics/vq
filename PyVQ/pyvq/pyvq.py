@@ -271,9 +271,9 @@ class TriggerSectionFilter:
         return False
 
     def plot_str(self):
-        label_stre = "  triggerSections"
-        for sec in section_list:
-            label_str += "-"+str(sec)
+        label_str = "  triggerSections"
+        for sec in self._section_list:
+            label_str += "-"+geometry.model.section(sec).name()
         return label_str
 
         
@@ -1815,7 +1815,9 @@ class BasePlotter:
         elif plot_type == "line":
             ax.plot(x_data, y_data, color='g')
         elif plot_type == "hist":
-            ax.hist(x_data, bins=100)
+            if len(x_data) > 200: BINS=1000
+            else: BINS=100
+            ax.hist(x_data, bins=BINS)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2580,7 +2582,7 @@ if __name__ == "__main__":
     if args.plot_recurrence:
         times = events.interevent_times()
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year)
-        BasePlotter().create_plot("hist", False, times, None, "Recurrence Times", "interevent time [years]", "", filename)
+        BasePlotter().create_plot("hist", False, times, None, events.plot_str(), "interevent time [years]", "", filename)
 
     if args.field_plot:
         type = args.field_type.lower()
