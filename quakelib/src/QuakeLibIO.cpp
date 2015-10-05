@@ -3640,6 +3640,9 @@ void quakelib::ModelStress::get_field_descs(std::vector<quakelib::FieldDesc> &de
 }
 
 // ********************************************************************************************
+void quakelib::ModelStressState::read_data(const StressDataTime &in_data) {
+    memcpy(&_times, &in_data, sizeof(StressDataTime));
+}
 
 void quakelib::ModelStressState::write_ascii_header(std::ostream &out_stream) {
     std::vector<FieldDesc>                  descs;
@@ -3770,23 +3773,82 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
 }
 #endif
 
+
 int quakelib::ModelStressSet::read_file_hdf5(const std::string &file_name) {
 #ifdef HDF5_FOUND
-    hid_t       plist_id, data_file;
-    herr_t      res;
+    hid_t                       plist_id, data_file;
+    std::vector<FieldDesc>      descs;
+    hsize_t                     num_fields, num_states, num_stresses;
+    unsigned int                i, j;
+    StressDataTime              *state_data;
+    StressData                  *stress_data;
+    size_t                      *field_offsets_state, *field_offsets_stress;
+    size_t                      *field_sizes_state, *field_sizes_stress;
+    herr_t                      res;
 
     if (!H5Fis_hdf5(file_name.c_str())) return -1;
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
-
     if (plist_id < 0) exit(-1);
 
     data_file = H5Fopen(file_name.c_str(), H5F_ACC_RDONLY, plist_id);
-
     if (data_file < 0) exit(-1);
 
-    read_state_hdf5(data_file);
-    read_stress_hdf5(data_file);
+    // Read the state data from the file, grab the time data and number of stress records per state
+    descs.clear();
+    ModelStressState::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets_state = new size_t[num_fields];
+    field_sizes_state = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets_state[i] = descs[i].offset;
+        field_sizes_state[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelStressState::hdf5_table_name().c_str(), &num_fields, &num_states);
+    if (res < 0) exit(-1); 
+    
+    // Read all the stress time/num_recs data for all states
+    state_data = new StressDataTime[num_states];
+    res = H5TBread_records(data_file, ModelStressState::hdf5_table_name().c_str(), 0, num_states, sizeof(StressDataTime), field_offsets_state, field_sizes_state, state_data);
+    
+    // Prepare for stress table reading
+    descs.clear();
+    ModelStress::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets_stress = new size_t[num_fields];
+    field_sizes_stress = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets_stress[i] = descs[i].offset;
+        field_sizes_stress[i] = descs[i].size;
+    }
+   
+    // Read all the stress data entries, we will parse them to the appropriate stress state later
+    res = H5TBget_table_info(data_file, ModelStress::hdf5_table_name().c_str(), &num_fields, &num_stresses);
+    if (res < 0) exit(-1); 
+   
+    stress_data = new StressData[num_stresses];
+    res = H5TBread_records(data_file, ModelStress::hdf5_table_name().c_str(), 0, num_stresses, sizeof(StressData), field_offsets_stress, field_sizes_stress, stress_data);
+   
+    // For each state, set the stress data
+    for (i=0; i<num_states; ++i) {
+        // Create the stress state, read the data
+        ModelStressState new_state;
+        new_state.read_data(state_data[i]);
+        
+        // Create this state's stress data, and read the corresponding stress records
+        ModelStress new_stress; 
+        for (j=new_state.getStartRec(); j<new_state.getEndRec(); ++j) {
+            new_stress.add_stress_entry(stress_data[j]);
+        }
+
+        // Set the stress data for the state
+        new_state.setStresses(new_stress);
+        // Add the state to the set of states
+        _states.push_back(new_state);
+    }
 
     // Release HDF5 handles
     res = H5Pclose(plist_id);
@@ -3796,6 +3858,16 @@ int quakelib::ModelStressSet::read_file_hdf5(const std::string &file_name) {
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
+    
+    
+    // Free memory for HDF5 related data
+    // yoder: ... and use delete [] for arrays...
+    delete [] stress_data;
+    delete [] state_data;
+    delete [] field_offsets_state;
+    delete [] field_sizes_state;
+    delete [] field_offsets_stress;
+    delete [] field_sizes_stress;
 
 #else
     // TODO: Error out

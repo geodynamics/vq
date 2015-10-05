@@ -975,6 +975,10 @@ namespace quakelib {
                 new_entry._slip_deficit = slip_deficit;
                 _data.push_back(new_entry);
             }
+            
+            void add_stress_entry(StressData &new_entry) {
+                _data.push_back(new_entry);
+            }
 #ifdef HDF5_FOUND
             static std::string hdf5_table_name(void) {
                 return "stresses";
@@ -1047,6 +1051,7 @@ namespace quakelib {
             };
             static void setup_stress_state_hdf5(const hid_t &data_file);
             void append_stress_state_hdf5(const hid_t &data_file) const;
+            void read_data(const StressDataTime &in_data);
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -1089,6 +1094,14 @@ namespace quakelib {
             }
             unsigned int getNumStressRecords(void) const {
                 return _times._end_rec - _times._start_rec;
+            };
+            
+            unsigned int getStartRec(void) const {
+                return _times._start_rec;
+            };
+            
+            unsigned int getEndRec(void) const {
+                return _times._end_rec;
             };
 
             void read_ascii(std::istream &in_stream);

@@ -53,25 +53,27 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::string stress_filename = sim->getStressInfile();
     std::string stress_index_filename = sim->getStressIndexInfile();
 
-    if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "") {
+    if (stress_filename != "" && stress_file_type != "") {
         
         if (stress_file_type == "text") {
-            err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+            if (stress_index_filename == "") {
+                sim->errConsole() << "ERROR: Must specify stress index file " << std::endl;
+                return;
+            } else {
+                err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+            }
         } else if (stress_file_type == "hdf5") {
-            // TODO: Schultz, add hdf5 reading
-            sim->errConsole() << "ERROR: only text files supported right now " << stress_file_type << std::endl;
-            return;
+            err = stress_set.read_file_hdf5(stress_filename);
         } else {
             sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
             return;
         }
         
-        // Schultz: Currently we only support a single stress state. We may want to keep writing stress
-        // states every N events, then just load the last event saved in the stress state file.
+        // Schultz: Currently we just load the last event saved in the stress state file.
         stress = stress_set[stress_set.size()-1].stresses();
         // Also set the sim year to the year the stresses were saved
         sim->setYear(stress_set[stress_set.size()-1].getYear());
-        sim->console() << "--- Setting intial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
+        sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
     
         // If given an initial stress state, set those stresses
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
@@ -273,11 +275,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // Compute initial stress on all blocks
     stressRecompute();
     
-    if (sim->isRootNode()) {
-        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
-        }
-    }
+//    Debug output
+//    if (sim->isRootNode()) {
+//        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+//            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+//        }
+//    }
 
 }
 
