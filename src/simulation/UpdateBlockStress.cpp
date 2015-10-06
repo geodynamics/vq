@@ -222,7 +222,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
         // Initialize element slips to equilibrium position, slip=0
-        // Unless we are reading in a stress input file, then we have already set the slip deficit in ReadModelFile.cpp
+        // Unless we are reading in a stress input file, then we have already set the slip deficit higher up in this method
         if (sim->getStressInfile() == "" && sim->getStressIndexInfile() == "") sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {

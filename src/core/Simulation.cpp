@@ -71,6 +71,7 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
 void Simulation::output_stress(quakelib::UIndex event_num) {
     quakelib::ModelStress       stress;
     quakelib::ModelStressState  stress_state;
+    unsigned int                gid;
 
     if (getStressOutfileType() == "") return;
 
@@ -79,12 +80,12 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
     //stress_state.setSweepNum(sweep_num);
     stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
 
-    // Store stress values
+    // Communicate all values between nodes
+
+
     for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
         // TODO: Figure this out for multi-proc
-        if (isLocalBlockID(i)) {
-            stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
-        }
+        stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
     }
 
     num_stress_recs += numGlobalBlocks();

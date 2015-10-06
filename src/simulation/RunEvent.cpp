@@ -716,10 +716,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sweep_num++;
     }
 
-    //
-    // output_stress() for final item in list.
-    //sim->output_stress(sim->getCurrentEvent().getEventNumber(), sweep_num);
-
     // Set the completed list as the sweep list for the entire event
     sim->collectEventSweep(event_sweeps);
     sim->getCurrentEvent().setSweeps(event_sweeps);
@@ -739,9 +735,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     unsigned int evnum = sim->getCurrentEvent().getEventNumber();
     if (evnum >= sim->getStressOutInterval() && evnum%sim->getStressOutInterval() == 0) {
         sim->output_stress(sim->getCurrentEvent().getEventNumber());
-        if (sim->isRootNode()) {
         sim->console() << std::endl << "--- Writing sim stress state to file after event " << sim->getCurrentEvent().getEventNumber() << " ---" << std::endl << std::flush;
-        }
     }
     
 }
