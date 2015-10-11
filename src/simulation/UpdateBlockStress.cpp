@@ -28,7 +28,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockList::iterator nt;
     BlockID             gid;
     SectionID           sid;
-    int                 lid;
+    int                 lid, i;
     bool                err;
     double              stress_drop;
     double rho = 2700.0;      // density of rock in kg m^-3
@@ -75,11 +75,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setYear(stress_set[stress_set.size()-1].getYear());
         sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
     
-        // If given an initial stress state, set those stresses
-        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-            assert(stress[gid]._element_id == gid);
-            sim->setInitShearNormalStress(gid, stress[gid]._shear_stress, stress[gid]._normal_stress);
-            sim->setSlipDeficit(gid, stress[gid]._slip_deficit);
+        // If given an initial stress state, set those stresses and slip deficits.
+        // Schultz: The slip deficit is really the only information used to start the sim, as we
+        // recalculate stresses at the end of this init() based on slip deficits.
+        for (i=0; i<stress.size(); ++i) {
+            sim->setInitShearNormalStress(stress[i]._element_id, stress[i]._shear_stress, stress[i]._normal_stress);
+            sim->setSlipDeficit(stress[i]._element_id, stress[i]._slip_deficit);
         }
     }
 
