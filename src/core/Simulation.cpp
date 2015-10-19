@@ -152,7 +152,8 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
         for (i=0; i<numGlobalBlocks(); ++i) {
             BlockID         bid = all_slips[i].block_id;
             stress.add_stress_entry(bid, all_shear[i].val, all_normal[i].val, all_slips[i].val);
-            std::cout << bid << "  " << all_shear[i].val << "  " << all_normal[i].val << "  " << all_slips[i].val << std::endl;
+            // Debug output
+            // std::cout << bid << "  " << all_shear[i].val << "  " << all_normal[i].val << "  " << all_slips[i].val << std::endl;
         }
         
         num_stress_recs += numGlobalBlocks();
@@ -171,6 +172,7 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
             
             // Write the stress details
             stress.append_stress_hdf5(stress_data_file);
+            
         }
         
         H5Fclose(stress_data_file);
@@ -192,6 +194,7 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
     }
     
 #else
+    // Single processor output
     
     stress_state.setYear(getYear());
     stress_state.setEventNum(event_num);
@@ -297,9 +300,12 @@ void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
 
     if (plist_id < 0) exit(-1);
 
-#ifdef HDF5_IS_PARALLEL
-    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
+    // Schultz: I've changed this methodology. Now instead of writing to HDF5 in parallel,
+    //     we consolidate the info from all procs then write from the root.
+//#ifdef HDF5_IS_PARALLEL
+//    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+//#endif
+    
     // Create the data file, overwriting any old files
     stress_data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 

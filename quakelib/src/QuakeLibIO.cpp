@@ -3755,7 +3755,7 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
         field_offsets[i] = descs[i].offset;
         field_sizes[i] = descs[i].size;
     }
-
+    
     // Add to the stress state table
     res = H5TBappend_records(data_file,
                              ModelStressState::hdf5_table_name().c_str(),
@@ -3766,7 +3766,7 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
                              &_times);
 
     if (res < 0) exit(-1);
-
+    
     // Free memory for HDF5 related data
     delete [] field_offsets;
     delete [] field_sizes;

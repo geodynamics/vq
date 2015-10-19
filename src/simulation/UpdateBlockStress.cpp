@@ -48,40 +48,61 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
     
-    // Read the stress input file for initial stress conditions
-    std::string stress_file_type = sim->getStressInfileType();
-    std::string stress_filename = sim->getStressInfile();
-    std::string stress_index_filename = sim->getStressIndexInfile();
+    // Read the stress input file for initial stress conditions on the root node
+    if (sim->isRootNode()) {
+        std::string stress_file_type = sim->getStressInfileType();
+        std::string stress_filename = sim->getStressInfile();
+        std::string stress_index_filename = sim->getStressIndexInfile();
 
-    if (stress_filename != "" && stress_file_type != "") {
-        
-        if (stress_file_type == "text") {
-            if (stress_index_filename == "") {
-                sim->errConsole() << "ERROR: Must specify stress index file " << std::endl;
-                return;
+        if (stress_filename != "" && stress_file_type != "") {
+            
+            if (stress_file_type == "text") {
+                if (stress_index_filename == "") {
+                    sim->errConsole() << "ERROR: Must specify stress index file " << std::endl;
+                    return;
+                } else {
+                    err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+                }
+            } else if (stress_file_type == "hdf5") {
+                err = stress_set.read_file_hdf5(stress_filename);
+                // Debug
+                std::cout << std::endl << "# Read file " << stress_filename  << ", " << stress_set.size() << " records." << std::endl << std::endl;
             } else {
-                err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+                sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
+                return;
             }
-        } else if (stress_file_type == "hdf5") {
-            err = stress_set.read_file_hdf5(stress_filename);
-        } else {
-            sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
-            return;
-        }
+            
+            // If there was an error then exit
+            if (err) {
+                sim->errConsole() << "ERROR: could not read file " << stress_filename << std::endl;
+                return;
+            }
+            
+            // Schultz: Currently we just load the last event saved in the stress state file.
+            assertThrow(stress_set.size() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
+            stress = stress_set[stress_set.size()-1].stresses();
+            // Also set the sim year to the year the stresses were saved
+            sim->setYear(stress_set[stress_set.size()-1].getYear());
+            sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
         
-        // Schultz: Currently we just load the last event saved in the stress state file.
-        stress = stress_set[stress_set.size()-1].stresses();
-        // Also set the sim year to the year the stresses were saved
-        sim->setYear(stress_set[stress_set.size()-1].getYear());
-        sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
-    
-        // If given an initial stress state, set those stresses and slip deficits.
-        // Schultz: The slip deficit is really the only information used to start the sim, as we
-        // recalculate stresses at the end of this init() based on slip deficits.
-        for (i=0; i<stress.size(); ++i) {
-            sim->setInitShearNormalStress(stress[i]._element_id, stress[i]._shear_stress, stress[i]._normal_stress);
-            sim->setSlipDeficit(stress[i]._element_id, stress[i]._slip_deficit);
+            // If given an initial stress state, set those stresses and slip deficits.
+            // Schultz: The slip deficit is really the only information used to start the sim, as we
+            // recalculate stresses at the end of this init() based on slip deficits.
+            for (i=0; i<stress.size(); ++i) {
+                sim->setInitShearNormalStress(stress[i]._element_id, stress[i]._shear_stress, stress[i]._normal_stress);
+                sim->setSlipDeficit(stress[i]._element_id, stress[i]._slip_deficit);
+                // We need to broadcast these values to the other nodes
+                sim->setUpdateField(stress[i]._element_id, stress[i]._slip_deficit);
+            }
+            
+            // Broadcast the slip deficits to all nodes
+            sim->broadcastUpdateField();
         }
+    }
+    
+    // And update the slip deficit on each process to take this into account
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        sim->setSlipDeficit(gid, sim->getUpdateField(gid));
     }
 
     // Determine section minimum distance along strike (required since das is defined along
@@ -224,7 +245,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
         // Initialize element slips to equilibrium position, slip=0
         // Unless we are reading in a stress input file, then we have already set the slip deficit higher up in this method
-        if (sim->getStressInfile() == "" && sim->getStressIndexInfile() == "") sim->setSlipDeficit(gid, 0);
+        if (sim->getStressInfile() == "") sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);
@@ -277,11 +298,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     stressRecompute();
     
 //    Debug output
-//    if (sim->isRootNode()) {
-//        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-//            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
-//        }
-//    }
+    if (sim->isRootNode()) {
+        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+        }
+    }
 
 }
 
