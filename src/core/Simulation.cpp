@@ -175,8 +175,6 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
             
         }
         
-        H5Fclose(stress_data_file);
-        
         // use delete [] for arrays:
         if (isRootNode()) {
             delete [] counts;

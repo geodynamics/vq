@@ -79,7 +79,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             }
             
             // Schultz: Currently we just load the last event saved in the stress state file.
-            assertThrow(stress_set.size() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
+            assertThrow(stress_set[stress_set.size()-1].getNumStressRecords() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
             stress = stress_set[stress_set.size()-1].stresses();
             // Also set the sim year to the year the stresses were saved
             sim->setYear(stress_set[stress_set.size()-1].getYear());
@@ -95,10 +95,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
                 sim->setUpdateField(stress[i]._element_id, stress[i]._slip_deficit);
             }
             
-            // Broadcast the slip deficits to all nodes
-            sim->broadcastUpdateField();
         }
     }
+    
+    // Broadcast the slip deficits from root node to all nodes
+    sim->broadcastUpdateField();
     
     // And update the slip deficit on each process to take this into account
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {

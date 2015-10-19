@@ -1078,16 +1078,7 @@ namespace quakelib {
             UIndex getEventNum(void) const {
                 return _times._event_num;
             }
-        
-            // Schultz: For the first version of the stress in/out, lets not write mid-event.
-            // If we write between events, then we don't need sweep info.
-        
-            //void setSweepNum(const UIndex sweep_num) {
-            //    _times._sweep_num = sweep_num;
-            //}
-            //UIndex getSweepNum(void) const {
-            //    return _times._sweep_num;
-            //}
+
             void setStartEndRecNums(const unsigned int start_rec, const unsigned int end_rec) {
                 _times._start_rec = start_rec;
                 _times._end_rec = end_rec;
