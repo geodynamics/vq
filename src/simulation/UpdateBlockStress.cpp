@@ -82,8 +82,12 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             assertThrow(stress_set[stress_set.size()-1].getNumStressRecords() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
             stress = stress_set[stress_set.size()-1].stresses();
             // Also set the sim year to the year the stresses were saved
-            sim->setYear(stress_set[stress_set.size()-1].getYear());
-            sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
+            ///// SCHULTZ: For some reason, when we read in the stresses and set the start year to be non-zero,
+            // when the simulation executes vc_sim->finish() and tries to stop all the timers, it is unable to 
+            // stop total_timer and just freezes. For now I will handle this with PyVQ, modifying the years when
+            // one specifies that you want to paste together multiple event files.
+            //sim->setYear(stress_set[stress_set.size()-1].getYear());
+            //sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
         
             // If given an initial stress state, set those stresses and slip deficits.
             // Schultz: The slip deficit is really the only information used to start the sim, as we
@@ -178,6 +182,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
+        
         //
         // TODO: check if this negative sign is warranted and not double counted
         depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
@@ -299,11 +304,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     stressRecompute();
     
 //    Debug output
-    if (sim->isRootNode()) {
-        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
-        }
-    }
+//    if (sim->isRootNode()) {
+//        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+//            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+//        }
+//    }
 
 }
 
