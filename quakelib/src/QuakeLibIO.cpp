@@ -3432,6 +3432,158 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
 #endif
 }
 
+int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
+    hid_t       plist_id, data_file;
+    herr_t      res;
+    
+    std::cout << "## Combining with events from " << file_name << std::endl;
+
+    if (!H5Fis_hdf5(file_name.c_str())) return -1;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+    data_file = H5Fopen(file_name.c_str(), H5F_ACC_RDONLY, plist_id);
+
+    if (data_file < 0) exit(-1);
+
+    // Grab the largest event number currently in _events, we append events after this one
+    unsigned int the_last_evnum = _events[_events.size()-1].getEventNumber();
+
+    append_events_hdf5(data_file, add_year, add_evnum);
+    append_sweeps_hdf5(data_file, the_last_evnum);
+
+    // Release HDF5 handles
+    res = H5Pclose(plist_id);
+
+    if (res < 0) exit(-1);
+
+    res = H5Fclose(data_file);
+
+    if (res < 0) exit(-1);
+
+#else
+    // TODO: Error out
+#endif
+    return 0;
+}
+
+void quakelib::ModelEventSet::append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
+    std::vector<FieldDesc>                        descs;
+    std::map<UIndex, ModelEvent>::const_iterator  fit;
+    hsize_t                     num_fields, num_events;
+    unsigned int                i;
+    EventData                   *event_data;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    descs.clear();
+    ModelEvent::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelEvent::hdf5_table_name().c_str(), &num_fields, &num_events);
+
+    if (res < 0) exit(-1);
+
+    event_data = new EventData[num_events];
+    res = H5TBread_records(data_file, ModelEvent::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
+
+    if (res < 0) exit(-1);
+
+    unsigned int the_last_evnum = _events[_events.size()-1].getEventNumber();
+    std::cout << "# Appending events after event number " << the_last_evnum <<  std::endl;
+    
+    for (i=0; i<num_events; ++i) {
+        ModelEvent  new_event;
+        new_event.read_data(event_data[i]);
+        // Add the offsets for event numbers and years
+        //std::cout << "Read event " << new_event.getEventNumber() << ", trigger = " << new_event.getEventTrigger() << std::endl;
+        new_event.setEventNumber(new_event.getEventNumber()+add_evnum);
+        new_event.setEventYear(new_event.getEventYear()+add_year);
+        // Only add it if it's not in _events already
+        if (new_event.getEventNumber() > the_last_evnum) {
+            _events.push_back(new_event);
+        }
+    }
+
+    // Free memory for HDF5 related data
+    delete [] event_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
+}
+
+void quakelib::ModelEventSet::append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum) {
+#ifdef HDF5_FOUND
+    std::vector<FieldDesc>                    descs;
+    ModelEventSet::iterator                   fit;
+    hsize_t                     num_fields, num_sweeps;
+    unsigned int                i;
+    unsigned int                start_sweep;
+    unsigned int                end_sweep;
+    SweepData                   *event_sweeps;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelSweeps::hdf5_table_name().c_str(), &num_fields, &num_sweeps);
+
+    if (res < 0) exit(-1);
+
+    event_sweeps = new SweepData[num_sweeps];
+    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(SweepData), field_offsets, field_sizes, event_sweeps);
+
+    if (res < 0) exit(-1);
+
+    // Read sweeps data into the ModelEventSet
+    for (fit=_events.begin(); fit!=_events.end(); ++fit) {
+        // Do not modify sweeps for events already stored, only the newly added ones
+        if (fit->getEventNumber() > last_evnum) {
+            fit->getStartEndSweep(start_sweep, end_sweep);
+            ModelSweeps new_sweeps;
+
+            for (i=start_sweep; i<end_sweep; i++) {
+                new_sweeps.read_data(event_sweeps[i]);
+                new_sweeps.resetEventNumbers(fit->getEventNumber());
+            }
+
+            fit->setSweeps(new_sweeps);
+        }
+    }
+
+    delete [] event_sweeps;
+    // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
+    delete [] field_offsets;
+    delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
+}
+
 // ********************************************************************************************
 
 void quakelib::ModelStress::read_ascii(std::istream &in_stream, const unsigned int num_records) {

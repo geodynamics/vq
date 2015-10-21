@@ -579,6 +579,12 @@ namespace quakelib {
                 return _sweeps.end();
             };
 
+            void resetEventNumbers(const double &new_num) {
+                for (std::vector<SweepData>::iterator it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                    it->_event_number = new_num;
+                }
+            }
+
             void setSlipAndArea(const UIndex &sweep_number, const UIndex &element_id, const double &slip, const double &area, const double &mu) {
                 unsigned int    pos = sweepElementPos(sweep_number, element_id);
                 _sweeps[pos]._slip = slip;
@@ -905,6 +911,8 @@ namespace quakelib {
             std::vector<ModelEvent>     _events;
             void read_events_hdf5(const hid_t &data_file);
             void read_sweeps_hdf5(const hid_t &data_file);
+            void append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum);
+            void append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum);
 
         public:
             typedef std::vector<ModelEvent>::iterator       iterator;
@@ -936,6 +944,7 @@ namespace quakelib {
             int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
 
             int read_file_hdf5(const std::string &file_name);
+            int append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum);
     };
 
     /*!
