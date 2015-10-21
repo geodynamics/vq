@@ -101,7 +101,7 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     return x_ave, y_ave
 
 class SaveFile:
-    def event_plot(self, event_file, plot_type, min_mag, min_year, max_year):
+    def event_plot(self, event_file, plot_type, min_mag, min_year, max_year, combine):
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
@@ -119,6 +119,8 @@ class SaveFile:
                 add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
             else:
                 add += "_minMag_"+min_mag
+        if combine is not None:
+            add+="_combined"
 
         return plot_type+add+"_"+event_file.split(".")[0]+".png"
         
@@ -142,7 +144,7 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
         
-    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None):
+    def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
@@ -159,6 +161,8 @@ class SaveFile:
                 add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
             else:
                 add += "_minMag_"+min_mag
+        if combine is not None:
+            add += "_combined"
             
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
 
@@ -428,7 +432,7 @@ def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True,
     
     
 class Events:
-    def __init__(self, event_file, sweep_file = None):
+    def __init__(self, event_file, sweep_file = None, combine_file=None, stress_file=None):
         filetype = event_file.split('.')[-1].lower()
         event_file_type = "text" # default
         if filetype == 'h5' or filetype == 'hdf5': event_file_type = "hdf5"
@@ -447,6 +451,15 @@ class Events:
             self._events.read_file_ascii(event_file, sweep_file)
         else:
             raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
+            
+        if combine_file is not None and event_file_type == 'hdf5' and stress_file is not None:
+            with h5py.File(stress_file) as state_data:
+                stress_state = state_data['stress_state'][()]
+            stress_state = np.core.records.fromarrays(stress_state[-1], dtype=stress_state.dtype)
+            add_year = float(stress_state['year'])
+            add_evnum = int(stress_state['event_num'])
+            self._events.append_from_hdf5(combine_file, add_year, add_evnum)
+            sys.stdout.write("## Combined with: "+combine_file+"\n")
             
         self._filtered_events = range(len(self._events))
         self._plot_str = ""
@@ -2299,6 +2312,8 @@ if __name__ == "__main__":
             help="Name of stress file to use in analysis.")
     parser.add_argument('--summary', type=int, required=False,
             help="Specify the number of largest magnitude EQs to summarize.")
+    parser.add_argument('--combine_file', required=False,
+            help="Name of events hdf5 file to combine with event_file.")
 
     # Event filtering arguments
     parser.add_argument('--min_magnitude', type=float, required=False,
@@ -2468,7 +2483,7 @@ if __name__ == "__main__":
         if not os.path.isfile(args.event_file):
             raise "Event file does not exist: "+args.event_file
         else:
-            events = Events(args.event_file, args.sweep_file)
+            events = Events(args.event_file, args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file)
 
     # Read the geometry model if specified
     if args.model_file:
@@ -2504,7 +2519,7 @@ if __name__ == "__main__":
     # Detectability threshold, min slip 1cm
     if args.min_slip is None: 
         args.min_slip = 0.01
-        sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< ")
+        sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< \n")
 
     if args.min_slip or args.max_slip:
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
@@ -2552,36 +2567,36 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.leonard = True
     if args.plot_freq_mag:
-        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
     if args.plot_mag_rupt_area:
-        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
     if args.plot_mag_mean_slip:
-        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
     if args.plot_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         ProbabilityPlot().plot_p_of_t(events, filename)
     if args.plot_prob_vs_t_fixed_dt:
-        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
     if args.plot_cond_prob_vs_t:
-        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         if args.beta:
             ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
         else:
             ProbabilityPlot().plot_p_of_t_multi(events, filename)
     if args.plot_waiting_times:
-        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         ProbabilityPlot().plot_dt_vs_t0(events, filename)
     if args.plot_recurrence:
         times = events.interevent_times()
-        filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year)
+        filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         BasePlotter().create_plot("hist", False, times, None, events.plot_str(), "interevent time [years]", "", filename)
 
     if args.field_plot:
@@ -2714,7 +2729,7 @@ if __name__ == "__main__":
         filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         DiagnosticPlot().plot_normal_stress_changes(events, filename)
     if args.event_mean_slip:
-        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude, combine=args.combine_file)
         DiagnosticPlot().plot_mean_slip(events, filename)
         
     if args.event_movie:
