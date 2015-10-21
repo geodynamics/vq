@@ -1617,6 +1617,36 @@ To implement these bounds for the shear stress Greens functions, in your simulat
 	
 
 
+
+\subsection{Periodically Saving the Simulation State}
+The Virtual Quake simulation can crash mid-simulation for a number of reasons, and while we do not anticipate your simulation to crash, it does happen. To prevent the loss of simulation data, and to avoid the situation of a simulation crashing 50,000 years in, leaving you to start your large simulation from the beginning, we have the ability to output the state of simulation. 
+
+In order to save the simulation state to an HDF5 file, for example, after every 10,000 earthquakes, simply add the following to your simulation parameter file:
+
+\begin{verbatim}
+	sim.file.output_stress  	   	      = file_to_save_sim_state.h5
+	sim.file.output_stress_type  	      = hdf5
+	sim.file.output_stress_num_events = 10000
+\end{verbatim}
+
+If you want to start a simulation after the last checkpoint was written for the previous simulation, simply run a new simulation with the following parameters:
+
+\begin{verbatim}
+	sim.file.input_stress  	   	      = file_to_save_sim_state.h5
+	sim.file.input_stress_type        = hdf5
+\end{verbatim}
+
+Lets say this process gives you two simulation files: one initial simulation that saved it's state before failing (let's call it initial\_simulation.h5), and a second simulation file that continued the initial simulation by loading the saved state of the initial simulation (continued\_simulation.h5). We can combine the events from these two simulation files with PyVQ and plot the results of the complete simulation by running the following example (to plot the magnitude-area distribution):
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file initial_simulation.h5  --combine_file 
+	continued_simulation.h5 --stress_file file_to_save_sim_state.h5
+	--plot_mag_rupt_area
+\end{verbatim}
+
+More PyVQ examples can be found in Section \ref{sec:pyvq}, and a detailed list of stress simulation parameters can be found in Section \ref{sec:file_params}.
+
+
 \section{Single Element Tutorial\label{sec:Tutorial_single}}
 
 
@@ -2138,7 +2168,7 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5  --model_file
 
 This section summarizes the current functionality of the pyvq script (section \ref{sec:pyvq}). These parameters do not have default values, and are not used unless specified. 
 
-\subsection{Model parameters}
+\subsection{Model File Parameters}
 
 \noindent %
 \begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
@@ -2150,7 +2180,11 @@ This section summarizes the current functionality of the pyvq script (section \r
 \texttt{\small{--model\_file}} & The fault model file.\tabularnewline
 \hline 
 \texttt{\small{--model\_file\_type}} & Either 'hdf5' or 'text'.\tabularnewline
+\hline
+\texttt{\small{--stress\_file}} & hdf5 file containing simulation stress state information.\tabularnewline
 \hline 
+\texttt{\small{--combine\_file}} & An hdf5 simulation file whose events will be combined with those from --event\_file. Must also specify --stress\_file.\tabularnewline
+\hline
 \end{tabular}
 
 \subsection{Subsetting/Filtering Parameters}
@@ -2384,7 +2418,7 @@ remain the same.\tabularnewline
 \end{tabular}
 
 
-\subsection{File name parameters}
+\subsection{File I/O parameters \label{sec:file_params}}
 
 \begin{tabular}{|>{\raggedright}p{2.3in}|>{\raggedright}p{3.8in}|}
 \hline 
@@ -2399,6 +2433,20 @@ not be recorded.\tabularnewline
 not be recorded.\tabularnewline
 \hline 
 \texttt{\small{sim.file.output\_event\_type}} & The file format to output events - must be one of text or hdf5.  If hdf5, sweep and event information will be printed to the same file specified by \texttt{sim.file.output\_event}.\tabularnewline
+\hline 
+\texttt{\small{sim.file.output\_stress}} & The file to output the stress state after a specified number of events, specified by \texttt{sim.file.output\_stress\_num\_events}.\tabularnewline
+\hline 
+\texttt{\small{sim.file.output\_stress\_type}} & The file type for stress output, either text or hdf5. If text, must also specify \texttt{sim.file.output\_stress\_index}.\tabularnewline
+\hline 
+\texttt{\small{sim.file.output\_stress\_index}} & The text file name to write the stress state information. Must be used with \texttt{sim.file.output\_stress}.\tabularnewline
+\hline 
+\texttt{\small{sim.file.output\_stress\_num\_events}} & The number of events before each stress state output.\tabularnewline
+\hline 
+\texttt{\small{sim.file.input\_stress}} & The stress state file used to set initial stresses.\tabularnewline
+\hline 
+\texttt{\small{sim.file.input\_stress\_type}} & The file type for stress input, either text or hdf5. If text, must also specify \texttt{sim.file.input\_stress\_index}.\tabularnewline
+\hline 
+\texttt{\small{sim.file.input\_stress\_index}} & The text file name to load stress state information. Must be used with \texttt{sim.file.input\_stress}.\tabularnewline
 \hline 
 \end{tabular}
 
