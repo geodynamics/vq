@@ -134,7 +134,7 @@ namespace quakelib {
                 return std::max(_das[0], std::max(_das[1], _das[2]));
             };
 
-        
+
             //! Get the maximum distance along strike of a vertex.
             double min_das(void) {
                 return std::min(_das[0], std::min(_das[1], _das[2]));

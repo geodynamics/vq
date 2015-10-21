@@ -166,11 +166,11 @@ class VCParams {
         std::string getStressOutfileType(void) const {
             return params.read<string>("sim.file.output_stress_type");
         };
-    
+
         int getStressOutInterval(void) const {
             return params.read<unsigned int>("sim.file.output_stress_num_events");
         };
-    
+
         std::string getStressInfile(void) const {
             return params.read<string>("sim.file.input_stress");
         };
@@ -180,7 +180,7 @@ class VCParams {
         std::string getStressInfileType(void) const {
             return params.read<string>("sim.file.input_stress_type");
         };
-    
+
         //
         // yoder: helper functions for greens function max/min values:
         // can we make a (set of) generic pramGetter(str.pram_name) function(s)? then, we can add params at will...

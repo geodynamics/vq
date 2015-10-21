@@ -95,7 +95,7 @@ void ReadModelFile::init(SimFramework *_sim) {
         new_block.setSectionID(eit->section_id());    // TODO: add sections?
 
         BlockID bid = sim->addBlock(new_block);
-        
+
         sim->setInitShearNormalStress(bid, 0, 0);
 
     }

@@ -131,7 +131,7 @@ void VCSimData::deallocateArrays(void) {
     if (rhogd) free(rhogd);
 
     if (stress_drop) free(stress_drop);
-    
+
     if (max_stress_drop) free(max_stress_drop);
 
     if (cff) free(cff);

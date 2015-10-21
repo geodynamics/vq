@@ -984,7 +984,7 @@ namespace quakelib {
                 new_entry._slip_deficit = slip_deficit;
                 _data.push_back(new_entry);
             }
-            
+
             void add_stress_entry(StressData &new_entry) {
                 _data.push_back(new_entry);
             }
@@ -1095,11 +1095,11 @@ namespace quakelib {
             unsigned int getNumStressRecords(void) const {
                 return _times._end_rec - _times._start_rec;
             };
-            
+
             unsigned int getStartRec(void) const {
                 return _times._start_rec;
             };
-            
+
             unsigned int getEndRec(void) const {
                 return _times._end_rec;
             };
@@ -1113,7 +1113,7 @@ namespace quakelib {
     class ModelStressSet {
         private:
             std::vector<ModelStressState>   _states;
-            
+
 #ifdef HDF5_FOUND
             void read_state_hdf5(const hid_t &data_file);
             void read_stress_hdf5(const hid_t &data_file);
@@ -1272,9 +1272,9 @@ namespace quakelib {
 
             int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
-            
+
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
-            char* rgb2hex(const int r, const int g, const int b) const;
+            char *rgb2hex(const int r, const int g, const int b) const;
             double section_length(const UIndex &sec_id) const;
             double section_max_depth(const UIndex &sec_id) const;
     };

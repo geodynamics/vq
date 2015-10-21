@@ -44,10 +44,10 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::map<SectionID, double>::iterator ssit;
     quakelib::ModelStressSet    stress_set;
     quakelib::ModelStress       stress;
-    
+
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
-    
+
     // Read the stress input file for initial stress conditions on the root node
     if (sim->isRootNode()) {
         std::string stress_file_type = sim->getStressInfileType();
@@ -55,7 +55,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         std::string stress_index_filename = sim->getStressIndexInfile();
 
         if (stress_filename != "" && stress_file_type != "") {
-            
+
             if (stress_file_type == "text") {
                 if (stress_index_filename == "") {
                     sim->errConsole() << "ERROR: Must specify stress index file " << std::endl;
@@ -71,24 +71,24 @@ void UpdateBlockStress::init(SimFramework *_sim) {
                 sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
                 return;
             }
-            
+
             // If there was an error then exit
             if (err) {
                 sim->errConsole() << "ERROR: could not read file " << stress_filename << std::endl;
                 return;
             }
-            
+
             // Schultz: Currently we just load the last event saved in the stress state file.
             assertThrow(stress_set[stress_set.size()-1].getNumStressRecords() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
             stress = stress_set[stress_set.size()-1].stresses();
             // Also set the sim year to the year the stresses were saved
             ///// SCHULTZ: For some reason, when we read in the stresses and set the start year to be non-zero,
-            // when the simulation executes vc_sim->finish() and tries to stop all the timers, it is unable to 
+            // when the simulation executes vc_sim->finish() and tries to stop all the timers, it is unable to
             // stop total_timer and just freezes. For now I will handle this with PyVQ, modifying the years when
             // one specifies that you want to paste together multiple event files.
             //sim->setYear(stress_set[stress_set.size()-1].getYear());
             //sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
-        
+
             // If given an initial stress state, set those stresses and slip deficits.
             // Schultz: The slip deficit is really the only information used to start the sim, as we
             // recalculate stresses at the end of this init() based on slip deficits.
@@ -98,13 +98,13 @@ void UpdateBlockStress::init(SimFramework *_sim) {
                 // We need to broadcast these values to the other nodes
                 sim->setUpdateField(stress[i]._element_id, stress[i]._slip_deficit);
             }
-            
+
         }
     }
-    
+
     // Broadcast the slip deficits from root node to all nodes
     sim->broadcastUpdateField();
-    
+
     // And update the slip deficit on each process to take this into account
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         sim->setSlipDeficit(gid, sim->getUpdateField(gid));
@@ -114,20 +114,20 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // faults and doesn't reset to 0 when entering a new section of the same fault.
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
         sid = nt->getSectionID();
-        
+
         if (section_min_das.count(sid)) {
             sit = section_min_das.find(sid);
             // Replace the current max length with this element's distance along strike if it's smaller
             // Trying to find the lower bound for the fault
             sit->second = std::min(sit->second, nt->min_das());
-            
+
         } else {
             // If it's not already in here, add this section
             section_min_das.insert(std::make_pair(sid, nt->min_das()));
         }
-        
+
     }
-    
+
     // Determine section lengths and add up the areas
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
         sid = nt->getSectionID();
@@ -157,18 +157,18 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
     }
-    
+
     // Set the simulation section areas now that we computed them
     for (sit=section_areas.begin(); sit!=section_areas.end(); ++sit) {
         sim->setSectionArea(sit->first, sit->second);
     }
-    
+
     // Set the simulation section lengths now that we computed them
     for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
         sim->setSectionLength(sit->first, sit->second);
     }
-    
-    
+
+
     /*
     /////// Schultz: First we compute the mean slip rate to avoid NaN's
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
@@ -182,7 +182,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        
+
         //
         // TODO: check if this negative sign is warranted and not double counted
         depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
@@ -302,13 +302,13 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
-    
-//    Debug output
-//    if (sim->isRootNode()) {
-//        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-//            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
-//        }
-//    }
+
+    //    Debug output
+    //    if (sim->isRootNode()) {
+    //        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+    //            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+    //        }
+    //    }
 
 }
 

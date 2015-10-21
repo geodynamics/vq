@@ -84,6 +84,7 @@ void GreensFuncCalcStandard::CalculateGreens(Simulation *sim) {
     for (int r=0; r<sim->numLocalBlocks(); ++r) {
         for (int c=0; c<num_blocks; ++c) {
             int global_r = sim->getGlobalBID(r);
+
             //// Schultz, excluding zero slip rate elements from sim by setting Greens to zero
             if (sim->getBlock(global_r).slip_rate()==0  ||  sim->getBlock(c).slip_rate()==0) {
                 sim->setGreens(global_r, c, 0, 0);

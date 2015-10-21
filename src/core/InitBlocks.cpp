@@ -65,7 +65,7 @@ void VCInitBlocks::init(SimFramework *_sim) {
     // If it has already been set by reading in a stress file, do not overwrite it
     if (sim->getYear() > 0.0) {
         sim->console() << "Beginning sim at year " << sim->getYear() << "." << std::endl;
-    } else { 
+    } else {
         sim->setYear(sim->getSimStart());
     }
 
