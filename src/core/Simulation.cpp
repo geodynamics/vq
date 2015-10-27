@@ -73,7 +73,10 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
     quakelib::ModelStressState  stress_state;
     unsigned int                gid;
 
-    if (getStressOutfileType() == "") return;
+    if (getStressOutfileType() == "") {
+        console() << "No stress output type specified, so not writing." << std::endl;
+        return;
+    }
 
 #ifdef MPI_C_FOUND
     // note: this does nothing if not MPI_C_FOUND

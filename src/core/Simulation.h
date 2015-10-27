@@ -323,6 +323,12 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         void partitionBlocks(void);
 
         void output_stress(quakelib::UIndex event_num);
+        
+#ifdef HDF5_FOUND
+        hid_t getStressDataFileHandle(void) const {
+            return stress_data_file;
+        }
+#endif
 
     private:
 #ifdef DEBUG
