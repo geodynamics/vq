@@ -909,10 +909,12 @@ namespace quakelib {
     class ModelEventSet {
         private:
             std::vector<ModelEvent>     _events;
+#ifdef HDF5_FOUND
             void read_events_hdf5(const hid_t &data_file);
             void read_sweeps_hdf5(const hid_t &data_file);
             void append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum);
             void append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum);
+#endif
 
         public:
             typedef std::vector<ModelEvent>::iterator       iterator;
