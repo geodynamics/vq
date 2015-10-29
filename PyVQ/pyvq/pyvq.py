@@ -59,6 +59,9 @@ except ImportError:
 #MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
+COLOR_CYCLE = ['k','g','b', 'r']
+SCATTER_ALPHA = 0.6
+
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
 # Used to compute cutoff for field value evaluation, cutoff scales with
@@ -102,12 +105,15 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
 
 class SaveFile:
     def event_plot(self, event_file, plot_type, min_mag, min_year, max_year, combine):
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        if isinstance(event_file, list): 
+            event_file = event_file[0]
+            add += "_MULTI_EVENT_FILE"
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
-        # Add tags to convey the subsets/cuts being made
-        add=""
         if min_year is not None: add+="_yearMin"+str(int(min_year))    
         if max_year is not None: add+="_yearMax"+str(int(max_year))
         if args.use_sections is not None:
@@ -145,10 +151,14 @@ class SaveFile:
         return "traces_"+model_file.split(".")[0]+".png"
         
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        if isinstance(event_file, list): 
+            event_file = event_file[0]
+            add += "_MULTI_EVENT_FILE"
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
-        add=""
         if min_year is not None: add+="_yearMin"+str(int(min_year))    
         if max_year is not None: add+="_yearMax"+str(int(max_year))
         if args.use_sections is not None:
@@ -653,7 +663,7 @@ class Sweeps:
         assert(len(triggerSecElements) == num_elements_across*num_elements_down)
         element_grid = np.zeros((num_elements_down,num_elements_across))
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax = plt.gca()
         if min_slip > 0:
             cmap = plt.get_cmap('Reds')
             norm = mcolor.Normalize(vmin=0, vmax=max_slip)
@@ -1815,29 +1825,29 @@ class FieldEvaluator:
 
 
 class BasePlotter:
-    def create_plot(self, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    def create_plot(self, fig, color_index, plot_type, log_y, x_data, y_data, plot_title, x_label, y_label, filename):
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data, color='g')
+            ax.scatter(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA)
         elif plot_type == "line":
-            ax.plot(x_data, y_data, color='g')
+            ax.plot(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
         elif plot_type == "hist":
             if len(x_data) > 200: BINS=1000
             else: BINS=100
-            ax.hist(x_data, bins=BINS)
+            ax.hist(x_data, bins=BINS, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def multi_line_plot(self, x_data, y_data, labels, linewidths, plot_title, x_label, y_label, legend_str, filename, colors=None, linestyles=None):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    def multi_line_plot(self, fig, x_data, y_data, labels, linewidths, plot_title, x_label, y_label, legend_str, filename, colors=None, linestyles=None):
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         if linestyles is None: linestyles = ["-" for each in x_data]
@@ -1852,12 +1862,12 @@ class BasePlotter:
                 raise "These lists must be the same length: x_data, y_data, labels, linewidths."
             for i in range(len(x_data)):
                 ax.plot(x_data[i], y_data[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
-        ax.legend(title=legend_str, loc='best')
+        #ax.legend(title=legend_str, loc='best')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def t0_vs_dt_plot(self, t0_dt_plot, wait_75, filename):
+    def t0_vs_dt_plot(self, fig, t0_dt_plot, wait_75, filename):
 # TODO: Set fonts explicitly
         t0_dt_main_line_color   = '#000000'
         t0_dt_sub_line_color    = '#737373'
@@ -1866,8 +1876,8 @@ class BasePlotter:
         t0_dt_range_color       = plt.get_cmap('autumn')(0.99)
         years_since_line_color  = 'blue'
         legend_loc              = 'best'
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(r't$_0$ [years]')
         ax.set_ylabel(r'$\Delta$t [years]')
         percents = t0_dt_plot.keys()
@@ -1889,75 +1899,75 @@ class BasePlotter:
         if wait_75 is not None:
             # Draw vertical dotted line where "today" is denoted by years_since
             ax.axvline(x=years_since,ymin=0,ymax=wait_75,color=years_since_line_color,linewidth=t0_dt_main_line_width,linestyle='--')
-        ax.legend(title='event prob.', loc=legend_loc, handlelength=5)
+        #ax.legend(title='event prob.', loc=legend_loc, handlelength=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def scatter_and_errorbar(self, log_y, x_data, y_data, err_x, err_y, y_error, err_label, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    def scatter_and_errorbar(self, fig, log_y, x_data, y_data, err_x, err_y, y_error, err_label, plot_title, x_label, y_label, filename, add_x = None, add_y = None, add_label = None):
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data)
+        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA)
         ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        ax.legend(loc = "best")
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #ax.legend(loc = "best")
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
 
-    def scatter_and_line(self, log_y, x_data, y_data, line_x, line_y, line_label, plot_title, x_label, y_label, filename, legend_loc ='upper left'):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    def scatter_and_line(self, fig, color_index, log_y, x_data, y_data, line_x, line_y, line_label, plot_title, x_label, y_label, filename, legend_loc ='upper left'):
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, color='g')
+        ax.scatter(x_data, y_data, label=filename, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], alpha=SCATTER_ALPHA)
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', c = 'k', lw=2)
-            ax.legend(loc = legend_loc)
+            ax.plot(line_x, line_y, label = line_label, ls='-', color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], lw=3)
+            #ax.legend(loc = legend_loc)
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
         if args.zoom: plt.ylim(-5,5)
         
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
         
-    def scatter_and_multiline(self, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename, legend_loc='upper left'):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    def scatter_and_multiline(self, fig, log_y, x_data, y_data, lines_x, lines_y, line_labels, line_widths, line_styles, colors, plot_title, x_label, y_label, filename, legend_loc='upper left'):
+        #fig = plt.figure()
+        ax = plt.gca()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y: ax.set_yscale('log')
-        ax.scatter(x_data, y_data, color='g')
+        ax.scatter(x_data, y_data, label=filename)
         for i in range(len(lines_x)):
             ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        ax.legend(loc = legend_loc)
+        #ax.legend(loc = legend_loc)
 
         y_label_words = [s.lower() for s in y_label.split(" ")]
         if "slip" in y_label_words and min(y_data) > 0.95e-2 and max(y_data) < 1.05e1: plt.ylim(1e-2,1e1)
         if "area" in y_label_words and max(y_data) < 2e4 and max(y_data) < 1.05e4: plt.ylim(1,1e4)
         
-        plt.savefig(filename,dpi=100)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        #plt.savefig(filename,dpi=100)
+        #sys.stdout.write("Plot saved: {}\n".format(filename))
 
 class MagnitudeRuptureAreaPlot(BasePlotter):
-    def plot(self, events, filename, WC94=False, leonard=False):
+    def plot(self, fig, color_index, events, filename, WC94=False, leonard=False):
         ra_list = events.event_rupture_areas()
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
         min_mag, max_mag = min(mag_list), max(mag_list)
-        if WC94 and not leonard:
+        if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('area')
             scale_label = "Wells & Coppersmith 1994"
             full_x, full_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
@@ -1967,15 +1977,15 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
-            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, events.pl,   "Magnitude", "Rupture Area (square km)", filename)
-        elif leonard and not WC94:
+            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, events.pl,   "Magnitude", "Rupture Area (square km)", filename)
+        elif leonard and not WC94 and color_index == 0:
             scale_label = "Leonard 2010"
             full_x, full_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            self.scatter_and_line(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Rupture Area (square km)", filename)
-        elif leonard and WC94:
+            self.scatter_and_line(fig, color_index, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Rupture Area (square km)", filename)
+        elif leonard and WC94 and color_index == 0:
             wc_x, wc_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
             leo_x, leo_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
@@ -1986,16 +1996,17 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
-            self.scatter_and_multiline(True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
+            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", filename)
         else:
-            self.create_plot("scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
+            self.create_plot(fig, color_index, "scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", filename)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
-    def plot(self, events, filename, WC94=False, leonard=False):
+    def plot(self, fig, color_index, events, filename, WC94=False, leonard=False):
+    # Color index is an index for the event_file number, 0 is the first file, 1 is the second file
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
         min_mag, max_mag = min(mag_list), max(mag_list)
-        if WC94 and not leonard:
+        if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('slip')
             scale_label = "Wells & Coppersmith 1994"
             full_x, full_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
@@ -2005,15 +2016,15 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
-            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
-        elif leonard and not WC94:
+            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+        elif leonard and not WC94 and color_index == 0:
             scale_label = "Leonard 2010"
             full_x, full_y = Distributions().leonard_2010('slip', min_mag=min_mag, max_mag=max_mag)
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            self.scatter_and_line(True, mag_list, slip_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Mean Slip (meters)", filename)
-        elif leonard and WC94:
+            self.scatter_and_line(fig, color_index, True, mag_list, slip_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Mean Slip (meters)", filename)
+        elif leonard and WC94 and color_index == 0:
             wc_x, wc_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
             leo_x, leo_y = Distributions().leonard_2010('slip', min_mag=min_mag, max_mag=max_mag)
@@ -2024,12 +2035,12 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
-            self.scatter_and_multiline(True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
+            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", filename)
         else:
-            self.create_plot("scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
+            self.create_plot(fig, color_index, "scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
 
 class FrequencyMagnitudePlot(BasePlotter):
-    def plot(self, events, filename, UCERF2 = False, b1 = False):
+    def plot(self, fig, color_index, events, filename, UCERF2 = False, b1 = False):
         # California observed seismicity rates and errorbars (UCERF2)
         x_UCERF = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
         y_UCERF = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
@@ -2050,17 +2061,19 @@ class FrequencyMagnitudePlot(BasePlotter):
         for mag in sorted(cum_freq.iterkeys()):
             freq_x.append(mag)
             freq_y.append(float(cum_freq[mag])/year_range)
-        if b1:
+        if b1 and color_index == 0:
             add_x = np.linspace(min(freq_x),max(freq_x),10)
             fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
             add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
             add_label = "b==1"
-        if UCERF2:
-            self.scatter_and_errorbar(True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
-        if b1 and not UCERF2:
-            self.scatter_and_line(True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
-        if not UCERF2 and not b1:
-            self.create_plot("scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
+        if UCERF2 and color_index == 0:
+            self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
+        elif b1 and not UCERF2 and color_index == 0:
+            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
+        elif not UCERF2 and not b1:
+            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
+        else:
+            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -2078,48 +2091,48 @@ class StressHistoryPlot(BasePlotter):
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
         
 class DiagnosticPlot(BasePlotter):
-    def plot_shear_stress_changes(self, events, filename):
+    def plot_shear_stress_changes(self, fig, color_index, events, filename):
         shear_init = np.array(events.event_initial_shear_stresses())
         shear_final = np.array(events.event_final_shear_stresses())
         years = events.event_years()
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
-    def plot_normal_stress_changes(self, events, filename):
+    def plot_normal_stress_changes(self, fig, color_index, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
         normal_final = np.array(events.event_final_normal_stresses())
         years = events.event_years()
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
         
-    def plot_number_of_sweeps(self, events, filename):
+    def plot_number_of_sweeps(self, fig, color_index, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
         years = events.event_years()
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
-        self.scatter_and_line(True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        self.scatter_and_line(fig, color_index, True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
         
-    def plot_mean_slip(self, events, filename):
+    def plot_mean_slip(self, fig, color_index, events, filename):
         slips = np.array(events.event_mean_slip())
         years = events.event_years()
         # Generate the binned averages too
         x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
-        self.scatter_and_line(True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
+        self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
-    def plot_p_of_t(self, events, filename):
+    def plot_p_of_t(self, fig, events, filename):
         # Cumulative probability P(t) as a function of interevent time t
         intervals = np.array(events.interevent_times())
         prob = {}
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
-        self.create_plot("line", False, prob['x'], prob['y'], events.plot_str(),"t [years]", "P(t)", filename)
+        self.create_plot(fig, color_index, "line", False, prob['x'], prob['y'], events.plot_str(),"t [years]", "P(t)", filename)
 
-    def plot_conditional_fixed_dt(self, events, filename, fixed_dt=30.0):
+    def plot_conditional_fixed_dt(self, fig, events, filename, fixed_dt=30.0):
         # P(t0 + dt, t0) vs. t0 for fixed dt
         intervals = np.array(events.interevent_times())
         prob_dt = {'x':[],'y':[]}
@@ -2130,9 +2143,9 @@ class ProbabilityPlot(BasePlotter):
             if int_t0.size != 0:
                 prob_dt['x'].append(t0)
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
-        self.create_plot("line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
+        self.create_plot(fig, color_index, "line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
 
-    def plot_p_of_t_multi(self, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
+    def plot_p_of_t_multi(self, fig, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
         # Cumulative conditional probability P(t,t0) as a function of
         # interevent time t, computed for multiple t0. Beta/Tau are Weibull parameters
         line_colormap = plt.get_cmap('autumn')
@@ -2188,9 +2201,9 @@ class ProbabilityPlot(BasePlotter):
         y_lab         = r'P(t, t$_0$)'
         x_lab         = r't = t$_0$ + $\Delta$t [years]'
         plot_title    = ""
-        self.multi_line_plot(x_data, y_data, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename, colors=colors)
+        self.multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename, colors=colors)
 
-    def plot_dt_vs_t0(self, events, filename, years_since=None):
+    def plot_dt_vs_t0(self, fig, events, filename, years_since=None):
         # Plot the waiting times corresponding to 25/50/75% conditional probabilities
         # as a function of t0 (time since last earthquake on the selected faults).
         # years_since is the number of years since the last observed (real) earthquake
@@ -2244,7 +2257,7 @@ class ProbabilityPlot(BasePlotter):
             sys.stdout.write('\n50% waiting time: {:.2f} years'.format(wait_50))
             sys.stdout.write('\n75% waiting time: {:.2f} years'.format(wait_75))
             sys.stdout.write('\n=======================================\n\n')
-        self.t0_vs_dt_plot(t0_dt_plot, wait_75, filename)
+        self.t0_vs_dt_plot(fig, t0_dt_plot, wait_75, filename)
 
 class Distributions:
     def weibull(self, X, beta, tau):
@@ -2298,7 +2311,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyVQ.")
 
     # Event/model file arguments
-    parser.add_argument('--event_file', required=False,
+    parser.add_argument('--event_file', required=False, type=str, nargs='+',
             help="Name of event file to analyze.")
     parser.add_argument('--sweep_file', required=False,
             help="Name of sweep file to analyze.")
@@ -2479,11 +2492,21 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------
 
     # Read the event and sweeps files
-    if args.event_file:
+    if args.event_file and args.sweep_file is None and args.combine_file is None:
+        # If given multiple event files
+        # Currently only works for hdf5 files, time consuming to add text file support for every new feature
+        events = []
+        for file in args.event_file:
+            # Check that all files exist
+            if not os.path.isfile(file):
+                raise "Event file does not exist: "+file
+            else:
+                events.append( Events(file, None) )
+    elif len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
         if not os.path.isfile(args.event_file):
-            raise "Event file does not exist: "+args.event_file
+            raise "Event file does not exist: "+args.event_file[0]
         else:
-            events = Events(args.event_file, args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file)
+            events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file)]
 
     # Read the geometry model if specified
     if args.model_file:
@@ -2537,13 +2560,19 @@ if __name__ == "__main__":
         if args.elements is None:
             args.elements = [elem_num for elem_num in range(geometry.model.num_elements()) if geometry.model.element(elem_num).section_id() in args.use_sections]
         
-        
     if args.use_trigger_sections:
         if not args.model_file: raise "Must specify --model_file for --use_trigger_sections to work."
         event_filters.append(TriggerSectionFilter(geometry, args.use_trigger_sections))
 
     if args.event_file:
-        events.set_filters(event_filters)
+        if isinstance(args.event_file, list):
+            for event_set in events:
+                event_set.set_filters(event_filters)
+        else:
+            events.set_filters(event_filters)
+            
+    # Make sure that events is a list
+    assert(isinstance(events, list))
         
     # Print out event summary data if requested
     if args.summary:
@@ -2567,38 +2596,87 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.leonard = True
     if args.plot_freq_mag:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         if args.plot_freq_mag == 1: UCERF2,b1 = False, False
         if args.plot_freq_mag == 2: UCERF2,b1 = False, True
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
-        FrequencyMagnitudePlot().plot(events, filename, UCERF2=UCERF2, b1=b1)
+        for i, event_set in enumerate(events):
+            print(args.event_file[i].split("events_")[-1])
+            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], UCERF2=UCERF2, b1=b1)
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        MagnitudeRuptureAreaPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
+        for i, event_set in enumerate(events):
+            MagnitudeRuptureAreaPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], WC94=args.wc94, leonard=args.leonard)
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_mean_slip:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        MagnitudeMeanSlipPlot().plot(events, filename, WC94=args.wc94, leonard=args.leonard)
+        for i, event_set in enumerate(events):
+            MagnitudeMeanSlipPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], WC94=args.wc94, leonard=args.leonard)
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        ProbabilityPlot().plot_p_of_t(events, filename)
+        for event_set in events:
+            ProbabilityPlot().plot_p_of_t(fig, event_set, filename)
+        ax.legend(loc='best')
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t_fixed_dt:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        ProbabilityPlot().plot_conditional_fixed_dt(events, filename)
+        for event_set in events:
+            ProbabilityPlot().plot_conditional_fixed_dt(fig, event_set, filename)
+        ax.legend(loc='best')
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_cond_prob_vs_t:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         if args.beta:
-            ProbabilityPlot().plot_p_of_t_multi(events, filename, beta=args.beta, tau=args.tau)
+            for event_set in events:
+                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename, beta=args.beta, tau=args.tau)
         else:
-            ProbabilityPlot().plot_p_of_t_multi(events, filename)
+            for event_set in events:
+                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename)
+        ax.legend(loc='best')
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_waiting_times:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "waiting_times", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        ProbabilityPlot().plot_dt_vs_t0(events, filename)
+        for event_set in events:
+            ProbabilityPlot().plot_dt_vs_t0(fig, event_set, filename)
+        ax.legend(loc='best')
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_recurrence:
-        times = events.interevent_times()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        times = [event_set.interevent_times() for event_set in events]
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        BasePlotter().create_plot("hist", False, times, None, events.plot_str(), "interevent time [years]", "", filename)
-
+        for time in times:
+            BasePlotter().create_plot(fig, color_index, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
+        ax.legend(loc='best')
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
@@ -2679,6 +2757,7 @@ if __name__ == "__main__":
             sys.stdout.write("{}  {}\n".format(id,slip_rates[id]))
             
     if args.slip_time_series:
+        # TODO: Add multi-event file compatibility to compare between different sims
         if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
         if args.min_year is None: args.min_year = 0.0
         if args.max_year is None: args.max_year = 20.0
@@ -2720,18 +2799,41 @@ if __name__ == "__main__":
         StressHistoryPlot().plot(stress_set, args.stress_elements)
         
     if args.num_sweeps:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().diagnostic_plot(args.event_file, "num_sweeps", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
-        DiagnosticPlot().plot_number_of_sweeps(events, filename)
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_number_of_sweeps(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_shear_stress:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
-        DiagnosticPlot().plot_shear_stress_changes(events, filename)
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_shear_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_normal_stress:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
-        DiagnosticPlot().plot_normal_stress_changes(events, filename)
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_normal_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_mean_slip:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         filename = SaveFile().diagnostic_plot(args.event_file, "mean_slip", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude, combine=args.combine_file)
-        DiagnosticPlot().plot_mean_slip(events, filename)
-        
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_mean_slip(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=100)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_movie:
         if args.event_file is None or args.event_id is None:
             raise "Must specify event file and event id."
@@ -2742,15 +2844,16 @@ if __name__ == "__main__":
     # Validate data if requested
     err = False
     if args.validate_slip_sum:
+        events = events[0]
         mean_slip = sum(events.event_mean_slip())
         if abs(mean_slip-args.validate_slip_sum)/args.validate_slip_sum > 0.01: err = True
         print("Calculated mean slip:", mean_slip, "vs. expected:", args.validate_slip_sum)
 
     if args.validate_mean_interevent:
+        events = events[0]
         ie_times = events.interevent_times()
         mean_ie = sum(ie_times)/len(ie_times)
         if abs(mean_ie-args.mean_interevent)/args.mean_interevent > 0.02: err = True
         print("Calculated mean interevent:", mean_interevent, "vs. expected:", args.mean_interevent)
 
     if err: exit(1)
-
