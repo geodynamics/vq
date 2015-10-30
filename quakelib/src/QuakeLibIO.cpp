@@ -669,7 +669,10 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Go through the created elements and assign maximum slip based on the total fault area
     // From Table 2A in Wells Coppersmith 1994
-    double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
+    //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
+
+    // Schultz: Updating these to a newer paper. From Leonard 2010
+    double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area));
 
     for (unsigned int i=0; i<elem_ids.size(); ++i) {
         double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*element(elem_ids[i]).lame_mu()*fault_area);
@@ -1735,7 +1738,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         // Go through the created elements and assign maximum slip based on fault section area.
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
             // From Table 2A in Wells Coppersmith 1994
-            double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+            //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+
+            // Schultz: Updating these to a newer paper. From Leonard 2010
+            double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
             // Need to document where this scaling law comes from
             double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
@@ -1914,11 +1920,12 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     // Loop thru elements to compute min/max slip rates for color bounds
     double max_rate = 0;
     double min_rate = 0;
+
     for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
         max_rate = fmax( max_rate, eit->second.slip_rate());
         min_rate = fmin( min_rate, eit->second.slip_rate());
     }
-    
+
     /////// Bounds for color in blue to red range, white in the middle
     double y_min = 0;
     double y_max = 255;
@@ -1951,12 +1958,13 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                     lld[3] = lld[2];
                     lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
                 }
-                
+
                 // Compute blue to red color (RGB)
                 // Keep red scale (min is white, max is red) so red=255
                 // Blue and green are equal and vary from (255 for min vals to 0 for max vals)
                 int blue, green;
                 int red = y_max;
+
                 if (eit->second.slip_rate() == 0) {
                     blue = 0;
                     green = 0;
@@ -1966,7 +1974,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                     blue = y_max - interp_color;
                     green = blue;
                 }
-                
+
                 // Output the KML format polygon for this element
                 out_file << "\t\t<Placemark>\n";
                 out_file << "\t\t<description>\n";
@@ -1978,11 +1986,11 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                 out_file << "\t\t</description>\n";
                 out_file << "\t\t\t<Style>\n";
                 out_file << "\t\t\t\t<LineStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
-                out_file << "\t\t\t\t\t<width>1</width>\n"; 
+                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+                out_file << "\t\t\t\t\t<width>1</width>\n";
                 out_file << "\t\t\t\t</LineStyle>\n";
                 out_file << "\t\t\t\t<PolyStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
                 out_file << "\t\t\t\t</PolyStyle>\n";
                 out_file << "\t\t\t</Style>\n";
                 //out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
@@ -2021,7 +2029,7 @@ double quakelib::ModelWorld::linear_interp(const double &x, const double &x_min,
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min;
 }
 
-char* quakelib::ModelWorld::rgb2hex(const int r, const int g, const int b) const {
+char *quakelib::ModelWorld::rgb2hex(const int r, const int g, const int b) const {
     // Returning ABGR to work with KML format
     char *buf;
     size_t sz;
@@ -2055,9 +2063,9 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     dx = max_xyz[0]-min_xyz[0];
     dy = max_xyz[1]-min_xyz[1];
     range = fmax(dx, dy) * (1.0/tan(c.deg2rad(30)));
-    
+
     double max_depth = fabs(min_bound.altitude());
-    
+
     //// Get relevant event info
     involved_elements = event.getInvolvedElements();
     trigger = event.getEventTrigger();
@@ -2104,8 +2112,10 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     ModelVertex     vert;
 
     eit = _elements.find(trigger);
+
     for (i=0; i<3; ++i) {
         cur_alt = _vertices.find(eit->second.vertex(i))->second.lld().altitude();
+
         if (cur_alt < min_altitude) {
             min_altitude = cur_alt;
             best_vertex = eit->second.vertex(i);
@@ -2121,21 +2131,22 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     // Loop thru elements to compute min/max slip rates for color bounds
     double max_slip = -DBL_MAX;
     double min_slip = DBL_MAX;
+
     for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
         max_slip = fmax( max_slip, event.getEventSlip(*it));
         min_slip = fmin( min_slip, event.getEventSlip(*it));
         involved_sections.insert(_elements.find(*it)->second.section_id());
     }
 
-    // Add all the elements from the involved sections, regardless if they 
-    // actually slipped in the event. The ones with no slip will fill out the 
+    // Add all the elements from the involved sections, regardless if they
+    // actually slipped in the event. The ones with no slip will fill out the
     // faults and be nearly transparent.
-    for (eit=_elements.begin();eit!=_elements.end(); ++eit) {
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
         if (involved_sections.count(eit->second.section_id())) {
             all_elements.insert(eit->first);
         }
     }
-    
+
     /////// Bounds for color in blue to red range, white in the middle
     double y_min = -255;
     double y_max = 255;
@@ -2143,6 +2154,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     double x_min = -x_max;
 
     out_file << "<Folder id=\"elements\">\n";
+
     // Go through the involved elements
     for (it=all_elements.begin(); it!=all_elements.end(); ++it) {
         LatLonDepth         lld[4];
@@ -2163,12 +2175,13 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             lld[3] = lld[2];
             lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
         }
-        
+
         // If the element is involved in the event..
         // Compute blue to red color (RGB)
         if (involved_elements.count(*it)) {
             int blue, green, red;
             int interp_color = (int) linear_interp(event.getEventSlip(*it), x_min, x_max, y_min, y_max);
+
             if (interp_color > 0) {
                 // More red
                 red = y_max;
@@ -2179,7 +2192,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
                 red = y_max - abs(interp_color);
                 green = red;
             }
-            
+
             // Output the KML format polygon for this element
             out_file << "\t\t<Placemark>\n";
             out_file << "\t\t<description>\n";
@@ -2188,11 +2201,11 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t</description>\n";
             out_file << "\t\t\t<Style>\n";
             out_file << "\t\t\t\t<LineStyle>\n";
-            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
-            out_file << "\t\t\t\t\t<width>1</width>\n"; 
+            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+            out_file << "\t\t\t\t\t<width>1</width>\n";
             out_file << "\t\t\t\t</LineStyle>\n";
             out_file << "\t\t\t\t<PolyStyle>\n";
-            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n"; 
+            out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
             out_file << "\t\t\t\t</PolyStyle>\n";
             out_file << "\t\t\t</Style>\n";
             out_file << "\t\t\t<Polygon>\n";
@@ -2211,7 +2224,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t\t</Polygon>\n";
             out_file << "\t\t</Placemark>\n";
         } else {
-        // If this element wasn't involved in the event and is included to fill out the fault
+            // If this element wasn't involved in the event and is included to fill out the fault
             // Output the KML format polygon for this element
             out_file << "\t\t<Placemark>\n";
             out_file << "\t\t<description>\n";
@@ -2219,11 +2232,11 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t</description>\n";
             out_file << "\t\t\t<Style>\n";
             out_file << "\t\t\t\t<LineStyle>\n";
-            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n"; 
-            out_file << "\t\t\t\t\t<width>1</width>\n"; 
+            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n";
+            out_file << "\t\t\t\t\t<width>1</width>\n";
             out_file << "\t\t\t\t</LineStyle>\n";
             out_file << "\t\t\t\t<PolyStyle>\n";
-            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n"; 
+            out_file << "\t\t\t\t\t<color>66FFFFFF</color>\n";
             out_file << "\t\t\t\t</PolyStyle>\n";
             out_file << "\t\t\t</Style>\n";
             out_file << "\t\t\t<Polygon>\n";
@@ -2579,23 +2592,27 @@ double quakelib::ModelWorld::section_length(const quakelib::UIndex &sec_id) cons
     std::map<UIndex, ModelElement>::const_iterator  eit;
     double min_das = DBL_MAX;
     double max_das = -DBL_MAX;
+
     for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
         if (eit->second.section_id() == sec_id) {
             min_das = fmin(min_das, create_sim_element(eit->first).min_das());
             max_das = fmax(max_das, create_sim_element(eit->first).max_das());
         }
     }
+
     return max_das-min_das;
 }
 
 double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) const {
     std::map<UIndex, ModelElement>::const_iterator  eit;
     double max_depth = DBL_MAX;
+
     for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
         if (eit->second.section_id() == sec_id) {
             max_depth = fmin(max_depth, create_sim_element(eit->first).max_depth());
         }
     }
+
     return max_depth;
 }
 
@@ -3435,6 +3452,159 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
 #endif
 }
 
+int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
+    hid_t       plist_id, data_file;
+    herr_t      res;
+
+    std::cout << "## Combining with events from " << file_name << std::endl;
+
+    if (!H5Fis_hdf5(file_name.c_str())) return -1;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+    data_file = H5Fopen(file_name.c_str(), H5F_ACC_RDONLY, plist_id);
+
+    if (data_file < 0) exit(-1);
+
+    // Grab the largest event number currently in _events, we append events after this one
+    unsigned int the_last_evnum = _events[_events.size()-1].getEventNumber();
+
+    append_events_hdf5(data_file, add_year, add_evnum);
+    append_sweeps_hdf5(data_file, the_last_evnum);
+
+    // Release HDF5 handles
+    res = H5Pclose(plist_id);
+
+    if (res < 0) exit(-1);
+
+    res = H5Fclose(data_file);
+
+    if (res < 0) exit(-1);
+
+#else
+    // TODO: Error out
+#endif
+    return 0;
+}
+
+void quakelib::ModelEventSet::append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
+    std::vector<FieldDesc>                        descs;
+    std::map<UIndex, ModelEvent>::const_iterator  fit;
+    hsize_t                     num_fields, num_events;
+    unsigned int                i;
+    EventData                   *event_data;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    descs.clear();
+    ModelEvent::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelEvent::hdf5_table_name().c_str(), &num_fields, &num_events);
+
+    if (res < 0) exit(-1);
+
+    event_data = new EventData[num_events];
+    res = H5TBread_records(data_file, ModelEvent::hdf5_table_name().c_str(), 0, num_events, sizeof(EventData), field_offsets, field_sizes, event_data);
+
+    if (res < 0) exit(-1);
+
+    unsigned int the_last_evnum = _events[_events.size()-1].getEventNumber();
+    std::cout << "# Appending events after event number " << the_last_evnum <<  std::endl;
+
+    for (i=0; i<num_events; ++i) {
+        ModelEvent  new_event;
+        new_event.read_data(event_data[i]);
+        // Add the offsets for event numbers and years
+        //std::cout << "Read event " << new_event.getEventNumber() << ", trigger = " << new_event.getEventTrigger() << std::endl;
+        new_event.setEventNumber(new_event.getEventNumber()+add_evnum);
+        new_event.setEventYear(new_event.getEventYear()+add_year);
+
+        // Only add it if it's not in _events already
+        if (new_event.getEventNumber() > the_last_evnum) {
+            _events.push_back(new_event);
+        }
+    }
+
+    // Free memory for HDF5 related data
+    delete [] event_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
+}
+
+void quakelib::ModelEventSet::append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum) {
+#ifdef HDF5_FOUND
+    std::vector<FieldDesc>                    descs;
+    ModelEventSet::iterator                   fit;
+    hsize_t                     num_fields, num_sweeps;
+    unsigned int                i;
+    unsigned int                start_sweep;
+    unsigned int                end_sweep;
+    SweepData                   *event_sweeps;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    descs.clear();
+    ModelSweeps::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelSweeps::hdf5_table_name().c_str(), &num_fields, &num_sweeps);
+
+    if (res < 0) exit(-1);
+
+    event_sweeps = new SweepData[num_sweeps];
+    res = H5TBread_records(data_file, ModelSweeps::hdf5_table_name().c_str(), 0, num_sweeps, sizeof(SweepData), field_offsets, field_sizes, event_sweeps);
+
+    if (res < 0) exit(-1);
+
+    // Read sweeps data into the ModelEventSet
+    for (fit=_events.begin(); fit!=_events.end(); ++fit) {
+        // Do not modify sweeps for events already stored, only the newly added ones
+        if (fit->getEventNumber() > last_evnum) {
+            fit->getStartEndSweep(start_sweep, end_sweep);
+            ModelSweeps new_sweeps;
+
+            for (i=start_sweep; i<end_sweep; i++) {
+                new_sweeps.read_data(event_sweeps[i]);
+                new_sweeps.resetEventNumbers(fit->getEventNumber());
+            }
+
+            fit->setSweeps(new_sweeps);
+        }
+    }
+
+    delete [] event_sweeps;
+    // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
+    delete [] field_offsets;
+    delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
+}
+
 // ********************************************************************************************
 
 void quakelib::ModelStress::read_ascii(std::istream &in_stream, const unsigned int num_records) {
@@ -3444,6 +3614,7 @@ void quakelib::ModelStress::read_ascii(std::istream &in_stream, const unsigned i
         ss >> new_stress_rec._element_id;
         ss >> new_stress_rec._shear_stress;
         ss >> new_stress_rec._normal_stress;
+        ss >> new_stress_rec._slip_deficit;
         // Put the stress record on the list
         _data.push_back(new_stress_rec);
     }
@@ -3455,7 +3626,8 @@ void quakelib::ModelStress::write_ascii(std::ostream &out_stream) const {
     for (it=_data.begin(); it!=_data.end(); ++it) {
         out_stream << it->_element_id << " ";
         out_stream << it->_shear_stress << " ";
-        out_stream << it->_normal_stress;
+        out_stream << it->_normal_stress << " ";
+        out_stream << it->_slip_deficit;
 
         next_line(out_stream);
     }
@@ -3629,9 +3801,21 @@ void quakelib::ModelStress::get_field_descs(std::vector<quakelib::FieldDesc> &de
     field_desc.size = sizeof(float);
 #endif
     descs.push_back(field_desc);
+
+    field_desc.name = "slip_deficit";
+    field_desc.details = "Slip deficit for the element (meters).";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(StressData, _slip_deficit);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
 }
 
 // ********************************************************************************************
+void quakelib::ModelStressState::read_data(const StressDataTime &in_data) {
+    memcpy(&_times, &in_data, sizeof(StressDataTime));
+}
 
 void quakelib::ModelStressState::write_ascii_header(std::ostream &out_stream) {
     std::vector<FieldDesc>                  descs;
@@ -3763,6 +3947,113 @@ void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file
 #endif
 
 
+int quakelib::ModelStressSet::read_file_hdf5(const std::string &file_name) {
+#ifdef HDF5_FOUND
+    hid_t                       plist_id, data_file;
+    std::vector<FieldDesc>      descs;
+    hsize_t                     num_fields, num_states, num_stresses;
+    unsigned int                i, j;
+    StressDataTime              *state_data;
+    StressData                  *stress_data;
+    size_t                      *field_offsets_state, *field_offsets_stress;
+    size_t                      *field_sizes_state, *field_sizes_stress;
+    herr_t                      res;
+
+    if (!H5Fis_hdf5(file_name.c_str())) return -1;
+
+    plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+    if (plist_id < 0) exit(-1);
+
+    data_file = H5Fopen(file_name.c_str(), H5F_ACC_RDONLY, plist_id);
+
+    if (data_file < 0) exit(-1);
+
+    // Read the state data from the file, grab the time data and number of stress records per state
+    descs.clear();
+    ModelStressState::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets_state = new size_t[num_fields];
+    field_sizes_state = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets_state[i] = descs[i].offset;
+        field_sizes_state[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelStressState::hdf5_table_name().c_str(), &num_fields, &num_states);
+
+    if (res < 0) exit(-1);
+
+    // Read all the stress time/num_recs data for all states
+    state_data = new StressDataTime[num_states];
+    res = H5TBread_records(data_file, ModelStressState::hdf5_table_name().c_str(), 0, num_states, sizeof(StressDataTime), field_offsets_state, field_sizes_state, state_data);
+
+    // Prepare for stress table reading
+    descs.clear();
+    ModelStress::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets_stress = new size_t[num_fields];
+    field_sizes_stress = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets_stress[i] = descs[i].offset;
+        field_sizes_stress[i] = descs[i].size;
+    }
+
+    // Read all the stress data entries, we will parse them to the appropriate stress state later
+    res = H5TBget_table_info(data_file, ModelStress::hdf5_table_name().c_str(), &num_fields, &num_stresses);
+
+    if (res < 0) exit(-1);
+
+    stress_data = new StressData[num_stresses];
+    res = H5TBread_records(data_file, ModelStress::hdf5_table_name().c_str(), 0, num_stresses, sizeof(StressData), field_offsets_stress, field_sizes_stress, stress_data);
+
+    // For each state, set the stress data
+    for (i=0; i<num_states; ++i) {
+        // Create the stress state, read the data
+        ModelStressState new_state;
+        new_state.read_data(state_data[i]);
+
+        // Create this state's stress data, and read the corresponding stress records
+        ModelStress new_stress;
+
+        for (j=new_state.getStartRec(); j<new_state.getEndRec(); ++j) {
+            new_stress.add_stress_entry(stress_data[j]);
+        }
+
+        // Set the stress data for the state
+        new_state.setStresses(new_stress);
+        // Add the state to the set of states
+        _states.push_back(new_state);
+    }
+
+    // Release HDF5 handles
+    res = H5Pclose(plist_id);
+
+    if (res < 0) exit(-1);
+
+    res = H5Fclose(data_file);
+
+    if (res < 0) exit(-1);
+
+
+    // Free memory for HDF5 related data
+    // yoder: ... and use delete [] for arrays...
+    delete [] stress_data;
+    delete [] state_data;
+    delete [] field_offsets_state;
+    delete [] field_sizes_state;
+    delete [] field_offsets_stress;
+    delete [] field_sizes_stress;
+
+#else
+    // TODO: Error out
+#endif
+    return 0;
+}
+
+
 // Schultz: For the first version of the stress in/out, lets not write mid-event.
 // If we write between events, then we don't need sweep info.
 void quakelib::ModelStressState::read_ascii(std::istream &in_stream) {
@@ -3806,14 +4097,14 @@ void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc
 #endif
     descs.push_back(field_desc);
 
-//    field_desc.name = "sweep_num";
-//    field_desc.details = "Sweep number this stress state corresponds to.";
-//#ifdef HDF5_FOUND
-//    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
-//    field_desc.type = H5T_NATIVE_UINT;
-//    field_desc.size = sizeof(unsigned int);
-//#endif
-//    descs.push_back(field_desc);
+    //    field_desc.name = "sweep_num";
+    //    field_desc.details = "Sweep number this stress state corresponds to.";
+    //#ifdef HDF5_FOUND
+    //    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
+    //    field_desc.type = H5T_NATIVE_UINT;
+    //    field_desc.size = sizeof(unsigned int);
+    //#endif
+    //    descs.push_back(field_desc);
 
     field_desc.name = "start_rec";
     field_desc.details = "Starting record of stress values for this time.";
@@ -3836,7 +4127,6 @@ void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc
 
 int quakelib::ModelStressSet::read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name) {
     std::ifstream   stress_ind_file, stress_file;
-    ModelSweeps     file_sweeps;
 
     // Try to open the stress index file
     stress_ind_file.open(stress_index_file_name.c_str());
@@ -3864,6 +4154,7 @@ int quakelib::ModelStressSet::read_file_ascii(const std::string &stress_index_fi
     stress_ind_file.close();
     stress_file.close();
 
+    std::cout << "==== Read stress state from file ====" << std::endl;
     return 0;
 }
 

@@ -158,6 +158,13 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return friction[gid];
         }
 
+//        void setFriction(const BlockID gid, const double coefficient) {
+//            // Schultz: Cannot let friction decrease with increasing depth.
+//            // Instead lets prescribe a coefficient.
+//            // TODO: Add friction file reading so we can specify coeff. per block
+//            friction[gid] = coefficient;
+//        }
+
         //! Whether the block experienced static friction failure.
         //! This occurs if the Coulomb failure function goes over 0.
         bool cffFailure(const BlockID gid) const {
@@ -191,7 +198,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         double getSelfStresses(const BlockID gid) const {
             return self_shear[gid] - friction[gid]*self_normal[gid];
         };
-        
+
         //! Get the area for the section in square meters.
         double getSectionArea(const SectionID sid) const {
             return section_areas.find(sid)->second;
@@ -204,28 +211,28 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
                 section_areas.insert(std::make_pair(sid, new_area));
             }
         };
-        
+
         //! Compute the dynamic stress drop from the current event size for element gid.
         double computeDynamicStressDrop(const BlockID gid, const double current_event_area) const {
             double fault_area, fault_length, fault_width, char_slip;
             double char_magnitude, R, nu, dynamicStressDrop;
-            
+
             // Fault wise data
             fault_area = getSectionArea(getBlock(gid).getSectionID());
             fault_length = getSectionLength(getBlock(gid).getSectionID());
             fault_width = fault_area/fault_length;
             R = sqrt(fault_length*fault_length + fault_width*fault_width);
             nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
-            
+
             // Get current expected slip from the current event area
-            char_magnitude = 4.07+0.98*log10(current_event_area*1e-6) + stressDropFactor();
+            char_magnitude = 4.0+log10(current_event_area*1e-6) + stressDropFactor();
             char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*getBlock(gid).lame_mu()*current_event_area);
-            
+
             dynamicStressDrop = -2*getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
-            
+
             return dynamicStressDrop;
         };
-        
+
         //! Get the length for the section in meters.
         double getSectionLength(const SectionID sid) const {
             return section_lengths.find(sid)->second;
@@ -248,7 +255,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
         };
-        
+
         //! Get the max stress drop for this block in Pascals.
         double getMaxStressDrop(const BlockID gid) const {
             return max_stress_drop[gid];
@@ -322,7 +329,13 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
 
         void partitionBlocks(void);
 
-        void output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num);
+        void output_stress(quakelib::UIndex event_num);
+        
+#ifdef HDF5_FOUND
+        hid_t getStressDataFileHandle(void) const {
+            return stress_data_file;
+        }
+#endif
 
     private:
 #ifdef DEBUG

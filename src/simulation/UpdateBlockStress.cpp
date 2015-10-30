@@ -28,7 +28,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     BlockList::iterator nt;
     BlockID             gid;
     SectionID           sid;
-    int                 lid;
+    int                 lid, i;
+    bool                err;
     double              stress_drop;
     double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
@@ -41,28 +42,92 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     std::map<SectionID, double>::iterator sit;
     std::map<SectionID, double> section_min_das;
     std::map<SectionID, double>::iterator ssit;
-    
+    quakelib::ModelStressSet    stress_set;
+    quakelib::ModelStress       stress;
+
     sim = static_cast<Simulation *>(_sim);
     tmpBuffer = new double[sim->numGlobalBlocks()];
+
+    // Read the stress input file for initial stress conditions on the root node
+    if (sim->isRootNode()) {
+        std::string stress_file_type = sim->getStressInfileType();
+        std::string stress_filename = sim->getStressInfile();
+        std::string stress_index_filename = sim->getStressIndexInfile();
+
+        if (stress_filename != "" && stress_file_type != "") {
+
+            if (stress_file_type == "text") {
+                if (stress_index_filename == "") {
+                    sim->errConsole() << "ERROR: Must specify stress index file " << std::endl;
+                    return;
+                } else {
+                    err = stress_set.read_file_ascii(stress_index_filename, stress_filename);
+                }
+            } else if (stress_file_type == "hdf5") {
+                err = stress_set.read_file_hdf5(stress_filename);
+                // Debug
+                std::cout << std::endl << "# Read file " << stress_filename  << ", " << stress_set.size() << " records." << std::endl << std::endl;
+            } else {
+                sim->errConsole() << "ERROR: unknown file type " << stress_file_type << std::endl;
+                return;
+            }
+
+            // If there was an error then exit
+            if (err) {
+                sim->errConsole() << "ERROR: could not read file " << stress_filename << std::endl;
+                return;
+            }
+
+            // Schultz: Currently we just load the last event saved in the stress state file.
+            assertThrow(stress_set[stress_set.size()-1].getNumStressRecords() == sim->numGlobalBlocks(), "Did not read the correct number of blocks from stress file.");
+            stress = stress_set[stress_set.size()-1].stresses();
+            // Also set the sim year to the year the stresses were saved
+            ///// SCHULTZ: For some reason, when we read in the stresses and set the start year to be non-zero,
+            // when the simulation executes vc_sim->finish() and tries to stop all the timers, it is unable to
+            // stop total_timer and just freezes. For now I will handle this with PyVQ, modifying the years when
+            // one specifies that you want to paste together multiple event files.
+            //sim->setYear(stress_set[stress_set.size()-1].getYear());
+            //sim->console() << "--- Setting initial stresses from file, starting new sim at year " << sim->getYear() << " ---" << std::endl;
+
+            // If given an initial stress state, set those stresses and slip deficits.
+            // Schultz: The slip deficit is really the only information used to start the sim, as we
+            // recalculate stresses at the end of this init() based on slip deficits.
+            for (i=0; i<stress.size(); ++i) {
+                sim->setInitShearNormalStress(stress[i]._element_id, stress[i]._shear_stress, stress[i]._normal_stress);
+                sim->setSlipDeficit(stress[i]._element_id, stress[i]._slip_deficit);
+                // We need to broadcast these values to the other nodes
+                sim->setUpdateField(stress[i]._element_id, stress[i]._slip_deficit);
+            }
+
+        }
+    }
+
+    // Broadcast the slip deficits from root node to all nodes
+    sim->broadcastUpdateField();
+
+    // And update the slip deficit on each process to take this into account
+    for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+        sim->setSlipDeficit(gid, sim->getUpdateField(gid));
+    }
 
     // Determine section minimum distance along strike (required since das is defined along
     // faults and doesn't reset to 0 when entering a new section of the same fault.
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
         sid = nt->getSectionID();
-        
+
         if (section_min_das.count(sid)) {
             sit = section_min_das.find(sid);
             // Replace the current max length with this element's distance along strike if it's smaller
             // Trying to find the lower bound for the fault
             sit->second = std::min(sit->second, nt->min_das());
-            
+
         } else {
             // If it's not already in here, add this section
             section_min_das.insert(std::make_pair(sid, nt->min_das()));
         }
-        
+
     }
-    
+
     // Determine section lengths and add up the areas
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
         sid = nt->getSectionID();
@@ -92,18 +157,18 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
     }
-    
+
     // Set the simulation section areas now that we computed them
     for (sit=section_areas.begin(); sit!=section_areas.end(); ++sit) {
         sim->setSectionArea(sit->first, sit->second);
     }
-    
+
     // Set the simulation section lengths now that we computed them
     for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
         sim->setSectionLength(sit->first, sit->second);
     }
-    
-    
+
+
     /*
     /////// Schultz: First we compute the mean slip rate to avoid NaN's
     for (nt=sim->begin(); nt!=sim->end(); ++nt) {
@@ -117,6 +182,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // and transfer stress drop values between nodes later
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
+
         //
         // TODO: check if this negative sign is warranted and not double counted
         depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
@@ -166,7 +232,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             fault_width = fault_area/fault_length; // This way we get the mean width
 
             // Use Wells & Coppersmith scaling to find the characteristic magnitude and slip given the fault geometry
-            char_magnitude = 4.07+0.98*log10(fault_area*1e-6) + sim->stressDropFactor();
+            char_magnitude = 4.0+log10(fault_area*1e-6) + sim->stressDropFactor();
             char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*sim->getBlock(gid).lame_mu()*fault_area);
 
             // Compute stress drop from geometry and expected slip/mag
@@ -184,7 +250,8 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         }
 
         // Initialize element slips to equilibrium position, slip=0
-        sim->setSlipDeficit(gid, 0);
+        // Unless we are reading in a stress input file, then we have already set the slip deficit higher up in this method
+        if (sim->getStressInfile() == "") sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);
@@ -204,17 +271,20 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         double       stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       max_stress_drop=std::numeric_limits<float>::quiet_NaN();
         double       tmp_rhogd = std::numeric_limits<float>::quiet_NaN();
+        double       slip_deficit = std::numeric_limits<float>::quiet_NaN();
 
         if (sim->isLocalBlockID(gid)) {
             stress_drop = sim->getStressDrop(gid);
             max_stress_drop = sim->getMaxStressDrop(gid);
             //
             tmp_rhogd = sim->getRhogd(gid);
+            slip_deficit = sim->getSlipDeficit(gid);
         }
 
         //
         MPI_Bcast(&stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         MPI_Bcast(&max_stress_drop, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
+        MPI_Bcast(&slip_deficit, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
         //
         MPI_Bcast(&tmp_rhogd, 1, MPI_DOUBLE, sim->getBlockNode(gid), MPI_COMM_WORLD);
 
@@ -224,6 +294,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             sim->setMaxStressDrop(gid, max_stress_drop);
             //
             sim->setRhogd(gid, tmp_rhogd);
+            sim->setSlipDeficit(gid, slip_deficit);
         }
     }
 
@@ -231,6 +302,13 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
+
+    //    Debug output
+    //    if (sim->isRootNode()) {
+    //        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+    //            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
+    //        }
+    //    }
 
 }
 

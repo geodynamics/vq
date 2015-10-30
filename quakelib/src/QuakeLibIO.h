@@ -579,6 +579,12 @@ namespace quakelib {
                 return _sweeps.end();
             };
 
+            void resetEventNumbers(const double &new_num) {
+                for (std::vector<SweepData>::iterator it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                    it->_event_number = new_num;
+                }
+            }
+
             void setSlipAndArea(const UIndex &sweep_number, const UIndex &element_id, const double &slip, const double &area, const double &mu) {
                 unsigned int    pos = sweepElementPos(sweep_number, element_id);
                 _sweeps[pos]._slip = slip;
@@ -940,6 +946,7 @@ namespace quakelib {
             int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
 
             int read_file_hdf5(const std::string &file_name);
+            int append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum);
     };
 
     /*!
@@ -952,7 +959,7 @@ namespace quakelib {
         UIndex          _element_id;
 
         //! Shear and normal stress on the element at this time
-        float          _shear_stress, _normal_stress;
+        float          _shear_stress, _normal_stress, _slip_deficit;
     };
 
     /*!
@@ -971,11 +978,16 @@ namespace quakelib {
                 _data.clear();
             }
 
-            void add_stress_entry(UIndex element_id, float shear_stress, float normal_stress) {
+            void add_stress_entry(UIndex element_id, float shear_stress, float normal_stress, float slip_deficit) {
                 StressData new_entry;
                 new_entry._element_id = element_id;
                 new_entry._shear_stress = shear_stress;
                 new_entry._normal_stress = normal_stress;
+                new_entry._slip_deficit = slip_deficit;
+                _data.push_back(new_entry);
+            }
+
+            void add_stress_entry(StressData &new_entry) {
                 _data.push_back(new_entry);
             }
 #ifdef HDF5_FOUND
@@ -1050,6 +1062,7 @@ namespace quakelib {
             };
             static void setup_stress_state_hdf5(const hid_t &data_file);
             void append_stress_state_hdf5(const hid_t &data_file) const;
+            void read_data(const StressDataTime &in_data);
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -1076,22 +1089,21 @@ namespace quakelib {
             UIndex getEventNum(void) const {
                 return _times._event_num;
             }
-        
-            // Schultz: For the first version of the stress in/out, lets not write mid-event.
-            // If we write between events, then we don't need sweep info.
-        
-            //void setSweepNum(const UIndex sweep_num) {
-            //    _times._sweep_num = sweep_num;
-            //}
-            //UIndex getSweepNum(void) const {
-            //    return _times._sweep_num;
-            //}
+
             void setStartEndRecNums(const unsigned int start_rec, const unsigned int end_rec) {
                 _times._start_rec = start_rec;
                 _times._end_rec = end_rec;
             }
             unsigned int getNumStressRecords(void) const {
                 return _times._end_rec - _times._start_rec;
+            };
+
+            unsigned int getStartRec(void) const {
+                return _times._start_rec;
+            };
+
+            unsigned int getEndRec(void) const {
+                return _times._end_rec;
             };
 
             void read_ascii(std::istream &in_stream);
@@ -1103,6 +1115,11 @@ namespace quakelib {
     class ModelStressSet {
         private:
             std::vector<ModelStressState>   _states;
+
+#ifdef HDF5_FOUND
+            void read_state_hdf5(const hid_t &data_file);
+            void read_stress_hdf5(const hid_t &data_file);
+#endif
 
         public:
             typedef std::vector<ModelStressState>::iterator         iterator;
@@ -1132,6 +1149,7 @@ namespace quakelib {
             };
 
             int read_file_ascii(const std::string &stress_index_file_name, const std::string &stress_file_name);
+            int read_file_hdf5(const std::string &file_name);
     };
 
     class ModelWorld : public ModelIO {
@@ -1256,9 +1274,9 @@ namespace quakelib {
 
             int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
-            
+
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
-            char* rgb2hex(const int r, const int g, const int b) const;
+            char *rgb2hex(const int r, const int g, const int b) const;
             double section_length(const UIndex &sec_id) const;
             double section_max_depth(const UIndex &sec_id) const;
     };

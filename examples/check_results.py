@@ -18,15 +18,19 @@ def check_self_consistent(events):
     for event in events:
         elements = event.getInvolvedElements()
         element_sweep_slip_sums = {}
+        element_mu = {}
+        element_area = {}
         for elem_id in elements: element_sweep_slip_sums[elem_id] = 0
         summed_moment = 0
         for sweep in event.getSweeps():
             element_sweep_slip_sums[sweep._element_id] += sweep._slip
-            summed_moment += sweep._slip*sweep._area*sweep._mu
+            element_mu[sweep._element_id] = sweep._mu
+            element_area[sweep._element_id] = sweep._area
 
         total_slips = {}
         for elem_num in elements:
             total_slips[elem_num] = event.getEventSlip(elem_num)
+            summed_moment += element_sweep_slip_sums[elem_num]*element_area[elem_num]*element_mu[elem_num]
 
         # Confirm that the sum of sweep slips is equal to the total slip
         for elem_num in total_slips:
@@ -38,6 +42,9 @@ def check_self_consistent(events):
         # yoder: including the 1e7 term in the log argument can cause problems for really big numbers... which is likely indicative of a problem in and
         # of itself, but for now, let's just take it out so we can handle bigger numbers.
         #summed_mag = (2.0/3.0)*math.log10(1e7*summed_moment) - 10.7
+        if (summed_moment <= 0):
+            print("!!! Event {}, Moment {:.5f}, Mag {:.5f}".format(event.getEventNumber(), summed_moment, event.getMagnitude()))
+        
         summed_mag = (2.0/3.0)*(7.0 + math.log10(summed_moment)) - 10.7
         #
         if abs(event.getMagnitude()-summed_mag) > 1e-5:

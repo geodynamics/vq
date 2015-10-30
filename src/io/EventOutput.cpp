@@ -201,6 +201,18 @@ void EventOutput::finish(SimFramework *_sim) {
 
         if (res < 0) exit(-1);
     }
+        
+    // Schultz: Need to explicitly close the HDF5 stress output file
+//    if (sim->isRootNode()) {
+//        hid_t stress_data_file = sim->getStressDataFileHandle();
+//
+//        herr_t res = H5Fclose(stress_data_file);
+//
+//        if (res < 0) exit(-1);
+//        
+//        sim->console() << "# Closed hdf5 stress out file, hid_t = " << stress_data_file << std::endl;
+//        
+//    }
 
 #endif
 

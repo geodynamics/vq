@@ -62,7 +62,12 @@ void VCInitBlocks::init(SimFramework *_sim) {
                      sim->useTransposedMatrix());
 
     // Set the starting year of the simulation
-    sim->setYear(sim->getSimStart());
+    // If it has already been set by reading in a stress file, do not overwrite it
+    if (sim->getYear() > 0.0) {
+        sim->console() << "Beginning sim at year " << sim->getYear() << "." << std::endl;
+    } else {
+        sim->setYear(sim->getSimStart());
+    }
 
     // Determine neighbors of blocks
     // Schultz: Removing this for now, we don't use these anymore in dynamic failure check

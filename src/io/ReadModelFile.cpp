@@ -40,8 +40,6 @@ void ReadModelFile::init(SimFramework *_sim) {
     Simulation                  *sim = static_cast<Simulation *>(_sim);
     std::string                 file_name, file_type, stress_filename, stress_file_type, stress_index_filename;
     quakelib::ModelWorld        world;
-    quakelib::ModelStressSet    stress_set;
-    quakelib::ModelStress       stress;
     quakelib::siterator         sit;
     quakelib::eiterator         eit;
     int                         err;
@@ -60,38 +58,10 @@ void ReadModelFile::init(SimFramework *_sim) {
         return;
     }
 
-    stress_file_type = sim->getStressInfileType();
-    stress_filename = sim->getStressInfile();
-    stress_index_filename = sim->getStressIndexInfile();
-    
-    if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "") {
-        // Read the stress input file for initial stress conditions
-        if (stress_file_type == "text") {
-            err |= stress_set.read_file_ascii(stress_index_filename, stress_filename);
-        } else if (stress_file_type == "hdf5") {
-            // TODO: Schultz, add hdf5 reading
-            sim->errConsole() << "ERROR: only text files supported right now " << file_type << std::endl;
-            return;
-        } else {
-            sim->errConsole() << "ERROR: unknown file type " << file_type << std::endl;
-            return;
-        }
-    }
-    
-    
     // If there was an error then exit
     if (err) {
         sim->errConsole() << "ERROR: could not read file " << file_name << std::endl;
         return;
-    }
-    
-    // Schultz: Currently we only support a single stress state. We may want to keep writing stress
-    // states every N events, then just load the last event saved in the stress state file.
-    if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "" && !err) {
-        // Grab the stress values of the first (only) stress state
-        stress = stress_set[0].stresses();
-        // Also set the sim year to the year the stresses were saved
-        sim->setYear(stress_set[0].getYear());
     }
 
     // Convert input world to simulation elements
@@ -126,13 +96,7 @@ void ReadModelFile::init(SimFramework *_sim) {
 
         BlockID bid = sim->addBlock(new_block);
 
-        // If given an initial stress state, set those stresses
-        if (stress_filename != "" && stress_file_type != "" && stress_index_filename != "") {
-            assert(stress[bid]._element_id == bid);
-            sim->console() << bid << "  "  << stress[bid]._shear_stress << "  " << stress[bid]._normal_stress << "  " << std::endl;
-            sim->setInitShearNormalStress(bid, stress[bid]._shear_stress, stress[bid]._normal_stress);
-        } else {
-            sim->setInitShearNormalStress(bid, 0, 0);
-        }
+        sim->setInitShearNormalStress(bid, 0, 0);
+
     }
 }

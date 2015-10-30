@@ -68,20 +68,144 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
     }
 }
 
-void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex sweep_num) {
+void Simulation::output_stress(quakelib::UIndex event_num) {
     quakelib::ModelStress       stress;
     quakelib::ModelStressState  stress_state;
+    unsigned int                gid;
 
-    if (getStressOutfileType() == "") return;
+    if (getStressOutfileType() == "") {
+        console() << "No stress output type specified, so not writing." << std::endl;
+        return;
+    }
+
+#ifdef MPI_C_FOUND
+    // note: this does nothing if not MPI_C_FOUND
+    int                             i, num_local_blocks, total_block_count;
+    int                             *counts, *offsets;
+    BlockVal                        *slip_vals, *all_slips;
+    BlockVal                        *shear_vals, *all_shear;
+    BlockVal                        *normal_vals, *all_normal;
+
+    // Gather the number of blocks per node at the root
+    num_local_blocks = numLocalBlocks();
+
+    if (isRootNode()) {
+        counts = new int[world_size];
+        offsets = new int[world_size];
+    } else {
+        counts = offsets = NULL;
+    }
+
+    MPI_Gather(&num_local_blocks, 1, MPI_INT, counts, 1, MPI_INT, ROOT_NODE_RANK, MPI_COMM_WORLD);
+
+    // Record the number of blocks the root will receive from each node
+    if (isRootNode()) {
+        total_block_count = 0;
+
+        for (i=0; i<world_size; ++i) {
+            // note: this gives the starting position of blocks from each node (first node starts at position i=0,
+            // second at i=n_0, third at i=n_1, etc.)
+            offsets[i] = total_block_count;
+            total_block_count += counts[i];
+        }
+
+        assertThrow(total_block_count == numGlobalBlocks(), "Number of total blocks mismatch among processors.")
+    }
+
+    // Record the values of each block on this proc
+    slip_vals = new BlockVal[numLocalBlocks()];
+    shear_vals = new BlockVal[numLocalBlocks()];
+    normal_vals = new BlockVal[numLocalBlocks()];
+
+    if (isRootNode()) all_slips = new BlockVal[numGlobalBlocks()];
+
+    if (isRootNode()) all_shear = new BlockVal[numGlobalBlocks()];
+
+    if (isRootNode()) all_normal = new BlockVal[numGlobalBlocks()];
+
+    // Copy local block info to the local array
+    for (i=0; i<numLocalBlocks(); ++i) {
+        gid = getGlobalBID(i);
+        slip_vals[i].val = getSlipDeficit(gid);
+        slip_vals[i].block_id = gid;
+        shear_vals[i].val = getShearStress(gid);
+        shear_vals[i].block_id = gid;
+        normal_vals[i].val = getNormalStress(gid);
+        normal_vals[i].block_id = gid;
+    }
+
+    // Gather the slip info at the root node
+    MPI_Gatherv(slip_vals, numLocalBlocks(), block_val_type,
+                all_slips, counts, offsets, block_val_type,
+                ROOT_NODE_RANK, MPI_COMM_WORLD);
+
+    // Gather the shear stress info at the root node
+    MPI_Gatherv(shear_vals, numLocalBlocks(), block_val_type,
+                all_shear, counts, offsets, block_val_type,
+                ROOT_NODE_RANK, MPI_COMM_WORLD);
+
+    // Gather the normal stress info at the root node
+    MPI_Gatherv(normal_vals, numLocalBlocks(), block_val_type,
+                all_normal, counts, offsets, block_val_type,
+                ROOT_NODE_RANK, MPI_COMM_WORLD);
+
+    // Write out the state for all blocks on the root node
+    if (isRootNode()) {
+        stress_state.setYear(getYear());
+        stress_state.setEventNum(event_num);
+        stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
+
+        for (i=0; i<numGlobalBlocks(); ++i) {
+            BlockID         bid = all_slips[i].block_id;
+            stress.add_stress_entry(bid, all_shear[i].val, all_normal[i].val, all_slips[i].val);
+            // Debug output
+            // std::cout << bid << "  " << all_shear[i].val << "  " << all_normal[i].val << "  " << all_slips[i].val << std::endl;
+        }
+
+        num_stress_recs += numGlobalBlocks();
+
+        if (getStressOutfileType() == "text") {
+            // Write the stress state details
+            stress_state.write_ascii(stress_index_outfile);
+            stress_index_outfile.flush();
+
+            // Write the stress details
+            stress.write_ascii(stress_outfile);
+            stress_outfile.flush();
+        } else if (getStressOutfileType() == "hdf5") {
+            // Write the stress state details
+            stress_state.append_stress_state_hdf5(stress_data_file);
+
+            // Write the stress details
+            stress.append_stress_hdf5(stress_data_file);
+
+        }
+
+        // use delete [] for arrays:
+        if (isRootNode()) {
+            delete [] counts;
+            delete [] offsets;
+            delete [] all_slips;
+            delete [] all_shear;
+            delete [] all_normal;
+        } else {
+            delete counts;
+            delete offsets;
+            delete all_slips;
+            delete all_normal;
+            delete all_shear;
+        }
+    }
+
+#else
+    // Single processor output
 
     stress_state.setYear(getYear());
     stress_state.setEventNum(event_num);
-    //stress_state.setSweepNum(sweep_num);
     stress_state.setStartEndRecNums(num_stress_recs, num_stress_recs+numGlobalBlocks());
 
-    // Store stress values
     for (unsigned int i=0; i<numGlobalBlocks(); ++i) {
-        stress.add_stress_entry(i, shear_stress[i], normal_stress[i]);
+        stress.add_stress_entry(i, shear_stress[i], normal_stress[i], slip_deficit[i]);
     }
 
     num_stress_recs += numGlobalBlocks();
@@ -101,6 +225,9 @@ void Simulation::output_stress(quakelib::UIndex event_num, quakelib::UIndex swee
         // Write the stress details
         stress.append_stress_hdf5(stress_data_file);
     }
+
+#endif
+
 }
 
 /*!
@@ -177,9 +304,12 @@ void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
 
     if (plist_id < 0) exit(-1);
 
-#ifdef HDF5_IS_PARALLEL
-    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
+    // Schultz: I've changed this methodology. Now instead of writing to HDF5 in parallel,
+    //     we consolidate the info from all procs then write from the root.
+    //#ifdef HDF5_IS_PARALLEL
+    //    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    //#endif
+
     // Create the data file, overwriting any old files
     stress_data_file = H5Fcreate(hdf5_file_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 

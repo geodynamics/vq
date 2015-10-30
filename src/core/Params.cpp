@@ -85,11 +85,13 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<string>("sim.file.output_stress", "");
     params.readSet<string>("sim.file.output_stress_index", "");
     params.readSet<string>("sim.file.output_stress_type", "");
-    
+    params.readSet<unsigned int>("sim.file.output_stress_num_events", std::numeric_limits<unsigned int>::max());
+
     params.readSet<string>("sim.file.input_stress", "");
     params.readSet<string>("sim.file.input_stress_index", "");
     params.readSet<string>("sim.file.input_stress_type", "");
-    
+
+
     //
     // yoder: add parameters to truncate crazy greens function values:
     //params.readSet<double>("sim.greens.shear_max",  std::numeric_limits<double>::max());
@@ -116,8 +118,8 @@ void VCParams::read_params(const std::string &param_file_name) {
     // Kasey: parameter to either read in stress drops from file or compute them
     params.readSet<bool>("sim.friction.compute_stress_drops", true);
 
-    params.readSet<double>("sim.friction.stress_drop_factor", 0.5);
-    
+    params.readSet<double>("sim.friction.stress_drop_factor", 0.4);
+
     params.readSet<bool>("sim.friction.dynamic_stress_drops", false);
 
 }
