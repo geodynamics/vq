@@ -42,6 +42,9 @@ def check_self_consistent(events):
         # yoder: including the 1e7 term in the log argument can cause problems for really big numbers... which is likely indicative of a problem in and
         # of itself, but for now, let's just take it out so we can handle bigger numbers.
         #summed_mag = (2.0/3.0)*math.log10(1e7*summed_moment) - 10.7
+        if (summed_moment <= 0):
+            print("!!! Event {}, Moment {:.5f}, Mag {:.5f}".format(event.getEventNumber(), summed_moment, event.getMagnitude()))
+        
         summed_mag = (2.0/3.0)*(7.0 + math.log10(summed_moment)) - 10.7
         #
         if abs(event.getMagnitude()-summed_mag) > 1e-5:

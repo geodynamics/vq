@@ -442,7 +442,7 @@ def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True,
     
     
 class Events:
-    def __init__(self, event_file, sweep_file = None, combine_file=None, stress_file=None):
+    def __init__(self, event_file, sweep_file = None, combine_file=None, stress_file=None, stress_index_file=None):
         filetype = event_file.split('.')[-1].lower()
         event_file_type = "text" # default
         if filetype == 'h5' or filetype == 'hdf5': event_file_type = "hdf5"
@@ -462,13 +462,23 @@ class Events:
         else:
             raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
             
-        if combine_file is not None and event_file_type == 'hdf5' and stress_file is not None:
+        if combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and not stress_file.split(".")[-1]=="txt":
+            if not os.path.isfile(stress_file) or not os.path.isfile(combine_file):
+                raise "One or more files does not exist!"
+            # If stress state was saved as hdf5
             with h5py.File(stress_file) as state_data:
                 stress_state = state_data['stress_state'][()]
             stress_state = np.core.records.fromarrays(stress_state[-1], dtype=stress_state.dtype)
             add_year = float(stress_state['year'])
             add_evnum = int(stress_state['event_num'])
             self._events.append_from_hdf5(combine_file, add_year, add_evnum)
+            sys.stdout.write("## Combined with: "+combine_file+"\n")
+        elif combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and stress_index_file is not None:
+            if not os.path.isfile(stress_file) or not os.path.isfile(combine_file) or not os.path.isfile(stress_index_file):
+                raise "One or more files does not exist!"
+            # If stress state was saved as text
+            add_year, add_evnum, start_rec, end_rec = np.genfromtxt(stress_index_file)
+            self._events.append_from_hdf5(combine_file, add_year, int(add_evnum))
             sys.stdout.write("## Combined with: "+combine_file+"\n")
             
         self._filtered_events = range(len(self._events))
@@ -2503,10 +2513,10 @@ if __name__ == "__main__":
             else:
                 events.append( Events(file, None) )
     elif len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
-        if not os.path.isfile(args.event_file):
+        if not os.path.isfile(args.event_file[0]):
             raise "Event file does not exist: "+args.event_file[0]
         else:
-            events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file)]
+            events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
     # Read the geometry model if specified
     if args.model_file:
