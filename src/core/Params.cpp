@@ -121,6 +121,8 @@ void VCParams::read_params(const std::string &param_file_name) {
     params.readSet<double>("sim.friction.stress_drop_factor", 0.4);
 
     params.readSet<bool>("sim.friction.dynamic_stress_drops", false);
+    
+    params.readSet<double>("sim.friction.coefficient", 0.6);
 
 }
 
