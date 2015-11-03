@@ -42,7 +42,8 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     params.readSet<unsigned int>("sim.system.progress_period", 0);
 
-    params.readSet<double>("sim.friction.dynamic", INFINITY);
+    // Schultz: Added a default value of 1.0, I don't know why the default was infinity
+    params.readSet<double>("sim.friction.dynamic", 1.0);
 
     params.readSet<double>("sim.greens.kill_distance", 0.0);
     double dist = params.readSet<double>("sim.greens.sample_distance", 1000.0);

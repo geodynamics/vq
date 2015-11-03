@@ -63,7 +63,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 1.0 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
