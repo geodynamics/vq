@@ -77,11 +77,13 @@ FOREACH(NPROC ${NUM_PROCS})
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
             # Check that the results are internally self consistent
-            ADD_TEST(NAME test_consistent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
-            SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
-                DEPENDS run_P${NPROC}_${TAPER}_${RES}
-                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            IF(DEFINED SWIG_FOUND)
+                ADD_TEST(NAME test_consistent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
+                SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
+                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            ENDIF(DEFINED SWIG_FOUND)
 
             # Check that the mean slip is near our expectations
             # Schultz: For now removing until we come up with better tests
