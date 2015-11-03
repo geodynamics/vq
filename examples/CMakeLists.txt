@@ -11,6 +11,8 @@ SET(TAPER_METHODS none taper taper_renorm)
 SET(METHOD_MEANSLIP 100.4 0 0)
 SET(METHOD_INTEREVENT 49.2 0 0)
 
+SET(MAX_TIME 180)
+
 INCLUDE(FindPythonModule)
 FIND_PYTHON_MODULE(h5py)
 
@@ -66,7 +68,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
                 COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 1.0 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
-            SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
+            SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES} TIMEOUT ${MAX_TIME})
 
             # Test that the simulation runs with the resulting mesh
             IF (NPROC EQUAL 1)
@@ -76,7 +78,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 ADD_TEST(NAME run_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
                     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_${RES}.prm)
             ENDIF (NPROC EQUAL 1)
-            SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
+            SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES} TIMEOUT ${MAX_TIME})
 
             # Check that the results are internally self consistent
             IF(DEFINED SWIG_FOUND)
@@ -84,7 +86,8 @@ FOREACH(NPROC ${NUM_PROCS})
                     COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
                 SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
                     DEPENDS run_P${NPROC}_${TAPER}_${RES}
-                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+                    TIMEOUT ${MAX_TIME})
             ENDIF(DEFINED SWIG_FOUND)
 
             # Check that the mean slip is near our expectations
@@ -94,7 +97,8 @@ FOREACH(NPROC ${NUM_PROCS})
             #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
             #    SET_TESTS_PROPERTIES (test_slip_P${NPROC}_${TAPER}_${RES} PROPERTIES
             #        DEPENDS run_P${NPROC}_${TAPER}_${RES}
-            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+            #        TIMEOUT ${MAX_TIME})
             #ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
             # Check that the mean interevent time is near our expectations
@@ -104,7 +108,8 @@ FOREACH(NPROC ${NUM_PROCS})
             #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_interevent ${INTEREVENT})
             #    SET_TESTS_PROPERTIES (test_interevent_P${NPROC}_${TAPER}_${RES} PROPERTIES
             #        DEPENDS run_P${NPROC}_${TAPER}_${RES}
-            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+            #        TIMEOUT ${MAX_TIME})
             #ENDIF(NOT ${INTEREVENT} EQUAL 0) 
         ENDFOREACH(RES ${RESOLUTIONS})
     ENDFOREACH(TAPER_IND RANGE ${NUM_TAPER})
@@ -148,12 +153,12 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
  
         ADD_TEST(NAME param_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 two_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
-        SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES})
+        SET_TESTS_PROPERTIES (param_two_${TAPER}_${RES} PROPERTIES DEPENDS mesh_two_${TAPER}_${RES} TIMEOUT ${MAX_TIME})
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_two_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND vq params_${RES}.prm)
-        SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
+        SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES} TIMEOUT ${MAX_TIME})
 
 	IF(DEFINED SWIG_FOUND)
             # Check that the results are internally self consistent
@@ -161,7 +166,8 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
                 COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
             SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES
                 DEPENDS run_two_${TAPER}_${RES}
-                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+                TIMEOUT ${MAX_TIME})
         ENDIF(DEFINED SWIG_FOUND)
 
         # Check that the mean slip is near our expectations
@@ -172,7 +178,8 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
         #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_slip ${MEANSLIP})
         #    SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES
         #        DEPENDS run_two_${TAPER}_${RES}
-        #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+        #        ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+        #        TIMEOUT ${MAX_TIME})
         #ENDIF (NOT ${MEANSLIP} EQUAL 0)
 
         # Check that the mean interevent time is near our expectations
@@ -182,7 +189,8 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
         #        COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --mean_interevent ${INTEREVENT})
         #    SET_TESTS_PROPERTIES (test_two_interevent_${TAPER}_${RES} PROPERTIES
         #       DEPENDS run_two_${TAPER}_${RES}
-        #       ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+        #       ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+        #       TIMEOUT ${MAX_TIME})
         #ENDIF(NOT ${INTEREVENT} EQUAL 0)             
     ENDFOREACH(RES ${RESOLUTIONS_TWO})
 ENDFOREACH(TAPER_IND RANGE ${NUM_TAPER})
@@ -209,27 +217,27 @@ IF (HDF5_FOUND)
             )
         ADD_TEST(NAME param_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_generate.prm params_gen_${RES}.prm)
-        SET_TESTS_PROPERTIES (param_gen_${TEST_SUFFIX} PROPERTIES DEPENDS mesh_${TEST_SUFFIX})
+        SET_TESTS_PROPERTIES (param_gen_${TEST_SUFFIX} PROPERTIES DEPENDS mesh_${TEST_SUFFIX} TIMEOUT ${MAX_TIME})
 
         ADD_TEST(NAME param_run_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.5 single_fault ${VQ_EXAMPLE_DIR}/greens_input.prm params_run_${RES}.prm)
-        SET_TESTS_PROPERTIES (param_run_${TEST_SUFFIX} PROPERTIES DEPENDS param_gen_${TEST_SUFFIX})
+        SET_TESTS_PROPERTIES (param_run_${TEST_SUFFIX} PROPERTIES DEPENDS param_gen_${TEST_SUFFIX} TIMEOUT ${MAX_TIME})
 
         ADD_TEST(NAME run_gen_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_gen_${RES}.prm)
-        SET_TESTS_PROPERTIES (run_gen_${TEST_SUFFIX} PROPERTIES DEPENDS param_run_${TEST_SUFFIX})
+        SET_TESTS_PROPERTIES (run_gen_${TEST_SUFFIX} PROPERTIES DEPENDS param_run_${TEST_SUFFIX} TIMEOUT ${MAX_TIME})
 
         # If h5py is available, confirm the values in the Greens file sum to the correct value
         IF(PY_H5PY)
             ADD_TEST(NAME check_sum_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
                 COMMAND ${PYTHON_EXECUTABLE} ${GREENS_SCRIPT} greens_3000.h5 6.9056016275796917e-08 -91753588.690448046)
-            SET_TESTS_PROPERTIES (check_sum_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
+            SET_TESTS_PROPERTIES (check_sum_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX} TIMEOUT ${MAX_TIME})
         ENDIF(PY_H5PY)
 
         # Test that the simulation runs with the resulting mesh
         ADD_TEST(NAME run_full_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_run_${RES}.prm)
-        SET_TESTS_PROPERTIES (run_full_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
+        SET_TESTS_PROPERTIES (run_full_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX} TIMEOUT ${MAX_TIME})
 
 	IF(DEFINED SWIG_FOUND)
             # Check that the results are internally self consistent
@@ -237,7 +245,8 @@ IF (HDF5_FOUND)
                 COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
             SET_TESTS_PROPERTIES (check_consistent_${TEST_SUFFIX} PROPERTIES
                 DEPENDS run_full_${TEST_SUFFIX}
-                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+                TIMEOUT ${MAX_TIME})
         ENDIF(DEFINED SWIG_FOUND)
 
         # Check that the mean slip is near our expectations
@@ -249,7 +258,8 @@ IF (HDF5_FOUND)
                     COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
                 SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES
                     DEPENDS run_full_${TEST_SUFFIX}
-                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/"
+                    TIMEOUT ${MAX_TIME})
             ENDIF (NOT ${MEANSLIP} EQUAL 0)
         ENDIF(DEFINED SWIG_FOUND)
     ENDFOREACH(NPROC ${NUM_PROCS})
