@@ -65,7 +65,7 @@ namespace quakelib {
         std::string details;
 #ifdef HDF5_FOUND
         size_t      offset;
-        hid_t       type;
+        int       type;
         size_t      size;
 #endif
     };
@@ -627,8 +627,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "sweeps";
             };
-            static void setup_sweeps_hdf5(const hid_t &data_file);
-            void append_sweeps_hdf5(const hid_t &data_file) const;
+            static void setup_sweeps_hdf5(const int &data_file);
+            void append_sweeps_hdf5(const int &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -891,8 +891,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "events";
             };
-            static void setup_event_hdf5(const hid_t &data_file);
-            void append_event_hdf5(const hid_t &data_file) const;
+            static void setup_event_hdf5(const int &data_file);
+            void append_event_hdf5(const int &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -910,10 +910,10 @@ namespace quakelib {
         private:
             std::vector<ModelEvent>     _events;
 #ifdef HDF5_FOUND
-            void read_events_hdf5(const hid_t &data_file);
-            void read_sweeps_hdf5(const hid_t &data_file);
-            void append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum);
-            void append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum);
+            void read_events_hdf5(const int &data_file);
+            void read_sweeps_hdf5(const int &data_file);
+            void append_events_hdf5(const int &data_file, const double &add_year, const unsigned int &add_evnum);
+            void append_sweeps_hdf5(const int &data_file, const unsigned int &last_evnum);
 #endif
 
         public:
@@ -994,8 +994,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "stresses";
             };
-            static void setup_stress_hdf5(const hid_t &data_file);
-            void append_stress_hdf5(const hid_t &data_file) const;
+            static void setup_stress_hdf5(const int &data_file);
+            void append_stress_hdf5(const int &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -1060,8 +1060,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "stress_state";
             };
-            static void setup_stress_state_hdf5(const hid_t &data_file);
-            void append_stress_state_hdf5(const hid_t &data_file) const;
+            static void setup_stress_state_hdf5(const int &data_file);
+            void append_stress_state_hdf5(const int &data_file) const;
             void read_data(const StressDataTime &in_data);
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
@@ -1117,8 +1117,8 @@ namespace quakelib {
             std::vector<ModelStressState>   _states;
 
 #ifdef HDF5_FOUND
-            void read_state_hdf5(const hid_t &data_file);
-            void read_stress_hdf5(const hid_t &data_file);
+            void read_state_hdf5(const int &data_file);
+            void read_stress_hdf5(const int &data_file);
 #endif
 
         public:
@@ -1161,13 +1161,13 @@ namespace quakelib {
             double _min_lat, _max_lat, _min_lon, _max_lon;
 
 #ifdef HDF5_FOUND
-            void read_section_hdf5(const hid_t &data_file);
-            void read_element_hdf5(const hid_t &data_file);
-            void read_vertex_hdf5(const hid_t &data_file);
+            void read_section_hdf5(const int &data_file);
+            void read_element_hdf5(const int &data_file);
+            void read_vertex_hdf5(const int &data_file);
 
-            void write_section_hdf5(const hid_t &data_file) const;
-            void write_element_hdf5(const hid_t &data_file) const;
-            void write_vertex_hdf5(const hid_t &data_file) const;
+            void write_section_hdf5(const int &data_file) const;
+            void write_element_hdf5(const int &data_file) const;
+            void write_vertex_hdf5(const int &data_file) const;
 #endif
 
         public:

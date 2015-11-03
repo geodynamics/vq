@@ -48,16 +48,16 @@
 class HDF5Checkpoint {
     protected:
         // HDF5 handle to checkpoint data file
-        hid_t               data_file;
+        int               data_file;
 
         // Dataspace of checkpoint state
-        hid_t               state_dataspace, year_event_dataspace;
+        int               state_dataspace, year_event_dataspace;
 
         // Handle to checkpoint state dataset
-        hid_t               state_dataset, year_dataset, event_dataset;
+        int               state_dataset, year_dataset, event_dataset;
 
         // Access control handle
-        hid_t               plist_id;
+        int               plist_id;
 };
 
 class HDF5CheckpointReader : public HDF5Checkpoint {
@@ -81,13 +81,13 @@ class HDF5CheckpointWriter : public HDF5Checkpoint {
 class HDF5GreensData {
     protected:
         // HDF5 handle to data file
-        hid_t               data_file;
+        int               data_file;
 
         // Handles to Greens data in the file
-        hid_t               green_norm_set, green_shear_set;
+        int               green_norm_set, green_shear_set;
 
         // Handles to data space specifications
-        hid_t               green_dataspace;
+        int               green_dataspace;
 
         // Dimension of Greens matrix
         unsigned int        greens_dim;
