@@ -711,9 +711,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         sim->computeCFFs();
-
-        // Create the matrix equation, including interactions, and solve the system for slips
-        processBlocksSecondaryFailures(sim, event_sweeps);
+        
         
         // Schultz:  If we are using a cellular automata rupture model...
         if (sim->doCellularAutomata()) {
