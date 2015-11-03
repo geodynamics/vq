@@ -150,10 +150,10 @@ void RunEvent::processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, q
             local_secondary_id_list.insert(gid);
         }
     }
-    
+
     // Figure out how many failures there were over all processors
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
-    
+
     // Schultz: now that we know how many elements are involved, assign dynamic stress drops
     if (sim->doDynamicStressDrops()) {
         double current_event_area = 0.0;
@@ -191,7 +191,7 @@ void RunEvent::processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, q
             }
         }
     }
-    
+
     // For each block that fails in this sweep, calculate how much it slips
     for (fit=local_secondary_id_list.begin(); fit!=local_secondary_id_list.end(); ++fit) {
         if (sim->isLocalBlockID(*fit)) {
@@ -226,7 +226,7 @@ void RunEvent::processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, q
             sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
         }
     }
-    
+
 }
 
 
@@ -711,8 +711,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         }
 
         sim->computeCFFs();
-        
-        
+
+
         // Schultz:  If we are using a cellular automata rupture model...
         if (sim->doCellularAutomata()) {
             processBlocksSecondaryFailuresCellularAutomata(sim, event_sweeps);

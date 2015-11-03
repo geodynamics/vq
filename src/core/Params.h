@@ -213,7 +213,7 @@ class VCParams {
         bool doDynamicStressDrops(void) const {
             return params.read<bool>("sim.friction.dynamic_stress_drops");
         };
-        
+
         // Schultz: Prescribe a constant coefficient of friction for all blocks
         double getFrictionCoefficient(void) const {
             return params.read<double>("sim.friction.coefficient");
@@ -260,13 +260,13 @@ class VCParams {
         double getGreenNormalOffDiagMin(void) const {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
-        
+
         // Schultz: Cellular automata model means we don't use interactions in secondary rupture model
         //   matrix solutions for slip. AKA: True = Michael's VC type, False: Eric's VQ type
         bool doCellularAutomata(void) const {
             return params.read<bool>("sim.system.cellular_automata_model");
         };
-        
+
 
 };
 

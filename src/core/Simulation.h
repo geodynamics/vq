@@ -150,9 +150,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Calculates the static friction of this block.
-//        void calcFriction(const BlockID gid) {
-//            friction[gid] = (fabs(stress_drop[gid])/rhogd[gid]);
-//        }
+        //        void calcFriction(const BlockID gid) {
+        //            friction[gid] = (fabs(stress_drop[gid])/rhogd[gid]);
+        //        }
 
         //! Get the static friction of this block.
         double getFriction(const BlockID gid) {
@@ -251,11 +251,11 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         double getStressDrop(const BlockID gid) const {
             return stress_drop[gid];
         };
-        
+
         //! Set the stress drop for this block in Pascals.
         void setStressDrop(const BlockID gid, const double new_stress_drop) {
             stress_drop[gid] = new_stress_drop;
-            // Schultz: Going to try prescribing friction coefficients 
+            // Schultz: Going to try prescribing friction coefficients
             //calcFriction(gid);
         };
 
@@ -273,7 +273,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
         void setRhogd(const BlockID gid, const double new_rhogd) {
             rhogd[gid] = new_rhogd;
-            // Schultz: Going to try prescribing friction coefficients 
+            // Schultz: Going to try prescribing friction coefficients
             //calcFriction(gid);
         };
 
@@ -334,7 +334,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         void partitionBlocks(void);
 
         void output_stress(quakelib::UIndex event_num);
-        
+
 #ifdef HDF5_FOUND
         int getStressDataFileHandle(void) const {
             return stress_data_file;

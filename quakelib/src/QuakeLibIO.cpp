@@ -607,8 +607,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
             if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm") {
 
-				double z = (float(ve)+0.5)/num_vert_elems;
-				taper_t *= sqrt(1-z);
+                double z = (float(ve)+0.5)/num_vert_elems;
+                taper_t *= sqrt(1-z);
             }
 
             taper_flow += taper_t *elem_slip_rate*(horiz_elem_size*vert_elem_size);
