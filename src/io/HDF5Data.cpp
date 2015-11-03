@@ -64,7 +64,7 @@ HDF5CheckpointWriter::HDF5CheckpointWriter(const std::string &ckpt_file_name,
     StateCheckpointData             *mem_state;
     unsigned int                    i, num_local;
     hsize_t                         start[2], count[2];
-    hid_t                           file_select, mem_select, xfer_plist_id;
+    int                           file_select, mem_select, xfer_plist_id;
     herr_t                          res;
 
     // Create access properties
@@ -225,7 +225,7 @@ HDF5GreensData::~HDF5GreensData(void) {
  */
 HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, const unsigned int &nblocks) : HDF5GreensData() {
     hsize_t             dimsf[2];
-    hid_t               plist_id;
+    int               plist_id;
 
     greens_dim = nblocks;
 
@@ -268,7 +268,7 @@ HDF5GreensDataWriter::HDF5GreensDataWriter(const std::string &hdf5_file_name, co
 void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_vals, const double *norm_vals) {
     herr_t      status;
     hsize_t     file_start[2], mem_start[2], count[2];
-    hid_t       file_select, mem_select, plist_id;
+    int       file_select, mem_select, plist_id;
 
     // Copy the selector for the entire dataspace
     file_select = H5Scopy(green_dataspace);
@@ -308,7 +308,7 @@ void HDF5GreensDataWriter::setGreensVals(const int &bid, const double *shear_val
 void HDF5GreensDataReader::getGreensVals(const int &bid, double *shear_vals, double *norm_vals) {
     herr_t      status;
     hsize_t     file_start[2], mem_start[2], count[2];
-    hid_t       file_select, mem_select, plist_id;
+    int       file_select, mem_select, plist_id;
 
     // Copy the selector for the entire dataspace
     file_select = H5Scopy(green_dataspace);

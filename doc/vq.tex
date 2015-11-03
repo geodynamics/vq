@@ -1518,6 +1518,11 @@ than require the user to specify these parameters, they are internally
 calculated by VQ to match established physical laws and empirical
 observations.
 
+\subsubsection{Setting the Coefficients of Friction}
+
+To set the coefficients of friction for all faults in the model (currently an fault-wise specification is not available) say to be 0.5, simply add the following line to the simulation parameter file: \texttt{sim.friction.coefficient = 0.5}.
+
+
 \subsection{Simulation Parameter File}
 
 The main simulation input file is the parameter file. This file tells
@@ -1621,7 +1626,7 @@ To implement these bounds for the shear stress Greens functions, in your simulat
 \subsection{Periodically Saving the Simulation State}
 The Virtual Quake simulation can crash mid-simulation for a number of reasons, and while we do not anticipate your simulation to crash, it does happen. To prevent the loss of simulation data, and to avoid the situation of a simulation crashing 50,000 years in, leaving you to start your large simulation from the beginning, we have the ability to output the state of simulation. 
 
-In order to save the simulation state to an HDF5 file, for example, after every 10,000 earthquakes, simply add the following to your simulation parameter file:
+In order to save the simulation state to an HDF5 file, for example (you can also save to text file), after every 10,000 earthquakes, simply add the following to your simulation parameter file:
 
 \begin{verbatim}
 	sim.file.output_stress  	   	      = file_to_save_sim_state.h5
@@ -1644,7 +1649,7 @@ $ python path/to/vq/pyvq/pyvq.py --event_file initial_simulation.h5  --combine_f
 	--plot_mag_rupt_area
 \end{verbatim}
 
-More PyVQ examples can be found in Section \ref{sec:pyvq}, and a detailed list of stress simulation parameters can be found in Section \ref{sec:file_params}.
+More PyVQ examples can be found in Section \ref{sec:pyvq}, and a detailed list of stress simulation parameters (including text file I/O) can be found in Section \ref{sec:file_params}.
 
 
 \section{Single Element Tutorial\label{sec:Tutorial_single}}
@@ -2363,6 +2368,8 @@ are less likely to propagate and result in smaller earthquakes.\tabularnewline
 \texttt{\small{sim.friction.compute\_stress\_drops}} & Boolean. Default is True. If true, compute the stress drops from the fault geometry and scaling relations. If false, must specify stress drops in the model file. See section \ref{sec:stress_drops}.\tabularnewline
 \hline 
 \texttt{\small{sim.friction.stress\_drop\_factor}} & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. Must use this with sim.friction.compute\_stress\_drops. See section \ref{sec:stress_drops}.\tabularnewline
+\hline 
+\texttt{\small{sim.friction.coefficient}} & Default is 0.6, this is the coefficient of friction used to compute CFFs.\tabularnewline
 \hline 
 \end{tabular}
 

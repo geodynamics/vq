@@ -45,11 +45,11 @@ void EventOutput::initDesc(const SimFramework *_sim) const {
  */
 #ifdef HDF5_FOUND
 void EventOutput::open_hdf5_file(const std::string &hdf5_file_name, const double &start_year, const double &end_year) {
-    hid_t   plist_id;
+    int   plist_id;
     herr_t  status;
     double  tmp[2];
-    hid_t   sim_years_set;
-    hid_t   pair_val_dataspace;
+    int   sim_years_set;
+    int   pair_val_dataspace;
     hsize_t dimsf[2];
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -201,18 +201,18 @@ void EventOutput::finish(SimFramework *_sim) {
 
         if (res < 0) exit(-1);
     }
-        
+
     // Schultz: Need to explicitly close the HDF5 stress output file
-//    if (sim->isRootNode()) {
-//        hid_t stress_data_file = sim->getStressDataFileHandle();
-//
-//        herr_t res = H5Fclose(stress_data_file);
-//
-//        if (res < 0) exit(-1);
-//        
-//        sim->console() << "# Closed hdf5 stress out file, hid_t = " << stress_data_file << std::endl;
-//        
-//    }
+    //    if (sim->isRootNode()) {
+    //        int stress_data_file = sim->getStressDataFileHandle();
+    //
+    //        herr_t res = H5Fclose(stress_data_file);
+    //
+    //        if (res < 0) exit(-1);
+    //
+    //        sim->console() << "# Closed hdf5 stress out file, int = " << stress_data_file << std::endl;
+    //
+    //    }
 
 #endif
 

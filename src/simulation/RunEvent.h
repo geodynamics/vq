@@ -38,6 +38,7 @@ class RunEvent : public SimPlugin {
         //
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
+        void processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps);
         virtual void markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(Simulation *sim);
 

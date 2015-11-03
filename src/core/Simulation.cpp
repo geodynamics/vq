@@ -298,7 +298,7 @@ void Simulation::init(void) {
 
 #ifdef HDF5_FOUND
 void Simulation::open_stress_hdf5_file(const std::string &hdf5_file_name) {
-    hid_t   plist_id;
+    int   plist_id;
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
 

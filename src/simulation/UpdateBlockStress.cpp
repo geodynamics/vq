@@ -107,7 +107,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // And update the slip deficit on each process to take this into account
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-        sim->setSlipDeficit(gid, sim->getUpdateField(gid));
+        // If we haven't loaded slip deficits, updateField is NaN so set slip deficit to zero in that case
+        sim->setSlipDeficit(gid, isnan(sim->getUpdateField(gid)) ? 0.0 : sim->getUpdateField(gid));
+        //std::cout << gid << "  slip deficit: " << sim->getSlipDeficit(gid) << std::endl;
+        sim->setFriction(gid, sim->getFrictionCoefficient());
+        //std::cout << "friction: " << sim->getFrictionCoefficient() << std::endl;
     }
 
     // Determine section minimum distance along strike (required since das is defined along
@@ -249,9 +253,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
             sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
         }
 
-        // Initialize element slips to equilibrium position, slip=0
-        // Unless we are reading in a stress input file, then we have already set the slip deficit higher up in this method
-        if (sim->getStressInfile() == "") sim->setSlipDeficit(gid, 0);
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);

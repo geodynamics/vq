@@ -42,7 +42,8 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     params.readSet<unsigned int>("sim.system.progress_period", 0);
 
-    params.readSet<double>("sim.friction.dynamic", INFINITY);
+    // Schultz: Added a default value of 1.0, I don't know why the default was infinity
+    params.readSet<double>("sim.friction.dynamic", 1.0);
 
     params.readSet<double>("sim.greens.kill_distance", 0.0);
     double dist = params.readSet<double>("sim.greens.sample_distance", 1000.0);
@@ -115,12 +116,17 @@ void VCParams::read_params(const std::string &param_file_name) {
     //
     //printf("greens limits: %f, %f, %f, %f, %f, %f, %f, %f", params.read<double>("sim.greens.shear_diag_max"), params.read<double>("sim.greens.shear_diag_min"), params.read<double>("sim.greens.shear_offdiag_max"), params.read<double>("sim.greens.shear_offdiag_min"), params.read<double>("sim.greens.normal_diag_max"), params.read<double>("sim.greens.normal_diag_min"), params.read<double>("sim.greens.normal_offdiag_max"), params.read<double>("sim.greens.normal_offdiag_min"));
     //
+
     // Kasey: parameter to either read in stress drops from file or compute them
     params.readSet<bool>("sim.friction.compute_stress_drops", true);
 
     params.readSet<double>("sim.friction.stress_drop_factor", 0.4);
 
     params.readSet<bool>("sim.friction.dynamic_stress_drops", false);
+
+    params.readSet<double>("sim.friction.coefficient", 0.6);
+
+    params.readSet<bool>("sim.system.cellular_automata_model", 0);
 
 }
 

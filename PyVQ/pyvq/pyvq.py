@@ -107,9 +107,9 @@ class SaveFile:
     def event_plot(self, event_file, plot_type, min_mag, min_year, max_year, combine):
         # Add tags to convey the subsets/cuts being made
         add=""
-        if isinstance(event_file, list): 
-            event_file = event_file[0]
+        if len(event_file) > 1: 
             add += "_MULTI_EVENT_FILE"
+        event_file = event_file[0]
         min_mag = str(min_mag)
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:

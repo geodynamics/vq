@@ -14,6 +14,8 @@ SET(METHOD_INTEREVENT 49.2 0 0)
 INCLUDE(FindPythonModule)
 FIND_PYTHON_MODULE(h5py)
 
+FIND_PACKAGE(SWIG)
+
 # If MPI is available, set up MPI based tests as well
 IF(DEFINED MPI_C_FOUND AND MPI_CXX_FOUND)
     SET(NUM_PROCS 1 2 4)
@@ -63,7 +65,7 @@ FOREACH(NPROC ${NUM_PROCS})
                 --print_statistics=statistics_${RES}.txt
                 )
             ADD_TEST(NAME param_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 0.7 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
+                COMMAND ${SETUP_PARAMS_SCRIPT} ${RES} 1.0 single_fault ${VQ_EXAMPLE_DIR}/example_params.prm params_${RES}.prm)
             SET_TESTS_PROPERTIES (param_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS mesh_P${NPROC}_${TAPER}_${RES})
 
             # Test that the simulation runs with the resulting mesh
@@ -77,11 +79,13 @@ FOREACH(NPROC ${NUM_PROCS})
             SET_TESTS_PROPERTIES (run_P${NPROC}_${TAPER}_${RES} PROPERTIES DEPENDS param_P${NPROC}_${TAPER}_${RES})
 
             # Check that the results are internally self consistent
-            ADD_TEST(NAME test_consistent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
-            SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
-                DEPENDS run_P${NPROC}_${TAPER}_${RES}
-                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            IF(DEFINED SWIG_FOUND)
+                ADD_TEST(NAME test_consistent_P${NPROC}_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
+                SET_TESTS_PROPERTIES (test_consistent_P${NPROC}_${TAPER}_${RES} PROPERTIES
+                    DEPENDS run_P${NPROC}_${TAPER}_${RES}
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            ENDIF(DEFINED SWIG_FOUND)
 
             # Check that the mean slip is near our expectations
             # Schultz: For now removing until we come up with better tests
@@ -151,12 +155,14 @@ FOREACH(TAPER_IND RANGE ${NUM_TAPER})
             COMMAND vq params_${RES}.prm)
         SET_TESTS_PROPERTIES (run_two_${TAPER}_${RES} PROPERTIES DEPENDS param_two_${TAPER}_${RES})
 
-        # Check that the results are internally self consistent
-        ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
-        SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES
-            DEPENDS run_two_${TAPER}_${RES}
-            ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+	IF(DEFINED SWIG_FOUND)
+            # Check that the results are internally self consistent
+            ADD_TEST(NAME test_two_consistent_${TAPER}_${RES} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE_TWO} --sweep_file ${SWEEP_FILE_TWO} --check_consistent)
+            SET_TESTS_PROPERTIES (test_two_consistent_${TAPER}_${RES} PROPERTIES
+                DEPENDS run_two_${TAPER}_${RES}
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+        ENDIF(DEFINED SWIG_FOUND)
 
         # Check that the mean slip is near our expectations
         #    These two faults have same slip rate as single fault, so using
@@ -225,23 +231,27 @@ IF (HDF5_FOUND)
             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROC} ${VQ_BINARY_DIR}/vq params_run_${RES}.prm)
         SET_TESTS_PROPERTIES (run_full_${TEST_SUFFIX} PROPERTIES DEPENDS run_gen_${TEST_SUFFIX})
 
-        # Check that the results are internally self consistent
-        ADD_TEST(NAME check_consistent_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-            COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
-        SET_TESTS_PROPERTIES (check_consistent_${TEST_SUFFIX} PROPERTIES
-            DEPENDS run_full_${TEST_SUFFIX}
-            ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+	IF(DEFINED SWIG_FOUND)
+            # Check that the results are internally self consistent
+            ADD_TEST(NAME check_consistent_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --check_consistent)
+            SET_TESTS_PROPERTIES (check_consistent_${TEST_SUFFIX} PROPERTIES
+                DEPENDS run_full_${TEST_SUFFIX}
+                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+        ENDIF(DEFINED SWIG_FOUND)
 
         # Check that the mean slip is near our expectations
         #    These two faults have same slip rate as single fault, so using
         #       same mean slip values
-        IF (NOT ${MEANSLIP} EQUAL 0)
-            ADD_TEST(NAME check_slip_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
-            SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES
-                DEPENDS run_full_${TEST_SUFFIX}
-                ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
-        ENDIF (NOT ${MEANSLIP} EQUAL 0)
+	IF(DEFINED SWIG_FOUND)
+            IF (NOT ${MEANSLIP} EQUAL 0)
+                ADD_TEST(NAME check_slip_${TEST_SUFFIX} WORKING_DIRECTORY ${TEST_DIR}
+                    COMMAND ${PYTHON_EXECUTABLE} ${CHECK_SCRIPT} --event_file ${EVENT_FILE} --sweep_file ${SWEEP_FILE} --mean_slip ${MEANSLIP})
+                SET_TESTS_PROPERTIES (test_two_slip_${TAPER}_${RES} PROPERTIES
+                    DEPENDS run_full_${TEST_SUFFIX}
+                    ENVIRONMENT "PYTHONPATH=${QUAKELIB_BINARY_DIR}/python/")
+            ENDIF (NOT ${MEANSLIP} EQUAL 0)
+        ENDIF(DEFINED SWIG_FOUND)
     ENDFOREACH(NPROC ${NUM_PROCS})
 ENDIF (HDF5_FOUND)
 
