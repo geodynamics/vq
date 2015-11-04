@@ -59,7 +59,8 @@ except ImportError:
 #MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
-COLOR_CYCLE = ['k','g','b', 'r']
+COLOR_CYCLE = ['k','g','b','r']
+STAT_COLOR_CYCLE = ['b','g','r','k']
 SCATTER_ALPHA = 0.6
 
 #-------------------------------------------------------------------------------
@@ -1844,7 +1845,7 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA)
+            ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA)
         elif plot_type == "line":
             ax.plot(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
         elif plot_type == "hist":
@@ -1922,7 +1923,7 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA)
+        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA, color='k')
         ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
@@ -1940,7 +1941,7 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], alpha=SCATTER_ALPHA)
+        ax.scatter(x_data, y_data, label=filename, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA)
         if line_x is not None and line_y is not None:
             ax.plot(line_x, line_y, label = line_label, ls='-', color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], lw=3)
             #ax.legend(loc = legend_loc)
