@@ -219,11 +219,13 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
         stress.write_ascii(stress_outfile);
         stress_outfile.flush();
     } else if (getStressOutfileType() == "hdf5") {
+#ifdef HDF5_FOUND
         // Write the stress state details
         stress_state.append_stress_state_hdf5(stress_data_file);
 
         // Write the stress details
         stress.append_stress_hdf5(stress_data_file);
+#endif
     }
 
 #endif
@@ -285,7 +287,7 @@ void Simulation::init(void) {
 #ifdef HDF5_FOUND
         open_stress_hdf5_file(getStressOutfile());
 #else
-        sim->errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
+        errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
         exit(-1);
 #endif
     } else if (!(getStressOutfileType() == "")) {
