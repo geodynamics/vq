@@ -287,7 +287,7 @@ void Simulation::init(void) {
 #ifdef HDF5_FOUND
         open_stress_hdf5_file(getStressOutfile());
 #else
-        sim->errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
+        errConsole() << "ERROR: HDF5 library not linked, cannot use HDF5 output files." << std::endl;
         exit(-1);
 #endif
     } else if (!(getStressOutfileType() == "")) {
