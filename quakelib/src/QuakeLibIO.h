@@ -945,8 +945,10 @@ namespace quakelib {
 
             int read_file_ascii(const std::string &event_file_name, const std::string &sweep_file_name);
 
+#ifdef HDF5_FOUND
             int read_file_hdf5(const std::string &file_name);
             int append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum);
+#endif
     };
 
     /*!
