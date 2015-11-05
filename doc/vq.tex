@@ -1518,10 +1518,6 @@ than require the user to specify these parameters, they are internally
 calculated by VQ to match established physical laws and empirical
 observations.
 
-\subsubsection{Setting the Coefficients of Friction}
-
-To set the coefficients of friction for all faults in the model (currently an fault-wise specification is not available) say to be 0.5, simply add the following line to the simulation parameter file: \texttt{sim.friction.coefficient = 0.5}.
-
 
 \subsection{Simulation Parameter File}
 
@@ -2368,8 +2364,6 @@ are less likely to propagate and result in smaller earthquakes.\tabularnewline
 \texttt{\small{sim.friction.compute\_stress\_drops}} & Boolean. Default is True. If true, compute the stress drops from the fault geometry and scaling relations. If false, must specify stress drops in the model file. See section \ref{sec:stress_drops}.\tabularnewline
 \hline 
 \texttt{\small{sim.friction.stress\_drop\_factor}} & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. Must use this with sim.friction.compute\_stress\_drops. See section \ref{sec:stress_drops}.\tabularnewline
-\hline 
-\texttt{\small{sim.friction.coefficient}} & Default is 0.6, this is the coefficient of friction used to compute CFFs.\tabularnewline
 \hline 
 \end{tabular}
 
