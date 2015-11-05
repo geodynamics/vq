@@ -2616,7 +2616,6 @@ if __name__ == "__main__":
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         for i, event_set in enumerate(events):
-            print(args.event_file[i].split("events_")[-1])
             FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], UCERF2=UCERF2, b1=b1)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)

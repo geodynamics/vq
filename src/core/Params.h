@@ -202,8 +202,6 @@ class VCParams {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
 
-        // Kasey: new parameter for loading specified stress drops (False) or
-        // computing them from Green's functions (True)
         bool computeStressDrops(void) const {
             return params.read<bool>("sim.friction.compute_stress_drops");
         };
@@ -215,9 +213,9 @@ class VCParams {
         };
 
         // Schultz: Prescribe a constant coefficient of friction for all blocks
-        double getFrictionCoefficient(void) const {
-            return params.read<double>("sim.friction.coefficient");
-        };
+//        double getFrictionCoefficient(void) const {
+//            return params.read<double>("sim.friction.coefficient");
+//        };
 
         // The constant adjustment to the stress drops, should be between 0.3 and 0.5 globally
         //     with tuning the larger faults may need 0.6 to 0.8. The larger the number, the larger
