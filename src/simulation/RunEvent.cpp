@@ -1031,7 +1031,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     //assertThrow(sim->getCurrentEvent().size() > 0, "There was a trigger but no failed blocks.");
 #else
     //global_event_size=local_event_size;
-    global_event_size = sim->getCurrentEvent().size();
+    int global_event_size = sim->getCurrentEvent().size();
     assertThrow(global_event_size > 0, "There was a trigger but no failed blocks. (" << getpid() << "/" << sim->getNodeRank() << ")");
 
 #endif
