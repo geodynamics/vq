@@ -150,21 +150,21 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Calculates the static friction of this block.
-        //        void calcFriction(const BlockID gid) {
-        //            friction[gid] = (fabs(stress_drop[gid])/rhogd[gid]);
-        //        }
+        void calcFriction(const BlockID gid) {
+            friction[gid] = (fabs(stress_drop[gid])/rhogd[gid]);
+        }
 
         //! Get the static friction of this block.
         double getFriction(const BlockID gid) {
             return friction[gid];
         }
 
-        void setFriction(const BlockID gid, const double coefficient) {
-            // Schultz: Cannot let friction decrease with increasing depth.
-            // Instead lets prescribe a coefficient.
-            // TODO: Add friction file reading so we can specify coeff. per block
-            friction[gid] = coefficient;
-        }
+//        void setFriction(const BlockID gid, const double coefficient) {
+//            // Schultz: Cannot let friction decrease with increasing depth.
+//            // Instead lets prescribe a coefficient.
+//            // TODO: Add friction file reading so we can specify coeff. per block
+//            friction[gid] = coefficient;
+//        }
 
         //! Whether the block experienced static friction failure.
         //! This occurs if the Coulomb failure function goes over 0.
@@ -255,8 +255,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! Set the stress drop for this block in Pascals.
         void setStressDrop(const BlockID gid, const double new_stress_drop) {
             stress_drop[gid] = new_stress_drop;
-            // Schultz: Going to try prescribing friction coefficients
-            //calcFriction(gid);
+            calcFriction(gid);
         };
 
         //! Get the max stress drop for this block in Pascals.
@@ -273,8 +272,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
         void setRhogd(const BlockID gid, const double new_rhogd) {
             rhogd[gid] = new_rhogd;
-            // Schultz: Going to try prescribing friction coefficients
-            //calcFriction(gid);
+            calcFriction(gid);
         };
 
         void setDynamicVal(const BlockID gid, const double new_dynamic_val) {

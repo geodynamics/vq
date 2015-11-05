@@ -110,7 +110,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         // If we haven't loaded slip deficits, updateField is NaN so set slip deficit to zero in that case
         sim->setSlipDeficit(gid, isnan(sim->getUpdateField(gid)) ? 0.0 : sim->getUpdateField(gid));
         //std::cout << gid << "  slip deficit: " << sim->getSlipDeficit(gid) << std::endl;
-        sim->setFriction(gid, sim->getFrictionCoefficient());
+        //sim->setFriction(gid, sim->getFrictionCoefficient());
         //std::cout << "friction: " << sim->getFrictionCoefficient() << std::endl;
     }
 
