@@ -2588,8 +2588,9 @@ if __name__ == "__main__":
     # Print out event summary data if requested
     if args.summary:
         if args.model_file is None: raise "Must specify --model_file for summary."
-        print("\n Event summary for: "+args.event_file)
-        events.largest_event_summary(args.summary, geometry)
+        for i, event in enumerate(events):        
+            print("\n Event summary for: "+ args.event_file[i])
+            event.largest_event_summary(args.summary, geometry)
 
     if args.event_elements:
         if args.event_id is None: raise "Must specify --event_id"
