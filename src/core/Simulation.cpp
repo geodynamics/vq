@@ -219,11 +219,13 @@ void Simulation::output_stress(quakelib::UIndex event_num) {
         stress.write_ascii(stress_outfile);
         stress_outfile.flush();
     } else if (getStressOutfileType() == "hdf5") {
+#ifdef HDF5_FOUND
         // Write the stress state details
         stress_state.append_stress_state_hdf5(stress_data_file);
 
         // Write the stress details
         stress.append_stress_hdf5(stress_data_file);
+#endif
     }
 
 #endif
