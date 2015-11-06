@@ -140,7 +140,7 @@ class SaveFile:
         elif uniform_slip is not None and event_id is None:
             return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m.png"
         else:
-            raise "Must specify either uniform_slip or event_id"
+            raise BaseException("Must specify either uniform_slip or event_id")
             
     def greens_plot(self, name, field_type, slip):
         return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m.png"
@@ -334,11 +334,11 @@ class Geometry:
             elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
                 self.model.read_file_hdf5(model_file)
             else:
-                raise "Must specify --model_file_type, either hdf5 or text"
+                raise BaseException("Must specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
         else:
             if args.use_sections:
-                raise "Model file required if specifying fault sections."
+                raise BaseException("Model file required if specifying fault sections.")
             return None
 
     def get_fault_traces(self):
@@ -461,11 +461,11 @@ class Events:
             self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
         else:
-            raise "event_file_type must be hdf5 or text. If text, a sweep_file is required."
+            raise BaseException("event_file_type must be hdf5 or text. If text, a sweep_file is required.")
             
         if combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and not stress_file.split(".")[-1]=="txt":
             if not os.path.isfile(stress_file) or not os.path.isfile(combine_file):
-                raise "One or more files does not exist!"
+                raise BaseException("One or more files does not exist!")
             # If stress state was saved as hdf5
             with h5py.File(stress_file) as state_data:
                 stress_state = state_data['stress_state'][()]
@@ -476,7 +476,7 @@ class Events:
             sys.stdout.write("## Combined with: "+combine_file+"\n")
         elif combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and stress_index_file is not None:
             if not os.path.isfile(stress_file) or not os.path.isfile(combine_file) or not os.path.isfile(stress_index_file):
-                raise "One or more files does not exist!"
+                raise BaseException("One or more files does not exist!")
             # If stress state was saved as text
             add_year, add_evnum, start_rec, end_rec = np.genfromtxt(stress_index_file)
             self._events.append_from_hdf5(combine_file, add_year, int(add_evnum))
@@ -496,7 +496,7 @@ class Events:
             self._filtered_events = new_filtered_events
             self._plot_str += cur_filter.plot_str()
         if len(self._filtered_events) == 0:
-            raise "No events matching filters found!"
+            raise BaseException("No events matching filters found!")
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
@@ -1094,12 +1094,12 @@ class FieldPlotter:
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
         if event_id is None and event is None and element_slips is None:
-            raise "Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field."
+            raise BaseException("Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field.")
         else:
             self.element_ids = element_slips.keys()
             self.element_slips = element_slips
         if len(self.element_slips) != len(self.element_ids):
-            raise "Must specify slip for all elements."
+            raise BaseException("Must specify slip for all elements.")
         for ele_id in self.element_ids:
             new_ele = geometry.model.create_slipped_element(ele_id)
             new_ele.set_slip(self.element_slips[ele_id])
@@ -1865,12 +1865,12 @@ class BasePlotter:
         fig.suptitle(plot_title, fontsize=10)
         if colors is not None:
             if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
-                raise "These lists must be the same length: x_data, y_data, colors, labels, linewidths."
+                raise BaseException("These lists must be the same length: x_data, y_data, colors, labels, linewidths.")
             for i in range(len(x_data)):
                 ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         else:
             if not (len(x_data) == len(y_data) and len(x_data) == len(labels) and len(linewidths) == len(y_data)):
-                raise "These lists must be the same length: x_data, y_data, labels, linewidths."
+                raise BaseException("These lists must be the same length: x_data, y_data, labels, linewidths.")
             for i in range(len(x_data)):
                 ax.plot(x_data[i], y_data[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         #ax.legend(title=legend_str, loc='best')
@@ -2291,7 +2291,7 @@ class Distributions:
             a = -4.80
             b =  0.69
         else:
-            raise "Must specify rupture area or mean slip"
+            raise BaseException("Must specify rupture area or mean slip")
         x_data = np.linspace(min_mag, max_mag, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         return x_data, y_data
@@ -2305,7 +2305,7 @@ class Distributions:
             a = -3.417
             b =  0.499
         else:
-            raise "Must specify rupture area or mean slip"
+            raise BaseException("Must specify rupture area or mean slip")
         x_data = np.linspace(min_mag, max_mag, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
@@ -2479,27 +2479,27 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------
     # Catch these errors before reading events to save unneeded computation
     if args.uniform_slip:
-        if float(args.uniform_slip) < 0: raise "Slip must be positive"
+        if float(args.uniform_slip) < 0: raise BaseException("Slip must be positive")
     
     if args.field_plot:
         if args.model_file is None:
-            raise "Must specify --model_file for field plots"
+            raise BaseException("Must specify --model_file for field plots")
         elif args.field_type is None:
-            raise "Must specify --field_type for field plots"
+            raise BaseException("Must specify --field_type for field plots")
             
     if args.traces:
         if args.model_file is None:
-            raise "Must specify --model_file for fault trace plots"
+            raise BaseException("Must specify --model_file for fault trace plots")
             
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
-        raise "Must specify both beta and tau."
+        raise BaseException("Must specify both beta and tau.")
         
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
         if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
-            raise "Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid"
+            raise BaseException("Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid")
     # ------------------------------------------------------------------------
 
     # Read the event and sweeps files
@@ -2510,12 +2510,12 @@ if __name__ == "__main__":
         for file in args.event_file:
             # Check that all files exist
             if not os.path.isfile(file):
-                raise "Event file does not exist: "+file
+                raise BaseException("Event file does not exist: "+file)
             else:
                 events.append( Events(file, None) )
     elif len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
         if not os.path.isfile(args.event_file[0]):
-            raise "Event file does not exist: "+args.event_file[0]
+            raise BaseException("Event file does not exist: "+args.event_file[0])
         else:
             events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
@@ -2565,14 +2565,14 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
 
     if args.use_sections:
-        if not args.model_file: raise "Must specify --model_file for --use_sections to work."
+        if not args.model_file: raise BaseException("Must specify --model_file for --use_sections to work.")
         event_filters.append(SectionFilter(geometry, args.use_sections))
         # Also grab all the elements from this section in case this is being used to grab element ids
         if args.elements is None:
             args.elements = [elem_num for elem_num in range(geometry.model.num_elements()) if geometry.model.element(elem_num).section_id() in args.use_sections]
         
     if args.use_trigger_sections:
-        if not args.model_file: raise "Must specify --model_file for --use_trigger_sections to work."
+        if not args.model_file: raise BaseException("Must specify --model_file for --use_trigger_sections to work.")
         event_filters.append(TriggerSectionFilter(geometry, args.use_trigger_sections))
 
     if args.event_file:
@@ -2587,13 +2587,13 @@ if __name__ == "__main__":
         
     # Print out event summary data if requested
     if args.summary:
-        if args.model_file is None: raise "Must specify --model_file for summary."
+        if args.model_file is None: raise BaseException("Must specify --model_file for summary.")
         for i, event in enumerate(events):        
             print("\n Event summary for: "+ args.event_file[i])
             event.largest_event_summary(args.summary, geometry)
 
     if args.event_elements:
-        if args.event_id is None: raise "Must specify --event_id"
+        if args.event_id is None: raise BaseException("Must specify --event_id")
         print("\nEvent {}\n".format(args.event_id))
         print([each for each in events._events[args.event_id].getInvolvedElements()])
 
@@ -2697,7 +2697,7 @@ if __name__ == "__main__":
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
         if args.angles: 
             if len(args.angles) != 2:
-                raise "Must specify 2 angles"
+                raise BaseException("Must specify 2 angles")
             else:
                 angles = np.array(args.angles)*np.pi/180.0
         else: angles = None
@@ -2716,7 +2716,7 @@ if __name__ == "__main__":
             event = events._events[args.event_id]
         
         if len(ele_slips.keys()) == 0:
-            raise "Error in processing slips."
+            raise BaseException("Error in processing slips.")
         else:
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
@@ -2730,7 +2730,7 @@ if __name__ == "__main__":
         ele_slips = events.get_event_element_slips(args.event_id)
         event = events._events[args.event_id]
         if len(ele_slips.keys()) == 0:
-            raise "Error in processing slips."
+            raise BaseException("Error in processing slips.")
         else:
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
@@ -2769,7 +2769,7 @@ if __name__ == "__main__":
             
     if args.slip_time_series:
         # TODO: Add multi-event file compatibility to compare between different sims
-        if args.elements is None: raise "Must specify element ids, e.g. --elements 0 1 2"
+        if args.elements is None: raise BaseException("Must specify element ids, e.g. --elements 0 1 2")
         if args.min_year is None: args.min_year = 0.0
         if args.max_year is None: args.max_year = 20.0
         if args.dt is None: args.dt = 0.5  # Unit is decimal years
@@ -2798,7 +2798,7 @@ if __name__ == "__main__":
 
     if args.event_kml:
         if args.event_id is None or args.event_file is None or args.model_file is None:
-            raise "Must specify an event to plot with --event_id and provide an --event_file and a --model_file."
+            raise BaseException("Must specify an event to plot with --event_id and provide an --event_file and a --model_file.")
         else:
             event = events._events[args.event_id]
             filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
@@ -2846,10 +2846,12 @@ if __name__ == "__main__":
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_movie:
-        if args.event_file is None or args.event_id is None:
-            raise "Must specify event file and event id."
-        sim_sweeps = Sweeps(args.event_file, event_number=args.event_id)
-        save_file = SaveFile().event_movie(args.event_file, args.event_id)
+        if args.event_file is None or args.event_id is None or args.model_file is None:
+            raise BaseException("Must specify event file, event id, and model file.")
+        # If multiple event files are given, only use the first
+        event_file = args.event_file[0]
+        sim_sweeps = Sweeps(event_file, event_number=args.event_id)
+        save_file = SaveFile().event_movie(event_file, args.event_id)
         sim_sweeps.event_movie(geometry, save_file)
 
     # Validate data if requested
