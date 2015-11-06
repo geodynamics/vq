@@ -652,7 +652,7 @@ class Sweeps:
         if isinstance(block_ids, int): block_ids = [block_ids]
         return block_ids
         
-    def event_movie(self, geometry, savefile, FPS=3, DPI=100):
+    def event_movie(self, geometry, events, savefile, FPS=3, DPI=100):
         # Currently only works for perfectly rectangular faults
         # Currently only plotting the elements on the triggering section
         triggerID = int(self.sweep_data[ np.where(self.sweep_data['sweep_number']==0) ]['block_id'][0])
@@ -2850,9 +2850,10 @@ if __name__ == "__main__":
             raise BaseException("Must specify event file, event id, and model file.")
         # If multiple event files are given, only use the first
         event_file = args.event_file[0]
+        events = events[0]
         sim_sweeps = Sweeps(event_file, event_number=args.event_id)
         save_file = SaveFile().event_movie(event_file, args.event_id)
-        sim_sweeps.event_movie(geometry, save_file)
+        sim_sweeps.event_movie(geometry, events, save_file)
 
     # Validate data if requested
     err = False
