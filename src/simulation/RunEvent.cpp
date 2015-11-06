@@ -124,112 +124,6 @@ void solve_it(int n, double *x, double *A, double *b) {
     }
 }
 
-void RunEvent::processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps) {
-    // Schultz: In the interest of returning the rupture model to Michael Sach's VC version, I am implementing
-    //   here a cellular automata version of the secondary failure model. No matrix solutions here, just
-    //   using stress drop and CFF to assign slip.
-    // TODO: Someone should step thru the primary/secondary failure steps to insure that the slip economics make
-    //   sense. E.g. that all blocks involved in the event have their stresses changed the same way.
-    int             lid;
-    BlockID         gid;
-    double          stress_drop, slip;
-    quakelib::ElementIDSet          local_secondary_id_list;  // lists of local/global secondary failures.
-    BlockIDProcMapping              global_secondary_id_list;
-    //
-    quakelib::ElementIDSet::iterator      fit;
-    BlockIDProcMapping::const_iterator  jt;
-
-    //
-    for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
-        gid = sim->getGlobalBID(lid);
-
-        // If the block has already failed (but not in this sweep) then adjust the slip
-        // do we have the correct list of global failed elements?
-        if (sim->getFailed(gid) && global_failed_elements.count(gid) == 0) {
-            //local_id_list.insert(gid);
-            local_secondary_id_list.insert(gid);
-        }
-    }
-
-    // Figure out how many failures there were over all processors
-    sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
-
-    // Schultz: now that we know how many elements are involved, assign dynamic stress drops
-    if (sim->doDynamicStressDrops()) {
-        double current_event_area = 0.0;
-        double dynamicStressDrop;
-        quakelib::ElementIDSet current_blocks;
-        quakelib::ElementIDSet::const_iterator cit;
-        BlockIDProcMapping::const_iterator  bit;
-
-        // Compute the current event area
-        // Add in global_failed_elements
-        for (bit=global_failed_elements.begin(); bit!=global_failed_elements.end(); ++bit) {
-            // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
-                current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
-            }
-        }
-
-        // Also add in the area from the secondary failed elements
-        for (bit=global_secondary_id_list.begin(); bit!=global_secondary_id_list.end(); ++bit) {
-            // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
-                current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
-            }
-        }
-
-        for (cit=current_blocks.begin(); cit!=current_blocks.end(); ++cit) {
-            if (current_event_area < sim->getSectionArea(sim->getBlock(*cit).getSectionID())) {
-                // If the current area is smaller than the section area, scale the stress drop
-                dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                sim->setStressDrop(*cit, dynamicStressDrop);
-            } else {
-                sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
-            }
-        }
-    }
-
-    // For each block that fails in this sweep, calculate how much it slips
-    for (fit=local_secondary_id_list.begin(); fit!=local_secondary_id_list.end(); ++fit) {
-        if (sim->isLocalBlockID(*fit)) {
-            BlockID gid = *fit;
-            Block &b = sim->getBlock(*fit);
-
-            ///// Schultz:
-            // Even if we're doing dynamic stress drops, they've already been adjusted before this method
-            // has been called.
-            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-
-            // Slip is in m
-            slip = (stress_drop/sim->getSelfStresses(gid));
-
-            ////// Schultz:
-            // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
-            // So if stress_drop > 0, the element shouldn't be slipping. We must allow it to happen if it does.
-            // Perhaps the system needs this due to element loading thru interactions.
-            //if (slip < 0) slip = 0;
-
-            // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(sweep_num,
-                                  b.getBlockID(),
-                                  slip,
-                                  b.area(),
-                                  b.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   b.getBlockID(),
-                                   sim->getShearStress(gid),
-                                   sim->getNormalStress(gid));
-
-            sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
-        }
-    }
-
-}
-
-
 void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     // yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
     // logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
@@ -712,15 +606,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sim->computeCFFs();
 
-
-        // Schultz:  If we are using a cellular automata rupture model...
-        if (sim->doCellularAutomata()) {
-            processBlocksSecondaryFailuresCellularAutomata(sim, event_sweeps);
-        } else {
-            // Create the matrix equation, including interactions, and solve the system for slips
-            processBlocksSecondaryFailures(sim, event_sweeps);
-        }
-
+        // Create the matrix equation, including interactions, and solve the system for slips
+        processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
         for (it=sim->begin(); it!=sim->end(); ++it) {
