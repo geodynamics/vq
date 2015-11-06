@@ -126,7 +126,7 @@ void VCParams::read_params(const std::string &param_file_name) {
 
     //params.readSet<double>("sim.friction.coefficient", 0.6);
 
-    params.readSet<bool>("sim.system.cellular_automata_model", 0);
+    //params.readSet<bool>("sim.system.cellular_automata_model", 0);
 
 }
 

@@ -224,16 +224,12 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // stress transfer (greens functions) between each local element and all global elements.
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
         for (n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++n,++jt) {
-            // Schultz: If param file specifies cellular automata model, set off diagonals to zero
-            if (sim->doCellularAutomata() && *it != jt->first) {
-                A[i*num_global_failed+n] = 0.0;
-            } else {
-                A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
+            
+            A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
 
-                if (sim->doNormalStress()) {
-                    A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
-                }
-            }
+            if (sim->doNormalStress()) {
+                A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
+            }            
         }
 
         ///// Schultz:
@@ -438,20 +434,19 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // slip-then-slip-back scenarios and conforming to Sachs' VC model.
         // If we aren't doing CA model, record no matter the slip
         // If we are doing CA model, Only record positive slips.
-        if ( !(sim->doCellularAutomata()) || (slip > 0 && sim->doCellularAutomata())) {
-            // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(sweep_num,
-                                  *it,
-                                  slip,
-                                  block.area(),
-                                  block.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   *it,
-                                   sim->getShearStress(*it),
-                                   sim->getNormalStress(*it));
-            //
-            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
-        }
+        //if ( !(sim->doCellularAutomata()) || (slip > 0 && sim->doCellularAutomata())) {
+        // Record how much the block slipped in this sweep and initial stresses
+        sweeps.setSlipAndArea(sweep_num,
+                              *it,
+                              slip,
+                              block.area(),
+                              block.lame_mu());
+        sweeps.setInitStresses(sweep_num,
+                               *it,
+                               sim->getShearStress(*it),
+                               sim->getNormalStress(*it));
+        //
+        sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
     }
 
     //
