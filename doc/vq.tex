@@ -2291,16 +2291,30 @@ For any field plot you must specify ``--model\_file'' and ``--model\_file\_type'
 \hline 
 \texttt{\small{--angles}} & The observing angles for displacements and InSAR, the field is projected along this direction. Must specify azimuth and elevation angles in degrees. E.g. ``--angles 20.5 66.2''. \tabularnewline
 \hline 
-\texttt{\small{--traces}} & Plot the fault traces on a simple map.\tabularnewline
-\hline
 \texttt{\small{--field\_eval}} & Evaluate an event field at given lat/lon points. Must specify --field\_type, --lld\_file. Results are saved to file\tabularnewline
 \hline
 \texttt{\small{--lld\_file}} & Text file containing lat/lon pairs in columns. Used for field evaluations.\tabularnewline
 \hline
-\texttt{\small{--event\_kml}} & Create and save a Google Earth (KML) file that includes elements that slip during the specified event, colored by the amount of event slip. Must also specify --event\_id.\tabularnewline
-\hline
 \end{tabular}
 
+
+\subsection{\noindent Geometry/Model Plotting Parameters}
+For any geometry plot you must specify ``--model\_file''. \\
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--event\_kml}} & Create and save a Google Earth (KML) file that includes elements that slip during the specified event, colored by the amount of event slip. Must also specify --event\_id.\tabularnewline
+\hline
+\texttt{\small{--block\_area\_hist}} & Create and save a histogram of fault element areas. To present numbers relative to a reference value, must specify --reference .\tabularnewline
+\hline
+\texttt{\small{--block\_length\_hist}} & Create and save a histogram of fault element lengths (square root of area). To present numbers relative to a reference value, must specify --reference .\tabularnewline
+\hline
+\texttt{\small{--reference}} & A reference number or unit value for \texttt{\small{--block\_length\_hist}} or \texttt{\small{--block\_area\_hist}} plots.\tabularnewline
+\hline
+\texttt{\small{--traces}} & Plot the fault traces on a simple map.\tabularnewline
+\hline
+\end{tabular}
 
 %-------------------------------- End tutorials, begin appendices
 \part{Appendices}
