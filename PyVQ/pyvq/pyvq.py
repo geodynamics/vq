@@ -157,6 +157,12 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "block_areas_"+model_file.split(".")[0]+".png"
         
+    def block_length_plot(self, model_file):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
+        return "block_lengths_"+model_file.split(".")[0]+".png"
+        
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Add tags to convey the subsets/cuts being made
         add=""
@@ -704,7 +710,6 @@ class Sweeps:
         divider = make_axes_locatable(ax)
         cbar_ax = divider.append_axes("right", size="5%",pad=0.1)
         cb = mcolorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm)
-        #cbar_ax.set_xlabel("Cumulative Slip [m]",labelpad=-.5)
 
         with writer.saving(fig, savefile, DPI):
             # Create the first frame of zero slip
@@ -2473,6 +2478,10 @@ if __name__ == "__main__":
             help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
     parser.add_argument('--block_area_hist', required=False, action='store_true',
             help="Save a histogram of element areas.")
+    parser.add_argument('--block_length_hist', required=False, action='store_true',
+            help="Save a histogram of element lengths [sqrt(area)].")
+    parser.add_argument('--reference', required=False, type=float,
+            help="Reference value for numbers relative to some value.")
             
     # Event movies
     parser.add_argument('--event_movie', required=False, action='store_true',
@@ -2818,13 +2827,35 @@ if __name__ == "__main__":
         if args.model_file is None:
             raise BaseException("Must specify a fault model with --model_file.")
         else:
+            units = "km^2"
             fig = plt.figure()
             model_file = args.model_file
             areas = [geometry.model.create_sim_element(elem_num).area()/1e6 for elem_num in range(geometry.model.num_elements())]
+            if args.reference: 
+                areas = [area/args.reference for area in areas]
+                units = "{:.5f}".format(args.reference)+units
             filename = SaveFile().block_area_plot(model_file)
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
-            BasePlotter().create_plot(fig, 0, "hist", False, areas, None, model_file, "element area [km^2]", "", filename)
+            BasePlotter().create_plot(fig, 0, "hist", False, areas, None, model_file, "element area ["+units+"]", "", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))
+            
+    if args.block_length_hist:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            units = "km"
+            fig = plt.figure()
+            model_file = args.model_file
+            lengths = [np.sqrt(geometry.model.create_sim_element(elem_num).area()/1e6) for elem_num in range(geometry.model.num_elements())]
+            if args.reference: 
+                lengths = [length/args.reference for length in lengths]
+                units = "{:.5f}".format(args.reference)+units
+            filename = SaveFile().block_length_plot(model_file)
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "element length ["+units+"]", "", filename)
             plt.savefig(filename,dpi=100)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
