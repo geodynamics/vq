@@ -512,6 +512,15 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         //sim->barrier(); // yoder: (debug)
         //
+        
+        
+        ///////////////////////////////////////////////////////////////////
+        // TEMPORARY OUTPUT, only works on 1 proc
+//        for (unsigned int gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+//            sim->console() << sweep_num << "  " << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getCFF(gid) << "  " << sim->getStressDrop(gid) << std::endl;
+//        }
+        ///////////////////////////////////////////////////////////////////
+
 
         // Schultz: now that we know how many elements are involved, assign dynamic stress drops
         if (sim->doDynamicStressDrops()) {
@@ -704,6 +713,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear();  // we are done with these blocks
+
         //
         // Find any blocks that fail because of the new stresses (all local; no MPI).
         markBlocks2Fail(sim, trigger_fault);
