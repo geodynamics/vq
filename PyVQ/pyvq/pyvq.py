@@ -59,9 +59,9 @@ except ImportError:
 #MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
 
-COLOR_CYCLE = ['k','g','b','r']
-STAT_COLOR_CYCLE = ['b','g','r','k']
-SCATTER_ALPHA = 0.5
+STAT_COLOR_CYCLE = ['k','g','b','cyan','purple']
+SCATTER_ALPHA = 0.3
+SCATTER_SIZE = 10
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -1852,19 +1852,20 @@ class BasePlotter:
         #fig = plt.figure()
         ax = plt.gca()
         ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        ax.set_ylabel(y_lab)
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA)
+            ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         elif plot_type == "line":
-            ax.plot(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
+            ax.plot(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)])
         elif plot_type == "hist":
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
             else: BINS=100
-            ax.hist(x_data, bins=BINS, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], histtype='stepfilled')
+            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled')
+            plt.xlim(2.2,4.0)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -1936,11 +1937,11 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA, color='k')
-        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
+        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE)
+        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r', color='r')
         if add_x is not None:
-            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
-            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
+            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r')
+            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
@@ -1954,9 +1955,9 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA)
+        ax.scatter(x_data, y_data, label=filename, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], lw=3)
+            ax.plot(line_x, line_y, label = line_label, ls='-', color = 'r', lw=3)
             #ax.legend(loc = legend_loc)
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
@@ -1972,7 +1973,7 @@ class BasePlotter:
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y: ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename)
+        ax.scatter(x_data, y_data, label=filename, s=SCATTER_SIZE)
         for i in range(len(lines_x)):
             ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
