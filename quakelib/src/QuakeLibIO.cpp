@@ -3313,8 +3313,9 @@ int quakelib::ModelEventSet::read_file_ascii(const std::string &event_file_name,
 }
 
 
-#ifdef HDF5_FOUND
+
 int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
+#ifdef HDF5_FOUND
     int       plist_id, data_file;
     herr_t      res;
 
@@ -3339,11 +3340,16 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
-    
+
+#else
+    // TODO: Error out
+#endif
     return 0;
+
 }
 
 void quakelib::ModelEventSet::read_events_hdf5(const int &data_file) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                        descs;
     std::map<UIndex, ModelEvent>::const_iterator  fit;
     hsize_t                     num_fields, num_events;
@@ -3387,9 +3393,15 @@ void quakelib::ModelEventSet::read_events_hdf5(const int &data_file) {
     delete [] event_data;
     delete [] field_offsets;
     delete [] field_sizes;
+    
+#else
+    // TODO: Error out
+#endif
+
 }
 
 void quakelib::ModelEventSet::read_sweeps_hdf5(const int &data_file) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                          descs;
     ModelEventSet::iterator                   fit;
     hsize_t                     num_fields, num_sweeps;
@@ -3438,9 +3450,14 @@ void quakelib::ModelEventSet::read_sweeps_hdf5(const int &data_file) {
     // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
     delete [] field_offsets;
     delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
+
 }
 
 int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
     int       plist_id, data_file;
     herr_t      res;
 
@@ -3470,11 +3487,14 @@ int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, cons
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
-
+#else
+    // TODO: Error out
+#endif
     return 0;
 }
 
 void quakelib::ModelEventSet::append_events_hdf5(const int &data_file, const double &add_year, const unsigned int &add_evnum) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                        descs;
     std::map<UIndex, ModelEvent>::const_iterator  fit;
     hsize_t                     num_fields, num_events;
@@ -3525,9 +3545,13 @@ void quakelib::ModelEventSet::append_events_hdf5(const int &data_file, const dou
     delete [] event_data;
     delete [] field_offsets;
     delete [] field_sizes;
+#else
+    // TODO: Error out
+#endif
 }
 
 void quakelib::ModelEventSet::append_sweeps_hdf5(const int &data_file, const unsigned int &last_evnum) {
+#ifdef HDF5_FOUND
     std::vector<FieldDesc>                    descs;
     ModelEventSet::iterator                   fit;
     hsize_t                     num_fields, num_sweeps;
@@ -3579,8 +3603,11 @@ void quakelib::ModelEventSet::append_sweeps_hdf5(const int &data_file, const uns
     // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
     delete [] field_offsets;
     delete [] field_sizes;
-}
+    
+#else
+    // TODO: Error out
 #endif
+}
 
 
 // ********************************************************************************************

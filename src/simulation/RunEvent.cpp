@@ -224,16 +224,12 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // stress transfer (greens functions) between each local element and all global elements.
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
         for (n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++n,++jt) {
-            // Schultz: If param file specifies cellular automata model, set off diagonals to zero
-            if (sim->doCellularAutomata() && *it != jt->first) {
-                A[i*num_global_failed+n] = 0.0;
-            } else {
-                A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
+            
+            A[i*num_global_failed+n] = sim->getGreenShear(*it, jt->first);
 
-                if (sim->doNormalStress()) {
-                    A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
-                }
-            }
+            if (sim->doNormalStress()) {
+                A[i*num_global_failed+n] -= sim->getFriction(*it)*sim->getGreenNormal(*it, jt->first);
+            }            
         }
 
         ///// Schultz:
@@ -438,20 +434,19 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // slip-then-slip-back scenarios and conforming to Sachs' VC model.
         // If we aren't doing CA model, record no matter the slip
         // If we are doing CA model, Only record positive slips.
-        if ( !(sim->doCellularAutomata()) || (slip > 0 && sim->doCellularAutomata())) {
-            // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(sweep_num,
-                                  *it,
-                                  slip,
-                                  block.area(),
-                                  block.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   *it,
-                                   sim->getShearStress(*it),
-                                   sim->getNormalStress(*it));
-            //
-            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
-        }
+        //if ( !(sim->doCellularAutomata()) || (slip > 0 && sim->doCellularAutomata())) {
+        // Record how much the block slipped in this sweep and initial stresses
+        sweeps.setSlipAndArea(sweep_num,
+                              *it,
+                              slip,
+                              block.area(),
+                              block.lame_mu());
+        sweeps.setInitStresses(sweep_num,
+                               *it,
+                               sim->getShearStress(*it),
+                               sim->getNormalStress(*it));
+        //
+        sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
     }
 
     //
@@ -517,6 +512,15 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
         //sim->barrier(); // yoder: (debug)
         //
+        
+        
+        ///////////////////////////////////////////////////////////////////
+        // TEMPORARY OUTPUT, only works on 1 proc
+//        for (unsigned int gid=0; gid<sim->numGlobalBlocks(); ++gid) {
+//            sim->console() << sweep_num << "  " << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getCFF(gid) << "  " << sim->getStressDrop(gid) << std::endl;
+//        }
+        ///////////////////////////////////////////////////////////////////
+
 
         // Schultz: now that we know how many elements are involved, assign dynamic stress drops
         if (sim->doDynamicStressDrops()) {
@@ -709,6 +713,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear();  // we are done with these blocks
+
         //
         // Find any blocks that fail because of the new stresses (all local; no MPI).
         markBlocks2Fail(sim, trigger_fault);

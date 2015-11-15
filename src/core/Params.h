@@ -261,9 +261,9 @@ class VCParams {
 
         // Schultz: Cellular automata model means we don't use interactions in secondary rupture model
         //   matrix solutions for slip. AKA: True = Michael's VC type, False: Eric's VQ type
-        bool doCellularAutomata(void) const {
-            return params.read<bool>("sim.system.cellular_automata_model");
-        };
+//        bool doCellularAutomata(void) const {
+//            return params.read<bool>("sim.system.cellular_automata_model");
+//        };
 
 
 };

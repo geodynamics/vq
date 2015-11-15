@@ -17,6 +17,10 @@ matplotlib_available = True
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolor
+    import matplotlib.animation as manimation
+    import matplotlib.colorbar as mcolorbar
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     matplotlib_available = False
 numpy_available = True
@@ -154,6 +158,89 @@ class Sweeps:
         return block_ids
 
 
+
+def event_stress_movie(model, event_output_text_file, savefile, plotting, FPS=3, DPI=100):
+
+    event_data = np.genfromtxt(event_output_text_file, dtype=[('sweep_num','int'),('block_id','int'), ('shear_stress','f8'), ('normal_stress','f8'), ('cff','f8'), ('stress_drop','f8')])
+    split_data = np.split(event_data, np.unique(event_data['sweep_num']).shape[0])
+
+    # Currently only works for perfectly rectangular faults
+    # Currently only plotting the elements on the triggering section
+    triggerID = split_data[0][np.where(split_data[0]['sweep_num']==0)][0]['block_id']
+    num_sweeps = len(split_data)
+    print("Read "+str(num_sweeps)+" sweeps.")
+    
+    sectionID = model.element(triggerID).section_id()
+    ele_length = np.sqrt(model.create_sim_element(triggerID).area())
+    triggerSecElements = [id for id in range(model.num_elements()) if model.element(id).section_id() == sectionID]
+    sec_name = model.section(sectionID).name()
+    min_id    = triggerSecElements[0]
+      
+    max_val = max(event_data[plotting]/np.abs(np.mean(event_data['stress_drop'])))
+    min_val = min(event_data[plotting]/np.abs(np.mean(event_data['stress_drop'])))
+    shear_bound = max(np.abs(max_val), np.abs(min_val))
+            
+    section_length = model.section_length(sectionID)
+    section_depth = abs(model.section_max_depth(sectionID))
+    num_elements_down = int(round(section_depth/ele_length))
+    num_elements_across = int(round(section_length/ele_length))
+    assert(len(triggerSecElements) == num_elements_across*num_elements_down)
+    element_grid = np.zeros((num_elements_down,num_elements_across))
+    fig = plt.figure()
+    ax = plt.gca()
+    if min_val > 0:
+        cmap = plt.get_cmap('Reds')
+        norm = mcolor.Normalize(vmin=0, vmax=shear_bound)
+    else: 
+        cmap = plt.get_cmap('seismic')
+        norm = mcolor.Normalize(vmin=-shear_bound, vmax=shear_bound)
+    
+    # Initialize movie writing stuff
+    FFMpegWriter = manimation.writers['ffmpeg']
+    metadata = dict(title='VQ event', artist='Matplotlib',comment='Testing.')
+    writer = FFMpegWriter(fps=FPS, metadata=metadata)
+    
+    plt.xlabel("along strike")
+    plt.ylabel("down dip")
+    plt.title("Virtual Quake Event",fontsize=11)
+    plt.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    plt.tick_params(axis='y', which='both', left='off', right='off', labelleft='off')
+    plt.figtext(0.97, 0.6, '{} [units are mean stress drop]'.format(plotting), rotation='vertical')
+    
+    # Colorbar
+    divider = make_axes_locatable(ax)
+    cbar_ax = divider.append_axes("right", size="5%",pad=0.1)
+    cb = mcolorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm)
+
+    with writer.saving(fig, savefile, DPI):
+        # Create the first frame of zero slip
+        this_plot = ax.imshow(element_grid, cmap=cmap,origin='upper',interpolation='none',norm=norm)
+        writer.grab_frame()
+        for sweep_num in range(num_sweeps):
+            if sweep_num == 0: sys.stdout.write("Generating frames...")
+            if num_sweeps>10: 
+                if sweep_num%int(num_sweeps/10.0)==0: sys.stdout.write("...{:.1f}%".format(100*sweep_num/float(num_sweeps-1)))
+            sys.stdout.flush()
+            # Using here the fact that VQ element numbering goes from top (near surface) to bottom,
+            #   then makes a step down the strike (length) once you reach the bottom.
+            this_sweep = event_data[ np.where(event_data['sweep_num']==sweep_num) ]
+            for row in this_sweep:
+                ele_id = int(row['block_id'])
+                # Only plotting the elements on the triggering fault
+                if model.element(ele_id).section_id() == sectionID:
+                    grid_row = int((ele_id-min_id)%num_elements_down)
+                    grid_col = int((ele_id-min_id)/num_elements_down)
+                    element_grid[grid_row,grid_col] = row[plotting]/np.abs(row['stress_drop'])
+                else:
+                    sys.stdout.write("\nElement {} involved but not on triggering fault.".format(ele_id))
+            # Update the colors
+            this_plot.set_data(element_grid)
+            # Time stamp
+            plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
+            writer.grab_frame()
+    sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
+
+
 # ============================ TEMP. RUNNER ===================
 # Example usage below
 """
@@ -171,4 +258,24 @@ plt.savefig(savename,dpi=100)
 sim_sweeps.plot_stress_changes()
 savename = "../../../../VQScripts/event_{}_shear_changes{}.png".format(sim_sweeps.event_number,SIM_FILE.split("/")[-1].split(".")[0].split("events")[-1])
 plt.savefig(savename,dpi=100)
+
+
+# ---- plot CFF, stresses, from simulation internal data ---------
+# ---- To use this, one must hack VQ to output the following during every sweep for every element
+# ----  sweep_num  element_num  shear_stress  normal_stress  CFF   stress_drop
+
+model_file = "/Users/kasey/Desktop/RUNNING/single_small_fault_fault_6012.5m.txt"
+plotting = 'cff'  # 'cff' or 'shear_stress' or 'normal_stress'
+event_output_text_file = "/Users/kasey/Desktop/RUNNING/single_eq_out.txt"
+savefile = "/Users/kasey/VQScripts/test_stress_movie_"+plotting+".mp4"
+model = quakelib.ModelWorld()
+model.read_file_ascii(model_file)
+
+event_stress_movie(model, event_output_text_file, savefile, plotting, FPS=1, DPI=100)
 """
+
+
+
+
+
+

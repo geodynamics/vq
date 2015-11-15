@@ -61,7 +61,7 @@ except ImportError:
 
 COLOR_CYCLE = ['k','g','b','r']
 STAT_COLOR_CYCLE = ['b','g','r','k']
-SCATTER_ALPHA = 0.6
+SCATTER_ALPHA = 0.5
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -150,6 +150,18 @@ class SaveFile:
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
+
+    def block_area_plot(self, model_file):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
+        return "block_areas_"+model_file.split(".")[0]+".png"
+        
+    def block_length_plot(self, model_file):
+        # Remove any folders in front of model_file name
+        if len(model_file.split("/")) > 1:
+            model_file = model_file.split("/")[-1]
+        return "block_lengths_"+model_file.split(".")[0]+".png"
         
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Add tags to convey the subsets/cuts being made
@@ -1849,9 +1861,10 @@ class BasePlotter:
         elif plot_type == "line":
             ax.plot(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
         elif plot_type == "hist":
-            if len(x_data) > 200: BINS=1000
+            if len(x_data) > 200: BINS=100
+            elif len(x_data) < 60: BINS=20
             else: BINS=100
-            ax.hist(x_data, bins=BINS, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
+            ax.hist(x_data, bins=BINS, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], histtype='stepfilled')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2463,6 +2476,12 @@ if __name__ == "__main__":
     parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
     parser.add_argument('--event_kml', required=False, action='store_true',
             help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
+    parser.add_argument('--block_area_hist', required=False, action='store_true',
+            help="Save a histogram of element areas.")
+    parser.add_argument('--block_length_hist', required=False, action='store_true',
+            help="Save a histogram of element lengths [sqrt(area)].")
+    parser.add_argument('--reference', required=False, type=float,
+            help="Reference value for numbers relative to some value.")
             
     # Event movies
     parser.add_argument('--event_movie', required=False, action='store_true',
@@ -2513,7 +2532,7 @@ if __name__ == "__main__":
                 raise BaseException("Event file does not exist: "+file)
             else:
                 events.append( Events(file, None) )
-    elif len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
+    elif args.event_file and len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
         if not os.path.isfile(args.event_file[0]):
             raise BaseException("Event file does not exist: "+args.event_file[0])
         else:
@@ -2551,7 +2570,7 @@ if __name__ == "__main__":
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     # Detectability threshold, min slip 1cm
-    if args.min_slip is None: 
+    if args.event_file and args.min_slip is None: 
         args.min_slip = 0.01
         sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< \n")
 
@@ -2583,7 +2602,7 @@ if __name__ == "__main__":
             events.set_filters(event_filters)
             
     # Make sure that events is a list
-    assert(isinstance(events, list))
+    if args.event_file: assert(isinstance(events, list))
         
     # Print out event summary data if requested
     if args.summary:
@@ -2803,6 +2822,42 @@ if __name__ == "__main__":
             event = events._events[args.event_id]
             filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
             geometry.model.write_event_kml(filename, event)
+            
+    if args.block_area_hist:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            units = "km^2"
+            fig = plt.figure()
+            model_file = args.model_file
+            areas = [geometry.model.create_sim_element(elem_num).area()/1e6 for elem_num in range(geometry.model.num_elements())]
+            if args.reference: 
+                areas = [area/args.reference for area in areas]
+                units = "{:.5f}".format(args.reference)+units
+            filename = SaveFile().block_area_plot(model_file)
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "hist", False, areas, None, model_file, "element area ["+units+"]", "", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))
+            
+    if args.block_length_hist:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            units = "km"
+            fig = plt.figure()
+            model_file = args.model_file
+            lengths = [np.sqrt(geometry.model.create_sim_element(elem_num).area()/1e6) for elem_num in range(geometry.model.num_elements())]
+            if args.reference: 
+                lengths = [length/args.reference for length in lengths]
+                units = "{:.5f}".format(args.reference)+units
+            filename = SaveFile().block_length_plot(model_file)
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "element length ["+units+"]", "", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))
 
     # Generate stress plots
     if args.stress_elements:
