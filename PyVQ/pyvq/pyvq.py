@@ -1852,7 +1852,7 @@ class BasePlotter:
         #fig = plt.figure()
         ax = plt.gca()
         ax.set_xlabel(x_label)
-        ax.set_ylabel(y_lab)
+        ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
