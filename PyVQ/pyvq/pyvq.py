@@ -59,7 +59,7 @@ except ImportError:
 #MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_FIT_MAG  = 5.0     # lower end o08 f magnitude for fitting freq_mag plot with b=1 curve
 
-STAT_COLOR_CYCLE = ['cyan','b','k','purple','g']
+STAT_COLOR_CYCLE = ['k','cyan','b','purple','g']
 SCATTER_ALPHA = 0.5
 SCATTER_SIZE = 10
 
@@ -2646,7 +2646,7 @@ if __name__ == "__main__":
         if args.plot_freq_mag == 3: UCERF2,b1 = True, False
         if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         for i, event_set in enumerate(events):
-            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], UCERF2=UCERF2, b1=b1)
+            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=UCERF2, b1=b1)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2655,7 +2655,7 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
-            MagnitudeRuptureAreaPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], WC94=args.wc94, leonard=args.leonard)
+            MagnitudeRuptureAreaPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], WC94=args.wc94, leonard=args.leonard)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2664,7 +2664,7 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
-            MagnitudeMeanSlipPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1], WC94=args.wc94, leonard=args.leonard)
+            MagnitudeMeanSlipPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], WC94=args.wc94, leonard=args.leonard)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
