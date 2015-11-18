@@ -211,6 +211,16 @@ def event_stress_movie(model, event_output_text_file, savefile, plotting, FPS=3,
     divider = make_axes_locatable(ax)
     cbar_ax = divider.append_axes("right", size="5%",pad=0.1)
     cb = mcolorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm)
+    
+    # Draw the arrow in the rake direction
+    mean_rake = 0
+    for id in triggerSecElements: mean_rake += model.element(id).rake()/len(triggerSecElements) 
+    arrow_tail = np.array([0.13, 0.1])
+    arrow_length = 0.08
+    arrow_head = np.array([arrow_length*np.cos(mean_rake), arrow_length*np.sin(mean_rake)])
+    arrow_head += arrow_tail  #vector addition
+    plt.annotate("", xy=arrow_head, xytext=arrow_tail, arrowprops=dict(arrowstyle="->", lw=2), xycoords="figure fraction")
+    plt.figtext(0.03, 0.05, 'Rake Direction\n\n\n', bbox={'facecolor':'cyan', 'pad':8, 'alpha':0.3})
 
     with writer.saving(fig, savefile, DPI):
         # Create the first frame of zero slip
@@ -236,7 +246,7 @@ def event_stress_movie(model, event_output_text_file, savefile, plotting, FPS=3,
             # Update the colors
             this_plot.set_data(element_grid)
             # Time stamp
-            plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
+            plt.figtext(0.03, 0.9, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':8})
             writer.grab_frame()
     sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
 
@@ -264,10 +274,10 @@ plt.savefig(savename,dpi=100)
 # ---- To use this, one must hack VQ to output the following during every sweep for every element
 # ----  sweep_num  element_num  shear_stress  normal_stress  CFF   stress_drop
 
-model_file = "/Users/kasey/Desktop/RUNNING/single_small_fault_fault_6012.5m.txt"
+model_file = "/Users/kasey/Desktop/RUNNING/single_small_fault_3000m.txt"
 plotting = 'cff'  # 'cff' or 'shear_stress' or 'normal_stress'
-event_output_text_file = "/Users/kasey/Desktop/RUNNING/single_eq_out.txt"
-savefile = "/Users/kasey/VQScripts/test_stress_movie_"+plotting+".mp4"
+event_output_text_file = "/Users/kasey/Desktop/RUNNING/small_8x4_fault_eq_output.txt"
+savefile = "/Users/kasey/VQScripts/small_8x4_"+plotting+"_movie.mp4"
 model = quakelib.ModelWorld()
 model.read_file_ascii(model_file)
 
