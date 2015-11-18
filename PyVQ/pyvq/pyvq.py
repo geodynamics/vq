@@ -57,11 +57,11 @@ except ImportError:
 #LAT_LON_DIFF_FACTOR = 1.333 
 #MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-#MIN_FIT_MAG  = 5.0     # lower end of magnitude for fitting freq_mag plot with b=1 curve
+#MIN_FIT_MAG  = 5.0     # lower end o08 f magnitude for fitting freq_mag plot with b=1 curve
 
-COLOR_CYCLE = ['k','g','b','r']
-STAT_COLOR_CYCLE = ['b','g','r','k']
+STAT_COLOR_CYCLE = ['cyan','b','k','purple','g']
 SCATTER_ALPHA = 0.5
+SCATTER_SIZE = 10
 
 #-------------------------------------------------------------------------------
 # Given a set of maxes and mins return a linear value betweem them.
@@ -671,7 +671,7 @@ class Sweeps:
         num_sweeps = max([sweep_num for sweep_num in self.sweep_data['sweep_number'] ])+1
         sectionID = geometry.model.element(triggerID).section_id()
         ele_length = np.sqrt(geometry.model.create_sim_element(triggerID).area())
-        triggerSecElements = [id for id in range(geometry.model.num_elements()) if geometry.model.element(id).section_id() == sectionID]
+        triggerSecElements = [id for id in range(geometry.model.num_elements()) if geometry.model.element(id).section_id() == sectionID]       
         sec_name = geometry.model.section(sectionID).name()
         min_id    = triggerSecElements[0]
         magnitude = events._events[self.event_number].getMagnitude()
@@ -706,6 +706,16 @@ class Sweeps:
         plt.tick_params(axis='y', which='both', left='off', right='off', labelleft='off')
         plt.figtext(0.96, 0.6, r'cumulative slip $[m]$', rotation='vertical')
         
+        # Draw the arrow in the rake direction
+        mean_rake = 0
+        for id in triggerSecElements: mean_rake += geometry.model.element(id).rake()/len(triggerSecElements) 
+        arrow_tail = np.array([0.13, 0.1])
+        arrow_length = 0.08
+        arrow_head = np.array([arrow_length*np.cos(mean_rake), arrow_length*np.sin(mean_rake)])
+        arrow_head += arrow_tail  #vector addition
+        plt.annotate("", xy=arrow_head, xytext=arrow_tail, arrowprops=dict(arrowstyle="->", lw=2), xycoords="figure fraction")
+        plt.figtext(0.03, 0.05, 'Rake Direction\n\n\n', bbox={'facecolor':'cyan', 'pad':8, 'alpha':0.3})
+        
         # Colorbar
         divider = make_axes_locatable(ax)
         cbar_ax = divider.append_axes("right", size="5%",pad=0.1)
@@ -735,7 +745,7 @@ class Sweeps:
                 # Update the colors
                 this_plot.set_data(element_grid)
                 # Time stamp
-                plt.figtext(0.1, 0.33, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':5})
+                plt.figtext(0.03, 0.9, 'Sweep: {:03d}'.format(sweep_num), bbox={'facecolor':'yellow', 'pad':8})
                 writer.grab_frame()
         sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
 
@@ -1857,14 +1867,15 @@ class BasePlotter:
         if log_y:
             ax.set_yscale('log')
         if plot_type == "scatter":
-            ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA)
+            ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         elif plot_type == "line":
-            ax.plot(x_data, y_data, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)])
+            ax.plot(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)])
         elif plot_type == "hist":
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
             else: BINS=100
-            ax.hist(x_data, bins=BINS, color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], histtype='stepfilled')
+            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled')
+            plt.xlim(2.2,4.0)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -1936,11 +1947,11 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA, color='k')
-        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r')
+        ax.scatter(x_data, y_data, label=filename, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE)
+        ax.errorbar(err_x, err_y, yerr = y_error, label=err_label, ecolor='r', color='r')
         if add_x is not None:
-            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'k')
-            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'k')
+            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r')
+            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r')
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
@@ -1954,9 +1965,9 @@ class BasePlotter:
         ax.set_title(plot_title)
         if log_y:
             ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA)
+        ax.scatter(x_data, y_data, label=filename, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', color = COLOR_CYCLE[color_index%len(COLOR_CYCLE)], lw=3)
+            ax.plot(line_x, line_y, label = line_label, ls='-', color = 'r', lw=3)
             #ax.legend(loc = legend_loc)
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
@@ -1972,7 +1983,7 @@ class BasePlotter:
         ax.set_ylabel(y_label)
         ax.set_title(plot_title)
         if log_y: ax.set_yscale('log')
-        ax.scatter(x_data, y_data, label=filename)
+        ax.scatter(x_data, y_data, label=filename, s=SCATTER_SIZE)
         for i in range(len(lines_x)):
             ax.plot(lines_x[i], lines_y[i], label = line_labels[i], ls=line_styles[i], lw=line_widths[i], c = colors[i])
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
