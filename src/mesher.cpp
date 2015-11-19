@@ -307,17 +307,10 @@ int main (int argc, char **argv) {
         }
     }
 
-    // Check that there are the same number of element sizes as input trace files
-    if (num_trace_files != trace_element_sizes.size()) {
+    // Check that there are the same number of element sizes as input trace files, unless specifying taper and input from eqsim not trace
+    if ((num_trace_files != trace_element_sizes.size()) && eqsim_geom_in_file.empty()) {
         std::cerr << "ERROR: Incorrect number of element sizes (" << trace_element_sizes.size()
-                  << ") to input trace files (" << num_trace_files << ")." << std::endl;
-        arg_error = true;
-    }
-
-    // Check that there are the same number of taper methods as input trace files
-    if (num_trace_files != taper_fault_methods.size()) {
-        std::cerr << "ERROR: Incorrect number of taper methods (" << taper_fault_methods.size()
-                  << ") to input trace files (" << num_trace_files << ")." << std::endl;
+                  << ") to input trace files (" << num_trace_files << ").  EQSIM_FILE empty? " << eqsim_geom_in_file.empty() << std::endl;
         arg_error = true;
     }
 
@@ -419,7 +412,7 @@ int main (int argc, char **argv) {
         if (types[1][n] == "text") res = world.write_file_ascii(files[1][n]);
         else if (types[1][n] == "hdf5") res = world.write_file_hdf5(files[1][n]);
         else if (types[1][n] == "kml") res = world.write_file_kml(files[1][n]);
-        else if (types[1][n] == "trace") res = world.write_file_trace_latlon(files[1][n], 12000);
+        else if (types[1][n] == "trace") res = world.write_file_trace_latlon(files[1][n]);
 
         if (res) std::cout << "error." << std::endl;
         else std::cout << "done." << std::endl;
