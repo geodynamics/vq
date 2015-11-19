@@ -384,10 +384,9 @@ namespace quakelib {
             LatLonDepth(void) : _lat(std::numeric_limits<double>::quiet_NaN()), _lon(std::numeric_limits<double>::quiet_NaN()), _altitude(std::numeric_limits<double>::quiet_NaN()) {};
             //! Constructor with specified latitude and longitude. Altitude defaults to 0 unless specified.
             LatLonDepth(const double &lat, const double &lon, const double &altitude=0) throw(std::invalid_argument) : _lat(lat), _lon(lon), _altitude(altitude) {
-                /*if (fabs(lat)>90) throw std::invalid_argument("LatLonDepth::lat must be in [-90,90].");
+                if (fabs(lat)>90) throw std::invalid_argument("LatLonDepth::lat must be in [-90,90].");
 
                 if (fabs(lon)>180) throw std::invalid_argument("LatLonDepth::lon must be in [-180,180].");
-                 */
             }
 
             //! Get the latitude in degrees of this point.
