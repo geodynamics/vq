@@ -153,8 +153,11 @@ void print_usage(int argc, char **argv) {
     std::cerr << "-d, --delete_unused" << std::endl;
     std::cerr << "\tDelete unused vertices after importing files." << std::endl;
     std::cerr << "-r, --resize_trace_elements" << std::endl;
+    std::cerr << "\tTurns off resizing of elements generated on traces." << std::endl;
+    /*//Wilson: changed default behavior to resize elements.
     std::cerr << "\tResize elements generated on traces to better match fault length." << std::endl;
     std::cerr << "\tThis will only decrease and at most halve the element size." << std::endl;
+	*/
 
     std::cerr << std::endl;
     std::cerr << "FILE IMPORT" << std::endl;
@@ -201,7 +204,8 @@ int main (int argc, char **argv) {
     int                         ch, res;
     unsigned int                i, n, j, num_trace_files;
 
-    arg_error = delete_unused = merge_duplicate_vertices = resize_trace_elements = false;
+    arg_error = delete_unused = merge_duplicate_vertices = false;
+    resize_trace_elements = true;
     eqsim_geom_in_file = eqsim_fric_in_file = eqsim_cond_in_file = "";
     eqsim_geom_out_file = eqsim_fric_out_file = eqsim_cond_out_file = "";
 
@@ -216,7 +220,7 @@ int main (int argc, char **argv) {
                 break;
 
             case 'r':
-                resize_trace_elements = true;
+                resize_trace_elements = false;
                 break;
 
             case 's':
