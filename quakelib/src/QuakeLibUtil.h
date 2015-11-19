@@ -384,9 +384,10 @@ namespace quakelib {
             LatLonDepth(void) : _lat(std::numeric_limits<double>::quiet_NaN()), _lon(std::numeric_limits<double>::quiet_NaN()), _altitude(std::numeric_limits<double>::quiet_NaN()) {};
             //! Constructor with specified latitude and longitude. Altitude defaults to 0 unless specified.
             LatLonDepth(const double &lat, const double &lon, const double &altitude=0) throw(std::invalid_argument) : _lat(lat), _lon(lon), _altitude(altitude) {
-                if (fabs(lat)>90) throw std::invalid_argument("LatLonDepth::lat must be in [-90,90].");
+                /*if (fabs(lat)>90) throw std::invalid_argument("LatLonDepth::lat must be in [-90,90].");
 
                 if (fabs(lon)>180) throw std::invalid_argument("LatLonDepth::lon must be in [-180,180].");
+                 */
             }
 
             //! Get the latitude in degrees of this point.
@@ -467,6 +468,9 @@ namespace quakelib {
 
             //! Convert the specified point to a Cartesian coordinate using the base as (0,0,0).
             Vec<3> convert2xyz(const LatLonDepth &in_pt) const;
+
+            //! Used for reading in km-space trace files.
+			Vec<3> yxz2xyz(const LatLonDepth &in_pt) const;
 
             //! Convert the specified Cartesian coordinate to latitude/longitude using the base as (0,0,0).
             LatLonDepth convert2LatLon(const Vec<3> &in_pt) const;

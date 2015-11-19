@@ -479,7 +479,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
-        Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+    	Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+        //Vec<3> pt = conv.yxz2xyz(trace.at(i).pos()); //Use for importing trace in (y, x) halfspace coords
         spline.add_point(pt);
         unused_trace_pts.insert(i);
     }
