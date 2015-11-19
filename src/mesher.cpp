@@ -408,7 +408,7 @@ int main (int argc, char **argv) {
         if (types[1][n] == "text") res = world.write_file_ascii(files[1][n]);
         else if (types[1][n] == "hdf5") res = world.write_file_hdf5(files[1][n]);
         else if (types[1][n] == "kml") res = world.write_file_kml(files[1][n]);
-        else if (types[1][n] == "trace") res = world.write_file_trace_latlon(files[1][n], 12000);
+        else if (types[1][n] == "trace") res = world.write_file_trace_latlon(files[1][n]);
 
         if (res) std::cout << "error." << std::endl;
         else std::cout << "done." << std::endl;
