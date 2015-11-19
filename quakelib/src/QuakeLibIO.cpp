@@ -908,13 +908,13 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
 // TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
 // Also assumes elements will be in order along the trace
 // TODO: add element comments to output
-int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, const float &depth_along_dip) {
+int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name) {
     std::ofstream       out_file;
     eiterator           eit, last_element;
     siterator           sit;
     UIndex              sid;
     unsigned int        i;
-    double              max_alt;
+    double              max_alt, min_alt, depth_along_dip, fault_depth;
     bool                element_on_trace;
     Conversion          c;
 
@@ -929,10 +929,18 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, 
 
         // Start by going through all elements
         max_alt = -DBL_MAX;
+        min_alt = DBL_MAX;
 
         for (eit=begin_element(sid); eit!=end_element(sid); ++eit) {
-            for (i=0; i<3; ++i) max_alt = fmax(max_alt, vertex(eit->vertex(i)).xyz()[2]);
+            for (i=0; i<3; ++i) {
+                max_alt = fmax(max_alt, vertex(eit->vertex(i)).xyz()[2]);
+                min_alt = fmin(min_alt, vertex(eit->vertex(i)).xyz()[2]);
+            }
         }
+        
+        // Schultz: Here I am assuming a constant depth for the fault.
+        // This should be improved later.
+        fault_depth = fabs(max_alt-min_alt);
 
         // Go through the elements again and grab those which have vertices at the correct depth
         // TODO: interpolate between elements
@@ -946,6 +954,13 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name, 
                 a = vertex(eit->vertex(1)).xyz() - vertex(eit->vertex(0)).xyz();
                 b = vertex(eit->vertex(2)).xyz() - vertex(eit->vertex(0)).xyz();
                 dip_angle = a.cross(b).unit_vector().vector_angle(Vec<3>(0,0,1));
+                
+                // Using the dip angle, compute the depth along dip
+                if (dip_angle <= M_PI/2.0) {
+                    depth_along_dip = fault_depth/sin(dip_angle);
+                } else {
+                    depth_along_dip = fault_depth/sin(M_PI - dip_angle);
+                }
 
                 FaultTracePoint trace_pt(vertex(eit->vertex(0)).lld(),
                                          depth_along_dip,
