@@ -468,6 +468,9 @@ namespace quakelib {
             //! Convert the specified point to a Cartesian coordinate using the base as (0,0,0).
             Vec<3> convert2xyz(const LatLonDepth &in_pt) const;
 
+            //! Used for reading in km-space trace files.
+			Vec<3> yxz2xyz(const LatLonDepth &in_pt) const;
+
             //! Convert the specified Cartesian coordinate to latitude/longitude using the base as (0,0,0).
             LatLonDepth convert2LatLon(const Vec<3> &in_pt) const;
 

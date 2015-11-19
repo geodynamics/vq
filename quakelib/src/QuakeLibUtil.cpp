@@ -186,6 +186,16 @@ quakelib::Vec<3> quakelib::Conversion::convert2xyz(const LatLonDepth &in_pt) con
 }
 #endif
 
+quakelib::Vec<3> quakelib::Conversion::yxz2xyz(const LatLonDepth &in_pt) const {
+    double  new_vals[3];
+
+    new_vals[0] = in_pt.lon();
+	new_vals[1] = in_pt.lat();
+	new_vals[2] = in_pt.altitude();
+
+    return Vec<3>(new_vals);
+}
+
 quakelib::VectorList quakelib::Conversion::convertArray2xyz(const FloatList &lats, const FloatList &lons) const {
     quakelib::VectorList conversions;
 

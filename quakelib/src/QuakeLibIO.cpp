@@ -423,6 +423,7 @@ class TraceSpline {
             // an element greater than our target size
             double cur_dist = t * _spline_len;
 
+            /*// Wilson: Correcting indexing for horizontal size
             while (ind+1 < _pts.size() && start_pt.dist(_pts.at(ind+1)) < elem_size) {
                 ind++;
 
@@ -430,7 +431,15 @@ class TraceSpline {
                 else cur_dist += elem_size;
 
                 inner_t = 0;
-            }
+            }*/
+            while (ind < _pts.size()-1 && start_pt.dist(_pts.at(ind+1)) < elem_size) {
+
+            	if (ind < _point_dists.size()-1) cur_dist += (1-inner_t) * _point_dists.at(ind);
+				else cur_dist = (t * _spline_len) + elem_size;
+
+            	ind++;
+				inner_t = 0;
+			}
 
             // If we're past the end of the trace, return our best guess
             // for t based on the size of the last segment
@@ -479,7 +488,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
-        Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+    	Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+        //Vec<3> pt = conv.yxz2xyz(trace.at(i).pos()); //Use for importing trace in (y, x) halfspace coords
         spline.add_point(pt);
         unused_trace_pts.insert(i);
     }
@@ -501,7 +511,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         while (cur_t < 1) {
             next_t = spline.advance_element(cur_t, cur_elem_size_guess);
 
-            if (next_t < 1) {
+            //Wilson: changed this condition to <= to get last column of elements for perfect fit traces
+            if (next_t <= 1) {
                 sum_t += next_t-cur_t;
                 elem_count++;
                 cur_t = next_t;
