@@ -489,7 +489,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
     	Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
-        //Vec<3> pt = conv.yxz2xyz(trace.at(i).pos()); //Use for importing trace in (y, x) halfspace coords
+        //Vec<3> pt = conv.yxz2xyz(trace.at(i).pos()); //Use for importing trace in (y, x) halfspace coords.  Must turn off LatLonDepth error throwning for angles out of bounds in QuakeLibUtil.h.
         spline.add_point(pt);
         unused_trace_pts.insert(i);
     }
@@ -574,8 +574,11 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         elem_depth = inner_t *trace.at(next_elem_ind).depth_along_dip()+(1.0-inner_t)*trace.at(cur_elem_ind).depth_along_dip();
 
         // Change vertical element size to exactly match the required depth
-        num_vert_elems = round(elem_depth/element_size);
-        vert_elem_size = elem_depth / num_vert_elems;
+        /*num_vert_elems = round(elem_depth/element_size);
+        vert_elem_size = elem_depth / num_vert_elems;*/
+        //Wilson: Ensure square elements, vertical number for best fit.
+        num_vert_elems = round(elem_depth/horiz_elem_size);
+        vert_elem_size = horiz_elem_size;
 
         // TODO: change this to an assertion throw
         if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
