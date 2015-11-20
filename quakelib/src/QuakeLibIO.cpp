@@ -919,8 +919,7 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
 // TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
 // Also assumes elements will be in order along the trace
 // TODO: add element comments to output
-int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name) {
-    std::ofstream       out_file;
+int quakelib::ModelWorld::write_file_trace_latlon(void) {
     eiterator           eit, last_element;
     siterator           sit;
     UIndex              sid;
@@ -928,8 +927,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name) 
     double              max_alt, min_alt, depth_along_dip, fault_depth;
     bool                element_on_trace;
     Conversion          c;
-
-    out_file.open(file_name.c_str());
+    std::string         sec_file_name;
 
     // Write traces by section
     for (sit=begin_section(); sit!=end_section(); ++sit) {
@@ -937,6 +935,10 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name) 
 
         trace_pts.clear();
         sid = sit->id();
+
+        std::ofstream out_file;
+        sec_file_name = "trace_"+sit->name()+".txt";
+        out_file.open(sec_file_name);
 
         // Start by going through all elements
         max_alt = -DBL_MAX;
@@ -1023,9 +1025,11 @@ int quakelib::ModelWorld::write_file_trace_latlon(const std::string &file_name) 
 
         // And each of the trace points
         for (i=0; i<trace_pts.size(); ++i) trace_pts[i].write_ascii(out_file);
+        
+        // Close the file
+        out_file.close();
+        std::cout << "Wrote trace file: " << sec_file_name << std::endl;
     }
-
-    out_file.close();
 
     return 0;
 }
