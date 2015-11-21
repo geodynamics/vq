@@ -1271,7 +1271,7 @@ namespace quakelib {
             int write_file_kml(const std::string &file_name);
             int write_event_kml(const std::string &file_name, const ModelEvent &event);
 
-            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
+            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name, const std::string &taper_method);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
 
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
