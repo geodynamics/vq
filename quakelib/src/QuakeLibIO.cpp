@@ -1706,6 +1706,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
     double                          taper_t;
     double                          taper_flow = 0;
     double                          taper_full = 0;
+    std::map<double, ElementIDSet>  elements_at_each_das;
+    ElementIDSet::const_iterator    id_it;
 
     // Clear the world first to avoid incorrectly mixing indices
     clear();
@@ -1768,7 +1770,14 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             eqsim_world.insert(new_element);
 
             // Compute area of the current element, add it to the total for this section
-            fault_areas[sit->second.sid()] += eqsim_world.create_sim_element(new_element.id()).area();
+            quakelib::SimElement this_element = eqsim_world.create_sim_element(new_element.id());
+            fault_areas[sit->second.sid()] += this_element.area();
+            
+            // If we want to taper, keep a record of the elements at each distance along strike.
+            // Convention: I will be using the minimum das
+            if (taper_method == "taper" || taper_method == "taper_renorm") {
+                elements_at_each_das[this_element.min_das()].insert(new_element.id());
+            }
         }
 
         // Go through the created elements and assign maximum slip based on fault section area.
@@ -1792,17 +1801,14 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
                 // Loop over all other elements to compute the max depth for other elements above and below the current element.
                 // (alternatively stated, those elements with the same distance along strike)
                 double max_depth_at_das = -DBL_MAX;
-                double this_max_das = eqsim_world.create_sim_element(eit->id()).max_das();
-                for (eeit=eqsim_world.begin_element(); eeit!=eqsim_world.end_element(); ++eeit) {
-                    double another_max_das = eqsim_world.create_sim_element(eeit->id()).max_das();
-                    if (this_max_das == another_max_das) {
-                        max_depth_at_das = fmax(max_depth_at_das, fabs(eqsim_world.create_sim_element(eeit->id()).max_depth()));
-                    }
+                quakelib::SimElement this_element = eqsim_world.create_sim_element(eit->id());
+                for (id_it=elements_at_each_das[this_element.min_das()].begin(); id_it!=elements_at_each_das[this_element.min_das()].end(); ++id_it) {
+                    quakelib::SimElement that_element = eqsim_world.create_sim_element(*id_it);
+                    max_depth_at_das = fmax(max_depth_at_das, fabs(that_element.max_depth()));
                 }
                 
                 // The slip rate will be reduced by an amount corresponding to its depth_along_dip relative to the maximum
                 //   at this position along strike.
-                SimElement this_element = eqsim_world.create_sim_element(eit->id());
                 double adjusted_dip = (this_element.dip() <= M_PI/2 ) ? this_element.dip() : M_PI - this_element.dip();
                 double this_depth = fabs(this_element.max_depth()-this_element.min_depth());
                 double this_depth_down_dip = this_depth/sin(adjusted_dip);
