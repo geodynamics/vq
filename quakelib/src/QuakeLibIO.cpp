@@ -941,7 +941,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
 
         std::ofstream out_file;
         sec_file_name = "trace_"+sit->name()+".txt";
-        out_file.open(sec_file_name);
+        out_file.open(sec_file_name.c_str());
 
         // Start by going through all elements
         max_alt = -DBL_MAX;
@@ -1706,7 +1706,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
     double                          taper_t;
     double                          taper_flow = 0;
     double                          taper_full = 0;
-    std::map<double, ElementIDSet>  elements_at_each_das;
+    // Schultz: The structure below is a map from each fault_id to another map, which is (at this fault)
+    //    a map from the distinct values of DAS (distance along strike) to a set of element IDs.
+    //    Use this to access the elements above and below any particular element.
+    std::map<UIndex, std::map<double, ElementIDSet> >  faults_with_elements_at_each_das;
     ElementIDSet::const_iterator    id_it;
 
     // Clear the world first to avoid incorrectly mixing indices
@@ -1776,7 +1779,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             // If we want to taper, keep a record of the elements at each distance along strike.
             // Convention: I will be using the minimum das
             if (taper_method == "taper" || taper_method == "taper_renorm") {
-                elements_at_each_das[this_element.min_das()].insert(new_element.id());
+                UIndex this_fault = eqsim_world.section(new_element.section_id()).fault_id();
+                faults_with_elements_at_each_das[this_fault][this_element.min_das()].insert(new_element.id());
             }
         }
 
@@ -1802,7 +1806,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
                 // (alternatively stated, those elements with the same distance along strike)
                 double max_depth_at_das = -DBL_MAX;
                 quakelib::SimElement this_element = eqsim_world.create_sim_element(eit->id());
-                for (id_it=elements_at_each_das[this_element.min_das()].begin(); id_it!=elements_at_each_das[this_element.min_das()].end(); ++id_it) {
+                UIndex this_fault = eqsim_world.section(eit->section_id()).fault_id();
+                for (id_it=faults_with_elements_at_each_das[this_fault][this_element.min_das()].begin(); id_it!=faults_with_elements_at_each_das[this_fault][this_element.min_das()].end(); ++id_it) {
                     quakelib::SimElement that_element = eqsim_world.create_sim_element(*id_it);
                     max_depth_at_das = fmax(max_depth_at_das, fabs(that_element.max_depth()));
                 }
