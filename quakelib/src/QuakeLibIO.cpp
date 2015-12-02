@@ -1701,6 +1701,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
     quakelib::EQSimGeomSectionMap::const_iterator   sit;
     quakelib::EQSimGeomRectangleMap::const_iterator it;
     quakelib::eiterator             eit, eeit;
+    quakelib::siterator             sec_it;
     quakelib::LatLonDepth           base;
     std::map<UIndex, double>        fault_areas;
     double                          taper_t;
@@ -1783,70 +1784,80 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
                 faults_with_elements_at_each_das[this_fault][this_element.min_das()].insert(new_element.id());
             }
         }
+    }
 
-        // Go through the created elements and assign maximum slip based on fault section area.
-        for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
-            // From Table 2A in Wells Coppersmith 1994
-            //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+    // Go through the created elements and assign maximum slip based on fault section area.
+    for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
+        // From Table 2A in Wells Coppersmith 1994
+        //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
-            // Schultz: Updating these to a newer paper. From Leonard 2010
-            double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
+        // Schultz: Updating these to a newer paper. From Leonard 2010
+        double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
-            // Need to document where this scaling law comes from
-            double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
+        // Need to document where this scaling law comes from
+        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+10.7))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
 
-            // Set the max slip for the current element
-            eit->set_max_slip(max_slip);
-            
-            taper_t = 1;
-            // ---------- Taper the slip rates ------------------
-            if (taper_method == "taper" || taper_method == "taper_renorm") {
-            
-                // Loop over all other elements to compute the max depth for other elements above and below the current element.
-                // (alternatively stated, those elements with the same distance along strike)
-                double max_depth_at_das = -DBL_MAX;
-                quakelib::SimElement this_element = eqsim_world.create_sim_element(eit->id());
-                UIndex this_fault = eqsim_world.section(eit->section_id()).fault_id();
-                for (id_it=faults_with_elements_at_each_das[this_fault][this_element.min_das()].begin(); id_it!=faults_with_elements_at_each_das[this_fault][this_element.min_das()].end(); ++id_it) {
-                    quakelib::SimElement that_element = eqsim_world.create_sim_element(*id_it);
-                    max_depth_at_das = fmax(max_depth_at_das, fabs(that_element.max_depth()));
-                }
-                
-                // The slip rate will be reduced by an amount corresponding to its depth_along_dip relative to the maximum
-                //   at this position along strike.
-                double adjusted_dip = (this_element.dip() <= M_PI/2 ) ? this_element.dip() : M_PI - this_element.dip();
-                double this_depth = fabs(this_element.max_depth()-this_element.min_depth());
-                double this_depth_down_dip = this_depth/sin(adjusted_dip);
-                double max_depth_down_dip_at_das = max_depth_at_das/sin(adjusted_dip);
-                
-                double z = this_depth_down_dip/max_depth_down_dip_at_das;
-                taper_t *= sqrt(1-z);
-                
-                //Wilson: Removing horizontal dependance in tapering.
-                /*
-                if (taper_method == "taper_full" || taper_method == "taper_renorm") {
-                    double x = mid_t;
-                    double z = (float(ve)+0.5)/num_vert_elems;
-                    taper_t *= 4*(x-x*x)*sqrt(1-z);
-                } else if (taper_method == "taper") {
-                    double inside_dist = (0.5 - fabs(0.5-mid_t));
-
-                    if (inside_dist <= elem_depth) {
-                        double x = inside_dist/elem_depth;
-                        double z = (float(ve)+0.5)/num_vert_elems;
-                        taper_t *= sqrt(x)*sqrt(1-z);
-                    }
-                }*/
-                
+        // Set the max slip for the current element
+        eit->set_max_slip(max_slip);
+        
+        taper_t = 1;
+        // ---------- Taper the slip rates ------------------
+        if (taper_method == "taper" || taper_method == "taper_renorm") {
+        
+            // Loop over all other elements to compute the max depth for other elements above and below the current element.
+            // (alternatively stated, those elements with the same distance along strike on the same fault)
+            double max_depth_at_das = -DBL_MAX;
+            quakelib::SimElement this_element = eqsim_world.create_sim_element(eit->id());
+            UIndex this_fault = eqsim_world.section(eit->section_id()).fault_id();
+            for (id_it=faults_with_elements_at_each_das[this_fault][this_element.min_das()].begin(); id_it!=faults_with_elements_at_each_das[this_fault][this_element.min_das()].end(); ++id_it) {
+                quakelib::SimElement that_element = eqsim_world.create_sim_element(*id_it);
+                max_depth_at_das = fmax(max_depth_at_das, fabs(that_element.max_depth()));
             }
+    
+            // The slip rate will be reduced by an amount corresponding to its depth_along_dip relative to the maximum
+            //   at this position along strike.
+            double adjusted_dip = (this_element.dip() <= M_PI/2 ) ? this_element.dip() : M_PI - this_element.dip();
+            double this_depth = 0.5*fabs(this_element.max_depth() + this_element.min_depth());
+            double this_depth_down_dip = this_depth/sin(adjusted_dip);
+            double max_depth_down_dip_at_das = max_depth_at_das/sin(adjusted_dip);
             
-            taper_flow += taper_t*eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
-            taper_full += eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+            double z = this_depth_down_dip/max_depth_down_dip_at_das;
+            taper_t *= sqrt(1-z);
             
-            // Adjust the slip rate
-            eit->set_slip_rate(eit->slip_rate()*taper_t);
+            //Wilson: Removing horizontal dependance in tapering.
+            /*
+            if (taper_method == "taper_full" || taper_method == "taper_renorm") {
+                double x = mid_t;
+                double z = (float(ve)+0.5)/num_vert_elems;
+                taper_t *= 4*(x-x*x)*sqrt(1-z);
+            } else if (taper_method == "taper") {
+                double inside_dist = (0.5 - fabs(0.5-mid_t));
+
+                if (inside_dist <= elem_depth) {
+                    double x = inside_dist/elem_depth;
+                    double z = (float(ve)+0.5)/num_vert_elems;
+                    taper_t *= sqrt(x)*sqrt(1-z);
+                }
+            }*/
+            
+            
+            
+            ///// DEBUG ---------------------
+//            std::cout << "--- ID: " << eit->id() << "  DAS: " << this_element.min_das() << "  This Depth:  " << this_element.max_depth() <<  "  Max Depth at DAS: " << max_depth_at_das << std::endl;
+//            std::cout << "This min depth: " << this_element.min_depth() << "  This max depth: " << this_element.max_depth() << std::endl;
+//            std::cout << "Dip: " << this_element.dip() << " Adjusted Dip: " << adjusted_dip << "  This depth down dip: " << this_depth_down_dip << "  Max D.D.D.: " << max_depth_down_dip_at_das << "  Z: " << z << std::endl << std::endl;
+             
+            
             
         }
+        
+        taper_flow += taper_t*eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+        taper_full += eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+        
+        // Adjust the slip rate
+        eit->set_slip_rate(eit->slip_rate()*taper_t);
+        
+    }
         
     // Renormalize the slip rates to preserve total moment rate    
     if (taper_method == "taper_renorm") {
@@ -1858,7 +1869,30 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         }
     }
     
-    }
+    
+    //////// DEBUG OUT ///////////
+//    typedef std::map<double, ElementIDSet> inner_map;
+//    typedef std::map<UIndex, inner_map> outer_map;
+//    outer_map::iterator i;
+//    inner_map::iterator j;
+//    ElementIDSet::iterator k;
+//    for (i = faults_with_elements_at_each_das.begin(); i!=faults_with_elements_at_each_das.end(); ++i) {
+//        std::cout << "-----------------------------------" << std::endl;
+//        std::cout << "Fault: " << i->first << std::endl;
+//        
+//        inner_map &elements_per_das = i->second;
+//        for (j=elements_per_das.begin(); j!=elements_per_das.end(); ++j) {
+//            std::cout << "--- DAS: " << j->first;
+//            std::cout << "  Elements: ";
+//
+//            ElementIDSet &these_elements = j ->second;
+//            for (k=these_elements.begin(); k!=these_elements.end(); ++k) {
+//                std::cout << *k << "  ";
+//            }
+//            
+//            std::cout << std::endl;
+//        }
+//    }
 
     insert(eqsim_world);
 
