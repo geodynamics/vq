@@ -400,6 +400,11 @@ int main (int argc, char **argv) {
         std::cout << "Delete unused elements and vertices" << std::endl;
     }
 
+    // ***CREATE ModelFault OBJECTS***
+    // Here we take the final fault model and create ModelFault objects, which correctly rewrites DAS for
+    // each vertex to be relative to fault, applies horizontal tapering wrt length of fault
+    world.create_faults();
+
     // *** OUTPUT SECTION ***
     // Finally, export the appropriate file types
     for (n=0; n<files[1].size(); ++n) {
