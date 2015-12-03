@@ -21,6 +21,13 @@
 #include "QuakeLibIO.h"
 #include "QuakeLibEQSim.h"
 
+quakelib::ModelFault &quakelib::ModelWorld::fault(const UIndex &ind) throw(std::domain_error) {
+    std::map<UIndex, ModelFault>::iterator it = _faults.find(ind);
+
+    if (it == _faults.end()) throw std::domain_error("quakelib::ModelWorld::fault");
+    else return it->second;
+}
+
 quakelib::ModelSection &quakelib::ModelWorld::section(const UIndex &ind) throw(std::domain_error) {
     std::map<UIndex, ModelSection>::iterator it = _sections.find(ind);
 
@@ -694,6 +701,74 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     }
 }
 
+void quakelib::ModelWorld::create_faults(void) {
+	std::map<UIndex, ModelFault>::const_iterator fit;
+	std::map<UIndex, ModelSection>::const_iterator sit;
+	std::map<UIndex, ModelElement>::iterator eit;
+	std::map<UIndex, ModelVertex>::iterator vit;
+    std::map<UIndex, UIndex> vertSects;
+	ElementIDSet::iterator sidit;
+	std::map<UIndex, double> sectLengths;
+	std::map<UIndex, double> sectStartDAS;
+
+	int i;
+	double DAStotal;
+	ElementIDSet sec_IDs;
+
+	// populate _faults with data
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+
+		double sectionlength = section_length(sit->second.id());
+		sectLengths[sit->second.id()] = sectionlength;
+
+		if (_faults.count(sit->second.fault_id())==0){
+			ModelFault &fault = new_fault();
+			fault.set_id(sit->second.fault_id());
+			fault.set_length(sectionlength);
+			fault.insert_section_id(sit->second.id());
+		}
+		else{
+		    ModelFault &fault = _faults[sit->second.fault_id()];
+			fault.set_length(fault.length()+sectionlength);
+			fault.insert_section_id(sit->second.id());
+		}
+     }
+	// record which vertices belong to which sections
+    for (eit=_elements.begin(); eit!=_elements.end(); eit++){
+    	for (i=0; i<3; i++){
+    		vertSects[eit->second.vertex(i)] = eit->second.section_id();
+    	}
+    }
+    // record the fault DAS at the beginning of each section
+    for (fit=_faults.begin(); fit!=_faults.end(); fit++){
+    	sec_IDs = fit->second.section_ids();
+    	DAStotal = 0;
+    	for (sidit=sec_IDs.begin(); sidit!=sec_IDs.end(); sidit++){
+    		sectStartDAS[*sidit] = DAStotal;
+    		DAStotal += sectLengths[*sidit];
+    	}
+    }
+    // Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
+    for (vit=_vertices.begin(); vit!=_vertices.end(); vit++){
+    	vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
+    }
+    /*// Go back through elements; if they're in a fault end section,
+    // calc their midpoint DAS and assign horizontal sqrt tapering in end 12km.
+    for (eit=_elements.begin(); eit!=_elements.end(); eit++){
+    	SimElement simelem = create_sim_element(eit->second.id);
+    	float eldas = simelem.min_das+(simelem.max_das-simelem.min_das)/2.0
+    }*/
+
+
+}
+
+quakelib::ModelFault &quakelib::ModelWorld::new_fault(void) {
+    UIndex  max_ind = next_fault_index();
+    _faults.insert(std::make_pair(max_ind, ModelFault()));
+    _faults.find(max_ind)->second.set_id(max_ind);
+    return _faults.find(max_ind)->second;
+}
+
 quakelib::ModelSection &quakelib::ModelWorld::new_section(void) {
     UIndex  max_ind = next_section_index();
     _sections.insert(std::make_pair(max_ind, ModelSection()));
@@ -804,6 +879,7 @@ void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
 }
 
 void quakelib::ModelWorld::clear(void) {
+	_faults.clear();
     _sections.clear();
     _elements.clear();
     _vertices.clear();
@@ -2423,6 +2499,7 @@ void quakelib::ModelElement::apply_remap(const ModelRemapping &remap) {
     for (i=0; i<3; ++i) _data._vertices[i] = remap.get_vertex_id(_data._vertices[i]);
 }
 
+
 void quakelib::ModelVertex::apply_remap(const ModelRemapping &remap) {
     _data._id = remap.get_vertex_id(_data._id);
 }
@@ -2570,13 +2647,13 @@ quakelib::ModelRemapping quakelib::ModelWorld::remap_indices_contiguous(const UI
                                                                         const UIndex &start_element_index,
                                                                         const UIndex &start_vertex_index) const {
     ModelRemapping                                  remap;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     std::map<UIndex, ModelVertex>::const_iterator   vit;
     UIndex                                          cur_ind;
 
     // Change section indices to be in contiguous ascending order
-    for (cur_ind=start_section_index,fit=_sections.begin(); fit!=_sections.end(); ++cur_ind,++fit) remap.remap_section(fit->first, cur_ind);
+    for (cur_ind=start_section_index,sit=_sections.begin(); sit!=_sections.end(); ++cur_ind,++sit) remap.remap_section(sit->first, cur_ind);
 
     // Change element indices to be in contiguous ascending order
     for (cur_ind=start_element_index,eit=_elements.begin(); eit!=_elements.end(); ++cur_ind,++eit) remap.remap_element(eit->first, cur_ind);
@@ -2717,6 +2794,11 @@ void quakelib::ModelWorld::insert(const quakelib::ModelWorld &other_world) {
 }
 
 // TODO: correctly handle preexisting map entries
+void quakelib::ModelWorld::insert(const quakelib::ModelFault &new_fault) {
+    _faults.insert(std::make_pair(new_fault.id(), new_fault));
+}
+
+// TODO: correctly handle preexisting map entries
 void quakelib::ModelWorld::insert(const quakelib::ModelSection &new_section) {
     _sections.insert(std::make_pair(new_section.id(), new_section));
 }
@@ -2818,6 +2900,17 @@ quakelib::ElementIDSet quakelib::ModelWorld::getSectionIDs(void) const {
     }
 
     return sec_id_set;
+}
+
+quakelib::ElementIDSet quakelib::ModelWorld::getFaultIDs(void) const {
+    ElementIDSet fault_id_set;
+    std::map<UIndex, ModelFault>::const_iterator  fit;
+
+    for (fit=_faults.begin(); fit!=_faults.end(); ++fit) {
+        fault_id_set.insert(fit->second.id());
+    }
+
+    return fault_id_set;
 }
 
 size_t quakelib::ModelWorld::num_vertices(const quakelib::UIndex &fid) const {
