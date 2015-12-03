@@ -2645,6 +2645,12 @@ if __name__ == "__main__":
         for i, event_set in enumerate(events):
             FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=UCERF2, b1=b1)
         plt.legend(loc='best', fontsize=8)
+        if args.min_magnitude is not None and args.max_magnitude is not None:
+            plt.xlim(args.min_magnitude, args.max_magnitude)
+        elif args.min_magnitude is not None:
+            plt.xlim(args.min_magnitude, plt.xlim()[1])
+        elif args.max_magnitude is not None:
+            plt.xlim(plt.xlim()[0], args.max_magnitude)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
@@ -2653,6 +2659,12 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "mag_rupt_area", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
             MagnitudeRuptureAreaPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], WC94=args.wc94, leonard=args.leonard)
+        if args.min_magnitude is not None and args.max_magnitude is not None:
+            plt.xlim(args.min_magnitude, args.max_magnitude)
+        elif args.min_magnitude is not None:
+            plt.xlim(args.min_magnitude, plt.xlim()[1])
+        elif args.max_magnitude is not None:
+            plt.xlim(plt.xlim()[0], args.max_magnitude)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2662,6 +2674,12 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "mag_mean_slip", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
             MagnitudeMeanSlipPlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], WC94=args.wc94, leonard=args.leonard)
+        if args.min_magnitude is not None and args.max_magnitude is not None:
+            plt.xlim(args.min_magnitude, args.max_magnitude)
+        elif args.min_magnitude is not None:
+            plt.xlim(args.min_magnitude, plt.xlim()[1])
+        elif args.max_magnitude is not None:
+            plt.xlim(plt.xlim()[0], args.max_magnitude)
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
