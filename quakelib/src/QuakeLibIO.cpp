@@ -713,6 +713,7 @@ void quakelib::ModelWorld::create_faults(void) {
 
 	int i;
 	double DAStotal;
+	ElementIDSet sec_IDs;
 
 	// populate _faults with data
     for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
@@ -740,7 +741,7 @@ void quakelib::ModelWorld::create_faults(void) {
     }
     // record the fault DAS at the beginning of each section
     for (fit=_faults.begin(); fit!=_faults.end(); fit++){
-    	ElementIDSet sec_IDs = fit->second.section_ids();
+    	sec_IDs = fit->second.section_ids();
     	DAStotal = 0;
     	for (sidit=sec_IDs.begin(); sidit!=sec_IDs.end(); sidit++){
     		sectStartDAS[*sidit] = DAStotal;
