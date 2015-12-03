@@ -96,6 +96,8 @@ namespace quakelib {
             UIndex get_vertex_id(const UIndex &orig_id) const;
     };
 
+    typedef std::set<UIndex> ElementIDSet;
+
     struct VertexData {
         UIndex  _id;
         float   _lat, _lon, _alt;
@@ -373,6 +375,50 @@ namespace quakelib {
             void write_kml_geometry(std::ostream &out_stream) const {};
     };
 
+    struct FaultData {
+		UIndex              _id;
+		ElementIDSet		_section_ids;
+		float				_length;
+	};
+
+	class ModelFault : public ModelIO {
+		private:
+			FaultData         _data;
+
+		public:
+			ModelFault(void) {
+				_data._id = INVALID_INDEX;
+			};
+
+			FaultData data(void) const {
+				return _data;
+			};
+
+			UIndex id(void) const {
+				return _data._id;
+			};
+			void set_id(const UIndex &id) {
+				_data._id = id;
+			};
+
+			ElementIDSet section_ids(void) const {
+				return _data._section_ids;
+			};
+			void insert_section_id(const UIndex &section_id) {
+				_data._section_ids.insert(section_id);
+			};
+			void set_section_ids(const ElementIDSet &section_ids) {
+				_data._section_ids = section_ids;
+			};
+
+			float length(void) const {
+				return _data._length;
+			};
+			void set_length(const float &length) {
+				_data._length = length;
+			};
+	};
+
     class FaultTracePoint : public ModelIO {
         private:
             LatLonDepth         _pos;
@@ -503,8 +549,6 @@ namespace quakelib {
                 return (&*(eiterator)*this);
             };
     };
-
-    typedef std::set<UIndex> ElementIDSet;
 
     // Class recording data associated with a block that slipped during an event
     // mu is static, but we retain it for use in calculating magnitude.
@@ -1156,6 +1200,7 @@ namespace quakelib {
             std::map<UIndex, ModelVertex>   _vertices;
             std::map<UIndex, ModelElement>  _elements;
             std::map<UIndex, ModelSection>  _sections;
+            std::map<UIndex, ModelFault>  _faults;
             LatLonDepth _base;
             double _min_lat, _max_lat, _min_lon, _max_lon;
 
@@ -1163,7 +1208,9 @@ namespace quakelib {
             void read_section_hdf5(const int &data_file);
             void read_element_hdf5(const int &data_file);
             void read_vertex_hdf5(const int &data_file);
+            void read_fault_hdf5(const int &data_file);
 
+            void write_fault_hdf5(const int &data_file) const;
             void write_section_hdf5(const int &data_file) const;
             void write_element_hdf5(const int &data_file) const;
             void write_vertex_hdf5(const int &data_file) const;
@@ -1173,10 +1220,13 @@ namespace quakelib {
             ModelSection &new_section(void);
             ModelElement &new_element(void);
             ModelVertex &new_vertex(void);
+            ModelFault &new_fault(void);
 
+            ModelFault &fault(const UIndex &ind) throw(std::domain_error);
             ModelSection &section(const UIndex &ind) throw(std::domain_error);
             ModelElement &element(const UIndex &ind) throw(std::domain_error);
             ModelVertex &vertex(const UIndex &ind) throw(std::domain_error);
+
 
             siterator begin_section(void) {
                 return siterator(&_sections, _sections.begin());
@@ -1192,6 +1242,10 @@ namespace quakelib {
                 return eiterator(&_elements, _elements.end(), fid);
             };
 
+            UIndex next_fault_index(void) const {
+				if (_faults.size()) return _faults.rbegin()->first+1;
+				else return 0;
+			};
             UIndex next_section_index(void) const {
                 if (_sections.size()) return _sections.rbegin()->first+1;
                 else return 0;
@@ -1227,6 +1281,7 @@ namespace quakelib {
             }
 
             void insert(const ModelWorld &other_world);
+            void insert(const ModelFault &new_fault);
             void insert(const ModelSection &new_section);
             void insert(const ModelElement &new_element);
             void insert(const ModelVertex &new_vertex);
@@ -1236,6 +1291,7 @@ namespace quakelib {
             SimElement create_sim_element(const UIndex &element_id) const;
             SlippedElement create_slipped_element(const UIndex &element_id) const;
 
+            ElementIDSet getFaultIDs(void) const;
             ElementIDSet getElementIDs(void) const;
             ElementIDSet getVertexIDs(void) const;
             ElementIDSet getSectionIDs(void) const;
@@ -1258,6 +1314,8 @@ namespace quakelib {
                                 const std::string &section_name,
                                 const std::string &taper_method,
                                 const bool resize_trace_elements);
+
+            void create_faults(void);
 
             int read_file_ascii(const std::string &file_name);
             int write_file_ascii(const std::string &file_name) const;
