@@ -377,7 +377,7 @@ int main (int argc, char **argv) {
     if (!eqsim_geom_in_file.empty()) {
         quakelib::ModelWorld        new_world;
 
-        new_world.read_files_eqsim(eqsim_geom_in_file, eqsim_cond_in_file, eqsim_fric_in_file);
+        new_world.read_files_eqsim(eqsim_geom_in_file, eqsim_cond_in_file, eqsim_fric_in_file, taper_fault_methods.at(0));
         world.insert(new_world);
     }
 
@@ -413,7 +413,7 @@ int main (int argc, char **argv) {
         if (types[1][n] == "text") res = world.write_file_ascii(files[1][n]);
         else if (types[1][n] == "hdf5") res = world.write_file_hdf5(files[1][n]);
         else if (types[1][n] == "kml") res = world.write_file_kml(files[1][n]);
-        else if (types[1][n] == "trace") res = world.write_file_trace_latlon(files[1][n]);
+        else if (types[1][n] == "trace") res = world.write_file_trace_latlon();
 
         if (res) std::cout << "error." << std::endl;
         else std::cout << "done." << std::endl;

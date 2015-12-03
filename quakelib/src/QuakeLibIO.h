@@ -1321,7 +1321,7 @@ namespace quakelib {
             int write_file_ascii(const std::string &file_name) const;
 
             int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements);
-            int write_file_trace_latlon(const std::string &file_name);
+            int write_file_trace_latlon(void);
 
             int read_file_hdf5(const std::string &file_name);
             int write_file_hdf5(const std::string &file_name) const;
@@ -1329,7 +1329,7 @@ namespace quakelib {
             int write_file_kml(const std::string &file_name);
             int write_event_kml(const std::string &file_name, const ModelEvent &event);
 
-            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
+            int read_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name, const std::string &taper_method);
             int write_files_eqsim(const std::string &geom_file_name, const std::string &cond_file_name, const std::string &fric_file_name);
 
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
