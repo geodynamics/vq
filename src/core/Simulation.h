@@ -253,7 +253,8 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Set the stress drop for this block in Pascals.
-        void setStressDrop(const BlockID gid, const double new_stress_drop) {
+        void setStressDrop(const BlockID gid, double new_stress_drop) {
+            if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
         };
