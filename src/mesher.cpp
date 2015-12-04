@@ -425,7 +425,7 @@ int main (int argc, char **argv) {
     // ***CREATE ModelFault OBJECTS***
     // Here we take the final fault model and create ModelFault objects, which correctly rewrites DAS for
     // each vertex to be relative to fault, applies horizontal tapering wrt length of fault
-    world.create_faults();
+    world.create_faults(taper_fault_methods.at(0));
 
 
     // Schultz: Moving stress drop computation here (used to be in UpdateBlockStress.cpp.

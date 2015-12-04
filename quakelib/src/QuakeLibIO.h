@@ -1242,7 +1242,7 @@ namespace quakelib {
             ModelSection &new_section(void);
             ModelElement &new_element(void);
             ModelVertex &new_vertex(void);
-            ModelFault &new_fault(void);
+            ModelFault &new_fault(const UIndex &ind);
 
             ModelFault &fault(const UIndex &ind) throw(std::domain_error);
             ModelSection &section(const UIndex &ind) throw(std::domain_error);
@@ -1337,8 +1337,8 @@ namespace quakelib {
                                 const std::string &taper_method,
                                 const bool resize_trace_elements);
 
-            void create_faults(void);
             void compute_stress_drops(const double &stress_drop_factor);
+            void create_faults(const std::string &taper_method);
 
             int read_file_ascii(const std::string &file_name);
             int write_file_ascii(const std::string &file_name) const;
