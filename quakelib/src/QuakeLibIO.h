@@ -1220,7 +1220,7 @@ namespace quakelib {
             ModelSection &new_section(void);
             ModelElement &new_element(void);
             ModelVertex &new_vertex(void);
-            ModelFault &new_fault(void);
+            ModelFault &new_fault(const UIndex &ind);
 
             ModelFault &fault(const UIndex &ind) throw(std::domain_error);
             ModelSection &section(const UIndex &ind) throw(std::domain_error);

@@ -580,10 +580,12 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         // Use the t value between the trace points for interpolation
         elem_depth = inner_t *trace.at(next_elem_ind).depth_along_dip()+(1.0-inner_t)*trace.at(cur_elem_ind).depth_along_dip();
 
+        /*Wilson: removing this so all elements are square
         // Change vertical element size to exactly match the required depth
-        /*num_vert_elems = round(elem_depth/element_size);
+        num_vert_elems = round(elem_depth/element_size);
         vert_elem_size = elem_depth / num_vert_elems;*/
-        //Wilson: Ensure square elements, vertical number for best fit.
+
+        // Ensure square elements, vertical number for best fit.
         num_vert_elems = round(elem_depth/horiz_elem_size);
         vert_elem_size = horiz_elem_size;
 
@@ -708,32 +710,32 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 	std::map<UIndex, ModelElement>::iterator eit;
 	std::map<UIndex, ModelVertex>::iterator vit;
     std::map<UIndex, UIndex> vertSects;
-	ElementIDSet::iterator sidit;
-	std::map<UIndex, double> sectLengths;
-	std::map<UIndex, double> sectStartDAS;
+	std::map<UIndex, float> sectLengths;
+	std::map<UIndex, float> sectStartDAS;
 
 	int i;
-	double DAStotal, faultlength, eldas, innerdist;
+	float DAStotal, faultlength, eldas, innerdist, newSlipRate;
+	float currSlipRate, sectionlength, taper_factor, renorm_factor;
 	UIndex sid, fid;
 	ElementIDSet sec_IDs;
-	SimElement simelem;
+	ElementIDSet::iterator sidit;
+	SimElement simElem;
 
 	// populate _faults with data
     for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
 
-		double sectionlength = section_length(sit->second.id());
-		sectLengths[sit->second.id()] = sectionlength;
+		sectionlength = section_length(sit->first);
+		sectLengths[sit->first] = sectionlength;
 
 		if (_faults.count(sit->second.fault_id())==0){
-			ModelFault &fault = new_fault();
-			fault.set_id(sit->second.fault_id());
+			ModelFault &fault = new_fault(sit->second.fault_id());
 			fault.set_length(sectionlength);
-			fault.insert_section_id(sit->second.id());
+			fault.insert_section_id(sit->first);
 		}
 		else{
 		    ModelFault &fault = _faults[sit->second.fault_id()];
 			fault.set_length(fault.length()+sectionlength);
-			fault.insert_section_id(sit->second.id());
+			fault.insert_section_id(sit->first);
 		}
      }
 	// record which vertices belong to which sections
@@ -743,7 +745,6 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
     	}
     }
     // record the fault DAS at the beginning of each section
-    //
     for (fit=_faults.begin(); fit!=_faults.end(); fit++){
     	sec_IDs = fit->second.section_ids();
     	DAStotal = 0;
@@ -756,30 +757,56 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
     for (vit=_vertices.begin(); vit!=_vertices.end(); vit++){
     	vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
     }
-    // Go back through elements; alc their midpoint DAS and assign horizontal sqrt tapering in end 12km.
+    // If tapering, loop through elements, calc their midpoint DAS,
+    // assign horizontal sqrt tapering in end 12km.
 	if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm"){
+		std::map<UIndex, float> fault_taper_full;
+		std::map<UIndex, float> fault_taper_flow;
+		for (fit=_faults.begin(); fit!=_faults.end(); fit++){
+			fault_taper_full[fit->first] = 0;
+			fault_taper_flow[fit->first] = 0;
+		}
+
     	for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-			simelem = create_sim_element(eit->second.id());
-			eldas = simelem.min_das()+(simelem.max_das()-simelem.min_das())/2.0;
+			simElem = create_sim_element(eit->second.id());
+			eldas = simElem.min_das()+(simElem.max_das()-simElem.min_das())/2.0;
 			sid = eit->second.section_id();
 			fid = _sections[sid].fault_id();
+
+			fault_taper_full[fid] += simElem.area() * eit->second.slip_rate();
+
 			faultlength = _faults[fid].length();
 			innerdist = faultlength/2.0 - abs(faultlength/2.0 - eldas);
 			if (innerdist < 12000){
-				eit->second.set_slip_rate(eit->second.slip_rate() * sqrt(innerdist/12000.0));
+				taper_factor = sqrt(innerdist/12000.0);
+				newSlipRate = eit->second.slip_rate() * taper_factor;
+				eit->second.set_slip_rate(newSlipRate);
+				fault_taper_flow[fid] += taper_factor*simElem.area()*eit->second.slip_rate();
 			}
-
+			else{
+				fault_taper_flow[fid] += simElem.area()*eit->second.slip_rate();
+			}
 		}
+    	//If taper_renorm, loop back through elements and boost their slip rates by normalization factor
+    	if (taper_method == "taper_renorm") {
+    		for (eit=_elements.begin(); eit!=_elements.end(); eit++){
+    			sid = eit->second.section_id();
+    			fid = _sections[sid].fault_id();
+    			renorm_factor = fault_taper_full[fid] / fault_taper_flow[fid];
+    			newSlipRate = eit->second.slip_rate() * renorm_factor;
+				eit->second.set_slip_rate(newSlipRate);
+    		}
+    	}
+
 	}
 
 
 }
 
-quakelib::ModelFault &quakelib::ModelWorld::new_fault(void) {
-    UIndex  max_ind = next_fault_index();
-    _faults.insert(std::make_pair(max_ind, ModelFault()));
-    _faults.find(max_ind)->second.set_id(max_ind);
-    return _faults.find(max_ind)->second;
+quakelib::ModelFault &quakelib::ModelWorld::new_fault(const UIndex &fid) {
+    _faults.insert(std::make_pair(fid, ModelFault()));
+    _faults.find(fid)->second.set_id(fid);
+    return _faults.find(fid)->second;
 }
 
 quakelib::ModelSection &quakelib::ModelWorld::new_section(void) {
