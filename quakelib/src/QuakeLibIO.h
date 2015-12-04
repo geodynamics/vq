@@ -1222,7 +1222,7 @@ namespace quakelib {
             std::map<UIndex, ModelVertex>   _vertices;
             std::map<UIndex, ModelElement>  _elements;
             std::map<UIndex, ModelSection>  _sections;
-            std::map<UIndex, ModelFault>  _faults;
+            std::map<UIndex, ModelFault>    _faults;
             LatLonDepth _base;
             double _min_lat, _max_lat, _min_lon, _max_lon;
 

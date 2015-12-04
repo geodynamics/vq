@@ -45,6 +45,9 @@ static struct option longopts[] = {
     { NULL,                         0,                      NULL,           0 }
 };
 
+//    { "do_not_compute_stress_drops",no_argument,            NULL,           'x' },
+//    { "stress_drop_factor",         required_argument,      NULL,           'q' },
+
 std::string mem_string(const double &num_bytes) {
     std::stringstream       ss;
     int unit_place = (num_bytes > 0 ? (int)(log(num_bytes)/log(1024)) : 0);
@@ -155,6 +158,10 @@ void print_usage(int argc, char **argv) {
     std::cerr << "-r, --resize_trace_elements" << std::endl;
     std::cerr << "\tResize elements generated on traces to better match fault length." << std::endl;
     std::cerr << "\tThis will only decrease and at most halve the element size." << std::endl;
+    std::cerr << "-x, --do_not_compute_stress_drops" << std::endl;
+    std::cerr << "\tDo not compute stress drops, must specify from EQSim friction instead." << std::endl;
+    std::cerr << "-q FACTOR, --stress_drop_factor=FACTOR" << std::endl;
+    std::cerr << "\tSpecify the stress drop factor (usually 0.2-0.6). It's a multiplier for the computed stress drops (it's logarithmic, 0.1 increase means multiplying stress drops by 1.4)." << std::endl;
 
     std::cerr << std::endl;
     std::cerr << "FILE IMPORT" << std::endl;
@@ -189,7 +196,7 @@ void print_usage(int argc, char **argv) {
 
 int main (int argc, char **argv) {
     quakelib::ModelWorld        world;
-    bool                        delete_unused, merge_duplicate_vertices, resize_trace_elements;
+    bool                        delete_unused, merge_duplicate_vertices, resize_trace_elements, compute_stress_drops=true;
     bool                        arg_error, failed;
     std::string                 names[2] = {"import", "export"};
     std::string                 eqsim_geom_in_file, eqsim_fric_in_file, eqsim_cond_in_file;
@@ -198,6 +205,7 @@ int main (int argc, char **argv) {
     std::vector<std::string>    files[2], types[2];
     std::vector<std::string>    taper_fault_methods;
     std::vector<double>         trace_element_sizes;
+    double                      stress_drop_factor = 0.3;  // default value is a reasonable 0.3
     int                         ch, res;
     unsigned int                i, n, j, num_trace_files;
 
@@ -218,10 +226,18 @@ int main (int argc, char **argv) {
             case 'r':
                 resize_trace_elements = true;
                 break;
+                
+//            case 'x':
+//                compute_stress_drops = false;
+//                break;
 
             case 's':
                 stat_out_file = optarg;
                 break;
+
+//            case 'q':
+//                stress_drop_factor = atof(optarg);
+//                break;
 
             case 'D':
                 eqsim_cond_out_file = optarg;
@@ -319,6 +335,12 @@ int main (int argc, char **argv) {
         }
     }
 
+    if (!(compute_stress_drops) && (eqsim_fric_in_file.empty() || eqsim_geom_in_file.empty() )) {
+        std::cerr << "ERROR: If not computing stress drops, must specify EQSim geometry and EQSim friction file. EQSim friction should contain stress drops." << std::endl;
+        arg_error = true;
+    }
+
+
     // If any argument was malformed, print the correct usage
     if (arg_error) {
         print_usage(argc, argv);
@@ -404,6 +426,17 @@ int main (int argc, char **argv) {
     // Here we take the final fault model and create ModelFault objects, which correctly rewrites DAS for
     // each vertex to be relative to fault, applies horizontal tapering wrt length of fault
     world.create_faults();
+
+
+    // Schultz: Moving stress drop computation here (used to be in UpdateBlockStress.cpp.
+    // ------------------------------------------------------------------------------------------
+    // Compute the stress drops. Default behavior is to compute them. To prescribe stress drops,
+    //   one must specify the values in an EQSim friction file.
+    if (compute_stress_drops) {
+        std::cout << "Computing stress drops with stress_drop_factor=" << stress_drop_factor << std::endl;
+        world.compute_stress_drops(stress_drop_factor);
+    }
+
 
     // *** OUTPUT SECTION ***
     // Finally, export the appropriate file types
