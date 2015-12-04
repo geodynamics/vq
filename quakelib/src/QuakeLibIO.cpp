@@ -610,7 +610,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             double mid_t = (cur_t+next_t)/2.0;
 
 
-            //Wilson: Removing horizontal dependance in tapering.
+            //Wilson: Horizontal tapering is now in ModelWorld::create_faults.
             /*
             if (taper_method == "taper_full" || taper_method == "taper_renorm") {
                 double x = mid_t;
@@ -626,6 +626,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
                 }
             }*/
 
+            //Vertical tapering with sqrt of depth
             if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm") {
 
                 double z = (float(ve)+0.5)/num_vert_elems;
@@ -701,7 +702,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     }
 }
 
-void quakelib::ModelWorld::create_faults(void) {
+void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 	std::map<UIndex, ModelFault>::const_iterator fit;
 	std::map<UIndex, ModelSection>::const_iterator sit;
 	std::map<UIndex, ModelElement>::iterator eit;
@@ -712,8 +713,10 @@ void quakelib::ModelWorld::create_faults(void) {
 	std::map<UIndex, double> sectStartDAS;
 
 	int i;
-	double DAStotal;
+	double DAStotal, faultlength, eldas, innerdist;
+	UIndex sid, fid;
 	ElementIDSet sec_IDs;
+	SimElement simelem;
 
 	// populate _faults with data
     for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
@@ -740,6 +743,7 @@ void quakelib::ModelWorld::create_faults(void) {
     	}
     }
     // record the fault DAS at the beginning of each section
+    //
     for (fit=_faults.begin(); fit!=_faults.end(); fit++){
     	sec_IDs = fit->second.section_ids();
     	DAStotal = 0;
@@ -752,12 +756,21 @@ void quakelib::ModelWorld::create_faults(void) {
     for (vit=_vertices.begin(); vit!=_vertices.end(); vit++){
     	vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
     }
-    /*// Go back through elements; if they're in a fault end section,
-    // calc their midpoint DAS and assign horizontal sqrt tapering in end 12km.
-    for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-    	SimElement simelem = create_sim_element(eit->second.id);
-    	float eldas = simelem.min_das+(simelem.max_das-simelem.min_das)/2.0
-    }*/
+    // Go back through elements; alc their midpoint DAS and assign horizontal sqrt tapering in end 12km.
+	if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm"){
+    	for (eit=_elements.begin(); eit!=_elements.end(); eit++){
+			simelem = create_sim_element(eit->second.id());
+			eldas = simelem.min_das()+(simelem.max_das()-simelem.min_das())/2.0;
+			sid = eit->second.section_id();
+			fid = _sections[sid].fault_id();
+			faultlength = _faults[fid].length();
+			innerdist = faultlength/2.0 - abs(faultlength/2.0 - eldas);
+			if (innerdist < 12000){
+				eit->second.set_slip_rate(eit->second.slip_rate() * sqrt(innerdist/12000.0));
+			}
+
+		}
+	}
 
 
 }
