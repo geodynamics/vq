@@ -377,13 +377,14 @@ namespace quakelib {
 
     struct FaultData {
 		UIndex              _id;
-		ElementIDSet		_section_ids;
 		float				_length;
+        float               _area;
 	};
 
 	class ModelFault : public ModelIO {
 		private:
 			FaultData         _data;
+            ElementIDSet      _section_ids;
 
 		public:
 			ModelFault(void) {
@@ -397,18 +398,19 @@ namespace quakelib {
 			UIndex id(void) const {
 				return _data._id;
 			};
+            
 			void set_id(const UIndex &id) {
 				_data._id = id;
 			};
 
 			ElementIDSet section_ids(void) const {
-				return _data._section_ids;
+				return _section_ids;
 			};
 			void insert_section_id(const UIndex &section_id) {
-				_data._section_ids.insert(section_id);
+				_section_ids.insert(section_id);
 			};
 			void set_section_ids(const ElementIDSet &section_ids) {
-				_data._section_ids = section_ids;
+				_section_ids = section_ids;
 			};
 
 			float length(void) const {
@@ -417,6 +419,26 @@ namespace quakelib {
 			void set_length(const float &length) {
 				_data._length = length;
 			};
+            
+            float area(void) const {
+				return _data._area;
+			};
+			void set_area(const float &area) {
+				_data._area = area;
+			};
+            
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+            void write_ascii(std::ostream &out_stream) const;
+            void read_ascii(std::istream &in_stream);
+            void read_data(const FaultData &in_data);
+            void write_data(FaultData &out_data) const;
+            
+#ifdef HDF5_FOUND
+            static std::string hdf5_table_name(void) {
+                return "faults";
+            };
+#endif
+            
 	};
 
     class FaultTracePoint : public ModelIO {
@@ -1316,6 +1338,7 @@ namespace quakelib {
                                 const bool resize_trace_elements);
 
             void create_faults(void);
+            void compute_stress_drops(const double &stress_drop_factor);
 
             int read_file_ascii(const std::string &file_name);
             int write_file_ascii(const std::string &file_name) const;
@@ -1335,6 +1358,7 @@ namespace quakelib {
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
             char *rgb2hex(const int r, const int g, const int b) const;
             double section_length(const UIndex &sec_id) const;
+            double section_area(const quakelib::UIndex &sec_id) const;
             double section_max_depth(const UIndex &sec_id) const;
     };
 
