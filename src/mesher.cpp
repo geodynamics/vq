@@ -42,11 +42,12 @@ static struct option longopts[] = {
     { "delete_unused",              no_argument,            NULL,           'd' },
     { "taper_fault_method",         required_argument,      NULL,           't' },
     { "print_statistics",           required_argument,      NULL,           's' },
+    { "do_not_compute_stress_drops",no_argument,            NULL,           'x' },
+    { "stress_drop_factor",         required_argument,      NULL,           'q' },
+
     { NULL,                         0,                      NULL,           0 }
 };
 
-//    { "do_not_compute_stress_drops",no_argument,            NULL,           'x' },
-//    { "stress_drop_factor",         required_argument,      NULL,           'q' },
 
 std::string mem_string(const double &num_bytes) {
     std::stringstream       ss;
@@ -213,7 +214,7 @@ int main (int argc, char **argv) {
     eqsim_geom_in_file = eqsim_fric_in_file = eqsim_cond_in_file = "";
     eqsim_geom_out_file = eqsim_fric_out_file = eqsim_cond_out_file = "";
 
-    while ((ch = getopt_long(argc, argv, "mdrs:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "mdr:x:s:q:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
         switch (ch) {
             case 'd':
                 delete_unused = true;
@@ -227,17 +228,18 @@ int main (int argc, char **argv) {
                 resize_trace_elements = true;
                 break;
                 
-//            case 'x':
-//                compute_stress_drops = false;
-//                break;
+            case 'x':
+                compute_stress_drops = false;
+                std::cout << " === NOT computing stress drops ==="  << std::endl;
+                break;
 
             case 's':
                 stat_out_file = optarg;
                 break;
 
-//            case 'q':
-//                stress_drop_factor = atof(optarg);
-//                break;
+            case 'q':
+                stress_drop_factor = atof(optarg);
+                break;
 
             case 'D':
                 eqsim_cond_out_file = optarg;
