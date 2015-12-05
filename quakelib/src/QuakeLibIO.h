@@ -492,6 +492,39 @@ namespace quakelib {
             void write_ascii(std::ostream &out_stream) const;
     };
 
+    class fiterator {
+        private:
+            std::map<UIndex, ModelFault>              *_map;
+            std::map<UIndex, ModelFault>::iterator    _it;
+
+        public:
+            fiterator(void) : _map(NULL) {};
+            fiterator(std::map<UIndex, ModelFault> *map, std::map<UIndex, ModelFault>::iterator start) : _map(map), _it(start) {};
+            fiterator &operator=(const fiterator &other) {
+                _map = other._map;
+                _it = other._it;
+                return *this;
+            };
+            bool operator==(const fiterator &other) {
+                return (_map == other._map && _it == other._it);
+            };
+            bool operator!=(const fiterator &other) {
+                return (_map != other._map || _it != other._it);
+            };
+            fiterator &operator++(void) {
+                if (_map && _it != _map->end()) _it++;
+
+                return *this;
+            };
+            ModelFault &operator*(void) {
+                return _it->second;
+            };
+            ModelFault *operator->(void) {
+                return (&*(fiterator)*this);
+            };
+    };
+
+
     class siterator {
         private:
             std::map<UIndex, ModelSection>              *_map;
@@ -1255,6 +1288,13 @@ namespace quakelib {
             };
             siterator end_section(void) {
                 return siterator(&_sections, _sections.end());
+            };
+            
+            fiterator begin_fault(void) {
+                return fiterator(&_faults, _faults.begin());
+            };
+            fiterator end_fault(void) {
+                return fiterator(&_faults, _faults.end());
             };
 
             eiterator begin_element(const UIndex &fid=INVALID_INDEX) {

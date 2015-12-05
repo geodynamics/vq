@@ -870,12 +870,9 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
 
 	// Assign a stress drop to each element based on the geometry of the fault it belongs to
     for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-        std::cout << "Grabbing Ele: " << eit->second.id() << " Sec: " << eit->second.section_id();
         
     	fault_id = section(eit->second.section_id()).fault_id();
         this_fault = fault(fault_id);
-        
-        std::cout << " Fault: " << fault_id;
         
         fault_area = this_fault.area();
         fault_length = this_fault.length();
