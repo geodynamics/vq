@@ -27,21 +27,11 @@
 void UpdateBlockStress::init(SimFramework *_sim) {
     BlockList::iterator nt;
     BlockID             gid;
-    SectionID           sid;
     int                 lid, i;
     bool                err;
-    double              stress_drop;
     double rho = 2700.0;      // density of rock in kg m^-3
     double g = 9.81;           // force of gravity in m s^-2
     double depth = 0.0;         //
-    //double mean_slip_rate = 0.0;
-    //double norm_velocity;
-    double char_magnitude, char_slip, fault_length, fault_area, fault_width, nu, R;
-    std::map<SectionID, double> section_lengths;
-    std::map<SectionID, double> section_areas;
-    std::map<SectionID, double>::iterator sit;
-    std::map<SectionID, double> section_min_das;
-    std::map<SectionID, double>::iterator ssit;
     quakelib::ModelStressSet    stress_set;
     quakelib::ModelStress       stress;
 
@@ -110,148 +100,19 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         // If we haven't loaded slip deficits, updateField is NaN so set slip deficit to zero in that case
         sim->setSlipDeficit(gid, isnan(sim->getUpdateField(gid)) ? 0.0 : sim->getUpdateField(gid));
         //std::cout << gid << "  slip deficit: " << sim->getSlipDeficit(gid) << std::endl;
-        //sim->setFriction(gid, sim->getFrictionCoefficient());
-        //std::cout << "friction: " << sim->getFrictionCoefficient() << std::endl;
     }
 
-    // Determine section minimum distance along strike (required since das is defined along
-    // faults and doesn't reset to 0 when entering a new section of the same fault.
-    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-        sid = nt->getSectionID();
-
-        if (section_min_das.count(sid)) {
-            sit = section_min_das.find(sid);
-            // Replace the current max length with this element's distance along strike if it's smaller
-            // Trying to find the lower bound for the fault
-            sit->second = std::min(sit->second, nt->min_das());
-
-        } else {
-            // If it's not already in here, add this section
-            section_min_das.insert(std::make_pair(sid, nt->min_das()));
-        }
-
-    }
-
-    // Determine section lengths and add up the areas
-    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-        sid = nt->getSectionID();
-
-        if (section_lengths.count(sid)) {
-            sit = section_lengths.find(sid);
-            ssit = section_min_das.find(sid);
-            double min_das = ssit->second;
-            // Replace the current max length with this element's distance along strike if it's larger
-            sit->second = std::max(sit->second, nt->max_das()-min_das);
-
-        } else {
-            ssit = section_min_das.find(sid);
-            double min_das = ssit->second;
-            // If it's not already in here, add this section
-            section_lengths.insert(std::make_pair(sid, nt->max_das()-min_das));
-        }
-
-        if (section_areas.count(sid)) {
-            sit = section_areas.find(sid);
-            // Add the current element's area to the section's total
-            sit->second += nt->area();
-
-        } else {
-            // If it's not already in here, add this section
-            section_areas.insert(std::make_pair(sid, nt->area()));
-        }
-
-    }
-
-    // Set the simulation section areas now that we computed them
-    for (sit=section_areas.begin(); sit!=section_areas.end(); ++sit) {
-        sim->setSectionArea(sit->first, sit->second);
-    }
-
-    // Set the simulation section lengths now that we computed them
-    for (sit=section_lengths.begin(); sit!=section_lengths.end(); ++sit) {
-        sim->setSectionLength(sit->first, sit->second);
-    }
-
-
-    /*
-    /////// Schultz: First we compute the mean slip rate to avoid NaN's
-    for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-        mean_slip_rate += nt->slip_rate();
-    }
-    // Normalize by number of blocks
-    mean_slip_rate /= sim->numGlobalBlocks();
-    */
-
-    // All processes need the friction values for all blocks, so we set rhogd here
-    // and transfer stress drop values between nodes later
+    // Schultz: Now, stress drop computation has moved to the mesher. Here we just read in the 
+    //          pre-computed stress drops from the fault model.
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-
-        //
-        // TODO: check if this negative sign is warranted and not double counted
+        
         depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
-        //printf("**Degbug(%d): setting rhogd[%d/%dg], %f, %f, %f ==> %f\n", getpid(), lid, gid, rho, g, depth, sim->getRhogd(gid));
 
-        sim->setDynamicVal(gid, sim->getDynamic());
-        sim->setFailed(gid, false);
-
-        // Set stresses to their specified initial values
-        //printf("**Degbug(%d): shear[%d]\n", getpid(), gid);
-        sim->setShearStress(gid, sim->getInitShearStress(gid));
-        //printf("**Degbug(%d): normal[%d]\n", getpid(), gid);
-        sim->setNormalStress(gid, sim->getInitNormalStress(gid));
-
-        // Set the stress drop based on the Greens function calculations
-        if (sim->computeStressDrops()) {
-            // TODO: Instead of dividing by the local slip rate as your normalization,
-            //       we need to have some minimum or mean normalization constant to
-            //       handle zero slip rates that lead to stress_drop = NaN.
-
-            /* Eric's stress drop method
-            // Now compute weighted stress drops from slip rates and shear interactions
-            stress_drop = 0;
-            norm_velocity = sim->getBlock(gid).slip_rate();
-
-            for (nt=sim->begin(); nt!=sim->end(); ++nt) {
-                stress_drop += ((nt->slip_rate() + mean_slip_rate)/(norm_velocity + mean_slip_rate))*sim->getGreenShear(gid, nt->getBlockID());
-            }
-
-            stress_drop *= sim->getBlock(gid).max_slip();
-            /////// Schultz: All stress drops must be negative
-            if (stress_drop > 0) stress_drop = -1.0*fabs(stress_drop);
-
-            /////// Schultz: Hack #2, multiply the stress drops by 5.0 to get closer to the prescribed VC stress drop values
-            // TODO: Make this a parameter
-            stress_drop *= 5.0;
-            */
-
-            ///// Schultz stress drop method
-            // Get the section id, sid
-            sid = sim->getBlock(gid).getSectionID();
-            // Get fault area and length (we will compute the width)
-            fault_area = sim->getSectionArea(sid);
-            fault_length = sim->getSectionLength(sid);
-            fault_width = fault_area/fault_length; // This way we get the mean width
-
-            // Use Wells & Coppersmith scaling to find the characteristic magnitude and slip given the fault geometry
-            char_magnitude = 4.0+log10(fault_area*1e-6) + sim->stressDropFactor();
-            char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*sim->getBlock(gid).lame_mu()*fault_area);
-
-            // Compute stress drop from geometry and expected slip/mag
-            nu = 0.5*sim->getBlock(gid).lame_lambda()/(sim->getBlock(gid).lame_mu() + sim->getBlock(gid).lame_lambda());
-            R  = sqrt(fault_width*fault_width + fault_length*fault_length);
-
-            stress_drop = -2*sim->getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R ) ;
-
-            sim->setStressDrop(gid, stress_drop);
-            sim->setMaxStressDrop(gid, stress_drop);
-
-        } else {
-            sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
-            sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
-        }
+        sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
+        sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
 
 
         if (sim->isLocalBlockID(gid)) {
@@ -303,13 +164,6 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
     // Compute initial stress on all blocks
     stressRecompute();
-
-    //    Debug output
-    //    if (sim->isRootNode()) {
-    //        for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
-    //            std::cout << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getSlipDeficit(gid) <<std::endl;
-    //        }
-    //    }
 
 }
 

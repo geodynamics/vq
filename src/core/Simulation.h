@@ -159,13 +159,6 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return friction[gid];
         }
 
-//        void setFriction(const BlockID gid, const double coefficient) {
-//            // Schultz: Cannot let friction decrease with increasing depth.
-//            // Instead lets prescribe a coefficient.
-//            // TODO: Add friction file reading so we can specify coeff. per block
-//            friction[gid] = coefficient;
-//        }
-
         //! Whether the block experienced static friction failure.
         //! This occurs if the Coulomb failure function goes over 0.
         bool cffFailure(const BlockID gid) const {
