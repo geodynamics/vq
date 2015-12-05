@@ -201,15 +201,28 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Get the area for the section in square meters.
-        double getSectionArea(const SectionID sid) const {
-            return section_areas.find(sid)->second;
+        double getFaultArea(const SectionID fid) const {
+            return fault_areas.find(fid)->second;
         };
         //! Set the area for the section in square meters.
-        void setSectionArea(const SectionID sid, const double new_area) {
-            if (section_areas.count(sid)) {
-                section_areas.find(sid)->second = new_area;
+        void setFaultArea(const SectionID fid, const double new_area) {
+            if (fault_areas.count(fid)) {
+                fault_areas.find(fid)->second = new_area;
             } else {
-                section_areas.insert(std::make_pair(sid, new_area));
+                fault_areas.insert(std::make_pair(fid, new_area));
+            }
+        };
+        
+        //! Get the area for the section in square meters.
+        double getFaultLength(const SectionID fid) const {
+            return fault_lengths.find(fid)->second;
+        };
+        //! Set the area for the section in square meters.
+        void setFaultLength(const SectionID fid, const double new_length) {
+            if (fault_lengths.count(fid)) {
+                fault_lengths.find(fid)->second = new_length;
+            } else {
+                fault_lengths.insert(std::make_pair(fid, new_length));
             }
         };
 
@@ -219,8 +232,8 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             double char_magnitude, R, nu, dynamicStressDrop;
 
             // Fault wise data
-            fault_area = getSectionArea(getBlock(gid).getSectionID());
-            fault_length = getSectionLength(getBlock(gid).getSectionID());
+            fault_area = getFaultArea(getBlock(gid).getFaultID());
+            fault_length = getFaultLength(getBlock(gid).getFaultID());
             fault_width = fault_area/fault_length;
             R = sqrt(fault_length*fault_length + fault_width*fault_width);
             nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
@@ -232,19 +245,6 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             dynamicStressDrop = -2*getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
 
             return dynamicStressDrop;
-        };
-
-        //! Get the length for the section in meters.
-        double getSectionLength(const SectionID sid) const {
-            return section_lengths.find(sid)->second;
-        };
-        //! Set the length for the section in meters.
-        void setSectionLength(const SectionID sid, const double new_length) {
-            if (section_lengths.count(sid)) {
-                section_lengths.find(sid)->second = new_length;
-            } else {
-                section_lengths.insert(std::make_pair(sid, new_length));
-            }
         };
 
         //! Get the stress drop for this block in Pascals.

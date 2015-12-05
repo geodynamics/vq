@@ -59,8 +59,8 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         bool                    *failed;
         std::map<BlockID, double>   init_shear_stress;
         std::map<BlockID, double>   init_normal_stress;
-        std::map<SectionID, double>   section_lengths;
-        std::map<SectionID, double>   section_areas;
+        std::map<SectionID, double>   fault_lengths;
+        std::map<SectionID, double>   fault_areas;
 
     public:
         VCSimData(void) : global_size(0), local_size(0), green_shear(NULL), green_normal(NULL),
