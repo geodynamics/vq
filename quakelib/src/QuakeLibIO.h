@@ -1258,6 +1258,7 @@ namespace quakelib {
             std::map<UIndex, ModelFault>    _faults;
             LatLonDepth _base;
             double _min_lat, _max_lat, _min_lon, _max_lon;
+            double _stress_drop_factor;
 
 #ifdef HDF5_FOUND
             void read_section_hdf5(const int &data_file);
@@ -1269,6 +1270,9 @@ namespace quakelib {
             void write_section_hdf5(const int &data_file) const;
             void write_element_hdf5(const int &data_file) const;
             void write_vertex_hdf5(const int &data_file) const;
+            
+            void write_stress_drop_factor_hdf5(const int &data_file) const;
+            void read_stress_drop_factor_hdf5(const int &data_file);
 #endif
 
         public:
@@ -1331,6 +1335,14 @@ namespace quakelib {
 
             Vec<3> get_base(void) const {
                 return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
+            }
+            
+            double stressDropFactor(void) const{
+                return _stress_drop_factor;
+            }
+            
+            void setStressDropFactor(const double &new_stress_drop_factor) {
+                _stress_drop_factor = new_stress_drop_factor;
             }
 
             std::vector<double> get_latlon_bounds(void) const {
