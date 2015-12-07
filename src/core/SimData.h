@@ -57,17 +57,18 @@ class VCSimData : public VCSimDataBlocks, public VCSimDataEvents {
         double                  *normal_stress0;
         double                  *dynamic_val;
         bool                    *failed;
+        double                  stress_drop_factor;
         std::map<BlockID, double>   init_shear_stress;
         std::map<BlockID, double>   init_normal_stress;
-        std::map<SectionID, double>   section_lengths;
-        std::map<SectionID, double>   section_areas;
+        std::map<SectionID, double>   fault_lengths;
+        std::map<SectionID, double>   fault_areas;
 
     public:
         VCSimData(void) : global_size(0), local_size(0), green_shear(NULL), green_normal(NULL),
             shear_stress(NULL), normal_stress(NULL), update_field(NULL), slip_deficit(NULL),
             rhogd(NULL), stress_drop(NULL), max_stress_drop(NULL), cff(NULL), friction(NULL), cff0(NULL),
             self_shear(NULL), self_normal(NULL), shear_stress0(NULL), normal_stress0(NULL),
-            dynamic_val(NULL), failed(NULL) {};
+            dynamic_val(NULL), failed(NULL), stress_drop_factor(0) {};
 
         void setupArrays(const unsigned int &global_sys_size,
                          const unsigned int &local_sys_size,

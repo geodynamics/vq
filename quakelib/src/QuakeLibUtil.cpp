@@ -187,12 +187,12 @@ quakelib::Vec<3> quakelib::Conversion::convert2xyz(const LatLonDepth &in_pt) con
 #endif
 
 quakelib::Vec<3> quakelib::Conversion::yxz2xyz(const LatLonDepth &in_pt) const {
-	//Use for importing trace in (y, x) halfspace coords.  Must turn off LatLonDepth error throwning for angles out of bounds in QuakeLibUtil.h.
+    //Use for importing trace in (y, x) halfspace coords.  Must turn off LatLonDepth error throwning for angles out of bounds in QuakeLibUtil.h.
     double  new_vals[3];
 
     new_vals[0] = in_pt.lon();
-	new_vals[1] = in_pt.lat();
-	new_vals[2] = in_pt.altitude();
+    new_vals[1] = in_pt.lat();
+    new_vals[2] = in_pt.altitude();
 
     return Vec<3>(new_vals);
 }

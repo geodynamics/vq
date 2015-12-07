@@ -376,48 +376,70 @@ namespace quakelib {
     };
 
     struct FaultData {
-		UIndex              _id;
-		ElementIDSet		_section_ids;
-		float				_length;
-	};
+        UIndex              _id;
+        float               _length;
+        float               _area;
+    };
 
-	class ModelFault : public ModelIO {
-		private:
-			FaultData         _data;
+    class ModelFault : public ModelIO {
+        private:
+            FaultData         _data;
+            ElementIDSet      _section_ids;
 
-		public:
-			ModelFault(void) {
-				_data._id = INVALID_INDEX;
-			};
+        public:
+            ModelFault(void) {
+                _data._id = INVALID_INDEX;
+            };
 
-			FaultData data(void) const {
-				return _data;
-			};
+            FaultData data(void) const {
+                return _data;
+            };
 
-			UIndex id(void) const {
-				return _data._id;
-			};
-			void set_id(const UIndex &id) {
-				_data._id = id;
-			};
+            UIndex id(void) const {
+                return _data._id;
+            };
 
-			ElementIDSet section_ids(void) const {
-				return _data._section_ids;
-			};
-			void insert_section_id(const UIndex &section_id) {
-				_data._section_ids.insert(section_id);
-			};
-			void set_section_ids(const ElementIDSet &section_ids) {
-				_data._section_ids = section_ids;
-			};
+            void set_id(const UIndex &id) {
+                _data._id = id;
+            };
 
-			float length(void) const {
-				return _data._length;
-			};
-			void set_length(const float &length) {
-				_data._length = length;
-			};
-	};
+            ElementIDSet section_ids(void) const {
+                return _section_ids;
+            };
+            void insert_section_id(const UIndex &section_id) {
+                _section_ids.insert(section_id);
+            };
+            void set_section_ids(const ElementIDSet &section_ids) {
+                _section_ids = section_ids;
+            };
+
+            float length(void) const {
+                return _data._length;
+            };
+            void set_length(const float &length) {
+                _data._length = length;
+            };
+
+            float area(void) const {
+                return _data._area;
+            };
+            void set_area(const float &area) {
+                _data._area = area;
+            };
+
+            static void get_field_descs(std::vector<FieldDesc> &descs);
+            void write_ascii(std::ostream &out_stream) const;
+            void read_ascii(std::istream &in_stream);
+            void read_data(const FaultData &in_data);
+            void write_data(FaultData &out_data) const;
+
+#ifdef HDF5_FOUND
+            static std::string hdf5_table_name(void) {
+                return "faults";
+            };
+#endif
+
+    };
 
     class FaultTracePoint : public ModelIO {
         private:
@@ -469,6 +491,39 @@ namespace quakelib {
             void read_ascii(std::istream &in_stream);
             void write_ascii(std::ostream &out_stream) const;
     };
+
+    class fiterator {
+        private:
+            std::map<UIndex, ModelFault>              *_map;
+            std::map<UIndex, ModelFault>::iterator    _it;
+
+        public:
+            fiterator(void) : _map(NULL) {};
+            fiterator(std::map<UIndex, ModelFault> *map, std::map<UIndex, ModelFault>::iterator start) : _map(map), _it(start) {};
+            fiterator &operator=(const fiterator &other) {
+                _map = other._map;
+                _it = other._it;
+                return *this;
+            };
+            bool operator==(const fiterator &other) {
+                return (_map == other._map && _it == other._it);
+            };
+            bool operator!=(const fiterator &other) {
+                return (_map != other._map || _it != other._it);
+            };
+            fiterator &operator++(void) {
+                if (_map && _it != _map->end()) _it++;
+
+                return *this;
+            };
+            ModelFault &operator*(void) {
+                return _it->second;
+            };
+            ModelFault *operator->(void) {
+                return (&*(fiterator)*this);
+            };
+    };
+
 
     class siterator {
         private:
@@ -1200,9 +1255,10 @@ namespace quakelib {
             std::map<UIndex, ModelVertex>   _vertices;
             std::map<UIndex, ModelElement>  _elements;
             std::map<UIndex, ModelSection>  _sections;
-            std::map<UIndex, ModelFault>  _faults;
+            std::map<UIndex, ModelFault>    _faults;
             LatLonDepth _base;
             double _min_lat, _max_lat, _min_lon, _max_lon;
+            double _stress_drop_factor;
 
 #ifdef HDF5_FOUND
             void read_section_hdf5(const int &data_file);
@@ -1214,6 +1270,9 @@ namespace quakelib {
             void write_section_hdf5(const int &data_file) const;
             void write_element_hdf5(const int &data_file) const;
             void write_vertex_hdf5(const int &data_file) const;
+
+            void write_stress_drop_factor_hdf5(const int &data_file) const;
+            void read_stress_drop_factor_hdf5(const int &data_file);
 #endif
 
         public:
@@ -1235,6 +1294,13 @@ namespace quakelib {
                 return siterator(&_sections, _sections.end());
             };
 
+            fiterator begin_fault(void) {
+                return fiterator(&_faults, _faults.begin());
+            };
+            fiterator end_fault(void) {
+                return fiterator(&_faults, _faults.end());
+            };
+
             eiterator begin_element(const UIndex &fid=INVALID_INDEX) {
                 return eiterator(&_elements, _elements.begin(), fid);
             };
@@ -1243,9 +1309,9 @@ namespace quakelib {
             };
 
             UIndex next_fault_index(void) const {
-				if (_faults.size()) return _faults.rbegin()->first+1;
-				else return 0;
-			};
+                if (_faults.size()) return _faults.rbegin()->first+1;
+                else return 0;
+            };
             UIndex next_section_index(void) const {
                 if (_sections.size()) return _sections.rbegin()->first+1;
                 else return 0;
@@ -1269,6 +1335,14 @@ namespace quakelib {
 
             Vec<3> get_base(void) const {
                 return Vec<3>(_base.lat(), _base.lon(), _base.altitude());
+            }
+
+            double stressDropFactor(void) const {
+                return _stress_drop_factor;
+            }
+
+            void setStressDropFactor(const double &new_stress_drop_factor) {
+                _stress_drop_factor = new_stress_drop_factor;
             }
 
             std::vector<double> get_latlon_bounds(void) const {
@@ -1315,6 +1389,7 @@ namespace quakelib {
                                 const std::string &taper_method,
                                 const bool resize_trace_elements);
 
+            void compute_stress_drops(const double &stress_drop_factor);
             void create_faults(const std::string &taper_method);
 
             int read_file_ascii(const std::string &file_name);
@@ -1335,6 +1410,7 @@ namespace quakelib {
             double linear_interp(const double &x, const double &x_min, const double &x_max, const double &y_min, const double &y_max) const;
             char *rgb2hex(const int r, const int g, const int b) const;
             double section_length(const UIndex &sec_id) const;
+            double section_area(const quakelib::UIndex &sec_id) const;
             double section_max_depth(const UIndex &sec_id) const;
     };
 

@@ -41,6 +41,7 @@ void ReadModelFile::init(SimFramework *_sim) {
     std::string                 file_name, file_type, stress_filename, stress_file_type, stress_index_filename;
     quakelib::ModelWorld        world;
     quakelib::siterator         sit;
+    quakelib::fiterator         fit;
     quakelib::eiterator         eit;
     int                         err;
     quakelib::Conversion        c;
@@ -63,6 +64,16 @@ void ReadModelFile::init(SimFramework *_sim) {
         sim->errConsole() << "ERROR: could not read file " << file_name << std::endl;
         return;
     }
+
+    // Load in fault length and area data
+    for (fit=world.begin_fault(); fit!=world.end_fault(); ++fit) {
+        sim->setFaultArea(fit->id(), fit->area());
+        sim->setFaultLength(fit->id(), fit->length());
+    }
+
+    // Tell the simulation what the stress drop factor is (used for dynamic stress drops)
+    sim->setStressDropFactor(world.stressDropFactor());
+    std::cout << "# Sim stress drop factor set: " << sim->stressDropFactor() << std::endl;
 
     // Convert input world to simulation elements
     for (eit=world.begin_element(); eit!=world.end_element(); ++eit) {
