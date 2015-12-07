@@ -204,7 +204,7 @@ int main (int argc, char **argv) {
     std::string                 eqsim_geom_out_file, eqsim_fric_out_file, eqsim_cond_out_file;
     std::string                 stat_out_file;
     std::vector<std::string>    files[2], types[2];
-    std::vector<std::string>    taper_fault_methods;
+    std::string    				taper_fault_method;
     std::vector<double>         trace_element_sizes;
     double                      stress_drop_factor = 0.3;  // default value is a reasonable 0.3
     int                         ch, res;
@@ -286,7 +286,7 @@ int main (int argc, char **argv) {
                 break;
 
             case 't':
-                taper_fault_methods.push_back(optarg);
+                taper_fault_method = optarg;
                 break;
 
             default:
@@ -329,13 +329,11 @@ int main (int argc, char **argv) {
     }
 
     // Check that the taper methods are valid
-    for (i=0; i<taper_fault_methods.size(); ++i) {
-        if (taper_fault_methods[i] != "none" && taper_fault_methods[i] != "taper"
-            && taper_fault_methods[i] != "taper_full" && taper_fault_methods[i] != "taper_renorm") {
-            std::cerr << "ERROR: Taper method " << taper_fault_methods[i] << " must be one of: none, taper, taper_full, taper_renorm." << std::endl;
-            arg_error = true;
-        }
-    }
+	if (taper_fault_method != "none" && taper_fault_method != "taper"
+		&& taper_fault_method != "taper_full" && taper_fault_method != "taper_renorm") {
+		std::cerr << "ERROR: Taper method " << taper_fault_method << " must be one of: none, taper, taper_full, taper_renorm." << std::endl;
+		arg_error = true;
+	}
 
     if (!(compute_stress_drops) && (eqsim_fric_in_file.empty() || eqsim_geom_in_file.empty() )) {
         std::cerr << "ERROR: If not computing stress drops, must specify EQSim geometry and EQSim friction file. EQSim friction should contain stress drops." << std::endl;
@@ -375,7 +373,7 @@ int main (int argc, char **argv) {
         } else if (types[0][n] == "hdf5") {
             res = new_world.read_file_hdf5(files[0][n]);
         } else if (types[0][n] == "trace") {
-            res = new_world.read_file_trace_latlon(unused_trace_segments, files[0][n], trace_element_sizes.at(j), taper_fault_methods.at(j), resize_trace_elements);
+            res = new_world.read_file_trace_latlon(unused_trace_segments, files[0][n], trace_element_sizes.at(j), taper_fault_method, resize_trace_elements);
             ++j;
         }
 
@@ -401,7 +399,7 @@ int main (int argc, char **argv) {
     if (!eqsim_geom_in_file.empty()) {
         quakelib::ModelWorld        new_world;
 
-        new_world.read_files_eqsim(eqsim_geom_in_file, eqsim_cond_in_file, eqsim_fric_in_file, taper_fault_methods.at(0));
+        new_world.read_files_eqsim(eqsim_geom_in_file, eqsim_cond_in_file, eqsim_fric_in_file, taper_fault_method);
         world.insert(new_world);
     }
 
@@ -428,7 +426,7 @@ int main (int argc, char **argv) {
     // Create ModelFault objects and correctly rewrites DAS for each vertex to be relative to fault
     // Also applies horizontal tapering at ends of each fault if requested.
     // NOTE: the tapering method specified for the first trace file is used for the whole fault model.
-    world.create_faults(taper_fault_methods.at(0));
+    world.create_faults(taper_fault_method);
 
 
     // Schultz: Moving stress drop computation here (used to be in UpdateBlockStress.cpp.
