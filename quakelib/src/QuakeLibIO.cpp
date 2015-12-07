@@ -664,10 +664,8 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             // Calculate values for element based on interpolation between trace points
             taper_t = 1;
 
-            double mid_t = (cur_t+next_t)/2.0;
-
-
             //Wilson: Horizontal tapering is now in ModelWorld::create_faults.
+            //double mid_t = (cur_t+next_t)/2.0;
             /*
             if (taper_method == "taper_full" || taper_method == "taper_renorm") {
                 double x = mid_t;
@@ -770,7 +768,7 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 
     int i;
     float DAStotal, faultlength, eldas, innerdist, newSlipRate;
-    float currSlipRate, sectionlength, taper_factor, renorm_factor;
+    float sectionlength, taper_factor, renorm_factor;
     UIndex sid, fid;
     ElementIDSet sec_IDs;
     ElementIDSet::iterator sidit;
@@ -895,7 +893,7 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
         eit->second.set_stress_drop(stress_drop);
 
         //////////////////////
-        std::cout << " Drop: " << eit->second.stress_drop() << std::endl;
+        //std::cout << eit->second.stress_drop() << std::endl;
     }
 
 }
