@@ -123,12 +123,52 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
     //H5Tclose(section_name_datatype);
 }
 
+void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
+    FieldDesc       field_desc;
+
+    field_desc.name = "id";
+    field_desc.details = "Unique ID of the fault.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(FaultData, _id);
+    field_desc.type = H5T_NATIVE_UINT;
+    field_desc.size = sizeof(UIndex);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "fault_area";
+    field_desc.details = "Area of the fault [m^2].";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(FaultData, _area);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "fault_length";
+    field_desc.details = "Length of the fault [m].";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(FaultData, _length);
+    field_desc.type = H5T_NATIVE_FLOAT;
+    field_desc.size = sizeof(float);
+#endif
+    descs.push_back(field_desc);
+}
+
+
 void quakelib::ModelSection::read_data(const SectionData &in_data) {
     memcpy(&_data, &in_data, sizeof(SectionData));
 }
 
 void quakelib::ModelSection::write_data(SectionData &out_data) const {
     memcpy(&out_data, &_data, sizeof(SectionData));
+}
+
+void quakelib::ModelFault::read_data(const FaultData &in_data) {
+    memcpy(&_data, &in_data, sizeof(FaultData));
+}
+
+void quakelib::ModelFault::write_data(FaultData &out_data) const {
+    memcpy(&out_data, &_data, sizeof(FaultData));
 }
 
 void quakelib::ModelSection::read_ascii(std::istream &in_stream) {
@@ -139,10 +179,25 @@ void quakelib::ModelSection::read_ascii(std::istream &in_stream) {
     ss >> _data._name;
 }
 
+void quakelib::ModelFault::read_ascii(std::istream &in_stream) {
+    std::stringstream   ss(next_line(in_stream));
+    ss >> _data._id;
+    ss >> _data._area;
+    ss >> _data._length;
+}
+
 void quakelib::ModelSection::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._id << " ";
     out_stream << _data._fault_id << " ";
     out_stream << _data._name;
+
+    next_line(out_stream);
+}
+
+void quakelib::ModelFault::write_ascii(std::ostream &out_stream) const {
+    out_stream << _data._id << " ";
+    out_stream << _data._area << " ";
+    out_stream << _data._length;
 
     next_line(out_stream);
 }
@@ -441,12 +496,12 @@ class TraceSpline {
             }*/
             while (ind < _pts.size()-1 && start_pt.dist(_pts.at(ind+1)) < elem_size) {
 
-            	if (ind < _point_dists.size()-1) cur_dist += (1-inner_t) * _point_dists.at(ind);
-				else cur_dist = (t * _spline_len) + elem_size;
+                if (ind < _point_dists.size()-1) cur_dist += (1-inner_t) * _point_dists.at(ind);
+                else cur_dist = (t * _spline_len) + elem_size;
 
-            	ind++;
-				inner_t = 0;
-			}
+                ind++;
+                inner_t = 0;
+            }
 
             // If we're past the end of the trace, return our best guess
             // for t based on the size of the last segment
@@ -495,7 +550,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
-    	Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
+        Vec<3> pt = conv.convert2xyz(trace.at(i).pos());
         //Vec<3> pt = conv.yxz2xyz(trace.at(i).pos()); //Use for importing trace in (y, x) halfspace coords.  Must turn off LatLonDepth error throwning for angles out of bounds in QuakeLibUtil.h.
         spline.add_point(pt);
         unused_trace_pts.insert(i);
@@ -705,103 +760,149 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 }
 
 void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
-	std::map<UIndex, ModelFault>::const_iterator fit;
-	std::map<UIndex, ModelSection>::const_iterator sit;
-	std::map<UIndex, ModelElement>::iterator eit;
-	std::map<UIndex, ModelVertex>::iterator vit;
+    std::map<UIndex, ModelFault>::const_iterator fit;
+    std::map<UIndex, ModelSection>::const_iterator sit;
+    std::map<UIndex, ModelElement>::iterator eit;
+    std::map<UIndex, ModelVertex>::iterator vit;
     std::map<UIndex, UIndex> vertSects;
-	std::map<UIndex, float> sectLengths;
-	std::map<UIndex, float> sectStartDAS;
+    std::map<UIndex, float> sectLengths;
+    std::map<UIndex, float> sectStartDAS;
 
-	int i;
-	float DAStotal, faultlength, eldas, innerdist, newSlipRate;
-	float currSlipRate, sectionlength, taper_factor, renorm_factor;
-	UIndex sid, fid;
-	ElementIDSet sec_IDs;
-	ElementIDSet::iterator sidit;
-	SimElement simElem;
+    int i;
+    float DAStotal, faultlength, eldas, innerdist, newSlipRate;
+    float currSlipRate, sectionlength, taper_factor, renorm_factor;
+    UIndex sid, fid;
+    ElementIDSet sec_IDs;
+    ElementIDSet::iterator sidit;
+    SimElement simElem;
 
-	// populate _faults with data
+    // populate _faults with data
     for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
 
-		sectionlength = section_length(sit->first);
-		sectLengths[sit->first] = sectionlength;
+        sectionlength = section_length(sit->first);
+        sectLengths[sit->first] = sectionlength;
+        double sectionarea = section_area(sit->first);
 
-		if (_faults.count(sit->second.fault_id())==0){
-			ModelFault &fault = new_fault(sit->second.fault_id());
-			fault.set_length(sectionlength);
-			fault.insert_section_id(sit->first);
-		}
-		else{
-		    ModelFault &fault = _faults[sit->second.fault_id()];
-			fault.set_length(fault.length()+sectionlength);
-			fault.insert_section_id(sit->first);
-		}
-     }
-	// record which vertices belong to which sections
-    for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-    	for (i=0; i<3; i++){
-    		vertSects[eit->second.vertex(i)] = eit->second.section_id();
-    	}
+        if (_faults.count(sit->second.fault_id())==0) {
+            ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.set_length(sectionlength);
+            fault.set_area(sectionarea);
+            fault.insert_section_id(sit->first);
+        } else {
+            ModelFault &fault = _faults[sit->second.fault_id()];
+            fault.set_length(fault.length()+sectionlength);
+            fault.set_area(fault.area()+sectionarea);
+            fault.insert_section_id(sit->first);
+        }
     }
+
+    // record which vertices belong to which sections
+    for (eit=_elements.begin(); eit!=_elements.end(); eit++) {
+        for (i=0; i<3; i++) {
+            vertSects[eit->second.vertex(i)] = eit->second.section_id();
+        }
+    }
+
     // record the fault DAS at the beginning of each section
-    for (fit=_faults.begin(); fit!=_faults.end(); fit++){
-    	sec_IDs = fit->second.section_ids();
-    	DAStotal = 0;
-    	for (sidit=sec_IDs.begin(); sidit!=sec_IDs.end(); sidit++){
-    		sectStartDAS[*sidit] = DAStotal;
-    		DAStotal += sectLengths[*sidit];
-    	}
+    for (fit=_faults.begin(); fit!=_faults.end(); fit++) {
+        sec_IDs = fit->second.section_ids();
+        DAStotal = 0;
+
+        for (sidit=sec_IDs.begin(); sidit!=sec_IDs.end(); sidit++) {
+            sectStartDAS[*sidit] = DAStotal;
+            DAStotal += sectLengths[*sidit];
+        }
     }
+
     // Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
-    for (vit=_vertices.begin(); vit!=_vertices.end(); vit++){
-    	vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
+    for (vit=_vertices.begin(); vit!=_vertices.end(); vit++) {
+        vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
     }
+
     // If tapering, loop through elements, calc their midpoint DAS,
     // assign horizontal sqrt tapering in end 12km.
-	if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm"){
-		std::map<UIndex, float> fault_taper_full;
-		std::map<UIndex, float> fault_taper_flow;
-		for (fit=_faults.begin(); fit!=_faults.end(); fit++){
-			fault_taper_full[fit->first] = 0;
-			fault_taper_flow[fit->first] = 0;
-		}
+    if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm") {
+        std::map<UIndex, float> fault_taper_full;
+        std::map<UIndex, float> fault_taper_flow;
 
-    	for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-			simElem = create_sim_element(eit->second.id());
-			eldas = simElem.min_das()+(simElem.max_das()-simElem.min_das())/2.0;
-			sid = eit->second.section_id();
-			fid = _sections[sid].fault_id();
+        for (fit=_faults.begin(); fit!=_faults.end(); fit++) {
+            fault_taper_full[fit->first] = 0;
+            fault_taper_flow[fit->first] = 0;
+        }
 
-			fault_taper_full[fid] += simElem.area() * eit->second.slip_rate();
+        for (eit=_elements.begin(); eit!=_elements.end(); eit++) {
+            simElem = create_sim_element(eit->second.id());
+            eldas = simElem.min_das()+(simElem.max_das()-simElem.min_das())/2.0;
+            sid = eit->second.section_id();
+            fid = _sections[sid].fault_id();
 
-			faultlength = _faults[fid].length();
-			innerdist = faultlength/2.0 - abs(faultlength/2.0 - eldas);
-			if (innerdist < 12000){
-				taper_factor = sqrt(innerdist/12000.0);
-				newSlipRate = eit->second.slip_rate() * taper_factor;
-				eit->second.set_slip_rate(newSlipRate);
-				fault_taper_flow[fid] += taper_factor*simElem.area()*eit->second.slip_rate();
-			}
-			else{
-				fault_taper_flow[fid] += simElem.area()*eit->second.slip_rate();
-			}
-		}
-    	//If taper_renorm, loop back through elements and boost their slip rates by normalization factor
-    	if (taper_method == "taper_renorm") {
-    		for (eit=_elements.begin(); eit!=_elements.end(); eit++){
-    			sid = eit->second.section_id();
-    			fid = _sections[sid].fault_id();
-    			renorm_factor = fault_taper_full[fid] / fault_taper_flow[fid];
-    			newSlipRate = eit->second.slip_rate() * renorm_factor;
-				eit->second.set_slip_rate(newSlipRate);
-    		}
-    	}
+            fault_taper_full[fid] += simElem.area() * eit->second.slip_rate();
 
-	}
+            faultlength = _faults[fid].length();
+            innerdist = faultlength/2.0 - abs(faultlength/2.0 - eldas);
+
+            if (innerdist < 12000) {
+                taper_factor = sqrt(innerdist/12000.0);
+                newSlipRate = eit->second.slip_rate() * taper_factor;
+                eit->second.set_slip_rate(newSlipRate);
+                fault_taper_flow[fid] += taper_factor*simElem.area()*eit->second.slip_rate();
+            } else {
+                fault_taper_flow[fid] += simElem.area()*eit->second.slip_rate();
+            }
+        }
+
+        //If taper_renorm, loop back through elements and boost their slip rates by normalization factor
+        if (taper_method == "taper_renorm") {
+            for (eit=_elements.begin(); eit!=_elements.end(); eit++) {
+                sid = eit->second.section_id();
+                fid = _sections[sid].fault_id();
+                renorm_factor = fault_taper_full[fid] / fault_taper_flow[fid];
+                newSlipRate = eit->second.slip_rate() * renorm_factor;
+                eit->second.set_slip_rate(newSlipRate);
+            }
+        }
+
+    }
 
 
 }
+
+// Schultz: Adapted from Steve Ward's model, used in the EQSim comparison for UCERF2 model
+void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor) {
+    std::map<UIndex, ModelElement>::iterator eit;
+    UIndex fault_id;
+    ModelFault this_fault;
+    double fault_area, fault_length, fault_width, char_magnitude, char_slip, R, nu, stress_drop;
+
+    // Assign a stress drop to each element based on the geometry of the fault it belongs to
+    for (eit=_elements.begin(); eit!=_elements.end(); eit++) {
+
+        fault_id = section(eit->second.section_id()).fault_id();
+        this_fault = fault(fault_id);
+
+        fault_area = this_fault.area();
+        fault_length = this_fault.length();
+        fault_width = fault_area/fault_length;
+
+        char_magnitude = 4.0+log10(fault_area*1e-6) + stress_drop_factor;
+        char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*eit->second.lame_mu()*fault_area);
+
+        nu = 0.5*eit->second.lame_lambda()/(eit->second.lame_mu() + eit->second.lame_lambda());
+        R  = sqrt(fault_width*fault_width + fault_length*fault_length);
+
+        stress_drop = -2*eit->second.lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
+
+        eit->second.set_stress_drop(stress_drop);
+
+        //////////////////////
+        std::cout << " Drop: " << eit->second.stress_drop() << std::endl;
+    }
+
+}
+
+
+
+
 
 quakelib::ModelFault &quakelib::ModelWorld::new_fault(const UIndex &fid) {
     _faults.insert(std::make_pair(fid, ModelFault()));
@@ -919,7 +1020,7 @@ void quakelib::ModelVertex::write_ascii(std::ostream &out_stream) const {
 }
 
 void quakelib::ModelWorld::clear(void) {
-	_faults.clear();
+    _faults.clear();
     _sections.clear();
     _elements.clear();
     _vertices.clear();
@@ -927,7 +1028,8 @@ void quakelib::ModelWorld::clear(void) {
 
 int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     std::ifstream       in_file;
-    unsigned int        i, num_sections, num_elements, num_vertices;
+    unsigned int        i, num_sections, num_elements, num_vertices, num_faults;
+    double              stress_drop_factor;
     LatLonDepth         min_latlon, max_latlon;
 
     // Clear the world first to avoid incorrectly mixing indices
@@ -939,9 +1041,20 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
 
     // Read the first line describing the number of sections, etc
     std::stringstream desc_line(next_line(in_file));
+    desc_line >> num_faults;
     desc_line >> num_sections;
     desc_line >> num_elements;
     desc_line >> num_vertices;
+    desc_line >> stress_drop_factor;
+
+    setStressDropFactor(stress_drop_factor);
+
+    // Read faults
+    for (i=0; i<num_faults; ++i) {
+        ModelFault     new_fault;
+        new_fault.read_ascii(in_file);
+        _faults.insert(std::make_pair(new_fault.id(), new_fault));
+    }
 
     // Read sections
     for (i=0; i<num_sections; ++i) {
@@ -1069,7 +1182,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
                 min_alt = fmin(min_alt, vertex(eit->vertex(i)).xyz()[2]);
             }
         }
-        
+
         // Schultz: Here I am assuming a constant depth for the fault.
         // This should be improved later.
         fault_depth = fabs(max_alt-min_alt);
@@ -1086,7 +1199,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
                 a = vertex(eit->vertex(1)).xyz() - vertex(eit->vertex(0)).xyz();
                 b = vertex(eit->vertex(2)).xyz() - vertex(eit->vertex(0)).xyz();
                 dip_angle = a.cross(b).unit_vector().vector_angle(Vec<3>(0,0,1));
-                
+
                 // Using the dip angle, compute the depth along dip
                 if (dip_angle <= M_PI/2.0) {
                     depth_along_dip = fault_depth/sin(dip_angle);
@@ -1144,7 +1257,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
 
         // And each of the trace points
         for (i=0; i<trace_pts.size(); ++i) trace_pts[i].write_ascii(out_file);
-        
+
         // Close the file
         out_file.close();
         std::cout << "Wrote trace file: " << sec_file_name << std::endl;
@@ -1160,13 +1273,38 @@ int quakelib::ModelWorld::write_file_ascii(const std::string &file_name) const {
     std::map<UIndex, ModelVertex>::const_iterator   vit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelFault>::const_iterator    f_it;
 
     out_file.open(file_name.c_str());
+    out_file << "# Number of faults\n";
     out_file << "# Number of sections\n";
     out_file << "# Number of elements\n";
     out_file << "# Number of vertices\n";
-    out_file << _sections.size() << " " << _elements.size() << " " << _vertices.size();
+    out_file << "# Stress drop factor\n";
+    out_file << _faults.size() << " " << _sections.size() << " " << _elements.size() << " " << _vertices.size() << " " << stressDropFactor() ;
     next_line(out_file);
+
+    // Write fault header
+    descs.clear();
+    ModelFault::get_field_descs(descs);
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_file << "# " << dit->name << ": " << dit->details << "\n";
+    }
+
+    out_file << "# ";
+
+    for (dit=descs.begin(); dit!=descs.end(); ++dit) {
+        out_file << dit->name << " ";
+    }
+
+    out_file << "\n";
+
+    // Write faults
+    for (f_it=_faults.begin(); f_it!=_faults.end(); ++f_it) {
+        f_it->second.write_ascii(out_file);
+    }
+
 
     // Write section header
     descs.clear();
@@ -1255,6 +1393,8 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
 
     if (data_file < 0) exit(-1);
 
+    read_stress_drop_factor_hdf5(data_file);
+    read_fault_hdf5(data_file);
     read_section_hdf5(data_file);
     read_element_hdf5(data_file);
     read_vertex_hdf5(data_file);
@@ -1284,6 +1424,54 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
 }
 
 #ifdef HDF5_FOUND
+void quakelib::ModelWorld::read_fault_hdf5(const int &data_file) {
+    std::vector<FieldDesc>                          descs;
+    std::map<UIndex, ModelFault>::const_iterator  fit;
+    hsize_t                     num_fields, num_faults;
+    unsigned int                i;
+    FaultData                 *fault_data;
+    size_t                      *field_offsets;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    descs.clear();
+    ModelFault::get_field_descs(descs);
+    num_fields = descs.size();
+    field_offsets = new size_t[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_offsets[i] = descs[i].offset;
+        field_sizes[i] = descs[i].size;
+    }
+
+    res = H5TBget_table_info(data_file, ModelFault::hdf5_table_name().c_str(), &num_fields, &num_faults);
+
+    if (res < 0) exit(-1);
+
+    // TODO: check that num_fields matches the descs
+    //
+    fault_data = new FaultData[num_faults];
+    res = H5TBread_records(data_file, ModelFault::hdf5_table_name().c_str(), 0, num_faults, sizeof(FaultData), field_offsets, field_sizes, fault_data);
+
+    if (res < 0) exit(-1);
+
+    // Read section data into the World
+    for (i=0; i<num_faults; ++i) {
+        ModelFault  new_fault;
+        new_fault.read_data(fault_data[i]);
+        _faults.insert(std::make_pair(new_fault.id(), new_fault));
+    }
+
+    // Free memory for HDF5 related data
+    // yoder: ... and use delete [] for arrays...
+    delete [] fault_data;
+    delete [] field_offsets;
+    delete [] field_sizes;
+
+}
+
+
 void quakelib::ModelWorld::read_section_hdf5(const int &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelSection>::const_iterator  fit;
@@ -1422,6 +1610,143 @@ void quakelib::ModelWorld::read_vertex_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
+void quakelib::ModelWorld::write_stress_drop_factor_hdf5(const int &data_file) const {
+    double  tmp[2];
+    int     values_set;
+    int     pair_val_dataspace;
+    hsize_t dimsf[2];
+    herr_t  status, res;
+
+    // Create dataspace for a single value
+    dimsf[0] = 1;
+    pair_val_dataspace = H5Screate_simple(1, dimsf, NULL);
+
+    // Create entries for the simulation start/stop years and base longitude/latitude
+    values_set = H5Dcreate2(data_file, "stress_drop_factor", H5T_NATIVE_DOUBLE, pair_val_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+    if (values_set < 0) exit(-1);
+
+    // Record the simulation start/end years
+    tmp[0] = stressDropFactor();
+    tmp[1] = stressDropFactor();
+    status = H5Dwrite(values_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
+
+    // Close the handles we've used
+    res = H5Dclose(values_set);
+}
+
+void quakelib::ModelWorld::read_stress_drop_factor_hdf5(const int &data_file) {
+    double  tmp;
+    herr_t  res;
+    hid_t   data_id, data_access_properties;
+
+    // Get data set property list
+    data_access_properties = H5Pcreate(H5P_DATASET_ACCESS);
+
+    // Open the data set for reading
+    data_id = H5Dopen2(data_file, "stress_drop_factor", data_access_properties);
+
+    if (data_id < 0) exit(-1);
+
+    // Read the stress drop data
+    res = H5Dread(data_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
+
+    if (res < 0) exit(-1);
+
+    // Set the stress drop factor for the model
+    setStressDropFactor(tmp);
+
+}
+
+void quakelib::ModelWorld::write_fault_hdf5(const int &data_file) const {
+    std::vector<FieldDesc>                          descs;
+    std::map<UIndex, ModelFault>::const_iterator  fit;
+    size_t                      num_fields, num_faults;
+    unsigned int                i;
+    FaultData                   blank_fault, *fault_data;
+    char                        **field_names, **field_details;
+    size_t                      *field_offsets;
+    int                         *field_types;
+    size_t                      *field_sizes;
+    herr_t                      res;
+
+    // Set up the section table definition
+    descs.clear();
+    ModelFault::get_field_descs(descs);
+    num_fields = descs.size();
+    num_faults = _faults.size();
+    field_names = new char *[num_fields];
+    field_details = new char *[num_fields];
+    field_offsets = new size_t[num_fields];
+    field_types = new int[num_fields];
+    field_sizes = new size_t[num_fields];
+
+    for (i=0; i<num_fields; ++i) {
+        field_names[i] = new char[descs[i].name.length()+1];
+        strncpy(field_names[i], descs[i].name.c_str(), descs[i].name.length());
+        field_names[i][descs[i].name.length()] = '\0';
+        field_details[i] = new char[descs[i].details.length()+1];
+        strncpy(field_details[i], descs[i].details.c_str(), descs[i].details.length());
+        field_details[i][descs[i].details.length()] = '\0';
+        field_offsets[i] = descs[i].offset;
+        field_types[i] = descs[i].type;
+        field_sizes[i] = descs[i].size;
+    }
+
+    // TODO: factor this out?
+    blank_fault = ModelFault().data();
+
+    // Fill in the data for the sections
+    fault_data = new FaultData[num_faults];
+
+    for (i=0,fit=_faults.begin(); fit!=_faults.end(); ++i,++fit) {
+        fit->second.write_data(fault_data[i]);
+    }
+
+    // Create the section table
+    res = H5TBmake_table("Faults",
+                         data_file,
+                         ModelFault::hdf5_table_name().c_str(),
+                         num_fields,
+                         num_faults,
+                         sizeof(FaultData),
+                         (const char **)field_names,
+                         field_offsets,
+                         field_types,
+                         num_faults,
+                         &blank_fault,
+                         0,
+                         fault_data);
+
+    if (res < 0) exit(-1);
+
+    // Add the details of each field as an attribute
+    for (i=0; i<num_fields; ++i) {
+        std::stringstream   ss;
+        ss << "FIELD_" << i << "_DETAILS";
+        res = H5LTset_attribute_string(data_file,
+                                       ModelFault::hdf5_table_name().c_str(),
+                                       ss.str().c_str(),
+                                       field_details[i]);
+
+        if (res < 0) exit(-1);
+    }
+
+    // Free memory for HDF5 related data
+    delete fault_data;
+
+    for (i=0; i<num_fields; ++i) delete field_names[i];
+
+    delete field_names;
+
+    for (i=0; i<num_fields; ++i) delete field_details[i];
+
+    delete field_details;
+    delete field_offsets;
+    delete field_types;
+    delete field_sizes;
+}
+
 void quakelib::ModelWorld::write_section_hdf5(const int &data_file) const {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelSection>::const_iterator  fit;
@@ -1430,7 +1755,7 @@ void quakelib::ModelWorld::write_section_hdf5(const int &data_file) const {
     SectionData                 blank_section, *section_data;
     char                        **field_names, **field_details;
     size_t                      *field_offsets;
-    int                       *field_types;
+    int                         *field_types;
     size_t                      *field_sizes;
     herr_t                      res;
 
@@ -1704,6 +2029,8 @@ int quakelib::ModelWorld::write_file_hdf5(const std::string &file_name) const {
 
     if (data_file < 0) exit(-1);
 
+    write_stress_drop_factor_hdf5(data_file);
+    write_fault_hdf5(data_file);
     write_section_hdf5(data_file);
     write_element_hdf5(data_file);
     write_vertex_hdf5(data_file);
@@ -1892,7 +2219,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             // Compute area of the current element, add it to the total for this section
             quakelib::SimElement this_element = eqsim_world.create_sim_element(new_element.id());
             fault_areas[sit->second.sid()] += this_element.area();
-            
+
             // If we want to taper, keep a record of the elements at each distance along strike.
             // Convention: I will be using the minimum das
             if (taper_method == "taper" || taper_method == "taper_renorm") {
@@ -1915,31 +2242,33 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
         // Set the max slip for the current element
         eit->set_max_slip(max_slip);
-        
+
         taper_t = 1;
+
         // ---------- Taper the slip rates ------------------
         if (taper_method == "taper" || taper_method == "taper_renorm") {
-        
+
             // Loop over all other elements to compute the max depth for other elements above and below the current element.
             // (alternatively stated, those elements with the same distance along strike on the same fault)
             double max_depth_at_das = -DBL_MAX;
             quakelib::SimElement this_element = eqsim_world.create_sim_element(eit->id());
             UIndex this_fault = eqsim_world.section(eit->section_id()).fault_id();
+
             for (id_it=faults_with_elements_at_each_das[this_fault][this_element.min_das()].begin(); id_it!=faults_with_elements_at_each_das[this_fault][this_element.min_das()].end(); ++id_it) {
                 quakelib::SimElement that_element = eqsim_world.create_sim_element(*id_it);
                 max_depth_at_das = fmax(max_depth_at_das, fabs(that_element.max_depth()));
             }
-    
+
             // The slip rate will be reduced by an amount corresponding to its depth_along_dip relative to the maximum
             //   at this position along strike.
             double adjusted_dip = (this_element.dip() <= M_PI/2 ) ? this_element.dip() : M_PI - this_element.dip();
             double this_depth = 0.5*fabs(this_element.max_depth() + this_element.min_depth());
             double this_depth_down_dip = this_depth/sin(adjusted_dip);
             double max_depth_down_dip_at_das = max_depth_at_das/sin(adjusted_dip);
-            
+
             double z = this_depth_down_dip/max_depth_down_dip_at_das;
             taper_t *= sqrt(1-z);
-            
+
             //Wilson: Removing horizontal dependance in tapering.
             /*
             if (taper_method == "taper_full" || taper_method == "taper_renorm") {
@@ -1955,27 +2284,27 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
                     taper_t *= sqrt(x)*sqrt(1-z);
                 }
             }*/
-            
-            
-            
+
+
+
             ///// DEBUG ---------------------
-//            std::cout << "--- ID: " << eit->id() << "  DAS: " << this_element.min_das() << "  This Depth:  " << this_element.max_depth() <<  "  Max Depth at DAS: " << max_depth_at_das << std::endl;
-//            std::cout << "This min depth: " << this_element.min_depth() << "  This max depth: " << this_element.max_depth() << std::endl;
-//            std::cout << "Dip: " << this_element.dip() << " Adjusted Dip: " << adjusted_dip << "  This depth down dip: " << this_depth_down_dip << "  Max D.D.D.: " << max_depth_down_dip_at_das << "  Z: " << z << std::endl << std::endl;
-             
-            
-            
+            //            std::cout << "--- ID: " << eit->id() << "  DAS: " << this_element.min_das() << "  This Depth:  " << this_element.max_depth() <<  "  Max Depth at DAS: " << max_depth_at_das << std::endl;
+            //            std::cout << "This min depth: " << this_element.min_depth() << "  This max depth: " << this_element.max_depth() << std::endl;
+            //            std::cout << "Dip: " << this_element.dip() << " Adjusted Dip: " << adjusted_dip << "  This depth down dip: " << this_depth_down_dip << "  Max D.D.D.: " << max_depth_down_dip_at_das << "  Z: " << z << std::endl << std::endl;
+
+
+
         }
-        
-        taper_flow += taper_t*eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+
+        taper_flow += taper_t *eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
         taper_full += eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
-        
+
         // Adjust the slip rate
         eit->set_slip_rate(eit->slip_rate()*taper_t);
-        
+
     }
-        
-    // Renormalize the slip rates to preserve total moment rate    
+
+    // Renormalize the slip rates to preserve total moment rate
     if (taper_method == "taper_renorm") {
         double renorm_factor = taper_full/taper_flow, cur_slip_rate;
 
@@ -1984,31 +2313,31 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
             eit->set_slip_rate(renorm_factor*cur_slip_rate);
         }
     }
-    
-    
+
+
     //////// DEBUG OUT ///////////
-//    typedef std::map<double, ElementIDSet> inner_map;
-//    typedef std::map<UIndex, inner_map> outer_map;
-//    outer_map::iterator i;
-//    inner_map::iterator j;
-//    ElementIDSet::iterator k;
-//    for (i = faults_with_elements_at_each_das.begin(); i!=faults_with_elements_at_each_das.end(); ++i) {
-//        std::cout << "-----------------------------------" << std::endl;
-//        std::cout << "Fault: " << i->first << std::endl;
-//        
-//        inner_map &elements_per_das = i->second;
-//        for (j=elements_per_das.begin(); j!=elements_per_das.end(); ++j) {
-//            std::cout << "--- DAS: " << j->first;
-//            std::cout << "  Elements: ";
-//
-//            ElementIDSet &these_elements = j ->second;
-//            for (k=these_elements.begin(); k!=these_elements.end(); ++k) {
-//                std::cout << *k << "  ";
-//            }
-//            
-//            std::cout << std::endl;
-//        }
-//    }
+    //    typedef std::map<double, ElementIDSet> inner_map;
+    //    typedef std::map<UIndex, inner_map> outer_map;
+    //    outer_map::iterator i;
+    //    inner_map::iterator j;
+    //    ElementIDSet::iterator k;
+    //    for (i = faults_with_elements_at_each_das.begin(); i!=faults_with_elements_at_each_das.end(); ++i) {
+    //        std::cout << "-----------------------------------" << std::endl;
+    //        std::cout << "Fault: " << i->first << std::endl;
+    //
+    //        inner_map &elements_per_das = i->second;
+    //        for (j=elements_per_das.begin(); j!=elements_per_das.end(); ++j) {
+    //            std::cout << "--- DAS: " << j->first;
+    //            std::cout << "  Elements: ";
+    //
+    //            ElementIDSet &these_elements = j ->second;
+    //            for (k=these_elements.begin(); k!=these_elements.end(); ++k) {
+    //                std::cout << *k << "  ";
+    //            }
+    //
+    //            std::cout << std::endl;
+    //        }
+    //    }
 
     insert(eqsim_world);
 
@@ -2868,6 +3197,19 @@ double quakelib::ModelWorld::section_length(const quakelib::UIndex &sec_id) cons
     return max_das-min_das;
 }
 
+double quakelib::ModelWorld::section_area(const quakelib::UIndex &sec_id) const {
+    std::map<UIndex, ModelElement>::const_iterator  eit;
+    double sec_area = 0.0;
+
+    for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+        if (eit->second.section_id() == sec_id) {
+            sec_area += create_sim_element(eit->second.id()).area();
+        }
+    }
+
+    return sec_area;
+}
+
 double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) const {
     std::map<UIndex, ModelElement>::const_iterator  eit;
     double max_depth = DBL_MAX;
@@ -3669,7 +4011,7 @@ void quakelib::ModelEventSet::read_events_hdf5(const int &data_file) {
     delete [] event_data;
     delete [] field_offsets;
     delete [] field_sizes;
-    
+
 #else
     // TODO: Error out
 #endif
@@ -3763,6 +4105,7 @@ int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, cons
     res = H5Fclose(data_file);
 
     if (res < 0) exit(-1);
+
 #else
     // TODO: Error out
 #endif
@@ -3879,7 +4222,7 @@ void quakelib::ModelEventSet::append_sweeps_hdf5(const int &data_file, const uns
     // yoder: (added these deletes my self; are they supposed to not be deleted here and cleaned up somewhere else? looks like scope is wihtin function).
     delete [] field_offsets;
     delete [] field_sizes;
-    
+
 #else
     // TODO: Error out
 #endif

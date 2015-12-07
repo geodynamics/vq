@@ -50,8 +50,8 @@ Simulation::Simulation(int argc, char **argv) : SimFramework(argc, argv) {
 
     // Check validity of parameters
     // TODO: add more checks here
-    assertThrow(!getVersion().compare("2.0"),
-                "sim.version: Parameter file version must be 2.0");
+    //assertThrow(!getVersion().compare("2.0"),
+    //            "sim.version: Parameter file version must be 2.0");
     assertThrow(getSimStart()>=0,
                 "sim.start_year: Start year must be at least 0.");
     assertThrow(getSimStart() < getSimDuration(),

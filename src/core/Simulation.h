@@ -159,13 +159,6 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return friction[gid];
         }
 
-//        void setFriction(const BlockID gid, const double coefficient) {
-//            // Schultz: Cannot let friction decrease with increasing depth.
-//            // Instead lets prescribe a coefficient.
-//            // TODO: Add friction file reading so we can specify coeff. per block
-//            friction[gid] = coefficient;
-//        }
-
         //! Whether the block experienced static friction failure.
         //! This occurs if the Coulomb failure function goes over 0.
         bool cffFailure(const BlockID gid) const {
@@ -201,15 +194,28 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Get the area for the section in square meters.
-        double getSectionArea(const SectionID sid) const {
-            return section_areas.find(sid)->second;
+        double getFaultArea(const SectionID fid) const {
+            return fault_areas.find(fid)->second;
         };
         //! Set the area for the section in square meters.
-        void setSectionArea(const SectionID sid, const double new_area) {
-            if (section_areas.count(sid)) {
-                section_areas.find(sid)->second = new_area;
+        void setFaultArea(const SectionID fid, const double new_area) {
+            if (fault_areas.count(fid)) {
+                fault_areas.find(fid)->second = new_area;
             } else {
-                section_areas.insert(std::make_pair(sid, new_area));
+                fault_areas.insert(std::make_pair(fid, new_area));
+            }
+        };
+
+        //! Get the area for the section in square meters.
+        double getFaultLength(const SectionID fid) const {
+            return fault_lengths.find(fid)->second;
+        };
+        //! Set the area for the section in square meters.
+        void setFaultLength(const SectionID fid, const double new_length) {
+            if (fault_lengths.count(fid)) {
+                fault_lengths.find(fid)->second = new_length;
+            } else {
+                fault_lengths.insert(std::make_pair(fid, new_length));
             }
         };
 
@@ -219,8 +225,8 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             double char_magnitude, R, nu, dynamicStressDrop;
 
             // Fault wise data
-            fault_area = getSectionArea(getBlock(gid).getSectionID());
-            fault_length = getSectionLength(getBlock(gid).getSectionID());
+            fault_area = getFaultArea(getBlock(gid).getFaultID());
+            fault_length = getFaultLength(getBlock(gid).getFaultID());
             fault_width = fault_area/fault_length;
             R = sqrt(fault_length*fault_length + fault_width*fault_width);
             nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
@@ -234,29 +240,27 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return dynamicStressDrop;
         };
 
-        //! Get the length for the section in meters.
-        double getSectionLength(const SectionID sid) const {
-            return section_lengths.find(sid)->second;
-        };
-        //! Set the length for the section in meters.
-        void setSectionLength(const SectionID sid, const double new_length) {
-            if (section_lengths.count(sid)) {
-                section_lengths.find(sid)->second = new_length;
-            } else {
-                section_lengths.insert(std::make_pair(sid, new_length));
-            }
-        };
-
         //! Get the stress drop for this block in Pascals.
         double getStressDrop(const BlockID gid) const {
             return stress_drop[gid];
         };
 
         //! Set the stress drop for this block in Pascals.
-        void setStressDrop(const BlockID gid, const double new_stress_drop) {
+        void setStressDrop(const BlockID gid, double new_stress_drop) {
+            if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
+
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
         };
+
+        //! Set the stress drop factor for the simulation.
+        double stressDropFactor(void) const {
+            return stress_drop_factor;
+        };
+        void setStressDropFactor(double new_factor) {
+            stress_drop_factor = new_factor;
+        };
+
 
         //! Get the max stress drop for this block in Pascals.
         double getMaxStressDrop(const BlockID gid) const {

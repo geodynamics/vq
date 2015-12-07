@@ -706,12 +706,12 @@ failing.
 
 \subsection{Stress Drops \label{sec:stress_drops}}
 
-The stress drops for the fault elements are computed via Wells and Coppersmith 1994 scaling relations along with an analytical solution for the shear stress change per unit slip on a vertical rectangular fault. The simulation is pretty sensitive to these values; large stress drops tend to produce larger earthquakes with longer periods between events, while smaller stress drops produce many more small earthquakes. We provide a tuning parameter that globally adjusts the stress drops, \texttt{sim.friction.stress\_drop\_factor}. The default value is 0.3 and it's logarithmically scaled, and increasing this value by 0.1 multiplies the stress drops by 1.4, a 40\% increase.
+The stress drops for the fault elements are computed via Wells and Coppersmith 1994 scaling relations along with an analytical solution for the shear stress change per unit slip on a vertical rectangular fault. The simulation is pretty sensitive to these values; large stress drops tend to produce larger earthquakes with longer periods between events, while smaller stress drops produce many more small earthquakes. We provide a tuning parameter that globally adjusts the stress drops, and you must specify this when using the mesher to generate your fault model file. The mesher parameter is \texttt{--stress\_drop\_factor=X.X} where X.X is the value of the stress drop factor. The default value is 0.3 and it's logarithmically scaled, and increasing this value by 0.1 multiplies the stress drops by 1.4, a 40\% increase; typical values range from 0.2-0.6.
 
 We begin by using scaling relations to determine a different characteristic magnitude $M^{char}$ and a characteristic slip $\Delta s^{char}$ for each element in a fault based on the fault's geometry from Wells and Coppersmith 1994 scaling relations
 
 \begin{eqnarray}
-	M^{char}  = 4.07 + 0.98 \log_{10} (A) + \mbox{sim.friction.stress\_drop\_factor}
+	M^{char}  = 4.07 + 0.98 \log_{10} (A) + \mbox{stress\_drop\_factor}
 \end{eqnarray}
 
 where $A$ is the surface area of the fault in $km^2$. We then use the definition of moment magnitude to determine the mean slip $\Delta s^{char}$
@@ -2377,10 +2377,6 @@ values indicate ruptures are more likely to propagate along a fault
 and result in larger earthquakes, while lower values indicate ruptures
 are less likely to propagate and result in smaller earthquakes.\tabularnewline
 \hline 
-\texttt{\small{sim.friction.compute\_stress\_drops}} & Boolean. Default is True. If true, compute the stress drops from the fault geometry and scaling relations. If false, must specify stress drops in the model file. See section \ref{sec:stress_drops}.\tabularnewline
-\hline 
-\texttt{\small{sim.friction.stress\_drop\_factor}} & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. Must use this with sim.friction.compute\_stress\_drops. See section \ref{sec:stress_drops}.\tabularnewline
-\hline 
 \end{tabular}
 
 
@@ -2641,6 +2637,7 @@ are grouped by their functionality.
 \hline 
 -d, -\/-delete\_unused & Delete unused vertices after importing files.\tabularnewline
 \hline 
+-q -\/-stress\_drop\_factor & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. See section \ref{sec:stress_drops}.\tabularnewline
 \end{tabular}
 
 
