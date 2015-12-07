@@ -227,7 +227,7 @@ int main (int argc, char **argv) {
             case 'r':
                 resize_trace_elements = true;
                 break;
-                
+
             case 'x':
                 compute_stress_drops = false;
                 std::cout << " === NOT computing stress drops ==="  << std::endl;

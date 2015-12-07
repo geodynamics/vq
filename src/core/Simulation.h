@@ -205,7 +205,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
                 fault_areas.insert(std::make_pair(fid, new_area));
             }
         };
-        
+
         //! Get the area for the section in square meters.
         double getFaultLength(const SectionID fid) const {
             return fault_lengths.find(fid)->second;
@@ -248,10 +248,11 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! Set the stress drop for this block in Pascals.
         void setStressDrop(const BlockID gid, double new_stress_drop) {
             if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
+
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
         };
-        
+
         //! Set the stress drop factor for the simulation.
         double stressDropFactor(void) const {
             return stress_drop_factor;
@@ -259,7 +260,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         void setStressDropFactor(double new_factor) {
             stress_drop_factor = new_factor;
         };
-        
+
 
         //! Get the max stress drop for this block in Pascals.
         double getMaxStressDrop(const BlockID gid) const {

@@ -102,11 +102,11 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         //std::cout << gid << "  slip deficit: " << sim->getSlipDeficit(gid) << std::endl;
     }
 
-    // Schultz: Now, stress drop computation has moved to the mesher. Here we just read in the 
+    // Schultz: Now, stress drop computation has moved to the mesher. Here we just read in the
     //          pre-computed stress drops from the fault model.
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        
+
         depth = fabs(sim->getBlock(gid).center()[2]);  // depth of block center in m
 
         sim->setRhogd(gid, rho*g*depth);       // kg m^-3 * m s^-2 * m = kg m^-1 * s^-2 = Pa
