@@ -1023,6 +1023,7 @@ void quakelib::ModelWorld::clear(void) {
 int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     std::ifstream       in_file;
     unsigned int        i, num_sections, num_elements, num_vertices, num_faults;
+    double              stress_drop_factor;
     LatLonDepth         min_latlon, max_latlon;
 
     // Clear the world first to avoid incorrectly mixing indices
@@ -1038,6 +1039,9 @@ int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
     desc_line >> num_sections;
     desc_line >> num_elements;
     desc_line >> num_vertices;
+    desc_line >> stress_drop_factor;
+    
+    setStressDropFactor(stress_drop_factor);
 
     // Read faults
     for (i=0; i<num_faults; ++i) {
@@ -1270,7 +1274,8 @@ int quakelib::ModelWorld::write_file_ascii(const std::string &file_name) const {
     out_file << "# Number of sections\n";
     out_file << "# Number of elements\n";
     out_file << "# Number of vertices\n";
-    out_file << _faults.size() << " " << _sections.size() << " " << _elements.size() << " " << _vertices.size();
+    out_file << "# Stress drop factor\n";
+    out_file << _faults.size() << " " << _sections.size() << " " << _elements.size() << " " << _vertices.size() << " " << stressDropFactor() ;
     next_line(out_file);
 
     // Write fault header
@@ -1382,6 +1387,7 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
 
     if (data_file < 0) exit(-1);
 
+    read_stress_drop_factor_hdf5(data_file);
     read_fault_hdf5(data_file);
     read_section_hdf5(data_file);
     read_element_hdf5(data_file);
@@ -1596,6 +1602,52 @@ void quakelib::ModelWorld::read_vertex_hdf5(const int &data_file) {
     delete [] vertex_data;
     delete [] field_offsets;
     delete [] field_sizes;
+}
+
+void quakelib::ModelWorld::write_stress_drop_factor_hdf5(const int &data_file) const {
+    double  tmp[2];
+    int     values_set;
+    int     pair_val_dataspace;
+    hsize_t dimsf[2];
+    herr_t  status, res;
+
+    // Create dataspace for a single value
+    dimsf[0] = 1;
+    pair_val_dataspace = H5Screate_simple(1, dimsf, NULL);
+
+    // Create entries for the simulation start/stop years and base longitude/latitude
+    values_set = H5Dcreate2(data_file, "stress_drop_factor", H5T_NATIVE_DOUBLE, pair_val_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+    if (values_set < 0) exit(-1);
+ 
+    // Record the simulation start/end years
+    tmp[0] = stressDropFactor();
+    tmp[1] = stressDropFactor();
+    status = H5Dwrite(values_set, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
+
+    // Close the handles we've used
+    res = H5Dclose(values_set);
+}
+
+void quakelib::ModelWorld::read_stress_drop_factor_hdf5(const int &data_file) {
+    double  tmp;
+    herr_t  res;
+    hid_t   data_id, data_access_properties;
+    
+    // Get data set property list
+    data_access_properties = H5Pcreate(H5P_DATASET_ACCESS);
+
+    // Open the data set for reading
+    data_id = H5Dopen2(data_file, "stress_drop_factor", data_access_properties);
+    if (data_id < 0) exit(-1);
+
+    // Read the stress drop data
+    res = H5Dread(data_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tmp);
+    if (res < 0) exit(-1);
+    
+    // Set the stress drop factor for the model
+    setStressDropFactor(tmp);
+
 }
 
 void quakelib::ModelWorld::write_fault_hdf5(const int &data_file) const {
@@ -1969,6 +2021,7 @@ int quakelib::ModelWorld::write_file_hdf5(const std::string &file_name) const {
 
     if (data_file < 0) exit(-1);
 
+    write_stress_drop_factor_hdf5(data_file);
     write_fault_hdf5(data_file);
     write_section_hdf5(data_file);
     write_element_hdf5(data_file);
