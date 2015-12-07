@@ -401,8 +401,9 @@ int main (int argc, char **argv) {
     }
 
     // ***CREATE ModelFault OBJECTS***
-    // Here we take the final fault model and create ModelFault objects, which correctly rewrites DAS for
-    // each vertex to be relative to fault, applies horizontal tapering wrt length of fault
+    // Create ModelFault objects and correctly rewrites DAS for each vertex to be relative to fault
+    // Also applies horizontal tapering at ends of each fault if requested.
+    // NOTE: the tapering method specified for the first trace file is used for the whole fault model.
     world.create_faults(taper_fault_methods.at(0));
 
     // *** OUTPUT SECTION ***
