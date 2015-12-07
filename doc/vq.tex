@@ -1578,11 +1578,13 @@ FILE EXPORT
 	Specify an EQSim geometry file to export for the model.
 \end{verbatim}
 
-\subsubsection{Parameter File}
+\subsubsection{Taper Functionality}\label{sec:taper}
+Specifying any tapering method other than \texttt{none} will result in element slip rates being reduced near the edges of faults.  Slip rates are tapered both vertically, as the square root of the element's distance from the bottom of the fault normalized by the total fault depth, and horizontally for those elements within twelve kilometers of the ends of faults, as the square root of the element's distance from the fault end normalized by twelve kilometers. The \texttt{taper\_renorm} tapering method will perform this tapering with an additional slip rate normalization factor to maintain total moment rate over the fault.
+
+\subsection{Parameter File}
 
 Copy the \texttt{example\_params.d} file into the same folder as the mesher generated model.
 Edit the parameter file so the simulation parameters are set correctly for the current run. 
-
 
 \subsection{Bounding the Greens Functions}
 In some cases, the mesher produces elements that have some small percentage of overlap. This overlap can cause the Greens functions (interaction coefficients) to take on extreme/non-physical values. If your simulation is producing anomalous earthquakes, or behaving oddly, try the following.
@@ -2653,7 +2655,7 @@ a paired trace type file import.\tabularnewline
 \hline 
 -t METHOD, -\/-taper\_fault\_method=METHOD & Specify the how to taper the imported trace when meshing. Must have
 a paired trace type file import. Choices for taper method are: none,
-taper, taper\_full, taper\_renorm. %Taper follows the convention of \ref{sec:tapering}.
+taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tapering.
 \tabularnewline
 \hline 
 -C FILE, -\/-import\_eqsim\_condition=FILE & Specify an EQSim condition file to import for the model.\tabularnewline
