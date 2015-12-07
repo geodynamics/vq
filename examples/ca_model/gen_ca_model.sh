@@ -22,6 +22,7 @@ do
 done
 
 ../../build/src/mesher $EDITOR_ARGS \
+	--stress_drop_factor=0.4 \
     --export_file=all_cal_fault_${ELEM_SIZE}.txt \
     --export_file_type=text \
     --export_file=all_cal_fault_${ELEM_SIZE}.kml \
