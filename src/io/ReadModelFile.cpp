@@ -71,7 +71,10 @@ void ReadModelFile::init(SimFramework *_sim) {
         sim->setFaultLength(fit->id(), fit->length());
     }
 
-
+    // Tell the simulation what the stress drop factor is (used for dynamic stress drops)
+    sim->setStressDropFactor(world.stressDropFactor());
+    std::cout << "# Sim stress drop factor set: " << sim->stressDropFactor() << std::endl;
+    
     // Convert input world to simulation elements
     for (eit=world.begin_element(); eit!=world.end_element(); ++eit) {
         Block                   new_block;

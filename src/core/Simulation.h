@@ -251,6 +251,15 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             stress_drop[gid] = new_stress_drop;
             calcFriction(gid);
         };
+        
+        //! Set the stress drop factor for the simulation.
+        double stressDropFactor(void) const {
+            return stress_drop_factor;
+        };
+        void setStressDropFactor(double new_factor) {
+            stress_drop_factor = new_factor;
+        };
+        
 
         //! Get the max stress drop for this block in Pascals.
         double getMaxStressDrop(const BlockID gid) const {

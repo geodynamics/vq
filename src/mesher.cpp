@@ -437,6 +437,7 @@ int main (int argc, char **argv) {
     if (compute_stress_drops) {
         std::cout << "Computing stress drops with stress_drop_factor=" << stress_drop_factor << std::endl;
         world.compute_stress_drops(stress_drop_factor);
+        world.setStressDropFactor(stress_drop_factor);
     }
 
 
