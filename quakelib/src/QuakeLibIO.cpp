@@ -891,9 +891,15 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
         stress_drop = -2*eit->second.lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
 
         eit->second.set_stress_drop(stress_drop);
-
-        //////////////////////
-        //std::cout << eit->second.stress_drop() << std::endl;
+        
+        
+        /////
+        // TEMPORARY ASEISMIC CUT OFF, anything less than 0.13 gets set to 0
+        /////
+//        if (eit->second.aseismic() <= 0.13 ) {
+//            eit->second.set_aseismic(0.0);
+//        }
+        
     }
 
 }
@@ -1022,6 +1028,10 @@ void quakelib::ModelWorld::clear(void) {
     _sections.clear();
     _elements.clear();
     _vertices.clear();
+}
+
+void quakelib::ModelWorld::clear_faults(void) {
+    _faults.clear();
 }
 
 int quakelib::ModelWorld::read_file_ascii(const std::string &file_name) {
