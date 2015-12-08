@@ -407,6 +407,12 @@ class Geometry:
                                 pass # Ignore event elements that we are not asked for (in elements)                            
         return slip_time_series
 
+    def get_stress_drops(self):
+        return [self.model.element(ele).stress_drop() for ele in self.model.getElementIDs()]
+    
+    def get_stress_drop_factor(self):
+        return self.model.stressDropFactor()
+
 
 # ======= h5py I/O ============================================
 def read_events_h5(sim_file, event_numbers=None):
@@ -2068,11 +2074,16 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             self.create_plot(fig, color_index, "scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", filename)
 
 class FrequencyMagnitudePlot(BasePlotter):
-    def plot(self, fig, color_index, events, filename, UCERF2 = False, b1 = False):
+    def plot(self, fig, color_index, events, filename, UCERF2 = False, UCERF3 = False):
         # California observed seismicity rates and errorbars (UCERF2)
-        x_UCERF = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
-        y_UCERF = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
-        y_error_UCERF = [[1.2, 0.37, 0.22, 0.09, 0.04, 0.016],[1.50, 0.43, 0.28, 0.11, 0.06, 0.035]]
+        x_UCERF2 = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
+        y_UCERF2 = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
+        y_error_UCERF2 = [[1.2, 0.37, 0.22, 0.09, 0.04, 0.016],[1.50, 0.43, 0.28, 0.11, 0.06, 0.035]]
+        # California observed seismicity rates and errorbars (UCERF3, uses years 1932-2011)
+        # From table L12 in Appendix L of UCERF3 Time-Independent, K.R. Felzer
+        x_UCERF3 = [5.25, 5.75, 6.25, 6.75, 7.25, 7.75]
+        y_UCERF3 = [4.0, 1.4, 0.45, 0.2, 0.0625, 0.0125]
+        y_error_UCERF3 = [[0.4, 0.3, 0.09, 0.08, .0375, .0005],[1.5, 0.3, .14, .12, .0855, .0563]]
         add_x, add_y, add_label = None, None, None
         mag_list = events.event_magnitudes()
         cum_freq = {}
@@ -2089,17 +2100,17 @@ class FrequencyMagnitudePlot(BasePlotter):
         for mag in sorted(cum_freq.iterkeys()):
             freq_x.append(mag)
             freq_y.append(float(cum_freq[mag])/year_range)
-        if b1 and color_index == 0:
-            add_x = np.linspace(min(freq_x),max(freq_x),10)
-            fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
-            add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
-            add_label = "b==1"
+        #if b1 and color_index == 0:
+        #    add_x = np.linspace(min(freq_x),max(freq_x),10)
+        #    fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
+        #    add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
+        #    add_label = "b==1"
         if UCERF2 and color_index == 0:
-            self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF, y_UCERF, y_error_UCERF, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
-        elif b1 and not UCERF2 and color_index == 0:
+            self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
+        elif UCERF3 and color_index == 0:
+            self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename, add_x=add_x, add_y=add_y, add_label=add_label)
+        elif not UCERF2 and not UCERF3 and color_index == 0:
             self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
-        elif not UCERF2 and not b1:
-            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
         else:
             self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", filename)
 
@@ -2387,8 +2398,12 @@ if __name__ == "__main__":
             help="List of model triggering sections to use for subsetting events.")
 
     # Statisical plotting arguments
-    parser.add_argument('--plot_freq_mag', required=False, type=int,
-            help="Generate frequency magnitude plot. 1: Only event data, 2: Plot b=1 Gutenberg-Richter relation, 3: Plot UCERF2 observed seismicity rates, 4: Plot UCERF2 and the b=1 line.")
+    parser.add_argument('--plot_freq_mag', required=False, action='store_true',
+            help="Generate frequency magnitude plot.")
+    parser.add_argument('--UCERF2', required=False, action='store_true',
+            help="Add to frequency-magnitude plot the observed rates in California from UCERF2 [Field et al. 2009].")
+    parser.add_argument('--UCERF3', required=False, action='store_true',
+            help="Add to frequency-magnitude plot the observed rates in California from UCERF3 [Field et al. 2014].")
     parser.add_argument('--plot_mag_rupt_area', required=False, action='store_true',
             help="Generate magnitude vs rupture area plot.")
     parser.add_argument('--plot_mag_mean_slip', required=False, action='store_true',
@@ -2456,7 +2471,7 @@ if __name__ == "__main__":
             
     # Diagnostic plots
     parser.add_argument('--diagnostics', required=False, action='store_true',
-            help="Plot all diagnostic plots")
+            help="Plot all diagnostic plotsall")
     parser.add_argument('--event_elements', required=False, action='store_true',
             help="Print the involved elements, must specify event id.")
     parser.add_argument('--num_sweeps', required=False, action='store_true',
@@ -2486,6 +2501,12 @@ if __name__ == "__main__":
             help="Save a histogram of element lengths [sqrt(area)].")
     parser.add_argument('--block_aseismic_hist', required=False, action='store_true',
             help="Save a histogram of element aseismic fraction.")
+    parser.add_argument('--block_stress_drop_hist', required=False, action='store_true',
+            help="Save a histogram of element stress drops.")
+    parser.add_argument('--fault_length_hist', required=False, action='store_true',
+            help="Save a histogram of fault lengths in the model.")  
+    parser.add_argument('--fault_length_distribution', required=False, action='store_true',
+            help="Save the cumulative distribution of fault lengths in the model.") 
     parser.add_argument('--reference', required=False, type=float,
             help="Reference value for numbers relative to some value.")
             
@@ -2559,7 +2580,7 @@ if __name__ == "__main__":
         stress_set = None
         
     if args.all_stat_plots:
-        args.plot_freq_mag = 3
+        args.plot_freq_mag = True
         args.plot_mag_rupt_area = True
         args.plot_mag_mean_slip = True
         args.leonard = True
@@ -2630,7 +2651,7 @@ if __name__ == "__main__":
         args.event_shear_stress = True
         args.event_normal_stress = True
         args.event_mean_slip = True
-        args.plot_freq_mag = 3
+        args.plot_freq_mag = True
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.leonard = True
@@ -2638,12 +2659,8 @@ if __name__ == "__main__":
         fig = plt.figure()
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
-        if args.plot_freq_mag == 1: UCERF2,b1 = False, False
-        if args.plot_freq_mag == 2: UCERF2,b1 = False, True
-        if args.plot_freq_mag == 3: UCERF2,b1 = True, False
-        if args.plot_freq_mag == 4: UCERF2,b1 = True, True
         for i, event_set in enumerate(events):
-            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=UCERF2, b1=b1)
+            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3)
         plt.legend(loc='best', fontsize=8)
         if args.min_magnitude is not None and args.max_magnitude is not None:
             plt.xlim(args.min_magnitude, args.max_magnitude)
@@ -2867,6 +2884,47 @@ if __name__ == "__main__":
             plt.savefig(filename,dpi=100)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
+    if args.fault_length_hist:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            units = "km"
+            fig = plt.figure()
+            model_file = args.model_file
+            lengths = [geometry.model.fault(f_id).length()/1e3 for f_id in geometry.model.getFaultIDs()]
+            if args.reference: 
+                lengths = [length/args.reference for length in lengths]
+                units = "{:.5f}".format(args.reference)+units
+            filename = SaveFile().element_plot(model_file, "fault_length_hist")
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "fault length ["+units+"]", "", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))
+
+    if args.fault_length_distribution:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            cum_len = {}
+            lens_x, lens_y = [], []
+            units = "km"
+            fig = plt.figure()
+            model_file = args.model_file
+            lengths = [geometry.model.fault(f_id).length()/1e3 for f_id in geometry.model.getFaultIDs()]
+            num_faults = len(lengths)
+            for num, size in enumerate(sorted(lengths)):
+                cum_len[size] = num_faults - (num + 1)
+            for size in sorted(cum_len.iterkeys()):
+                lens_x.append(size)
+                lens_y.append(cum_len[size])
+            filename = SaveFile().element_plot(model_file, "fault_length_distrib")
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "line", True, lens_x, lens_y, model_file, "fault length L ["+units+"]", "Cumulative faults with length L or larger", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))        
+
     if args.block_aseismic_hist:
         if args.model_file is None:
             raise BaseException("Must specify a fault model with --model_file.")
@@ -2897,6 +2955,25 @@ if __name__ == "__main__":
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "element length ["+units+"]", "", filename)
+            plt.savefig(filename,dpi=100)
+            sys.stdout.write("Plot saved: {}\n".format(filename))
+
+    if args.block_stress_drop_hist:
+        if args.model_file is None:
+            raise BaseException("Must specify a fault model with --model_file.")
+        else:
+            units = "Pa"
+            fig = plt.figure()
+            model_file = args.model_file
+            drops = geometry.get_stress_drops()
+            factor = geometry.get_stress_drop_factor()
+            if args.reference: 
+                areas = [area/args.reference for area in areas]
+                units = "{:.5f}".format(args.reference)+units
+            filename = SaveFile().element_plot(model_file, "stress drop")
+            if len(model_file.split("/")) > 1:
+                model_file = model_file.split("/")[-1]
+            BasePlotter().create_plot(fig, 0, "hist", False, drops, None, model_file, "element stress drop ["+units+"], stress drop factor = {}".format(factor), "", filename)
             plt.savefig(filename,dpi=100)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
