@@ -1548,6 +1548,8 @@ The mesher is called on the command line.  The following runtime options are sup
 	Merge duplicate vertices after importing files.
 -d, --delete_unused
 	Delete unused vertices after importing files.
+-t METHOD, --taper_trace_method=METHOD
+	Specify the how to taper the imported faults when meshing.
 
 FILE IMPORT
 -i FILE, --import_file=FILE
@@ -1556,8 +1558,6 @@ FILE IMPORT
 	Specify a model file type for importing. Must have a paired import_file.
 -l SIZE, --import_trace_element_size=SIZE
 	Specify the element size (in meters) to use for trace file meshing. Must have a paired trace type file import.
--t METHOD, --taper_trace_method=METHOD
-	Specify the how to taper the imported trace when meshing. Must have a paired trace type file import.
 -C FILE, --import_eqsim_condition=FILE
 	Specify an EQSim condition file to import for the model.
 -F FILE, --import_eqsim_friction=FILE
@@ -1880,13 +1880,13 @@ Note the Greens shear and normal matrices now require 1.125 KB of memory instead
 The output data is stored in \texttt{events\_1000.txt} and \texttt{sweeps\_1000.txt}. For more details about the file contents, see Appendix
 \ref{chap:Virtual-Quake-Output}.
 
-\section{Multiple Fault Sections}
+\section{Multiple Fault Trace Points}
 
 
 \subsection{Overview}
 
 This tutorial explores a VQ simulation involving
-two neighboring fault sections --- each 15km long and 12km deep meshed
+a fault section defined by three trace points --- each segment 15km long and 12km deep meshed
 into 3km by 3km elements. We will also use larger fault elements than
 the previous example, which raises the lower bound for magnitudes
 in the output data set. Furthermore, we now will be simulating the
@@ -1897,7 +1897,7 @@ detailed discussion).
 \subsection{Input Files}
 
 We will use another trace file that is provided with the VQ package.
-This trace file specifies two neighboring vertical strike slip faults 
+This trace file specifies two neighboring vertical strike slip fault segments
 that intersect at the Earth and Physical Sciences building
 on campus at the University of California, Davis, shown in Figure
 \ref{fig:Davis_2_fault}. We generate the mesh with the following
@@ -1920,8 +1920,8 @@ $ ../../build/src/mesher \
 Which should output the following.
 \begin{verbatim}
 *** Summary of edits ***
-File import ../fault_traces/two_fault_1.txt with type trace... done.
-File import ../fault_traces/two_fault_2.txt with type trace... done.
+File import ../fault_traces/multiple_fault_trace.txt with type trace... done.
+Computing stress drops with stress_drop_factor=0.3
 File export two_fault_3000.txt with type text... done.
 File export two_fault_3000.kml with type kml... done.
 Print statistics to statistics_3000.txt
@@ -2644,6 +2644,10 @@ are grouped by their functionality.
 -d, -\/-delete\_unused & Delete unused vertices after importing files.\tabularnewline
 \hline 
 -q -\/-stress\_drop\_factor & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. See section \ref{sec:stress_drops}.\tabularnewline
+\hline 
+-t METHOD, -\/-taper\_fault\_method=METHOD & Specify the how to taper the imported fault model when meshing. Choices for taper method are: none,
+taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tapering.
+\tabularnewline \hline
 \end{tabular}
 
 
@@ -2658,11 +2662,6 @@ are grouped by their functionality.
 \hline 
 -l FILE, -\/-import\_trace\_element\_size=FILE & Specify the element size to use for trace file meshing. Must have
 a paired trace type file import.\tabularnewline
-\hline 
--t METHOD, -\/-taper\_fault\_method=METHOD & Specify the how to taper the imported trace when meshing. Must have
-a paired trace type file import. Choices for taper method are: none,
-taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tapering.
-\tabularnewline
 \hline 
 -C FILE, -\/-import\_eqsim\_condition=FILE & Specify an EQSim condition file to import for the model.\tabularnewline
 \hline 
