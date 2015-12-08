@@ -18,10 +18,12 @@ FILE_LIST=`ls ../fault_traces/ca_traces/trace_*.txt`
 EDITOR_ARGS=
 for FILE in $FILE_LIST
 do
-    EDITOR_ARGS="$EDITOR_ARGS--import_file=$FILE --import_file_type=trace --import_trace_element_size=$ELEM_SIZE --taper_fault_method=none "
+    EDITOR_ARGS="$EDITOR_ARGS--import_file=$FILE --import_file_type=trace --import_trace_element_size=$ELEM_SIZE "
 done
 
 ../../build/src/mesher $EDITOR_ARGS \
+	--stress_drop_factor=0.4 \
+	--taper_fault_method=none \
     --export_file=all_cal_fault_${ELEM_SIZE}.txt \
     --export_file_type=text \
     --export_file=all_cal_fault_${ELEM_SIZE}.kml \
