@@ -151,11 +151,11 @@ class SaveFile:
             model_file = model_file.split("/")[-1]
         return "traces_"+model_file.split(".")[0]+".png"
 
-    def element_plot(self, model_file,type):
+    def distribution_plot(self, model_file, type):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
-        return "block_"+type+"_hist_"+model_file.split(".")[0]+".png"
+        return type+"_"+model_file.split(".")[0]+".png"
         
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Add tags to convey the subsets/cuts being made
@@ -1874,7 +1874,7 @@ class BasePlotter:
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
             else: BINS=100
-            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled')
+            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled', log=log_y)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2877,7 +2877,7 @@ if __name__ == "__main__":
             if args.reference: 
                 areas = [area/args.reference for area in areas]
                 units = "{:.5f}".format(args.reference)+units
-            filename = SaveFile().element_plot(model_file, "area")
+            filename = SaveFile().distribution_plot(model_file, "area_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, areas, None, model_file, "element area ["+units+"]", "", filename)
@@ -2895,7 +2895,7 @@ if __name__ == "__main__":
             if args.reference: 
                 lengths = [length/args.reference for length in lengths]
                 units = "{:.5f}".format(args.reference)+units
-            filename = SaveFile().element_plot(model_file, "fault_length_hist")
+            filename = SaveFile().distribution_plot(model_file, "fault_length_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "fault length ["+units+"]", "", filename)
@@ -2918,7 +2918,7 @@ if __name__ == "__main__":
             for size in sorted(cum_len.iterkeys()):
                 lens_x.append(size)
                 lens_y.append(cum_len[size])
-            filename = SaveFile().element_plot(model_file, "fault_length_distrib")
+            filename = SaveFile().distribution_plot(model_file, "fault_length_distrib")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "line", True, lens_x, lens_y, model_file, "fault length L ["+units+"]", "Cumulative faults with length L or larger", filename)
@@ -2933,7 +2933,7 @@ if __name__ == "__main__":
             fig = plt.figure()
             model_file = args.model_file
             fractions = [geometry.model.element(elem_num).aseismic() for elem_num in range(geometry.model.num_elements())]
-            filename = SaveFile().element_plot(model_file, "aseismic")
+            filename = SaveFile().distribution_plot(model_file, "aseismic_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, fractions, None, model_file, units, "", filename)
@@ -2951,7 +2951,7 @@ if __name__ == "__main__":
             if args.reference: 
                 lengths = [length/args.reference for length in lengths]
                 units = "{:.5f}".format(args.reference)+units
-            filename = SaveFile().element_plot(model_file, "length")
+            filename = SaveFile().distribution_plot(model_file, "length_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "element length ["+units+"]", "", filename)
@@ -2970,7 +2970,7 @@ if __name__ == "__main__":
             if args.reference: 
                 areas = [area/args.reference for area in areas]
                 units = "{:.5f}".format(args.reference)+units
-            filename = SaveFile().element_plot(model_file, "stress drop")
+            filename = SaveFile().distribution_plot(model_file, "stress_drop_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, drops, None, model_file, "element stress drop ["+units+"], stress drop factor = {}".format(factor), "", filename)
