@@ -1377,6 +1377,7 @@ namespace quakelib {
                                                     const UIndex &start_vertex_index) const;
             ModelRemapping remove_duplicate_vertices_remap(void) const;
             void clear(void);
+            void clear_faults(void);
 
             void reset_base_coord(const LatLonDepth &new_base);
 
