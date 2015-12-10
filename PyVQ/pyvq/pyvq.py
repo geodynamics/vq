@@ -1870,12 +1870,14 @@ class BasePlotter:
             ax.scatter(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], label=filename, alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         elif plot_type == "line":
             ax.plot(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)])
+        elif plot_type == "loglog":
+            ax.loglog(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], lw=2)
         elif plot_type == "hist":
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
             else: BINS=100
             ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled', log=log_y)
-        plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        if plot_type != "loglog": plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
 
@@ -2083,7 +2085,7 @@ class FrequencyMagnitudePlot(BasePlotter):
         # From table L12 in Appendix L of UCERF3 Time-Independent, K.R. Felzer
         x_UCERF3 = [5.25, 5.75, 6.25, 6.75, 7.25, 7.75]
         y_UCERF3 = [4.0, 1.4, 0.45, 0.2, 0.0625, 0.0125]
-        y_error_UCERF3 = [[0.4, 0.3, 0.09, 0.08, .0375, .0005],[1.5, 0.3, .14, .12, .0855, .0563]]
+        y_error_UCERF3 = [[0.4, 0.3, 0.09, 0.08, .0375, .0112],[1.5, 0.3, .14, .12, .0855, .0563]]
         add_x, add_y, add_label = None, None, None
         mag_list = events.event_magnitudes()
         cum_freq = {}
@@ -2661,7 +2663,7 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
             FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3)
-        plt.legend(loc='best', fontsize=8)
+        plt.legend(loc='lower left', fontsize=8)
         if args.min_magnitude is not None and args.max_magnitude is not None:
             plt.xlim(args.min_magnitude, args.max_magnitude)
         elif args.min_magnitude is not None:
@@ -2682,7 +2684,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='best', fontsize=8)
+        plt.legend(loc='lower left', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_mean_slip:
@@ -2697,7 +2699,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='best', fontsize=8)
+        plt.legend(loc='lower left', fontsize=8)
         plt.savefig(filename,dpi=100)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t:
@@ -2921,7 +2923,11 @@ if __name__ == "__main__":
             filename = SaveFile().distribution_plot(model_file, "fault_length_distrib")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
-            BasePlotter().create_plot(fig, 0, "line", True, lens_x, lens_y, model_file, "fault length L ["+units+"]", "Cumulative faults with length L or larger", filename)
+            BasePlotter().create_plot(fig, 0, "loglog", True, lens_x, lens_y, model_file, "fault length L ["+units+"]", "Cumulative faults with length L or larger", filename)
+            plt.scatter([max(lengths)],[1], s=50, color='r', marker='*', label="Max Length = {:.2f} [km]".format(max(lengths)))
+            plt.legend(loc='best', scatterpoints=1)
+            plt.ylim(0.8, plt.ylim()[1])
+            plt.xlim(2,3e3)
             plt.savefig(filename,dpi=100)
             sys.stdout.write("Plot saved: {}\n".format(filename))        
 
