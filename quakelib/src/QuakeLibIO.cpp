@@ -2156,8 +2156,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
     quakelib::LatLonDepth           base;
     std::map<UIndex, double>        fault_areas;
     double                          taper_t;
-    double                          taper_flow = 0;
-    double                          taper_full = 0;
+    std::map<UIndex, double> section_taper_full;
+    std::map<UIndex, double> section_taper_flow;
     // Schultz: The structure below is a map from each fault_id to another map, which is (at this fault)
     //    a map from the distinct values of DAS (distance along strike) to a set of element IDs.
     //    Use this to access the elements above and below any particular element.
@@ -2204,6 +2204,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         for (it=sit->second.rectangles.begin(); it!=sit->second.rectangles.end(); ++it) {
             quakelib::ModelElement   new_element;
             unsigned int             i;
+            
+            // Initialize fault slip rate tapering data structures
+            section_taper_flow[sit->second.sid()] = 0.0;
+            section_taper_full[sit->second.sid()] = 0.0;
 
             // Kasey: Note, creating the elements one by one while reading each line enforces
             // that the element id's match the index in the EQSim files. So that new_element.id()
@@ -2304,8 +2308,8 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
         }
 
-        taper_flow += taper_t *eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
-        taper_full += eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+        section_taper_flow[eit->section_id()] += taper_t *eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
+        section_taper_full[eit->section_id()] += eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
 
         // Adjust the slip rate
         eit->set_slip_rate(eit->slip_rate()*taper_t);
@@ -2314,9 +2318,10 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
     // Renormalize the slip rates to preserve total moment rate
     if (taper_method == "taper_renorm") {
-        double renorm_factor = taper_full/taper_flow, cur_slip_rate;
+        double cur_slip_rate;
 
         for (eit=eqsim_world.begin_element(); eit!=eqsim_world.end_element(); ++eit) {
+            double renorm_factor = section_taper_full[eit->section_id()]/section_taper_flow[eit->section_id()];
             cur_slip_rate = eit->slip_rate();
             eit->set_slip_rate(renorm_factor*cur_slip_rate);
         }
