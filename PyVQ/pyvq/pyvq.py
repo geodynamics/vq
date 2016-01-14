@@ -1974,12 +1974,14 @@ class BasePlotter:
         x_vals = x_vals+[x_vals[0]]
         y_vals = y_vals+[y_vals[0]]
         xy_vals = np.array(zip(x_vals, y_vals))
-        ax.add_patch(mpatches.Polygon(xy_vals, label='{} 95% confidence bounds'.format(err_label), alpha=0.5, facecolor='r'))
-        ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE)
+        ax.add_patch(mpatches.Polygon(xy_vals, label='{} 95% confidence bounds'.format(err_label), alpha=0.4, facecolor='r', zorder=1))
+        ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE, zorder=10)
         if add_x is not None:
-            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r')
-            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r')
+            if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r', zorder=5)
+            if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r', zorder=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+        if args.max_magnitude is None:
+            plt.xlim(plt.xlim()[0], max(x_data))
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2138,12 +2140,12 @@ class FrequencyMagnitudePlot(BasePlotter):
         if label is None: label = filename
         if UCERF2 and color_index == 0:
             #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif UCERF3 and color_index == 0:
             #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif not UCERF2 and not UCERF3 and color_index == 0:
-            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label)
+            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label)
         else:
             self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label)
 
