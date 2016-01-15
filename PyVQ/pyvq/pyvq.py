@@ -871,7 +871,7 @@ class GreensPlotter:
                                         ec='k',fc='none',fill=False,
                                         ls='solid',lw=4.0)
         fig_axes.add_patch(fault_proj)
-        plt.savefig(output_file, dpi=100)
+        plt.savefig(output_file, dpi=args.dpi)
         print("----Greens function plot saved: "+output_file)
         plt.clf()
 
@@ -1968,20 +1968,34 @@ class BasePlotter:
             ax.set_yscale('log')
         y_low = list(np.array(err_y)-np.array(y_error[0]))
         y_hi = list(np.array(err_y)+np.array(y_error[1]))
+        # ===== UCERF3 rates with polygon, vertices are rate bin centers =======
+        """
         x_vals = list(err_x)+list(reversed(err_x))
         y_vals = y_hi+list(reversed(y_low))
         assert(len(y_vals)==len(x_vals))
         x_vals = x_vals+[x_vals[0]]
         y_vals = y_vals+[y_vals[0]]
         xy_vals = np.array(zip(x_vals, y_vals))
-        ax.add_patch(mpatches.Polygon(xy_vals, label='{} 95% confidence bounds'.format(err_label), alpha=0.4, facecolor='r', zorder=1))
+        ax.add_patch(mpatches.Polygon(xy_vals, label='{} 95% confidence bounds'.format(err_label), alpha=0.55, facecolor='r', zorder=1))
+        """
+        
+        # ===== UCERF3 rates with boxes =======
+        x_bounds = [[x0-.25,x0+.25] for x0 in err_x]
+        y_bounds = zip(y_low,y_hi)
+        x0_y0 = [[x_bounds[i][0], y_bounds[i][0]] for i in range(len(x_bounds))]
+        widths = [x_bounds[i][1] - x_bounds[i][0]for i in range(len(x_bounds))]
+        heigths = [y_bounds[i][1] - y_bounds[i][0]for i in range(len(y_bounds))]
+        for i in range(len(x_bounds)):
+            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.55, facecolor='r', label='{} 95% confidence bounds'.format(err_label)))
+            else: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.55, facecolor='r'))
+        
         ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE, zorder=10)
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r', zorder=5)
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r', zorder=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        if args.max_magnitude is None:
-            plt.xlim(plt.xlim()[0], max(x_data))
+        #if args.max_magnitude is None:
+        #    plt.xlim(plt.xlim()[0], max(x_data))
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2521,6 +2535,10 @@ if __name__ == "__main__":
             help="Plot the mean slip for events")
     parser.add_argument('--zoom', required=False, action='store_true',
             help="Force zoomed bounds on scatter and line plots")
+
+    # Customization
+    parser.add_argument('--dpi', required=False, type=float,
+            help="Specify the DPI for plots that are saved.")
             
     # Geometry
     parser.add_argument('--slip_rates', required=False, action='store_true',
@@ -2584,6 +2602,9 @@ if __name__ == "__main__":
         if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
             raise BaseException("Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid")
     # ------------------------------------------------------------------------
+    
+    if args.dpi is None:
+        args.dpi = 100
 
     # Read the event and sweeps files
     if args.event_file and args.sweep_file is None and args.combine_file is None:
@@ -2710,7 +2731,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
         fig = plt.figure()
@@ -2727,7 +2748,7 @@ if __name__ == "__main__":
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
         plt.legend(loc='lower left', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_mean_slip:
         fig = plt.figure()
@@ -2744,7 +2765,7 @@ if __name__ == "__main__":
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
         plt.legend(loc='lower left', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t:
         fig = plt.figure()
@@ -2753,7 +2774,7 @@ if __name__ == "__main__":
         for event_set in events:
             ProbabilityPlot().plot_p_of_t(fig, event_set, filename)
         ax.legend(loc='best')
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t_fixed_dt:
         fig = plt.figure()
@@ -2762,7 +2783,7 @@ if __name__ == "__main__":
         for event_set in events:
             ProbabilityPlot().plot_conditional_fixed_dt(fig, event_set, filename)
         ax.legend(loc='best')
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_cond_prob_vs_t:
         fig = plt.figure()
@@ -2775,7 +2796,7 @@ if __name__ == "__main__":
             for event_set in events:
                 ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename)
         ax.legend(loc='best')
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_waiting_times:
         fig = plt.figure()
@@ -2784,7 +2805,7 @@ if __name__ == "__main__":
         for event_set in events:
             ProbabilityPlot().plot_dt_vs_t0(fig, event_set, filename)
         ax.legend(loc='best')
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_recurrence:
         fig = plt.figure()
@@ -2794,7 +2815,7 @@ if __name__ == "__main__":
         for time in times:
             BasePlotter().create_plot(fig, color_index, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
         ax.legend(loc='best')
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.field_plot:
         type = args.field_type.lower()
@@ -2927,7 +2948,7 @@ if __name__ == "__main__":
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, areas, None, model_file, "element area ["+units+"]", "", filename)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
     if args.fault_length_hist:
@@ -2945,7 +2966,7 @@ if __name__ == "__main__":
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "fault length ["+units+"]", "", filename)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
     if args.fault_length_distribution:
@@ -2972,7 +2993,7 @@ if __name__ == "__main__":
             plt.legend(loc='best', scatterpoints=1)
             plt.ylim(0.8, plt.ylim()[1])
             plt.xlim(2,3e3)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))        
 
     if args.block_aseismic_hist:
@@ -2987,7 +3008,7 @@ if __name__ == "__main__":
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, fractions, None, model_file, units, "", filename)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
             
     if args.block_length_hist:
@@ -3005,7 +3026,7 @@ if __name__ == "__main__":
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, lengths, None, model_file, "element length ["+units+"]", "", filename)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
     if args.block_stress_drop_hist:
@@ -3025,7 +3046,7 @@ if __name__ == "__main__":
                 model_file = model_file.split("/")[-1]
             BasePlotter().create_plot(fig, 0, "hist", False, drops, None, model_file, "stress drop ["+units+"]", "", filename)
             plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-            plt.savefig(filename,dpi=100)
+            plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
 
     # Generate stress plots
@@ -3040,7 +3061,7 @@ if __name__ == "__main__":
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_number_of_sweeps(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_shear_stress:
         fig = plt.figure()
@@ -3049,7 +3070,7 @@ if __name__ == "__main__":
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_shear_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_normal_stress:
         fig = plt.figure()
@@ -3058,7 +3079,7 @@ if __name__ == "__main__":
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_normal_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_mean_slip:
         fig = plt.figure()
@@ -3067,7 +3088,7 @@ if __name__ == "__main__":
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_mean_slip(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
-        plt.savefig(filename,dpi=100)
+        plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_movie:
         if args.event_file is None or args.event_id is None or args.model_file is None:
