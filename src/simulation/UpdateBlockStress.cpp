@@ -114,6 +114,9 @@ void UpdateBlockStress::init(SimFramework *_sim) {
         sim->setStressDrop(gid, sim->getBlock(gid).stress_drop());
         sim->setMaxStressDrop(gid, sim->getBlock(gid).stress_drop());
 
+        sim->setDynamicVal(gid, sim->getDynamic());
+        sim->setFailed(gid, false);
+
 
         if (sim->isLocalBlockID(gid)) {
             sim->decompressNormalRow(gid);
