@@ -1986,16 +1986,16 @@ class BasePlotter:
         widths = [x_bounds[i][1] - x_bounds[i][0]for i in range(len(x_bounds))]
         heigths = [y_bounds[i][1] - y_bounds[i][0]for i in range(len(y_bounds))]
         for i in range(len(x_bounds)):
-            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.55, facecolor='r', label='{} 95% confidence bounds'.format(err_label)))
-            else: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.55, facecolor='r'))
+            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r', label='{} 95% confidence bounds'.format(err_label)))
+            else: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r'))
         
         ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE, zorder=10)
         if add_x is not None:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r', zorder=5)
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r', zorder=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        #if args.max_magnitude is None:
-        #    plt.xlim(plt.xlim()[0], max(x_data))
+        if args.max_magnitude is None:
+            plt.xlim(plt.xlim()[0], max(max(x_data),8.05))
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -3034,7 +3034,8 @@ if __name__ == "__main__":
             raise BaseException("Must specify a fault model with --model_file.")
         else:
             units = "Pa"
-            if float(args.reference) == 1e6: units = "MPa"
+            if args.reference is not None: 
+                if float(args.reference) == 1e6: units = "MPa"
             fig = plt.figure()
             model_file = args.model_file
             drops = geometry.get_stress_drops()

@@ -204,7 +204,7 @@ int main (int argc, char **argv) {
     std::string                 eqsim_geom_out_file, eqsim_fric_out_file, eqsim_cond_out_file;
     std::string                 stat_out_file;
     std::vector<std::string>    files[2], types[2];
-    std::string    				taper_fault_method;
+    std::string                 taper_fault_method;
     std::vector<double>         trace_element_sizes;
     double                      stress_drop_factor = 0.3;  // default value is a reasonable 0.3
     int                         ch, res;
@@ -329,11 +329,11 @@ int main (int argc, char **argv) {
     }
 
     // Check that the taper methods are valid
-	if (taper_fault_method != "none" && taper_fault_method != "taper"
-		&& taper_fault_method != "taper_full" && taper_fault_method != "taper_renorm") {
-		std::cerr << "ERROR: Taper method " << taper_fault_method << " must be one of: none, taper, taper_full, taper_renorm." << std::endl;
-		arg_error = true;
-	}
+    if (taper_fault_method != "none" && taper_fault_method != "taper"
+        && taper_fault_method != "taper_full" && taper_fault_method != "taper_renorm") {
+        std::cerr << "ERROR: Taper method " << taper_fault_method << " must be one of: none, taper, taper_full, taper_renorm." << std::endl;
+        arg_error = true;
+    }
 
     if (!(compute_stress_drops) && (eqsim_fric_in_file.empty() || eqsim_geom_in_file.empty() )) {
         std::cerr << "ERROR: If not computing stress drops, must specify EQSim geometry and EQSim friction file. EQSim friction should contain stress drops." << std::endl;

@@ -2204,7 +2204,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         for (it=sit->second.rectangles.begin(); it!=sit->second.rectangles.end(); ++it) {
             quakelib::ModelElement   new_element;
             unsigned int             i;
-            
+
             // Initialize fault slip rate tapering data structures
             section_taper_flow[sit->second.sid()] = 0.0;
             section_taper_full[sit->second.sid()] = 0.0;
