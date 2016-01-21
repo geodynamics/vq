@@ -656,8 +656,12 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         elem_lame_lambda = inner_t *trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
         // Set up the vertical step to go along the dip
+        //    LEFT HANDED CONVENTION
+        //vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
+        //vert_step = vert_step.rotate_around_axis(element_step_vec, elem_dip);
+        //    RIGHT HANDED CONVENTION
         vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
-        vert_step = vert_step.rotate_around_axis(element_step_vec, elem_dip);
+        vert_step = vert_step.rotate_around_axis(element_step_vec, M_PI-elem_dip);
 
         // Create each of the elements along dip
         for (ve=0; ve<num_vert_elems; ++ve) {
