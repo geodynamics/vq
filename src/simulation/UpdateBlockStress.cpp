@@ -116,7 +116,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
 
         sim->setDynamicVal(gid, sim->getDynamic());
         sim->setFailed(gid, false);
-        
+
         // Set stresses to their specified initial values
         sim->setShearStress(gid, sim->getInitShearStress(gid));
         sim->setNormalStress(gid, sim->getInitNormalStress(gid));
