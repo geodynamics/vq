@@ -42,7 +42,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual Quake User Manual}
 \author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\John M. Wilson\\John B. Rundle\\Donald L. Turcotte\\\\ \copyright University of California, Davis\\
-Version 2.1.1}
+Version 2.1.2}
 %\date{\noindent \today}
 
 
@@ -107,7 +107,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.1.1}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.1.2}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -207,7 +207,7 @@ Seismological Research Letters, November/December 2012, v. 83, p.
 
 And to cite the manual:
 \begin{itemize}
-\item K. W. Schultz, E. M. Heien, M. K. Sachs, M. R. Yoder, J. M. Wilson,  J. B. Rundle, D. L. Turcotte (2015), Virtual Quake User Manual, Version 2.1.1. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{http://geodynamics.org/cig/software/github/vq/v2.1.1/vq_manual_2.1.1.pdf}{geodynamics.org/cig/software/github/vq/v2.1.1/vq\_manual\_2.1.1.pdf}
+\item K. W. Schultz, E. M. Heien, M. K. Sachs, M. R. Yoder, J. M. Wilson,  J. B. Rundle, D. L. Turcotte (2015), Virtual Quake User Manual, Version 2.1.2. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{http://geodynamics.org/cig/software/github/vq/v2.1.2/vq_manual_2.1.2.pdf}{geodynamics.org/cig/software/github/vq/v2.1.2/vq\_manual\_2.1.2.pdf}
 \end{itemize}
 
 The developers also request that in your oral presentations and in
@@ -2090,6 +2090,23 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5
 \caption{\label{fig:probabilities} \textbf{Left}: Conditional probability of an earthquake $M \geq 7$ on the specified sections as a function of time since the last earthquake $M \geq 7$. \textbf{Right}: Distribution of waiting times until the next earthquake $M \geq 7$ for waiting times with 25\%, 50\% and 75\% probability.}
 \end{figure}
 
+You can also print out a table of conditional earthquake probabilities if you know the observed time since the last earthquakes on your faults. To print out conditional probability table for $M>5$, $M>6$ and $M>7$ for the next 1yr, 5yr and 20yr intervals execute the following command (here we are using observed time since the last California earthquakes). The results are shown in Table \ref{tab:}.
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5   
+     --probability_table --t0 1.0 1.4 5.8     
+\end{verbatim}
+
+\begin{tabular}[c]{l | r | r | r | r }
+\centering
+\                   &              \ & 1 year      &  5 years     & 20 years \\
+\hline
+N=25475    & $M > 5$       &  0.41        &  0.95          & 1.00 \\
+N=23774    & $M > 6$      &  0.39        &  0.93          & 1.00 \\
+N=7495      & $M > 7$       &  0.14        &  0.53          & 0.96 \\
+\hline
+\end{tabular}
+
 
 \subsection{Plotting Data on a Map and Event Field Plots}
 
@@ -2272,6 +2289,10 @@ These parameters can be used in combination with ``--use\_sections'', ``--min\_m
 \texttt{\small{--beta}} & Beta parameter for the Weibull distribution, must also specify tau. If beta and tau are specified, the corresponding Weibull distribution is drawn in the ``--plot\_cond\_prob\_vs\_t'' plot.\tabularnewline
 \hline 
 \texttt{\small{--tau}} & Tau parameter for the Weibull distribution, must also specify beta.\tabularnewline
+\hline 
+\texttt{\small{--probability\_table}} & Prints out probabilities of $M>5$, $M>6$ and $M>7$ earthquakes. Must also specify --t0.\tabularnewline
+\hline 
+\texttt{\small{--t0}} & The observed times since the last $M>5$, $M>6$ and $M>7$ earthquakes on the faults in your model (units are decimal years). For California we would specify ``--t0 1.0 1.4 5.8''.\tabularnewline
 \hline 
 \end{tabular}
 
