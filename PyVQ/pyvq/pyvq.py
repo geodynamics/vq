@@ -2154,14 +2154,14 @@ class FrequencyMagnitudePlot(BasePlotter):
         if label is None: label = filename
         if UCERF2 and color_index == 0:
             #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif UCERF3 and color_index == 0:
             #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif not UCERF2 and not UCERF3 and color_index == 0:
-            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "number of events per year with mag > M", label)
+            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label)
         else:
-            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label)
+            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -2346,6 +2346,51 @@ class ProbabilityPlot(BasePlotter):
             sys.stdout.write('\n75% waiting time: {:.2f} years'.format(wait_75))
             sys.stdout.write('\n=======================================\n\n')
         self.t0_vs_dt_plot(fig, t0_dt_plot, wait_75, filename)
+        
+    def print_prob_table(self, t0_list, events):
+        dt_vals       = [1, 5, 20] # units = years
+        Mag_vals      = [5, 6,  7]
+        YEAR_INTERVAL = 0.1
+        probabilities = {} # Probabilities for the final table
+        num_events    = []
+        
+        for MAG in Mag_vals:
+            # --------- Set the first event filter for the lower magnitude bound ------------
+            event_filters = []
+            event_filters.append(MagFilter(min_mag=MAG, max_mag=None))
+            events.set_filters(event_filters)
+            num_events.append(len(events._filtered_events))
+            
+            # == Compute conditional probs for M > MAG earthquakes in the time ranges "dt_vals" ==
+            intervals   = np.array(events.interevent_times())
+            conditional = {}
+            max_t0      = intervals.max() 
+            t0_to_eval  = np.arange(0, max_t0+YEAR_INTERVAL, YEAR_INTERVAL)
+            for t0 in t0_to_eval:
+                t0 = round(t0,1)
+                int_t0 = intervals[np.where( intervals > t0 )]
+                if int_t0.size != 0:
+                    conditional[t0] = {'x':[],'y':[]}
+                    for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
+                        int_t0_dt = intervals[np.where( intervals > t0+dt )]
+                        conditional[t0]['x'].append(t0+dt)
+                        prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                        conditional[t0]['y'].append(prob_t0_dt)
+            
+            prob_in_t0_dt = []
+            
+            for i in range(len(dt_vals)):
+                #print("len conditional for last index({}): {}".format( int(dt_vals[i]/YEAR_INTERVAL),len(conditional[ t0_list[i] ]['y'])))
+                prob_in_t0_dt.append(conditional[ t0_list[i] ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ] - conditional[ t0_list[i] ]['y'][0])
+                #sys.stdout.write("M>{:d}  P(t={:.2f},t0={:.2f}) = {:.2f}\n".format(MAG,conditional[ t0_list[i] ]['x'][ int(dt_vals[i]/YEAR_INTERVAL) ], t0_list[i], prob_in_t0_dt[-1]))
+            
+            probabilities[MAG] = prob_in_t0_dt
+        
+        sys.stdout.write("\t\t\t{:d} yr \t{:d} yr \t{:d} yr \n".format(dt_vals[0],dt_vals[1],dt_vals[2]))
+        for i in range(len(Mag_vals)):
+            MAG = Mag_vals[i]
+            sys.stdout.write("(N={})\tM > {}\t{:.2f}\t{:.2f}\t{:.2f}\n".format(num_events[i],MAG,probabilities[MAG][0],probabilities[MAG][1],probabilities[MAG][2]))
+        
 
 class Distributions:
     def weibull(self, X, beta, tau):
@@ -2481,6 +2526,11 @@ if __name__ == "__main__":
             help="Beta parameter for the Weibull distribution, must also specify Tau")
     parser.add_argument('--tau', required=False, type=float,
             help="Tau parameter for the Weibull distribution, must also specify Beta")
+    parser.add_argument('--probability_table', required=False, action='store_true',
+            help="Generate a table of conditional probabilities for the next large earthquakes, must specify the time since the last M>5.0, M>6.0, and M>7.0 earthquakes on the faults being simulated (use --t0 to specify these times in units of decimal years).")
+    parser.add_argument('--t0', type=float, nargs='+', required=False,
+            help="List of times [rounded to the nearest 0.1 years] since the last M>5, M>6 and M>7. Example --t0 4.1 12.5 35.9")
+            
             
     # Field plotting arguments
     parser.add_argument('--field_plot', required=False, action='store_true',
@@ -2817,6 +2867,11 @@ if __name__ == "__main__":
         ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+    if args.probability_table:
+        if args.t0 is None: raise BaseException("Must specify time since last M>5, M>6, M>7 earthquakes (rounded to the nearest year). Use --t0.")
+        else:
+            for event_set in events:
+                ProbabilityPlot().print_prob_table(args.t0, event_set)
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
@@ -3038,14 +3093,14 @@ if __name__ == "__main__":
                 if float(args.reference) == 1e6: units = "MPa"
             fig = plt.figure()
             model_file = args.model_file
-            drops = geometry.get_stress_drops()
+            drops = np.abs(geometry.get_stress_drops())
             factor = geometry.get_stress_drop_factor()
             if args.reference: 
                 drops = [drop/args.reference for drop in drops]
             filename = SaveFile().distribution_plot(model_file, "stress_drop_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
-            BasePlotter().create_plot(fig, 0, "hist", False, drops, None, model_file, "stress drop ["+units+"]", "", filename)
+            BasePlotter().create_plot(fig, 0, "hist", False, drops, None, "", "stress drop ["+units+"]", "", filename)
             plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
             plt.savefig(filename,dpi=args.dpi)
             sys.stdout.write("Plot saved: {}\n".format(filename))
