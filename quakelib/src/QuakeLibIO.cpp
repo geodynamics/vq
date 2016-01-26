@@ -872,7 +872,8 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 // Schultz: Adapted from Steve Ward's model, used in the EQSim comparison for UCERF2 model
 void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor) {
     std::map<UIndex, ModelElement>::iterator eit;
-    UIndex fault_id;
+    UIndex     fault_id;
+    Conversion conv;
     ModelFault this_fault;
     double fault_area, fault_length, fault_width, char_magnitude, char_slip, R, nu, stress_drop;
 
@@ -886,7 +887,7 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
         fault_length = this_fault.length();
         fault_width = fault_area/fault_length;
 
-        char_magnitude = 4.0+log10(fault_area*1e-6) + stress_drop_factor;
+        char_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area)) + stress_drop_factor;
         char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(1e7*eit->second.lame_mu()*fault_area);
 
         nu = 0.5*eit->second.lame_lambda()/(eit->second.lame_mu() + eit->second.lame_lambda());
