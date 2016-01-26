@@ -233,7 +233,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
 
             // Get current expected slip from the current event area
             char_magnitude = 4.0+log10(current_event_area*1e-6) + stressDropFactor();
-            char_slip = pow(10, (3.0/2.0)*(char_magnitude+10.7))/(1e7*getBlock(gid).lame_mu()*current_event_area);
+            char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(1e7*getBlock(gid).lame_mu()*current_event_area);
 
             dynamicStressDrop = -2*getBlock(gid).lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
 
