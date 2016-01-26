@@ -898,7 +898,7 @@ namespace quakelib {
                     moment += it->_slip*it->_mu*it->_area;
                 }
 
-                _data._event_magnitude = (2.0/3.0)*log10(1e7*moment) - 6.0;
+                _data._event_magnitude = (2.0/3.0)*log10(moment) - 6.0;
             }
 
             //! Get the total amount a given block slipped during this event
@@ -930,7 +930,7 @@ namespace quakelib {
                     moment += getBlockMu(*it)*getEventSlip(*it)*getEventArea(*it);
                 }
 
-                return (2.0/3.0)*log10(1e7*moment) - 6.0;
+                return (2.0/3.0)*log10(moment) - 6.0;
             }
 
             //! Get the magnitude of the earthquake in this event.

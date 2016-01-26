@@ -811,7 +811,7 @@ void RunEvent::processAftershock(Simulation *sim) {
 
         // Determine the amount of slip needed to match the aftershock magnitude
         // The contribution of each block to moment is based on its fraction of total area*mu
-        double total_moment = pow(10, (as.mag + 6.0)*(3.0/2.0))/1e7;
+        double total_moment = pow(10, (as.mag + 6.0)*(3.0/2.0));
 
         for (bit=id_set.begin(); bit!=id_set.end(); ++bit) {
             Block &b=sim->getBlock(*bit);

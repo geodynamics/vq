@@ -756,7 +756,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area));
 
     for (unsigned int i=0; i<elem_ids.size(); ++i) {
-        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+6.0))/(1e7*element(elem_ids[i]).lame_mu()*fault_area);
+        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+6.0))/(element(elem_ids[i]).lame_mu()*fault_area);
         element(elem_ids[i]).set_max_slip(max_slip);
     }
 }
@@ -888,7 +888,7 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
         fault_width = fault_area/fault_length;
 
         char_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area)) + stress_drop_factor;
-        char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(1e7*eit->second.lame_mu()*fault_area);
+        char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(eit->second.lame_mu()*fault_area);
 
         nu = 0.5*eit->second.lame_lambda()/(eit->second.lame_mu() + eit->second.lame_lambda());
         R  = sqrt(fault_width*fault_width + fault_length*fault_length);
@@ -2255,7 +2255,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_areas[eit->section_id()]));
 
         // Need to document where this scaling law comes from
-        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+6.0))/(1e7*(eit->lame_mu())*fault_areas[eit->section_id()]);
+        double max_slip = pow(10, (3.0/2.0)*(moment_magnitude+6.0))/((eit->lame_mu())*fault_areas[eit->section_id()]);
 
         // Set the max slip for the current element
         eit->set_max_slip(max_slip);
