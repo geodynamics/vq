@@ -2045,6 +2045,8 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
         mag_list = events.event_magnitudes()
         ra_renorm_list = [quakelib.Conversion().sqm2sqkm(ra) for ra in ra_list]
         min_mag, max_mag = min(mag_list), max(mag_list)
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('area')
@@ -2056,14 +2058,14 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
-            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, events.pl,   "Magnitude", "Rupture Area (square km)", label)
+            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, PLOT_TITLE,   "Magnitude", "Rupture Area (square km)", label)
         elif leonard and not WC94 and color_index == 0:
             scale_label = "Leonard 2010"
             full_x, full_y = Distributions().leonard_2010('area', min_mag=min_mag, max_mag=max_mag)
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            self.scatter_and_line(fig, color_index, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Rupture Area (square km)", label)
+            self.scatter_and_line(fig, color_index, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, PLOT_TITLE,   "Magnitude", "Rupture Area (square km)", label)
         elif leonard and WC94 and color_index == 0:
             wc_x, wc_y = Distributions().wells_coppersmith('area', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
@@ -2075,9 +2077,9 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
             line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
-            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Rupture Area (square km)", label)
+            self.scatter_and_multiline(fig, True, mag_list, ra_renorm_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, PLOT_TITLE,   "Magnitude", "Rupture Area (square km)", label)
         else:
-            self.create_plot(fig, color_index, "scatter", True, mag_list, ra_renorm_list, events.plot_str(), "Magnitude", "Rupture Area (square km)", label)
+            self.create_plot(fig, color_index, "scatter", True, mag_list, ra_renorm_list, PLOT_TITLE, "Magnitude", "Rupture Area (square km)", label)
 
 class MagnitudeMeanSlipPlot(BasePlotter):
     def plot(self, fig, color_index, events, filename, WC94=False, leonard=False, label=None):
@@ -2085,6 +2087,8 @@ class MagnitudeMeanSlipPlot(BasePlotter):
         slip_list = events.event_mean_slip()
         mag_list = events.event_magnitudes()
         min_mag, max_mag = min(mag_list), max(mag_list)
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('slip')
@@ -2096,14 +2100,14 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             line_widths = [2.0, 1.0]
             line_styles = ['-', '--']
             colors = ['k', 'k']
-            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", label)
+            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors,PLOT_TITLE,   "Magnitude", "Mean Slip (meters)", label)
         elif leonard and not WC94 and color_index == 0:
             scale_label = "Leonard 2010"
             full_x, full_y = Distributions().leonard_2010('slip', min_mag=min_mag, max_mag=max_mag)
             lines_x = full_x
             lines_y = full_y
             line_labels = scale_label
-            self.scatter_and_line(fig, color_index, True, mag_list, slip_list, lines_x, lines_y, line_labels, events.plot_str(),   "Magnitude", "Mean Slip (meters)", label)
+            self.scatter_and_line(fig, color_index, True, mag_list, slip_list, lines_x, lines_y, line_labels, PLOT_TITLE,   "Magnitude", "Mean Slip (meters)", label)
         elif leonard and WC94 and color_index == 0:
             wc_x, wc_y = Distributions().wells_coppersmith('slip', min_mag=min_mag, max_mag=max_mag)
             wc_label = "Wells & Coppersmith 1994"
@@ -2115,12 +2119,14 @@ class MagnitudeMeanSlipPlot(BasePlotter):
             line_widths = [1.0, 1.0]
             line_styles = ['-', '-']
             colors = ['k', 'r']
-            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, "",   "Magnitude", "Mean Slip (meters)", label)
+            self.scatter_and_multiline(fig, True, mag_list, slip_list, lines_x, lines_y, line_labels, line_widths, line_styles, colors, PLOT_TITLE,   "Magnitude", "Mean Slip (meters)", label)
         else:
-            self.create_plot(fig, color_index, "scatter", True, mag_list, slip_list, events.plot_str(), "Magnitude", "Mean Slip (meters)", label)
+            self.create_plot(fig, color_index, "scatter", True, mag_list, slip_list, PLOT_TITLE, "Magnitude", "Mean Slip (meters)", label)
 
 class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, fig, color_index, events, filename, UCERF2 = False, UCERF3 = False, label=None):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         # California observed seismicity rates and errorbars (UCERF2)
         x_UCERF2 = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
         y_UCERF2 = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
@@ -2153,15 +2159,13 @@ class FrequencyMagnitudePlot(BasePlotter):
         #    add_label = "b==1"
         if label is None: label = filename
         if UCERF2 and color_index == 0:
-            #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif UCERF3 and color_index == 0:
-            #self.scatter_and_errorbar(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "# events/year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif not UCERF2 and not UCERF3 and color_index == 0:
-            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label)
+            self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label)
         else:
-            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, events.plot_str(), "Magnitude (M)", "cumulative number of events per year with mag > M", label)
+            self.create_plot(fig, color_index, "scatter", True, freq_x, freq_y, PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label)
 
 class StressHistoryPlot(BasePlotter):
     def plot(self, stress_set, elements):
@@ -2213,14 +2217,18 @@ class DiagnosticPlot(BasePlotter):
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, fig, events, filename):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         # Cumulative probability P(t) as a function of interevent time t
         intervals = np.array(events.interevent_times())
         prob = {}
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
-        self.create_plot(fig, color_index, "line", False, prob['x'], prob['y'], events.plot_str(),"t [years]", "P(t)", filename)
+        self.create_plot(fig, color_index, "line", False, prob['x'], prob['y'], PLOT_TITLE,"t [years]", "P(t)", filename)
 
     def plot_conditional_fixed_dt(self, fig, events, filename, fixed_dt=30.0):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         # P(t0 + dt, t0) vs. t0 for fixed dt
         intervals = np.array(events.interevent_times())
         prob_dt = {'x':[],'y':[]}
@@ -2231,9 +2239,11 @@ class ProbabilityPlot(BasePlotter):
             if int_t0.size != 0:
                 prob_dt['x'].append(t0)
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
-        self.create_plot(fig, color_index, "line", False, prob_dt['x'], prob_dt['y'], events.plot_str(),"t0 [years]", "P(t0 + dt, t0)", filename)
+        self.create_plot(fig, color_index, "line", False, prob_dt['x'], prob_dt['y'], PLOT_TITLE, "t0 [years]", "P(t0 + dt, t0)", filename)
 
     def plot_p_of_t_multi(self, fig, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
         # Cumulative conditional probability P(t,t0) as a function of
         # interevent time t, computed for multiple t0. Beta/Tau are Weibull parameters
         line_colormap = plt.get_cmap('autumn')
@@ -2288,8 +2298,7 @@ class ProbabilityPlot(BasePlotter):
         legend_string = r't$_0$='
         y_lab         = r'P(t, t$_0$)'
         x_lab         = r't = t$_0$ + $\Delta$t [years]'
-        plot_title    = ""
-        self.multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, x_lab, y_lab, legend_string, filename, colors=colors)
+        self.multi_line_plot(fig, x_data, y_data, labels, linewidths, PLOT_TITLE, x_lab, y_lab, legend_string, filename, colors=colors)
 
     def plot_dt_vs_t0(self, fig, events, filename, years_since=None):
         # Plot the waiting times corresponding to 25/50/75% conditional probabilities
@@ -2589,6 +2598,8 @@ if __name__ == "__main__":
     # Customization
     parser.add_argument('--dpi', required=False, type=float,
             help="Specify the DPI for plots that are saved.")
+    parser.add_argument('--no_titles', required=False, action='store_true',
+            help="Specify no titles on plots.")
             
     # Geometry
     parser.add_argument('--slip_rates', required=False, action='store_true',
@@ -2767,6 +2778,8 @@ if __name__ == "__main__":
         args.plot_mag_rupt_area = True
         args.leonard = True
     if args.plot_freq_mag:
+        if args.label is None: LABEL_SIZE = 8
+        else: LABEL_SIZE = 11
         fig = plt.figure()
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
@@ -2774,13 +2787,16 @@ if __name__ == "__main__":
             if args.label: LABEL = args.label[i]
             else: LABEL = None
             FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3, label=LABEL)
-        plt.legend(loc='lower left', fontsize=8)
+        plt.legend(loc='lower left', fontsize=LABEL_SIZE)
         if args.min_magnitude is not None and args.max_magnitude is not None:
             plt.xlim(args.min_magnitude, args.max_magnitude)
         elif args.min_magnitude is not None:
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
+        ###########
+        plt.ylim(0.8e-4,1)
+        ###########
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
@@ -3093,7 +3109,7 @@ if __name__ == "__main__":
                 if float(args.reference) == 1e6: units = "MPa"
             fig = plt.figure()
             model_file = args.model_file
-            drops = np.abs(geometry.get_stress_drops())
+            drops = np.fabs(geometry.get_stress_drops())
             factor = geometry.get_stress_drop_factor()
             if args.reference: 
                 drops = [drop/args.reference for drop in drops]
