@@ -706,7 +706,7 @@ failing.
 
 \subsection{Stress Drops \label{sec:stress_drops}}
 
-The stress drops for the fault elements are computed via Wells and Coppersmith 1994 scaling relations along with an analytical solution for the shear stress change per unit slip on a vertical rectangular fault. The simulation is pretty sensitive to these values; large stress drops tend to produce larger earthquakes with longer periods between events, while smaller stress drops produce many more small earthquakes. We provide a tuning parameter that globally adjusts the stress drops, and you must specify this when using the mesher to generate your fault model file. The mesher parameter is \texttt{--stress\_drop\_factor=X.X} where X.X is the value of the stress drop factor. The default value is 0.3 and it's logarithmically scaled, and increasing this value by 0.1 multiplies the stress drops by 1.4, a 40\% increase; typical values range from 0.2-0.6.
+The stress drops for the fault elements are computed via Wells and Coppersmith 1994 scaling relations along with an analytical solution for the shear stress change per unit slip on a vertical rectangular fault. The simulation is pretty sensitive to these values; large stress drops tend to produce larger earthquakes with longer periods between events, while smaller stress drops produce many more small earthquakes. We provide a tuning parameter that globally adjusts the stress drops, and you must specify this when using the mesher to generate your fault model file. The mesher parameter is \texttt{--stress\_drop\_factor=X.X} where X.X is the value of the stress drop factor. The default value is 0.3 and it's logarithmically scaled, and increasing this value by 0.1 multiplies the stress drops by 1.4, a 40\% increase; typical values range from 0.2-0.8.
 
 We begin by using scaling relations to determine a different characteristic magnitude $M^{char}$ and a characteristic slip $\Delta s^{char}$ for each element in a fault based on the fault's geometry from Wells and Coppersmith 1994 scaling relations
 
@@ -1262,6 +1262,20 @@ slipping properties of faults without requiring field measurements
 of each fault's physical properties, a result of VQ's abstraction
 and generality. Currently, this parameter is set globally for the
 fault model. For parameter usage, see Section \ref{sec:friction_params}.
+
+Figure \ref{fig:dynamictriggertune} shows the effect of a changing dynamic trigger factor $\eta$ on the frequency-magnitude relation for simulations of the UCERF3 fault model with a fixed stress drop factor. Figure \ref{fig:stressdroptune} shows the effect of a changing stress drop factor $\Delta M$ on the frequency-magnitude relation for simulations of the UCERF3 fault model with a dynamic trigger factor. 
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{graphics/dynamic_trigger_tuning.png}
+\caption{With the stress drop factor set to 0.7, this is the effect of tuning the dynamic trigger factor $eta$ on the frequency-magnitude distribution. These are 10,000 year simulations of the UCERF3 fault model compared to observed California earthquake rates and 95\% confidence bounds in red.}\label{fig:dynamictriggertune}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{graphics/stress_drop_tuning.png}
+\caption{With the dynamic trigger factor set to $\eta = 0.5$, this is the effect of tuning the stress drop factor $\Delta M$ on the frequency-magnitude distribution. These are 10,000 year simulations of the UCERF3 fault model compared to observed California earthquake rates and 95\% confidence bounds in red.}\label{fig:stressdroptune}
+\end{figure}
+
+
 %Figure \ref{fig:tuning_parameters} shows a comparison
 %of simulation results for a range of these parameter values.
 %
