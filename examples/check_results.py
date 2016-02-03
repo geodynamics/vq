@@ -46,7 +46,7 @@ def check_self_consistent(events):
             # TODO: Improve this negative moment handling.
             print("!!!! Event {}, Moment {:.5f}, Mag {:.5f}".format(event.getEventNumber(), summed_moment, event.getMagnitude()))
         else:        
-            summed_mag = (2.0/3.0)*(7.0 + math.log10(summed_moment)) - 10.7
+            summed_mag = (2.0/3.0)*(math.log10(summed_moment)) - 6.0
             #
             if abs(event.getMagnitude()-summed_mag) > 1e-5:
                 print("ERROR: Recorded magnitude and summed sweep magnitude is not equal for event", event.event_num)
