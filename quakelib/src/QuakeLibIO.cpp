@@ -2771,9 +2771,10 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             vit = _vertices.find( _elements.find(*it)->second.vertex(i) );
             lld[i] = vit->second.lld();
         }
-
+        
         // If this is a quad element, calculate the 4th implicit point
-        if (eit->second.is_quad()) {
+        if (_elements.find(*it)->second.is_quad()) {
+        
             Vec<3>              xyz[3];
 
             for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
@@ -2820,9 +2821,11 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t\t\t<outerBoundaryIs>\n";
             out_file << "\t\t\t\t\t<LinearRing>\n";
             out_file << "\t\t\t\t\t\t<coordinates>\n";
-            npoints = (eit->second.is_quad() ? 4 : 3);
+            //TODO: Fix compatibility with triangular models when we have them
+            //npoints = (eit->second.is_quad() ? 4 : 3);
+            npoints = 4;
 
-            for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
             out_file << "\t\t\t\t\t\t</coordinates>\n";
             out_file << "\t\t\t\t\t</LinearRing>\n";
@@ -2851,9 +2854,11 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t\t\t<outerBoundaryIs>\n";
             out_file << "\t\t\t\t\t<LinearRing>\n";
             out_file << "\t\t\t\t\t\t<coordinates>\n";
-            npoints = (eit->second.is_quad() ? 4 : 3);
+            //TODO: Fix compatibility with triangular models when we have them
+            //npoints = (eit->second.is_quad() ? 4 : 3);
+            npoints = 4;
 
-            for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
             out_file << "\t\t\t\t\t\t</coordinates>\n";
             out_file << "\t\t\t\t\t</LinearRing>\n";
