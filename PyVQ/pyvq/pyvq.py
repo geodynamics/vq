@@ -3013,7 +3013,7 @@ if __name__ == "__main__":
             raise BaseException("Must specify an event to plot with --event_id and provide an --event_file and a --model_file.")
         else:
             event = events[0]._events[args.event_id]
-            filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
+            filename = SaveFile().event_kml_plot(args.event_file[0], args.event_id)
             geometry.model.write_event_kml(filename, event)
             
     if args.block_area_hist:
