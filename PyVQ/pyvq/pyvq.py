@@ -1994,8 +1994,6 @@ class BasePlotter:
             if log_y: ax.semilogy(add_x, add_y, label = add_label, c = 'r', zorder=5)
             if not log_y: ax.plot(add_x, add_y, label = add_label, c = 'r', zorder=5)
         plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
-        if args.max_magnitude is None:
-            plt.xlim(plt.xlim()[0], max(max(x_data),8.05))
         #ax.legend(loc = "best")
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2224,22 +2222,29 @@ class ProbabilityPlot(BasePlotter):
         prob = {}
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
-        self.create_plot(fig, color_index, "line", False, prob['x'], prob['y'], PLOT_TITLE,"t [years]", "P(t)", filename)
+        
+        self.create_plot(fig, 0, "line", False, prob['x'], prob['y'], PLOT_TITLE,"t [years]", "P(t)", filename)
 
-    def plot_conditional_fixed_dt(self, fig, events, filename, fixed_dt=30.0):
+    def plot_conditional_fixed_dt(self, fig, events, filename, fixed_dt=5.0):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
         # P(t0 + dt, t0) vs. t0 for fixed dt
         intervals = np.array(events.interevent_times())
         prob_dt = {'x':[],'y':[]}
-        t0_to_eval = np.arange(0.0,int(intervals.max())+.01,1.0)
+        prob = {}
+        prob['x'] = np.sort(intervals)
+        prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
+        eq_guaranteed = prob['x'][np.where(prob['y']>0.995)[0][0]]
+        print("Probability reaches 99% at t={}".format(eq_guaranteed))
+        
+        t0_to_eval = np.arange(0.0,int(intervals.max()),0.5)
         for t0 in t0_to_eval:
             int_t0_dt = intervals[np.where( intervals > t0+fixed_dt)]
             int_t0 = intervals[np.where( intervals > t0)]
             if int_t0.size != 0:
                 prob_dt['x'].append(t0)
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
-        self.create_plot(fig, color_index, "line", False, prob_dt['x'], prob_dt['y'], PLOT_TITLE, "t0 [years]", "P(t0 + dt, t0)", filename)
+        self.create_plot(fig, 0, "line", False, prob_dt['x'], prob_dt['y'], PLOT_TITLE, "t0 [years]", "P(t0 + {:d}, t0)".format(int(fixed_dt)), filename)
 
     def plot_p_of_t_multi(self, fig, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
         PLOT_TITLE = events.plot_str()
@@ -2357,7 +2362,7 @@ class ProbabilityPlot(BasePlotter):
         self.t0_vs_dt_plot(fig, t0_dt_plot, wait_75, filename)
         
     def print_prob_table(self, t0_list, events):
-        dt_vals       = [1, 5, 20] # units = years
+        dt_vals       = [1, 5, 15] # units = years
         Mag_vals      = [5, 6,  7]
         YEAR_INTERVAL = 0.1
         probabilities = {} # Probabilities for the final table
@@ -2388,8 +2393,15 @@ class ProbabilityPlot(BasePlotter):
             
             prob_in_t0_dt = []
             
+            print("\n----------------------------------------")
+            print("M >= {}".format(MAG))
+            
             for i in range(len(dt_vals)):
                 #print("len conditional for last index({}): {}".format( int(dt_vals[i]/YEAR_INTERVAL),len(conditional[ t0_list[i] ]['y'])))
+                print(' ')
+                print(t0_list[i], int(dt_vals[i]/YEAR_INTERVAL))
+                print(len(conditional[ t0_list[i] ]['y']))
+                print(conditional[ t0_list[i] ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ])
                 prob_in_t0_dt.append(conditional[ t0_list[i] ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ] - conditional[ t0_list[i] ]['y'][0])
                 #sys.stdout.write("M>{:d}  P(t={:.2f},t0={:.2f}) = {:.2f}\n".format(MAG,conditional[ t0_list[i] ]['x'][ int(dt_vals[i]/YEAR_INTERVAL) ], t0_list[i], prob_in_t0_dt[-1]))
             
@@ -2716,9 +2728,9 @@ if __name__ == "__main__":
         event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
 
     # Detectability threshold, min slip 1cm
-    if args.event_file and args.min_slip is None: 
-        args.min_slip = 0.01
-        sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< \n")
+    #if args.event_file and args.min_slip is None: 
+    #    args.min_slip = 0.01
+    #    sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< \n")
     elif args.event_file and args.min_slip is not None and args.min_slip < 0:
         args.min_slip = None
 
@@ -2794,9 +2806,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        ###########
-        plt.ylim(0.8e-4,1)
-        ###########
+        plt.ylim(0.99e-5,1)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
@@ -2839,7 +2849,7 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for event_set in events:
             ProbabilityPlot().plot_p_of_t(fig, event_set, filename)
-        ax.legend(loc='best')
+        #ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t_fixed_dt:
@@ -2848,7 +2858,7 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "p_vs_t_fixed_dt", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for event_set in events:
             ProbabilityPlot().plot_conditional_fixed_dt(fig, event_set, filename)
-        ax.legend(loc='best')
+        #ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_cond_prob_vs_t:
@@ -2997,10 +3007,12 @@ if __name__ == "__main__":
         BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
 
     if args.event_kml:
+        '''Currently this only works for a the first event file if a list of event files is given
+        '''
         if args.event_id is None or args.event_file is None or args.model_file is None:
             raise BaseException("Must specify an event to plot with --event_id and provide an --event_file and a --model_file.")
         else:
-            event = events._events[args.event_id]
+            event = events[0]._events[args.event_id]
             filename = SaveFile().event_kml_plot(args.event_file, args.event_id)
             geometry.model.write_event_kml(filename, event)
             
