@@ -2235,9 +2235,9 @@ class ProbabilityPlot(BasePlotter):
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
         eq_guaranteed = prob['x'][np.where(prob['y']>0.995)[0][0]]
-        print("Probability reaches 99% at t={}".format(eq_guaranteed))
+        print("EQ probability reaches 99.5% after t={} years".format(eq_guaranteed))
         
-        t0_to_eval = np.arange(0.0,int(intervals.max()),0.5)
+        t0_to_eval = np.arange(0.0,int(eq_guaranteed)+1,0.2)
         for t0 in t0_to_eval:
             int_t0_dt = intervals[np.where( intervals > t0+fixed_dt)]
             int_t0 = intervals[np.where( intervals > t0)]
