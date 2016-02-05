@@ -54,9 +54,9 @@ except ImportError:
     
 # ----------------- Global constants -------------------------------------------
 # Kasey: These are only relevent for few-element field plots
-#LAT_LON_DIFF_FACTOR = 1.333 
-#MIN_LON_DIFF = 0.01   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
-#MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+LAT_LON_DIFF_FACTOR = 1.333 
+MIN_LON_DIFF = 0.4   # 1 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
+MIN_LAT_DIFF = MIN_LON_DIFF/LAT_LON_DIFF_FACTOR   # 0.8 corresponds to ~ 100km at lat,lon = (40.35, -124.85)
 #MIN_FIT_MAG  = 5.0     # lower end o08 f magnitude for fitting freq_mag plot with b=1 curve
 
 STAT_COLOR_CYCLE = ['k','b','cyan','purple','g']
@@ -877,8 +877,7 @@ class GreensPlotter:
 
 class TracePlotter:
     # Plot fault traces on a map
-    def __init__(self, geometry, output_file, use_sections=None, small_model=False):
-        self.small_model = small_model
+    def __init__(self, geometry, output_file, use_sections=None):
         plot_height = 768.0
         max_map_width = 690.0
         max_map_height = 658.0
@@ -899,7 +898,7 @@ class TracePlotter:
         self.base_lon = self.min_lon = base[1]
         self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
         # Expand lat/lon range in the case of plotting a few elements
-        if self.small_model:
+        if ((self.max_lat - self.min_lat) < MIN_LAT_DIFF) or ((self.max_lon - self.min_lon) < MIN_LON_DIFF):
             self.min_lat = self.min_lat - MIN_LAT_DIFF*10
             self.max_lat = self.max_lat + MIN_LAT_DIFF*10
             self.min_lon = self.min_lon - MIN_LON_DIFF*10
@@ -935,6 +934,7 @@ class TracePlotter:
         else:
             map_width = max_map_width
             map_height = max_map_width*map.aspect
+            
         # A conversion instance for doing the lat-lon to x-y conversions
         base_lld = quakelib.LatLonDepth(self.base_lat, self.base_lon, 0.0)
         self.convert = quakelib.Conversion(base_lld)
@@ -1075,13 +1075,12 @@ class TracePlotter:
         
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
-                cbar_max=None, levels=None, small_model=False, g0=None):
+                cbar_max=None, levels=None, g0=None):
         if g0 is None: 
             self.g0 = 9.80665
         else:
             self.g0 = g0
         self.field_type = field_type.lower()
-        self.small_model = small_model
         self.levels = levels
         self.event_id = event_id
         plot_height = 768.0
@@ -1134,7 +1133,7 @@ class FieldPlotter:
         self.base_lon = self.min_lon = base[1]
         self.min_lat, self.max_lat, self.min_lon, self.max_lon = geometry.model.get_latlon_bounds()
         # Expand lat/lon range in the case of plotting a few elements
-        if self.small_model:
+        if ((self.max_lat - self.min_lat) < MIN_LAT_DIFF) or ((self.max_lon - self.min_lon) < MIN_LON_DIFF):
             self.min_lat = self.min_lat - MIN_LAT_DIFF*10
             self.max_lat = self.max_lat + MIN_LAT_DIFF*10
             self.min_lon = self.min_lon - MIN_LON_DIFF*10
@@ -1546,6 +1545,7 @@ class FieldPlotter:
         return im2
 
     def plot_field(self, output_file=None, angles=None):
+        events = events[0]
         map_image = self.create_field_image(angles=angles)
         
         sys.stdout.write('map overlay : ')
@@ -2796,9 +2796,13 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for i, event_set in enumerate(events):
-            if args.label: LABEL = args.label[i]
-            else: LABEL = None
-            FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3, label=LABEL)
+            num_unique_mags = len(np.unique(np.array(event_set.event_magnitudes())))
+            if num_unique_mags > 5:
+                if args.label: LABEL = args.label[i]
+                else: LABEL = None
+                FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3, label=LABEL)
+            else:
+                print("Not plotting frequency/magnitude for {}, found < 5 unique events.".format(args.event_file[i].split("events_")[-1].split("/")[-1]))
         plt.legend(loc='lower left', fontsize=LABEL_SIZE)
         if args.min_magnitude is not None and args.max_magnitude is not None:
             plt.xlim(args.min_magnitude, args.max_magnitude)
@@ -2921,9 +2925,9 @@ if __name__ == "__main__":
                 ele_slips[ele_id] = uniform_slip
             event = None
         else:
-            sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events._events[args.event_id].getMagnitude()))
-            ele_slips = events.get_event_element_slips(args.event_id)
-            event = events._events[args.event_id]
+            sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
+            ele_slips = events[0].get_event_element_slips(args.event_id)
+            event = events[0]._events[args.event_id]
         
         if len(ele_slips.keys()) == 0:
             raise BaseException("Error in processing slips.")
@@ -2931,7 +2935,7 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         
-        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, small_model=args.small_model, g0=args.g)
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles)
     if args.field_eval:
@@ -2969,7 +2973,7 @@ if __name__ == "__main__":
     if args.traces:
         filename = SaveFile().trace_plot(args.model_file)
         if args.small_model is None: args.small_model = False
-        TP = TracePlotter(geometry, filename, use_sections=args.use_sections, small_model=args.small_model)
+        TP = TracePlotter(geometry, filename, use_sections=args.use_sections)
 
     if args.slip_rates:
         if args.elements is None: args.elements = geometry.model.getElementIDs()
