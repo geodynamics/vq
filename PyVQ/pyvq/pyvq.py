@@ -1545,7 +1545,6 @@ class FieldPlotter:
         return im2
 
     def plot_field(self, output_file=None, angles=None):
-        events = events[0]
         map_image = self.create_field_image(angles=angles)
         
         sys.stdout.write('map overlay : ')
@@ -1722,7 +1721,7 @@ class FieldPlotter:
                 item.set_alpha(0)
             
             if self.event_id is not None:
-                mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(events._events[self.event_id].getMagnitude())), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
+                mag_ax.text(0.5, 0.5, 'm = {:0.3f}'.format(float(events[0]._events[self.event_id].getMagnitude())), fontproperties=font_bold, size=arrow_fontsize, ha='center', va='center')
             else:
                 avg_slip = np.average([x[1] for x in self.element_slips.items()])
                 mag_ax.text(0.5, 0.5, 'mean slip \n{:0.3f}m'.format(avg_slip), fontproperties=font_bold, size=arrow_fontsize-1, ha='center', va='center')
@@ -1732,7 +1731,7 @@ class FieldPlotter:
         
         # If plotting event field, get involved sections
         if self.event_id is not None:
-            involved_sections = events.get_event_sections(self.event_id, geometry)
+            involved_sections = events[0].get_event_sections(self.event_id, geometry)
             sys.stdout.write(" Event slips on {} sections out of {} : ".format(len(involved_sections), len(geometry.model.getSectionIDs()) ))
         else:
             involved_sections = geometry.model.getSectionIDs()
@@ -2810,7 +2809,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.ylim(0.99e-5,1)
+        plt.ylim(0.99e-5,4)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_rupt_area:
@@ -2940,9 +2939,10 @@ if __name__ == "__main__":
         FP.plot_field(output_file=filename, angles=angles)
     if args.field_eval:
         filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id)
-        sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events._events[args.event_id].getMagnitude()))
-        ele_slips = events.get_event_element_slips(args.event_id)
-        event = events._events[args.event_id]
+        sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
+        sys.stdout.flush()
+        ele_slips = events[0].get_event_element_slips(args.event_id)
+        event = events[0]._events[args.event_id]
         if len(ele_slips.keys()) == 0:
             raise BaseException("Error in processing slips.")
         else:
