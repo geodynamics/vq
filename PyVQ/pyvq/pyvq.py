@@ -274,8 +274,8 @@ class SectionFilter:
         return False
 
     def plot_str(self):
-        label_stre = "  Slip on Sections"
-        for sec in section_list:
+        label_str = "  Slip on Sections"
+        for sec in self._section_list:
             label_str += "-"+str(sec)
         return label_str
 
