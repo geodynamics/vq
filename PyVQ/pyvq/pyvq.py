@@ -2359,13 +2359,13 @@ class ProbabilityPlot(BasePlotter):
         # years_since is the number of years since the last observed (real) earthquake
         # on the selected faults.
         intervals = np.array(events.interevent_times())
+        sys.stdout.write("Found {:d} recurrence times...\n".format(len(intervals)))
         conditional = {}
         wait_75 = None
         max_t0 = int(intervals.max())
         # t0_to_eval used to evaluate waiting times with 25/50/75% probability given t0=years_since
         t0_to_eval = np.arange(0, max_t0, 1.0)
-        # t0_to_plot is "smoothed" so that the plots aren't as jagged
-        t0_to_plot = np.linspace(0, int(max_t0), num=10)
+        t0_to_plot = np.linspace(0, int(max_t0), num=min(len(intervals),len(t0_to_eval)-5))
         t0_to_plot = [int(t0) for t0 in t0_to_plot]
         t0_dt      = {}
         t0_dt_plot = {}
