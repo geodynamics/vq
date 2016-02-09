@@ -71,6 +71,14 @@ SCATTER_SIZE = 10
 def linear_interp(x, x_min, x_max, y_min, y_max):
     return ((y_max - y_min)/(x_max - x_min) * (x - x_min)) + y_min
     
+def fit_to_weibull(prob_x, prob_y, beta_guess, tau_guess):
+    # Least squares fitting to the Weibull distribution
+    from scipy.optimize import leastsq
+    errorFunction = lambda beta_tau,x,y: Distributions().weibull(x, beta_tau[0], beta_tau[1])-y
+    beta_tau_guess = (beta_guess,tau_guess)
+    fit_params, success = leastsq(errorFunction, beta_tau_guess[:], args=(prob_x,prob_y))
+    return fit_params
+    
 def calculate_averages(x,y,log_bin=False,num_bins=None):
     if num_bins is None:
         num_bins = math.floor(len(x)/100)
@@ -2213,16 +2221,30 @@ class DiagnosticPlot(BasePlotter):
         self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
-    def plot_p_of_t(self, fig, events, filename):
+    def plot_p_of_t(self, fig, events, filename, fit_weibull):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
         # Cumulative probability P(t) as a function of interevent time t
         intervals = np.array(events.interevent_times())
         prob = {}
+        weibull = {}
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
         
+        if fit_weibull:
+            mean_t0 = np.mean(intervals)
+            t0_to_eval = list(np.linspace(0, int(intervals.max()), num=len(intervals)))
+            fit_beta,fit_tau = fit_to_weibull(prob['x'], prob['y'], 1.0, mean_t0)
+            sys.stdout.write("FITTED BETA = {:.3f}\nFITTED TAU = {:.3f}\n".format(fit_beta,fit_tau))
+            weibull     = {'x':[],'y':[]}
+            for dt in range(int(intervals.max())):
+                weibull['x'].append(dt)
+                weibull_t0_dt = Distributions().weibull(weibull['x'][-1],fit_beta,fit_tau)
+                weibull['y'].append(weibull_t0_dt)          
+        
         self.create_plot(fig, 0, "line", False, prob['x'], prob['y'], PLOT_TITLE,"t [years]", "P(t)", filename)
+        if fit_weibull:
+            fig.gca().plot(weibull['x'],weibull['y'],c='r',ls='--',label=r'$\beta = {:.3f}, \ \ \tau = {:.1f}$'.format(fit_beta,fit_tau))
 
     def plot_conditional_fixed_dt(self, fig, events, filename, fixed_dt=5.0):
         PLOT_TITLE = events.plot_str()
@@ -2245,7 +2267,7 @@ class ProbabilityPlot(BasePlotter):
                 prob_dt['y'].append(1.0 - float(int_t0_dt.size)/float(int_t0.size))
         self.create_plot(fig, 0, "line", False, prob_dt['x'], prob_dt['y'], PLOT_TITLE, "t0 [years]", "P(t0 + {:d}, t0)".format(int(fixed_dt)), filename)
 
-    def plot_p_of_t_multi(self, fig, events, filename, beta=None, tau=None, num_t0=4, numPoints=200):
+    def plot_p_of_t_multi(self, fig, events, filename, beta=None, tau=None, num_t0=4, numPoints=200, fitWeibull=False):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
         # Cumulative conditional probability P(t,t0) as a function of
@@ -2255,8 +2277,13 @@ class ProbabilityPlot(BasePlotter):
         conditional = {}
         weibull = {}
         max_t0 = int(intervals.max())
-        t0_to_eval = list(np.linspace(0, max_t0, num=numPoints))
-        t0_to_plot = [int(t) for t in np.linspace(0, int(max_t0/2.0), num=num_t0)]
+        mean_t0 = np.mean(intervals)
+        median_t0 = np.median(intervals)
+        sys.stdout.write("Mean recurrence interval: {:.2f}\n".format(mean_t0))
+        sys.stdout.write("Median recurrence interval: {:.2f}\n".format(median_t0))
+        t0_to_eval = list(np.linspace(0, max_t0, num=len(intervals)))
+        #t0_to_plot = [int(t) for t in np.linspace(0, int(max_t0/2.0), num=num_t0)]
+        t0_to_plot = [int(0), int(round(0.6*mean_t0,-1)), int(round(1.25*mean_t0,-1))]
         # To get the lines of P(t,t0) evaluated at integer values of t0
         t0_to_eval = np.sort(t0_to_eval+t0_to_plot)
         t0_to_plot = np.array(t0_to_plot)
@@ -2270,28 +2297,47 @@ class ProbabilityPlot(BasePlotter):
                     prob_t0_dt = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
                     conditional[t0]['x'].append(t0+dt)
                     conditional[t0]['y'].append(prob_t0_dt)
-                    if beta is not None and tau is not None:
+                    if beta is not None and tau is not None and not fitWeibull:
                         weibull[t0]['x'].append(t0+dt)
                         weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,beta,tau)
                         weibull[t0]['y'].append(weibull_t0_dt)
             else:
                 conditional[t0] = None
                 weibull[t0] = None
+                
+        if fitWeibull:
+            prob = {}
+            prob['x'] = np.sort(intervals)
+            prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
+            fit_beta,fit_tau = fit_to_weibull(prob['x'], prob['y'], 1.0, mean_t0)
+            sys.stdout.write("FITTED BETA = {:.3f}\nFITTED TAU = {:.3f}\n".format(fit_beta,fit_tau))
+            for t0 in t0_to_eval:
+                int_t0 = intervals[np.where( intervals > t0)]
+                if int_t0.size != 0:
+                    weibull[t0]     = {'x':[],'y':[]}
+                    for dt in range(max_t0-int(t0)):
+                        weibull[t0]['x'].append(t0+dt)
+                        weibull_t0_dt = Distributions().cond_weibull(weibull[t0]['x'][-1],t0,fit_beta,fit_tau)
+                        weibull[t0]['y'].append(weibull_t0_dt)
+                else:
+                    weibull[t0] = None
+                
         x_data_prob = [conditional[t0]['x'] for t0 in t0_to_plot]
         y_data_prob = [conditional[t0]['y'] for t0 in t0_to_plot]
         t0_colors   = [line_colormap(float(t0*.8)/t0_to_plot.max()) for t0 in t0_to_plot]
         prob_lw     = [2 for t0 in t0_to_plot]
-        if beta is not None and tau is not None:
+        if fitWeibull or (beta is not None and tau is not None):
             x_data_weib = [weibull[t0]['x'] for t0 in t0_to_plot]
             y_data_weib = [weibull[t0]['y'] for t0 in t0_to_plot]
             weib_colors = ['k' for t0 in t0_to_plot]
-            weib_labels = [None for t0 in t0_to_plot]
+            if fitWeibull: weib_labels = [r'$\beta = {:.3f}, \ \ \tau = {:.1f}$'.format(fit_beta,fit_tau), None, None]
+            else: weib_labels = [r'$\beta = {:.3f}, \tau = {:.1f}$'.format(beta,tau), None, None]
             weib_lw     = [1 for t0 in t0_to_plot]
             # List concatenation, not addition
             colors = t0_colors + weib_colors
             x_data = x_data_prob + x_data_weib
             y_data = y_data_prob + y_data_weib
-            labels = [t0 for t0 in t0_to_plot] + weib_labels
+            labels = ["$t_0 =$ {:d}".format(t0) for t0 in t0_to_plot] + weib_labels
             linewidths = prob_lw + weib_lw
         else:
             colors = t0_colors
@@ -2415,7 +2461,7 @@ class ProbabilityPlot(BasePlotter):
 class Distributions:
     def weibull(self, X, beta, tau):
         # Return the Weibull distribution at a point
-        return 1-np.exp( -(X/float(tau))**beta)
+        return 1-np.exp( -(np.array(X)/float(tau))**beta)
 
     def cond_weibull(self, X, t0, beta, tau):
         # Return the conditional Weibull distribution at a single point
@@ -2550,6 +2596,8 @@ if __name__ == "__main__":
             help="Generate a table of conditional probabilities for the next large earthquakes, must specify the time since the last M>5.0, M>6.0, and M>7.0 earthquakes on the faults being simulated (use --t0 to specify these times in units of decimal years).")
     parser.add_argument('--t0', type=float, nargs='+', required=False,
             help="List of times [rounded to the nearest 0.1 years] since the last M>5, M>6 and M>7. Example --t0 4.1 12.5 35.9")
+    parser.add_argument('--fit_weibull', action='store_true', required=False,
+            help="Fit a Weibull distribution to the simulated earthquake distribution.")
             
             
     # Field plotting arguments
@@ -2851,8 +2899,8 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "prob_vs_time", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for event_set in events:
-            ProbabilityPlot().plot_p_of_t(fig, event_set, filename)
-        #ax.legend(loc='best')
+            ProbabilityPlot().plot_p_of_t(fig, event_set, filename, args.fit_weibull)
+        ax.legend(loc='best',fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t_fixed_dt:
@@ -2870,11 +2918,11 @@ if __name__ == "__main__":
         filename = SaveFile().event_plot(args.event_file, "cond_prob_vs_t", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         if args.beta:
             for event_set in events:
-                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename, beta=args.beta, tau=args.tau)
+                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename, beta=args.beta, tau=args.tau, fitWeibull=args.fit_weibull)
         else:
             for event_set in events:
-                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename)
-        ax.legend(loc='best')
+                ProbabilityPlot().plot_p_of_t_multi(fig, event_set, filename, fitWeibull=args.fit_weibull)
+        ax.legend(loc='best', fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_waiting_times:
@@ -2892,8 +2940,7 @@ if __name__ == "__main__":
         times = [event_set.interevent_times() for event_set in events]
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for time in times:
-            BasePlotter().create_plot(fig, color_index, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
-        ax.legend(loc='best')
+            BasePlotter().create_plot(fig, 0, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.probability_table:
