@@ -128,6 +128,9 @@ class SaveFile:
         if args.use_sections is not None:
             for sec in args.use_sections:
                 add+="_"+geometry.model.section(sec).name()
+        if args.use_trigger_sections is not None:
+            for sec in args.use_trigger_sections:
+                add+="_triggeredBy_"+geometry.model.section(sec).name()
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
             if len(min_mag.split(".")) > 1:
