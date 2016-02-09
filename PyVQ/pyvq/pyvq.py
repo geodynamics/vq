@@ -2282,8 +2282,8 @@ class ProbabilityPlot(BasePlotter):
         sys.stdout.write("Mean recurrence interval: {:.2f}\n".format(mean_t0))
         sys.stdout.write("Median recurrence interval: {:.2f}\n".format(median_t0))
         t0_to_eval = list(np.linspace(0, max_t0, num=len(intervals)))
-        #t0_to_plot = [int(t) for t in np.linspace(0, int(max_t0/2.0), num=num_t0)]
         t0_to_plot = [int(0), int(round(0.6*mean_t0,-1)), int(round(1.25*mean_t0,-1))]
+        if t0_to_plot[1]==t0_to_plot[2]: t0_to_plot[2]+=10
         # To get the lines of P(t,t0) evaluated at integer values of t0
         t0_to_eval = np.sort(t0_to_eval+t0_to_plot)
         t0_to_plot = np.array(t0_to_plot)
@@ -2408,7 +2408,7 @@ class ProbabilityPlot(BasePlotter):
         
     def print_prob_table(self, t0_list, events):
         dt_vals       = [1, 5, 15] # units = years
-        Mag_vals      = [5, 6,  7]
+        Mag_vals      = [5, 6,  6.5]
         YEAR_INTERVAL = 0.1
         probabilities = {} # Probabilities for the final table
         num_events    = []
@@ -2424,31 +2424,29 @@ class ProbabilityPlot(BasePlotter):
             intervals   = np.array(events.interevent_times())
             conditional = {}
             max_t0      = intervals.max() 
-            t0_to_eval  = np.arange(0, max_t0+YEAR_INTERVAL, YEAR_INTERVAL)
-            for t0 in t0_to_eval:
-                t0 = round(t0,1)
-                int_t0 = intervals[np.where( intervals > t0 )]
-                if int_t0.size != 0:
-                    conditional[t0] = {'x':[],'y':[]}
-                    for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
-                        int_t0_dt = intervals[np.where( intervals > t0+dt )]
-                        conditional[t0]['x'].append(t0+dt)
-                        prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                        conditional[t0]['y'].append(prob_t0_dt)
+            t0_vals     = list(t0_list)+list([max_t0])
+            if (max_t0 != max(t0_vals)):
+                sys.stdout.write("A specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.".format(MAG))
+                return 0
+            else:            
+                t0_to_eval  = list(np.arange(0, max_t0+YEAR_INTERVAL, YEAR_INTERVAL))
+                t0_to_eval  += list(t0_list)
+                for t0 in sorted(t0_to_eval):
+                    t0 = round(t0,1)
+                    int_t0 = intervals[np.where( intervals > t0 )]
+                    if int_t0.size != 0:
+                        conditional[t0] = {'x':[],'y':[]}
+                        for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
+                            int_t0_dt = intervals[np.where( intervals > t0+dt )]
+                            conditional[t0]['x'].append(t0+dt)
+                            prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                            conditional[t0]['y'].append(prob_t0_dt)
             
             prob_in_t0_dt = []
             
-            print("\n----------------------------------------")
-            print("M >= {}".format(MAG))
-            
             for i in range(len(dt_vals)):
-                #print("len conditional for last index({}): {}".format( int(dt_vals[i]/YEAR_INTERVAL),len(conditional[ t0_list[i] ]['y'])))
-                print(' ')
-                print(t0_list[i], int(dt_vals[i]/YEAR_INTERVAL))
-                print(len(conditional[ t0_list[i] ]['y']))
-                print(conditional[ t0_list[i] ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ])
-                prob_in_t0_dt.append(conditional[ t0_list[i] ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ] - conditional[ t0_list[i] ]['y'][0])
-                #sys.stdout.write("M>{:d}  P(t={:.2f},t0={:.2f}) = {:.2f}\n".format(MAG,conditional[ t0_list[i] ]['x'][ int(dt_vals[i]/YEAR_INTERVAL) ], t0_list[i], prob_in_t0_dt[-1]))
+                t0_rounded = round(t0_list[i],1)
+                prob_in_t0_dt.append(conditional[ t0_rounded ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ] - conditional[ t0_rounded ]['y'][0])
             
             probabilities[MAG] = prob_in_t0_dt
         
