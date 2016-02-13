@@ -127,9 +127,6 @@ class SaveFile:
         if max_year is not None: add+="_yearMax"+str(int(max_year))
         if args.use_sections is not None:
             for sec in args.use_sections:
-                add+="_"+geometry.model.section(sec).name()
-        if args.use_trigger_sections is not None:
-            for sec in args.use_trigger_sections:
                 add+="_triggeredBy_"+geometry.model.section(sec).name()
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
@@ -271,25 +268,6 @@ class NumElementsFilter:
         if self._max_num_elements != sys.maxint: label_str += "<"+str(self._max_num_elements)
         return label_str
 
-class SectionFilter:
-    def __init__(self, geometry, section_list):
-        self._section_list = section_list
-        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
-
-    def test_event(self, event):
-        event_elements = event.getInvolvedElements()
-        for elem_num in event_elements:
-            elem_section = self._elem_to_section_map[elem_num]
-            if elem_section in self._section_list: return True
-
-        return False
-
-    def plot_str(self):
-        label_str = "  Slip on Sections"
-        for sec in self._section_list:
-            label_str += "-"+str(sec)
-        return label_str
-
 class TriggerSectionFilter:
     def __init__(self, geometry, section_list):
         self._section_list = section_list
@@ -306,6 +284,24 @@ class TriggerSectionFilter:
         label_str = "  triggerSections"
         for sec in self._section_list:
             label_str += "-"+geometry.model.section(sec).name()
+        return label_str
+
+
+class TriggerFaultFilter:
+    def __init__(self, geometry, fault_list):
+        self._fault_list = fault_list
+        self._elem_to_fault_map = {elem_num: geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() for elem_num in range(geometry.model.num_elements())}
+
+    def test_event(self, event):
+        triggerID = event.getEventTrigger()
+        elem_fault = self._elem_to_fault_map[triggerID]
+        if elem_fault in self._fault_list: return True
+        return False
+
+    def plot_str(self):
+        label_str = "  triggerFaults"
+        for fault in self._fault_list:
+            label_str += "-"+geometry.model.fault(fault).name()
         return label_str
 
         
@@ -760,6 +756,42 @@ class Sweeps:
                 writer.grab_frame()
         sys.stdout.write("\n>> Movie saved to {}\n".format(savefile))
 
+    
+
+
+#class SpaceTimePlot:
+#    def __init__(self, geometry=None, min_year=None, max_year=None, event_file=None, trigger_fault=None):
+#        if min_year is None or max_year is None: 
+#            raise BaseException("Must specify --min_year and --max_year")
+#        elif geometry is None:
+#            raise BaseException("Must specify --model_file")
+#        elif event_file is None:
+#            raise BaseException("Must specify --event_file")
+#        elif trigger_fault is None :
+#            raise BaseException("Must specify a single fault id (example fault #N) with --use_faults N")
+#        else:
+#            self.event_id = event_id
+#            self.trigger_fault = trigger_fault
+#            self.num_events = len(events[0]._filtered_events)
+#            self.event_ids = events[0]._filtered_events;
+#            self.geometry = geometry
+#            
+#            
+#    def plot(self, fig): 
+#        ax = plt.gca()
+#        ax.set_xlabel("Distance along strike [km]")
+#        ax.set_ylabel("Simulation time [years]")
+#        
+#        this_color = 'k'
+#        
+#        for id in self.event_ids:
+#            event_elements = events[0]._events[id].getInvolvedElements()
+#            event_time = events[0]._events[id].getEventYear()
+#            for element in event_elements:
+#                das_min = self.geometry.model.element_min_das(element)
+#                das_max = self.geometry.model.element_max_das(element)
+#                ax.axhline(y=event_time, xmin=das_min, xmax=das_max)
+            
     
         
 class GreensPlotter:
@@ -1886,7 +1918,7 @@ class BasePlotter:
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
             else: BINS=100
-            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled', log=log_y)
+            ax.hist(x_data, bins=BINS, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], histtype='stepfilled', log=log_y, normed=True)
         if plot_type != "loglog": plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
         #plt.savefig(filename,dpi=100)
         #sys.stdout.write("Plot saved: {}\n".format(filename))
@@ -2556,9 +2588,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_num_elements', type=float, required=False,
                         help="Maximum number of elements involved in an event")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
-            help="List of model sections to use (all sections used if unspecified).")
-    parser.add_argument('--use_trigger_sections', type=int, nargs='+', required=False,
-            help="List of model triggering sections to use for subsetting events.")
+            help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
 
     # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
@@ -2790,17 +2820,10 @@ if __name__ == "__main__":
 
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
-
+        
     if args.use_sections:
         if not args.model_file: raise BaseException("Must specify --model_file for --use_sections to work.")
-        event_filters.append(SectionFilter(geometry, args.use_sections))
-        # Also grab all the elements from this section in case this is being used to grab element ids
-        if args.elements is None:
-            args.elements = [elem_num for elem_num in range(geometry.model.num_elements()) if geometry.model.element(elem_num).section_id() in args.use_sections]
-        
-    if args.use_trigger_sections:
-        if not args.model_file: raise BaseException("Must specify --model_file for --use_trigger_sections to work.")
-        event_filters.append(TriggerSectionFilter(geometry, args.use_trigger_sections))
+        event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
 
     if args.event_file:
         if isinstance(args.event_file, list):
