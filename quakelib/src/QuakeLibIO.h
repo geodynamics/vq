@@ -1354,6 +1354,9 @@ namespace quakelib {
                 return bounds;
             }
 
+            double element_min_das(const quakelib::UIndex &id) const;
+            double element_max_das(const quakelib::UIndex &id) const;
+
             void insert(const ModelWorld &other_world);
             void insert(const ModelFault &new_fault);
             void insert(const ModelSection &new_section);
