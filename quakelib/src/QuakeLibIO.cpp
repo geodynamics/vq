@@ -3246,6 +3246,15 @@ double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) c
     return max_depth;
 }
 
+double quakelib::ModelWorld::element_min_das(const quakelib::UIndex &id) const {
+    return _vertices.find(_elements.find(id)->second.vertex(0))->second.das();
+}
+
+double quakelib::ModelWorld::element_max_das(const quakelib::UIndex &id) const {
+    return _vertices.find(_elements.find(id)->second.vertex(2))->second.das();
+}
+
+
 size_t quakelib::ModelWorld::num_sections(void) const {
     return _sections.size();
 }
