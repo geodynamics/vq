@@ -126,8 +126,13 @@ class SaveFile:
         if min_year is not None: add+="_yearMin"+str(int(min_year))    
         if max_year is not None: add+="_yearMax"+str(int(max_year))
         if args.use_sections is not None:
+            add+="_triggeredBySection_"
             for sec in args.use_sections:
-                add+="_triggeredBy_"+geometry.model.section(sec).name()
+                add+="-"+geometry.model.section(sec).name()
+        if args.use_faults is not None:
+            add+="_triggeredByFault_"
+            for fault in args.use_faults:
+                add+="-"+str(fault)
         if min_mag is not None: 
             # e.g. min_mag = 7.5, filename has '7-5'
             if len(min_mag.split(".")) > 1:
@@ -268,42 +273,6 @@ class NumElementsFilter:
         if self._max_num_elements != sys.maxint: label_str += "<"+str(self._max_num_elements)
         return label_str
 
-class TriggerSectionFilter:
-    def __init__(self, geometry, section_list):
-        self._section_list = section_list
-        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
-
-    def test_event(self, event):
-        triggerID = event.getEventTrigger()
-        elem_section = self._elem_to_section_map[triggerID]
-        if elem_section in self._section_list: return True
-
-        return False
-
-    def plot_str(self):
-        label_str = "  triggerSections"
-        for sec in self._section_list:
-            label_str += "-"+geometry.model.section(sec).name()
-        return label_str
-
-
-class TriggerFaultFilter:
-    def __init__(self, geometry, fault_list):
-        self._fault_list = fault_list
-        self._elem_to_fault_map = {elem_num: geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() for elem_num in range(geometry.model.num_elements())}
-
-    def test_event(self, event):
-        triggerID = event.getEventTrigger()
-        elem_fault = self._elem_to_fault_map[triggerID]
-        if elem_fault in self._fault_list: return True
-        return False
-
-    def plot_str(self):
-        label_str = "  triggerFaults"
-        for fault in self._fault_list:
-            label_str += "-"+geometry.model.fault(fault).name()
-        return label_str
-
         
 class SlipFilter:
     def __init__(self, min_slip=None, max_slip=None):
@@ -349,6 +318,7 @@ class Geometry:
             else:
                 raise BaseException("Must specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
+            self._elem_to_fault_map = {elem_num: self.model.section(self.model.element(elem_num).section_id()).fault_id() for elem_num in self.model.getElementIDs()}
         else:
             if args.use_sections:
                 raise BaseException("Model file required if specifying fault sections.")
@@ -419,6 +389,47 @@ class Geometry:
     
     def get_stress_drop_factor(self):
         return self.model.stressDropFactor()
+
+
+
+class TriggerSectionFilter:
+    def __init__(self, geometry, section_list):
+        self._section_list = section_list
+        #self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
+        self._elem_to_section_map = geometry._elem_to_section_map
+
+    def test_event(self, event):
+        triggerID = event.getEventTrigger()
+        elem_section = self._elem_to_section_map[triggerID]
+        if elem_section in self._section_list: return True
+
+        return False
+
+    def plot_str(self):
+        label_str = "  triggerSections"
+        for sec in self._section_list:
+            label_str += "-"+geometry.model.section(sec).name()
+        return label_str
+
+
+class TriggerFaultFilter:
+    def __init__(self, geometry, fault_list):
+        self._fault_list = fault_list
+        self._elem_to_fault_map = geometry._elem_to_fault_map
+
+    def test_event(self, event):
+        triggerID = event.getEventTrigger()
+        elem_fault = self._elem_to_fault_map[triggerID]
+        if elem_fault in self._fault_list: return True
+        return False
+
+    def plot_str(self):
+        label_str = "  triggerFaults"
+        for fault in self._fault_list:
+            # TODO: Add fault names once ModelFault::name() exists
+            #label_str += "-"+geometry.model.fault(fault).name()
+            label_str += "-"+str(fault)
+        return label_str
 
 
 # ======= h5py I/O ============================================
@@ -678,7 +689,7 @@ class Sweeps:
         num_sweeps = max([sweep_num for sweep_num in self.sweep_data['sweep_number'] ])+1
         sectionID = geometry.model.element(triggerID).section_id()
         ele_length = np.sqrt(geometry.model.create_sim_element(triggerID).area())
-        triggerSecElements = [id for id in range(geometry.model.num_elements()) if geometry.model.element(id).section_id() == sectionID]       
+        triggerSecElements = [id for id in geometry.model.getElementIDs() if geometry.model.element(id).section_id() == sectionID]       
         sec_name = geometry.model.section(sectionID).name()
         min_id    = triggerSecElements[0]
         magnitude = events._events[self.event_number].getMagnitude()
@@ -759,40 +770,75 @@ class Sweeps:
     
 
 
-#class SpaceTimePlot:
-#    def __init__(self, geometry=None, min_year=None, max_year=None, event_file=None, trigger_fault=None):
-#        if min_year is None or max_year is None: 
-#            raise BaseException("Must specify --min_year and --max_year")
-#        elif geometry is None:
-#            raise BaseException("Must specify --model_file")
-#        elif event_file is None:
-#            raise BaseException("Must specify --event_file")
-#        elif trigger_fault is None :
-#            raise BaseException("Must specify a single fault id (example fault #N) with --use_faults N")
-#        else:
-#            self.event_id = event_id
-#            self.trigger_fault = trigger_fault
-#            self.num_events = len(events[0]._filtered_events)
-#            self.event_ids = events[0]._filtered_events;
-#            self.geometry = geometry
-#            
-#            
-#    def plot(self, fig): 
-#        ax = plt.gca()
-#        ax.set_xlabel("Distance along strike [km]")
-#        ax.set_ylabel("Simulation time [years]")
-#        
-#        this_color = 'k'
-#        
-#        for id in self.event_ids:
-#            event_elements = events[0]._events[id].getInvolvedElements()
-#            event_time = events[0]._events[id].getEventYear()
-#            for element in event_elements:
-#                das_min = self.geometry.model.element_min_das(element)
-#                das_max = self.geometry.model.element_max_das(element)
-#                ax.axhline(y=event_time, xmin=das_min, xmax=das_max)
+class SpaceTimePlot:
+    def __init__(self, geometry=None, min_year=None, max_year=None, event_file=None, trigger_fault=None, title=None):
+        if min_year is None or max_year is None: 
+            raise BaseException("Must specify --min_year and --max_year")
+        elif geometry is None:
+            raise BaseException("Must specify --model_file")
+        elif event_file is None:
+            raise BaseException("Must specify --event_file")
+        elif trigger_fault is None :
+            raise BaseException("Must specify a single fault id (example fault #N) with --use_faults N")
+        else:
+            self.trigger_fault = trigger_fault
+            self.num_events = len(events[0]._filtered_events)
+            self.event_ids = events[0]._filtered_events;
+            self.geometry = geometry
+            self.title = title
+            self.min_year = min_year
+            self.max_year = max_year
+            self.min_mag = min(events[0].event_magnitudes())
+            self.lower_min_mag = min(events[0].event_magnitudes())*.85
+            self.max_mag = max(events[0].event_magnitudes())
+            self.mag_slope = 1.0/(self.max_mag - self.lower_min_mag)
+            self.cmap = plt.get_cmap('Reds')
             
-    
+    def get_color(self, magnitude):
+         return self.cmap(self.mag_slope * (magnitude - self.lower_min_mag))
+            
+            
+    def plot(self, fig): 
+        ax = plt.gca()
+        ax.set_xlabel("Distance along strike [km]")
+        ax.set_ylabel("Simulation time [years]")
+        ax.set_title(self.title)
+        global_max_das, global_min_das = 0.0, 0.0
+        ax.plot([],[])
+        
+        sys.stdout.write("----Plotting {:d} events from simulation years {:.1f} to {:.1f} on Fault {}\n".format(self.num_events,self.min_year,self.max_year,self.trigger_fault))
+        
+        for id in self.event_ids:
+            event_elements = events[0]._events[id].getInvolvedElements()
+            event_time = events[0]._events[id].getEventYear()
+            mag = events[0]._events[id].getMagnitude()
+            trigger_elem = events[0]._events[id].getEventTrigger()
+            sys.stdout.write("Time {:.1f}\tEvent {:d}\tM = {:.3f}\tNum. Elements {:d}\n".format(event_time,id,mag,len(event_elements)))
+            for element in event_elements:
+                # Only plot slips on the specified fault
+                if self.geometry._elem_to_fault_map[element] == self.trigger_fault:
+                    das_min = self.geometry.model.element_min_das(element)/1000.0
+                    das_max = self.geometry.model.element_max_das(element)/1000.0
+                    # Keep track of the total max DAS
+                    global_max_das = max(global_max_das,das_max)
+                    global_min_das = min(global_min_das,das_min)
+                    (r,g,b,a) = self.get_color(mag)
+                    ax.plot([das_min, das_max],[event_time, event_time], color=(r,g,b), zorder=1)
+                    # ===== Add a black star denoting the initial failure for the triggering element ======
+                    if element == trigger_elem:
+                        mean_das = 0.5*(das_max+das_min)
+                        ax.scatter([mean_das],[event_time], s=60, color='k', marker='*', zorder=10)
+                
+        fault_length = self.geometry.model.fault(self.trigger_fault).length()/1000.0
+        sys.stdout.write("---Fault {:d} has length {:.2f}, and the min/max event element DAS is {}, {}\n".format(self.trigger_fault,fault_length,global_min_das,global_max_das))
+        plt.xlim(0.0, global_max_das)
+        plt.ylim(args.min_year-3, args.max_year+3)
+        plt.gca().invert_yaxis()
+        norm = mcolor.Normalize(vmin=self.lower_min_mag, vmax=self.max_mag)
+        divider = make_axes_locatable(ax)
+        cbar_ax = divider.append_axes("right", size="3%",pad=0.2)
+        cb = mcolorbar.ColorbarBase(cbar_ax, cmap=self.cmap, norm=norm, orientation='vertical')
+        cb.set_label('Magnitude $M_W$')
         
 class GreensPlotter:
     # Plot Okubo Greens functions for a single fault element
@@ -2588,7 +2634,9 @@ if __name__ == "__main__":
     parser.add_argument('--max_num_elements', type=float, required=False,
                         help="Maximum number of elements involved in an event")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
-            help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
+            help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
+    parser.add_argument('--use_faults', type=int, nargs='+', required=False,
+            help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
 
     # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
@@ -2716,6 +2764,10 @@ if __name__ == "__main__":
     parser.add_argument('--reference', required=False, type=float,
             help="Reference value for numbers relative to some value.")
             
+    # --------- Spacetime plots -----------
+    parser.add_argument('--spacetime', required=False, action='store_true',
+            help="Plot a spacetime plot of ruptures for a single fault. Must specify the fault to use with --use_faults.")
+            
     # Event movies
     parser.add_argument('--event_movie', required=False, action='store_true',
             help="Make a movie of a specified event, must use --event_id.")
@@ -2824,6 +2876,13 @@ if __name__ == "__main__":
     if args.use_sections:
         if not args.model_file: raise BaseException("Must specify --model_file for --use_sections to work.")
         event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
+
+    if args.use_faults:
+        if not args.model_file: raise BaseException("Must specify --model_file for --use_faults to work.")
+        for fault_id in args.use_faults:
+            if fault_id not in geometry._elem_to_fault_map.values():
+                raise BaseException("Fault id {} does not exist.".format(fault_id))
+        event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
 
     if args.event_file:
         if isinstance(args.event_file, list):
@@ -3098,7 +3157,7 @@ if __name__ == "__main__":
             units = "km^2"
             fig = plt.figure()
             model_file = args.model_file
-            areas = [geometry.model.create_sim_element(elem_num).area()/1e6 for elem_num in range(geometry.model.num_elements())]
+            areas = [geometry.model.create_sim_element(elem_num).area()/1e6 for elem_num in geometry.model.getElementIDs()]
             if args.reference: 
                 areas = [area/args.reference for area in areas]
                 units = "{:.5f}".format(args.reference)+units
@@ -3161,7 +3220,7 @@ if __name__ == "__main__":
             units = "aseismic fraction"
             fig = plt.figure()
             model_file = args.model_file
-            fractions = [geometry.model.element(elem_num).aseismic() for elem_num in range(geometry.model.num_elements())]
+            fractions = [geometry.model.element(elem_num).aseismic() for elem_num in geometry.model.getElementIDs()]
             filename = SaveFile().distribution_plot(model_file, "aseismic_hist")
             if len(model_file.split("/")) > 1:
                 model_file = model_file.split("/")[-1]
@@ -3176,7 +3235,7 @@ if __name__ == "__main__":
             units = "km"
             fig = plt.figure()
             model_file = args.model_file
-            lengths = [np.sqrt(geometry.model.create_sim_element(elem_num).area()/1e6) for elem_num in range(geometry.model.num_elements())]
+            lengths = [np.sqrt(geometry.model.create_sim_element(elem_num).area()/1e6) for elem_num in geometry.model.getElementIDs()]
             if args.reference: 
                 lengths = [length/args.reference for length in lengths]
                 units = "{:.5f}".format(args.reference)+units
@@ -3258,6 +3317,21 @@ if __name__ == "__main__":
         sim_sweeps = Sweeps(event_file, event_number=args.event_id)
         save_file = SaveFile().event_movie(event_file, args.event_id)
         sim_sweeps.event_movie(geometry, events, save_file)
+    if args.spacetime:
+        if args.use_faults is None:
+            raise BaseException("Must specify a single fault for a spacetime plot, --use_faults #")
+        elif len(args.use_faults) != 1:
+            raise BaseException("Must specify a single fault for a spacetime plot, --use_faults #")
+        # TODO: Make compatible with multiple event files
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().event_plot(args.event_file, "spacetime", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
+        PLOT_TITLE = events[0].plot_str()
+        if args.no_titles: PLOT_TITLE = " "
+        stp = SpaceTimePlot(geometry=geometry, min_year=args.min_year, max_year=args.max_year, event_file=args.event_file[0], trigger_fault=args.use_faults[0], title=PLOT_TITLE)
+        stp.plot(fig)
+        plt.savefig(filename, dpi=args.dpi)
+        sys.stdout.write("\nPlot saved: {}\n".format(filename))
 
     # Validate data if requested
     err = False
