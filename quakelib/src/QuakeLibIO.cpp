@@ -2823,10 +2823,10 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t\t\t\t<LinearRing>\n";
             out_file << "\t\t\t\t\t\t<coordinates>\n";
             //TODO: Fix compatibility with triangular models when we have them
-            //npoints = (eit->second.is_quad() ? 4 : 3);
-            npoints = 4;
+            npoints = (_elements.find(*it)->second.is_quad() ? 4 : 3);
+            //npoints = 4;
 
-            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i].lon() << "," << lld[i].lat() << "," << max_depth + lld[i].altitude() << "\n";
 
             out_file << "\t\t\t\t\t\t</coordinates>\n";
             out_file << "\t\t\t\t\t</LinearRing>\n";
@@ -2857,10 +2857,10 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t\t\t\t<LinearRing>\n";
             out_file << "\t\t\t\t\t\t<coordinates>\n";
             //TODO: Fix compatibility with triangular models when we have them
-            //npoints = (eit->second.is_quad() ? 4 : 3);
-            npoints = 4;
+            npoints = (_elements.find(*it)->second.is_quad() ? 4 : 3);
+            //npoints = 4;
 
-            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i].lon() << "," << lld[i].lat() << "," << max_depth + lld[i].altitude() << "\n";
 
             out_file << "\t\t\t\t\t\t</coordinates>\n";
             out_file << "\t\t\t\t\t</LinearRing>\n";
