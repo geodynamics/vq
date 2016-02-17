@@ -2654,7 +2654,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     double                                          dx, dy, range, mean_slip, ev_year;
     unsigned int                                    i, trigger, ev_num;
     ElementIDSet                                    involved_elements;
-    ElementIDSet                                    involved_sections;
+    ElementIDSet                                    involved_faults;
     ElementIDSet                                    all_elements;
     ElementIDSet::iterator                          it;
 
@@ -2741,14 +2741,14 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
     for (it=involved_elements.begin(); it!=involved_elements.end(); ++it) {
         max_slip = fmax( max_slip, event.getEventSlip(*it));
         min_slip = fmin( min_slip, event.getEventSlip(*it));
-        involved_sections.insert(_elements.find(*it)->second.section_id());
+        involved_faults.insert(_sections.find(_elements.find(*it)->second.section_id())->second.fault_id());
     }
 
     // Add all the elements from the involved sections, regardless if they
     // actually slipped in the event. The ones with no slip will fill out the
     // faults and be nearly transparent.
     for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-        if (involved_sections.count(eit->second.section_id())) {
+        if (involved_faults.count(_sections.find(eit->second.section_id())->second.fault_id())) {
             all_elements.insert(eit->first);
         }
     }
@@ -2805,6 +2805,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t<description>\n";
             out_file << "Element #: " << *it << "\n";
             out_file << "Event slip [m]: " << event.getEventSlip(*it) << "\n";
+            out_file << "Distance along strike [km]: " << element_min_das(*it)/1000.0 << " to " << element_max_das(*it)/1000.0 << "\n";
             out_file << "\t\t</description>\n";
             out_file << "\t\t\t<Style>\n";
             out_file << "\t\t\t\t<LineStyle>\n";
@@ -2838,6 +2839,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t<Placemark>\n";
             out_file << "\t\t<description>\n";
             out_file << "Element #: " << *it << "\n";
+            out_file << "Distance along strike [km]: " << element_min_das(*it)/1000.0 << " to " << element_max_das(*it)/1000.0 << "\n";
             out_file << "\t\t</description>\n";
             out_file << "\t\t\t<Style>\n";
             out_file << "\t\t\t\t<LineStyle>\n";
@@ -3245,6 +3247,15 @@ double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) c
 
     return max_depth;
 }
+
+double quakelib::ModelWorld::element_min_das(const quakelib::UIndex &id) const {
+    return _vertices.find(_elements.find(id)->second.vertex(0))->second.das();
+}
+
+double quakelib::ModelWorld::element_max_das(const quakelib::UIndex &id) const {
+    return _vertices.find(_elements.find(id)->second.vertex(2))->second.das();
+}
+
 
 size_t quakelib::ModelWorld::num_sections(void) const {
     return _sections.size();
