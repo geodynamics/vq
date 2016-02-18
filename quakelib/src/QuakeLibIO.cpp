@@ -2420,12 +2420,15 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
             v1.set_loc(vertex(eit->vertex(1)).lld());
             v1.set_das(vertex(eit->vertex(1)).das());
             v1.set_trace_flag(NOT_ON_TRACE);
-            v2.set_loc(vertex(eit->vertex(2)).lld());
-            v2.set_das(vertex(eit->vertex(2)).das());
-            v2.set_trace_flag(NOT_ON_TRACE);
-            // Fourth vertex is implicit so we calculate it
-            v3.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
+            //v2.set_loc(vertex(eit->vertex(2)).lld());
+            //v2.set_das(vertex(eit->vertex(2)).das());
+            v3.set_loc(vertex(eit->vertex(2)).lld());
             v3.set_das(vertex(eit->vertex(2)).das());
+            v2.set_trace_flag(NOT_ON_TRACE);
+            //v3.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
+            //v3.set_das(vertex(eit->vertex(2)).das());
+            v2.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
+            v2.set_das(vertex(eit->vertex(2)).das());
             v3.set_trace_flag(NOT_ON_TRACE);
         }
     }
@@ -2586,6 +2589,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
                 out_file << "\t\t<description>\n";
                 out_file << "Fault name: " << fit->second.name() << "\n";
                 out_file << "Element #: " << eit->second.id() << "\n";
+                out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
                 out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
                 out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
                 out_file << "Aseismic: " << eit->second.aseismic() << "\n";
@@ -2805,7 +2809,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             out_file << "\t\t<description>\n";
             out_file << "Element #: " << *it << "\n";
             out_file << "Event slip [m]: " << event.getEventSlip(*it) << "\n";
-            out_file << "Distance along strike [km]: " << element_min_das(*it)/1000.0 << " to " << element_max_das(*it)/1000.0 << "\n";
+            out_file << "DAS [km]: " << element_min_das(*it)/1000.0 << " to " << element_max_das(*it)/1000.0 << "\n";
             out_file << "\t\t</description>\n";
             out_file << "\t\t\t<Style>\n";
             out_file << "\t\t\t\t<LineStyle>\n";
@@ -2826,7 +2830,7 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             npoints = (_elements.find(*it)->second.is_quad() ? 4 : 3);
             //npoints = 4;
 
-            for (i=0; i<npoints; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i].lon() << "," << lld[i].lat() << "," << max_depth + lld[i].altitude() << "\n";
+            for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
             out_file << "\t\t\t\t\t\t</coordinates>\n";
             out_file << "\t\t\t\t\t</LinearRing>\n";
