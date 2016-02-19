@@ -761,6 +761,30 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     }
 }
 
+void quakelib::ModelWorld::create_faults_minimal(void) {
+    std::map<UIndex, ModelSection>::const_iterator sit;
+
+    // populate _faults with data
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+
+        if (_faults.count(sit->second.fault_id())==0) {
+            ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.insert_section_id(sit->first);
+            fault.set_length(0.0);
+            fault.set_area(0.0);
+        } else {
+            ModelFault &fault = _faults[sit->second.fault_id()];
+            fault.insert_section_id(sit->first);
+            fault.set_length(0.0);
+            fault.set_area(0.0);
+        }
+    }
+
+}
+
+
+
+
 void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
     std::map<UIndex, ModelFault>::const_iterator fit;
     std::map<UIndex, ModelSection>::const_iterator sit;
@@ -932,6 +956,8 @@ quakelib::ModelElement &quakelib::ModelWorld::new_element(void) {
     _elements.find(max_ind)->second.set_id(max_ind);
     return _elements.find(max_ind)->second;
 }
+
+
 
 quakelib::ModelVertex &quakelib::ModelWorld::new_vertex(void) {
     UIndex  max_ind = next_vertex_index();
