@@ -893,6 +893,18 @@ class GreensPlotter:
                     loc       = quakelib.Vec3(self.XX[i][j], self.YY[i][j], 0.0)
                     self.field[i][j] = self.block.calc_displacement_vector(loc, self.C, self.dip, self.L, self.W, self.US, self.UD, self.UT, self._lambda, self._mu)[2]
     
+    def save_greens(self, output_file):
+        output_file = output_file.split('.png')[0]+'.txt'
+        outfile = open(output_file,'w')
+        # self.field[i][j] is the field value matrix
+        # self.XX[i][j] is the x coordinate
+        # self.YY[i][j] is the y coordinate
+        sys.stdout.write("Writing greens function values to {} in the format of\nX[m]\tY[m]\tfield value\n".format(output_file))
+        for i in range(self.XX.shape[0]):
+            for j in range(self.XX.shape[1]):
+                outfile.write("{:.6f}\t{:.6f}\t{:.6f}\n".format(self.XX[i][j],self.YY[i][j],self.field[i][j]))
+        
+    
     def plot_field(self, output_file, no_labels=False, cbar_loc='top', tick_font=18, frame_font=18, x_ticks=True):
         ticklabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=tick_font)
         framelabelfont = mfont.FontProperties(family='Arial', style='normal', variant='normal', size=frame_font)
@@ -2696,7 +2708,8 @@ if __name__ == "__main__":
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
     # Greens function plotting arguments
-    parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.")            
+    parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.") 
+    parser.add_argument('--save_greens', required=False, action='store_true', help="Save single element Okubo Green's function values.")            
     parser.add_argument('--plot_name', required=False, help="Name for saving the plot to file.")
     parser.add_argument('--Nx', required=False, type=int, help="Number of points along x axis to evaluate function (default 690).")
     parser.add_argument('--Ny', required=False, type=int, help="Number of points along y axis to evaluate function. (default 422)")
@@ -3100,6 +3113,8 @@ if __name__ == "__main__":
         GP = GreensPlotter(args.field_type, cbar_max=args.colorbar_max, levels=args.levels, Nx=args.Nx, Ny=args.Ny, Xmin=args.Xmin, Xmax=args.Xmax, Ymin=args.Ymin, Ymax=args.Ymax, L=args.L, W=args.W, DTTF=args.DTTF, slip=args.uniform_slip, dip=args.dip, _lambda=args._lambda, _mu=args.mu, rake=args.rake, g0=args.g)
         GP.compute_field()
         GP.plot_field(filename)
+        if args.save_greens:
+            GP.save_greens(filename)
     if args.traces:
         filename = SaveFile().trace_plot(args.model_file)
         if args.small_model is None: args.small_model = False
