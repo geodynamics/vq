@@ -795,7 +795,7 @@ void RunEvent::processAftershock(Simulation *sim) {
         // Determine the target rupture area given the aftershock magnitude
         // TODO:
         // user_defined_constants (flag this for later revisions in which we move these contant definitions to a parameters file).
-        double rupture_area = pow(10, -3.49+0.91*as.mag);
+        double rupture_area = pow(10, as.mag-4.0);
         double selected_rupture_area = 0;
         double selected_rupture_area_mu = 0;
 
