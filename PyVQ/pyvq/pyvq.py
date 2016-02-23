@@ -800,9 +800,11 @@ class SpaceTimePlot:
             self.title = title
             self.min_year = min_year
             self.max_year = max_year
-            self.min_mag = min(events[0].event_magnitudes())
+            if args.min_magnitude is None: self.min_mag = min(events[0].event_magnitudes())
+            else: self.min_mag = args.min_magnitude
             self.lower_min_mag = min(events[0].event_magnitudes())*.85
-            self.max_mag = max(events[0].event_magnitudes())
+            if args.max_magnitude is None: self.max_mag = max(events[0].event_magnitudes())
+            else: self.max_mag = args.max_magnitude
             self.mag_slope = 1.0/(self.max_mag - self.lower_min_mag)
             self.cmap = plt.get_cmap('Reds')
             
@@ -845,7 +847,7 @@ class SpaceTimePlot:
         sys.stdout.write("---Fault {:d} has length {:.2f}, and the min/max event element DAS is {}, {}\n".format(self.trigger_fault,fault_length,global_min_das,global_max_das))
         plt.xlim(0.0, global_max_das)
         plt.ylim(args.min_year-3, args.max_year+3)
-        plt.gca().invert_yaxis()
+        #plt.gca().invert_yaxis()
         norm = mcolor.Normalize(vmin=self.lower_min_mag, vmax=self.max_mag)
         divider = make_axes_locatable(ax)
         cbar_ax = divider.append_axes("right", size="3%",pad=0.2)
