@@ -115,6 +115,7 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
 class SaveFile:
     def __init__(self):
         if args.pdf: self.file_type = '.pdf'
+        elif args.eps: self.file_type = '.eps'
         else: self.file_type = '.png'
 
     def event_plot(self, event_file, plot_type, min_mag, min_year, max_year, combine):
@@ -743,7 +744,7 @@ class Sweeps:
         arrow_length = 0.08
         arrow_head = np.array([arrow_length*np.cos(mean_rake), arrow_length*np.sin(mean_rake)])
         arrow_head += arrow_tail  #vector addition
-        plt.annotate("", xy=arrow_head, xytext=arrow_tail, arrowprops=dict(arrowstyle="->", lw=2), xycoords="figure fraction")
+        plt.annotate("", xy=arrow_head, xytext=arrow_tail, arrowprops=dict(arrowstyle="->", lw=2.), xycoords="figure fraction")
         plt.figtext(0.03, 0.05, 'Rake Direction\n\n\n', bbox={'facecolor':'cyan', 'pad':8, 'alpha':0.3})
         
         # Colorbar
@@ -800,9 +801,11 @@ class SpaceTimePlot:
             self.title = title
             self.min_year = min_year
             self.max_year = max_year
-            self.min_mag = min(events[0].event_magnitudes())
+            if args.min_magnitude is None: self.min_mag = min(events[0].event_magnitudes())
+            else: self.min_mag = args.min_magnitude
             self.lower_min_mag = min(events[0].event_magnitudes())*.85
-            self.max_mag = max(events[0].event_magnitudes())
+            if args.max_magnitude is None: self.max_mag = max(events[0].event_magnitudes())
+            else: self.max_mag = args.max_magnitude
             self.mag_slope = 1.0/(self.max_mag - self.lower_min_mag)
             self.cmap = plt.get_cmap('Reds')
             
@@ -845,7 +848,7 @@ class SpaceTimePlot:
         sys.stdout.write("---Fault {:d} has length {:.2f}, and the min/max event element DAS is {}, {}\n".format(self.trigger_fault,fault_length,global_min_das,global_max_das))
         plt.xlim(0.0, global_max_das)
         plt.ylim(args.min_year-3, args.max_year+3)
-        plt.gca().invert_yaxis()
+        #plt.gca().invert_yaxis()
         norm = mcolor.Normalize(vmin=self.lower_min_mag, vmax=self.max_mag)
         divider = make_axes_locatable(ax)
         cbar_ax = divider.append_axes("right", size="3%",pad=0.2)
@@ -1983,7 +1986,7 @@ class BasePlotter:
         elif plot_type == "line":
             ax.plot(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)])
         elif plot_type == "loglog":
-            ax.loglog(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], lw=2)
+            ax.loglog(x_data, y_data, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], lw=2.0)
         elif plot_type == "hist":
             if len(x_data) > 200: BINS=100
             elif len(x_data) < 60: BINS=20
@@ -2120,7 +2123,7 @@ class BasePlotter:
             ax.set_yscale('log')
         ax.scatter(x_data, y_data, label=label, color = STAT_COLOR_CYCLE[color_index%len(STAT_COLOR_CYCLE)], alpha=SCATTER_ALPHA, s=SCATTER_SIZE)
         if line_x is not None and line_y is not None:
-            ax.plot(line_x, line_y, label = line_label, ls='-', color = 'r', lw=3)
+            ax.plot(line_x, line_y, label = line_label, ls='-', color = 'r', lw=3.0)
             #ax.legend(loc = legend_loc)
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
         
@@ -2765,6 +2768,8 @@ if __name__ == "__main__":
             help="Specify no titles on plots.")
     parser.add_argument('--pdf', required=False, action='store_true',
             help="Save plots as PDF instead of PNG.")
+    parser.add_argument('--eps', required=False, action='store_true',
+            help="Save plots as EPS instead of PNG.")
             
     # Geometry
     parser.add_argument('--slip_rates', required=False, action='store_true',
