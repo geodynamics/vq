@@ -2801,10 +2801,10 @@ int quakelib::ModelWorld::write_event_kml(const std::string &file_name, const qu
             vit = _vertices.find( _elements.find(*it)->second.vertex(i) );
             lld[i] = vit->second.lld();
         }
-        
+
         // If this is a quad element, calculate the 4th implicit point
         if (_elements.find(*it)->second.is_quad()) {
-        
+
             Vec<3>              xyz[3];
 
             for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
