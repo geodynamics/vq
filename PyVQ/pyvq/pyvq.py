@@ -318,10 +318,10 @@ class Geometry:
             self.model = quakelib.ModelWorld()
             if model_file_type =='text' or model_file.split(".")[-1] == 'txt':
                 self.model.read_file_ascii(model_file)
-                print("Read fault model from {}\n".format(model_file))
+                print("Read fault model from {}".format(model_file))
             elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
                 self.model.read_file_hdf5(model_file)
-                print("Read fault model from {}\n".format(model_file))
+                print("Read fault model from {}".format(model_file))
             else:
                 raise BaseException("Must specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
@@ -362,6 +362,8 @@ class Geometry:
         
     def get_slip_time_series(self, events, elements=None, min_year=None, max_year=None, DT=None):
         # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
+        # TODO: Make this compatible with multiple event files
+        events = events[0]
         # Get slip rates for the elements
         slip_rates = self.get_slip_rates(elements)
         #Initialize blocks with 0.0 slip at time t=0.0
@@ -3171,9 +3173,13 @@ if __name__ == "__main__":
         if args.use_sections is not None:
             plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
         else:
-            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
-        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+        fig = plt.figure()
+        BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+        plt.legend(loc='best')
+        plt.savefig(filename, dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
 
     if args.event_kml:
         '''Currently this only works for a the first event file if a list of event files is given
