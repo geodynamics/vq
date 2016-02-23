@@ -1998,7 +1998,7 @@ Next, create an appropriate parameter file and run VQ as shown in the previous s
 
 Section \ref{sec:quakelib_tour} showed plots of gravity changes and an InSAR interferogram for a selected simulated earthquake. These plots that analyze simulation data utilize the python interface to the QuakeLib library, specifically a python module named quakelib that is generated during the final step of compiling Virtual Quake (when using the command ``sudo make install'', see section \ref{sec:Install}). In the following sections we describe how to make plots with Virtual Quake data using the pyvq script in the pyvq directory.
 
-The set of simulation data analysis plotting scripts are located in the pyvq folder, and accessing by calling the python script pyvq.py with various command line arguments. The functionality is briefly explained in the README\_PYVQ file and discussed in further detail here. The full list of possible pyvq parameters is given in section \ref{sec:pyvq_params}.
+The set of simulation data analysis plotting scripts are located in the pyvq folder, and accessing by calling the python script pyvq.py with various command line arguments. The functionality is briefly explained in the README\_PYVQ file and discussed in further detail here. \textbf{The full list of possible PyVQ parameters is given in Section \ref{sec:pyvq_params}}.
 
 \subsection{Simulation Statistics Plots}
 
@@ -2078,6 +2078,26 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5  --slip_time_s
 \end{verbatim}
 
 
+\subsection{Space-Time Plots}
+
+To visualize when and where earthquake sequences occur during the simulation on a particular fault, we will generate space-time plots. The vertical axis is the simulation time in years, the horizontal axis is the distance along strike, the color will indicate event magnitude, lines are plotted to indicate which fault elements slipped during each earthquake, and black stars denote the rupture initiation location for each event. To generate a space-time plot like Figure \ref{fig:spacetime}, execute the following command that includes which fault (153) to plot and the simulation time range to plot (21000-23000 years):
+
+\begin{verbatim}
+$ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5  --model_file
+	path/to/model_file.txt   --use_faults 153 --min_year 21000 --max_year 23000
+	--spacetime 
+\end{verbatim}
+
+
+\begin{figure}
+\centering{}
+\includegraphics[width=0.85\textwidth]{graphics/spacetime_yearMin21000_yearMax23000_triggeredByFault_-153_minMag_None_event_East.png}
+\caption{\label{fig:spacetime} Space-time plot for simulated earthquakes from year 21000 to year 23000 on fault 153.}
+\end{figure}
+
+
+
+
 \subsection{Earthquake Probability Plots}
 
 To plot the conditional probabilities (Figure \ref{fig:probabilities}) of an earthquake with magnitude $\geq 7$ occurring on sections [4,5,6,7,8,9,10,11,12,13] (as defined in your fault model) as a function of time since the last earthquake on those sections:
@@ -2104,15 +2124,16 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5
 \caption{\label{fig:probabilities} \textbf{Left}: Conditional probability of an earthquake $M \geq 7$ on the specified sections as a function of time since the last earthquake $M \geq 7$. \textbf{Right}: Distribution of waiting times until the next earthquake $M \geq 7$ for waiting times with 25\%, 50\% and 75\% probability.}
 \end{figure}
 
-You can also print out a table of conditional earthquake probabilities if you know the observed time since the last earthquakes on your faults. To print out conditional probability table for $M>5$, $M>6$ and $M>7$ for the next 1yr, 5yr and 20yr intervals execute the following command (here we are using observed time since the last California earthquakes). The results are shown in Table \ref{tab:}.
+You can also print out a table of conditional earthquake probabilities if you know the observed time since the last earthquakes on your faults. To print out conditional probability table for $M>5$, $M>6$ and $M>7$ for the next 1yr, 5yr and 20yr intervals execute the following command (here we are using observed time since the last California earthquakes). The results are shown in the table above.
 
 \begin{verbatim}
 $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5   
      --probability_table --t0 1.0 1.4 5.8     
 \end{verbatim}
 
-\begin{tabular}[c]{l | r | r | r | r }
+\begin{table}
 \centering
+\begin{tabular}[c]{l | r | r | r | r }
 \                   &              \ & 1 year      &  5 years     & 20 years \\
 \hline
 N=25475    & $M > 5$       &  0.41        &  0.95          & 1.00 \\
@@ -2120,7 +2141,7 @@ N=23774    & $M > 6$      &  0.39        &  0.93          & 1.00 \\
 N=7495      & $M > 7$       &  0.14        &  0.53          & 0.96 \\
 \hline
 \end{tabular}
-
+\end{table}
 
 \subsection{Plotting Data on a Map and Event Field Plots}
 
@@ -2222,14 +2243,14 @@ This section summarizes the current functionality of the pyvq script (section \r
 \end{tabular}
 
 \subsection{Subsetting/Filtering Parameters}
-These parameters are used to select subsets of the faults or subsets of events. \\
+These parameters are used to select subsets of the faults or subsets of events.  \\
 
 \noindent %
 \begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
 \hline 
-\texttt{\small{--use\_sections}} & Select a subset of the fault sections from the model file. To select sections 23, 43, and 101 it would be ``--use\_sections 23 43 101''.\tabularnewline
+\texttt{\small{--use\_faults}} & Select a subset of events that are triggered on the specified faults from the model file.\tabularnewline
 \hline 
-\texttt{\small{--use\_trigger\_sections}} & Select a subset of events with triggering elements from the specified fault sections from the model file.\tabularnewline
+\texttt{\small{--use\_sections}} & Select a subset of events that are triggered on the specified fault sections from the model file. To select sections 23, 43, and 101 it would be ``--use\_sections 23 43 101''.\tabularnewline
 \hline 
 \texttt{\small{--min\_magnitude}} & Select a minimum magnitude for earthquakes to be analyzed. To select earthquakes only above magnitude 5.5 it would be ``--min\_magnitude 5.5''.\tabularnewline
 \hline 
@@ -2308,6 +2329,10 @@ These parameters can be used in combination with ``--use\_sections'', ``--min\_m
 \hline 
 \texttt{\small{--t0}} & The observed times since the last $M>5$, $M>6$ and $M>7$ earthquakes on the faults in your model (units are decimal years). For California we would specify ``--t0 1.0 1.4 5.8''.\tabularnewline
 \hline 
+\texttt{\small{--fit\_weibull}} & Fit the weibull distribution to the probability plots and plot the best fitting Weibull distribution.\tabularnewline
+\hline 
+\texttt{\small{--plot\_recurrence}} & Plot a histogram of recurrence times. This is best used with subsetting commands, selecting a particular fault section(s) with --use\_sections or a particular fault(s) with --use\_faults. \tabularnewline
+\hline 
 \end{tabular}
 
 \subsection{\noindent Field Plotting Parameters}
@@ -2341,6 +2366,8 @@ For any geometry plot you must specify ``--model\_file''. \\
 \noindent %
 \begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
 \hline 
+\texttt{\small{--spacetime}} & Create and save a Space-Time plot for a particular fault over a particular simulation time range. Must also specify --min\_year, --max\_year, and --use\_faults.\tabularnewline
+\hline
 \texttt{\small{--event\_kml}} & Create and save a Google Earth (KML) file that includes elements that slip during the specified event, colored by the amount of event slip. Must also specify --event\_id.\tabularnewline
 \hline
 \texttt{\small{--block\_area\_hist}} & Create and save a histogram of fault element areas. To present numbers relative to a reference value, must specify --reference .\tabularnewline
@@ -2358,6 +2385,22 @@ For any geometry plot you must specify ``--model\_file''. \\
 \texttt{\small{--traces}} & Plot the fault traces on a simple map.\tabularnewline
 \hline
 \end{tabular}
+
+\subsection{\noindent Miscellaneous Plotting Parameters} 
+
+\noindent %
+\begin{tabular}{|>{\raggedright}p{2in}|>{\raggedright}p{4.1in}|}
+\hline 
+\texttt{\small{--dpi}} & The dots-per-inch resolution of the figures to be saved. E.g. --dpi 300.\tabularnewline
+\hline
+\texttt{\small{--pdf}} & Save figures as PDF instead of the default PNG.\tabularnewline
+\hline
+\texttt{\small{--eps}} & Save figures as EPS instead of the default PNG.\tabularnewline
+\hline
+\texttt{\small{--no\_titles}} & Save figures without titles.\tabularnewline
+\hline
+\end{tabular}
+
 
 %-------------------------------- End tutorials, begin appendices
 \part{Appendices}
