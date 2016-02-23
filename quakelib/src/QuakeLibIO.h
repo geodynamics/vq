@@ -1395,6 +1395,7 @@ namespace quakelib {
 
             void compute_stress_drops(const double &stress_drop_factor);
             void create_faults(const std::string &taper_method);
+            void create_faults_minimal(void);
 
             int read_file_ascii(const std::string &file_name);
             int write_file_ascii(const std::string &file_name) const;
