@@ -764,7 +764,7 @@ void RunEvent::processAftershock(Simulation *sim) {
     std::map<double, BlockID>                   as_elem_dists;
     std::map<double, BlockID>::const_iterator   it;
     std::map<BlockID, double>                   elem_slips;
-    EventAftershock                           as;
+    EventAftershock                             as;
     BlockID                                     gid;
     quakelib::ElementIDSet                      id_set;
     quakelib::ElementIDSet::const_iterator      bit;
@@ -805,6 +805,9 @@ void RunEvent::processAftershock(Simulation *sim) {
             selected_rupture_area += convert.sqm2sqkm(b.area());
             selected_rupture_area_mu += b.area()*b.lame_mu();
             id_set.insert(it->second);
+
+            // If this is the first aftershock element, assign it as the event trigger
+            if (it==as_elem_dists.begin()) sim->getCurrentEvent().setEventTrigger(it->second);
 
             if (selected_rupture_area > rupture_area) break;
         }
