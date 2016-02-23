@@ -2304,8 +2304,14 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, fig, color_index, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
@@ -2313,22 +2319,40 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event normal stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_number_of_sweeps(self, fig, color_index, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
         years = events.event_years()
-        # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        # Generate the binned averages too, if we have more than 1 distinct value for the number of sweeps.
+        # i.e. don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(num_sweeps))) > 1:
+            x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, True, years, num_sweeps, x_ave, y_ave, ave_label, " ", "simulation time [years]", "number of event sweeps", filename)
         
     def plot_mean_slip(self, fig, color_index, events, filename):
         slips = np.array(events.event_mean_slip())
         years = events.event_years()
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(slips))) > 1:
+            x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, ave_label, " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, fig, events, filename, fit_weibull):
