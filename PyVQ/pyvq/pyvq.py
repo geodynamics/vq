@@ -113,6 +113,10 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     return x_ave, y_ave
 
 class SaveFile:
+    def __init__(self):
+        if args.pdf: self.file_type = '.pdf'
+        else: self.file_type = '.png'
+
     def event_plot(self, event_file, plot_type, min_mag, min_year, max_year, combine):
         # Add tags to convey the subsets/cuts being made
         add=""
@@ -142,33 +146,33 @@ class SaveFile:
         if combine is not None:
             add+="_combined"
 
-        return plot_type+add+"_"+event_file.split(".")[0]+".png"
+        return plot_type+add+"_"+event_file.split(".")[0]+self.file_type
         
     def field_plot(self, model_file, field_type, uniform_slip, event_id):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
         if uniform_slip is None and event_id is not None:
-            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+".png"
+            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+self.file_type
         elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m.png"
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+self.file_type
         else:
             raise BaseException("Must specify either uniform_slip or event_id")
             
     def greens_plot(self, name, field_type, slip):
-        return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m.png"
+        return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m"+self.file_type
             
     def trace_plot(self, model_file):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
-        return "traces_"+model_file.split(".")[0]+".png"
+        return "traces_"+model_file.split(".")[0]+self.file_type
 
     def distribution_plot(self, model_file, type):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
-        return type+"_"+model_file.split(".")[0]+".png"
+        return type+"_"+model_file.split(".")[0]+self.file_type
         
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Add tags to convey the subsets/cuts being made
@@ -194,7 +198,7 @@ class SaveFile:
         if combine is not None:
             add += "_combined"
             
-        return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+".png"
+        return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+self.file_type
 
     def event_movie(self, event_file, event_id):
         # Remove any folders in front of model_file name
@@ -313,12 +317,20 @@ class Geometry:
             self.model = quakelib.ModelWorld()
             if model_file_type =='text' or model_file.split(".")[-1] == 'txt':
                 self.model.read_file_ascii(model_file)
+                print("Read fault model from {}\n".format(model_file))
             elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
                 self.model.read_file_hdf5(model_file)
+                print("Read fault model from {}\n".format(model_file))
             else:
                 raise BaseException("Must specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
             self._elem_to_fault_map = {elem_num: self.model.section(self.model.element(elem_num).section_id()).fault_id() for elem_num in self.model.getElementIDs()}
+            ###!!!!!
+            #print(list(self.model.getElementIDs()))
+            #print("Elem to Section : {}".format(self._elem_to_section_map))
+            #print("Elem to Fault: {}".format(self._elem_to_fault_map))
+            ###!!!!!
+            
         else:
             if args.use_sections:
                 raise BaseException("Model file required if specifying fault sections.")
@@ -2751,6 +2763,8 @@ if __name__ == "__main__":
             help="Specify the DPI for plots that are saved.")
     parser.add_argument('--no_titles', required=False, action='store_true',
             help="Specify no titles on plots.")
+    parser.add_argument('--pdf', required=False, action='store_true',
+            help="Save plots as PDF instead of PNG.")
             
     # Geometry
     parser.add_argument('--slip_rates', required=False, action='store_true',
@@ -2892,9 +2906,10 @@ if __name__ == "__main__":
 
     if args.use_faults:
         if not args.model_file: raise BaseException("Must specify --model_file for --use_faults to work.")
-        for fault_id in args.use_faults:
-            if fault_id not in geometry._elem_to_fault_map.values():
-                raise BaseException("Fault id {} does not exist.".format(fault_id))
+        #for fault_id in args.use_faults:
+        #    if fault_id not in geometry._elem_to_fault_map.values():
+        #        print(geometry._elem_to_fault_map)
+        #        raise BaseException("Fault id {} does not exist.".format(fault_id))
         event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
 
     if args.event_file:
