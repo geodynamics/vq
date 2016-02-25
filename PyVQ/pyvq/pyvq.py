@@ -362,8 +362,6 @@ class Geometry:
         
     def get_slip_time_series(self, events, elements=None, min_year=None, max_year=None, DT=None):
         # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
-        # TODO: Make this compatible with multiple event files
-        events = events[0]
         # Get slip rates for the elements
         slip_rates = self.get_slip_rates(elements)
         #Initialize blocks with 0.0 slip at time t=0.0
@@ -3185,7 +3183,7 @@ if __name__ == "__main__":
                     section_name += geometry.model.section(sec).name()+", "
             else:
                 section_name = geometry.model.section(args.use_sections[0]).name()+", "
-        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        time_series = geometry.get_slip_time_series(events[0], elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
         if len(time_series.keys()) < 10: 
             labels = time_series.keys()+[""]
         else:
@@ -3195,7 +3193,7 @@ if __name__ == "__main__":
         styles = ["-" for key in time_series.keys()]+["--"]
         y_data = time_series.values()+[[0,0]]
         if args.use_sections is not None:
-            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         else:
             plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
