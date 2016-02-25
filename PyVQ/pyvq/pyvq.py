@@ -318,10 +318,10 @@ class Geometry:
             self.model = quakelib.ModelWorld()
             if model_file_type =='text' or model_file.split(".")[-1] == 'txt':
                 self.model.read_file_ascii(model_file)
-                print("Read fault model from {}\n".format(model_file))
+                print("Read fault model from {}".format(model_file))
             elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
                 self.model.read_file_hdf5(model_file)
-                print("Read fault model from {}\n".format(model_file))
+                print("Read fault model from {}".format(model_file))
             else:
                 raise BaseException("Must specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
@@ -2302,8 +2302,14 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (shear_final-shear_init)/shear_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event shear stress changes", "simulation time [years]", "fractional change", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event shear stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_normal_stress_changes(self, fig, color_index, events, filename):
         normal_init = np.array(events.event_initial_normal_stresses())
@@ -2311,22 +2317,40 @@ class DiagnosticPlot(BasePlotter):
         years = events.event_years()
         stress_changes = (normal_final-normal_init)/normal_init
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, "binned average", "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(years,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event normal stress changes", "simulation time [years]", "fractional change", filename)
         
     def plot_number_of_sweeps(self, fig, color_index, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
         years = events.event_years()
-        # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, True, years, num_sweeps, x_ave, y_ave, "binned average", " ", "simulation time [years]", "number of event sweeps", filename)
+        # Generate the binned averages too, if we have more than 1 distinct value for the number of sweeps.
+        # i.e. don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(num_sweeps))) > 1:
+            x_ave, y_ave = calculate_averages(years,num_sweeps,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, True, years, num_sweeps, x_ave, y_ave, ave_label, " ", "simulation time [years]", "number of event sweeps", filename)
         
     def plot_mean_slip(self, fig, color_index, events, filename):
         slips = np.array(events.event_mean_slip())
         years = events.event_years()
         # Generate the binned averages too
-        x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
-        self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, "binned average", " ", "simulation time [years]", "event mean slip [m]", filename)
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(slips))) > 1:
+            x_ave, y_ave = calculate_averages(years,slips,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, ave_label, " ", "simulation time [years]", "event mean slip [m]", filename)
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, fig, events, filename, fit_weibull):
@@ -3159,7 +3183,7 @@ if __name__ == "__main__":
                     section_name += geometry.model.section(sec).name()+", "
             else:
                 section_name = geometry.model.section(args.use_sections[0]).name()+", "
-        time_series = geometry.get_slip_time_series(events, elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        time_series = geometry.get_slip_time_series(events[0], elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
         if len(time_series.keys()) < 10: 
             labels = time_series.keys()+[""]
         else:
@@ -3169,11 +3193,15 @@ if __name__ == "__main__":
         styles = ["-" for key in time_series.keys()]+["--"]
         y_data = time_series.values()+[[0,0]]
         if args.use_sections is not None:
-            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         else:
-            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file.split("/")[-1])
+            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
-        BasePlotter().multi_line_plot(x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+        fig = plt.figure()
+        BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+        plt.legend(loc='best')
+        plt.savefig(filename, dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
 
     if args.event_kml:
         '''Currently this only works for a the first event file if a list of event files is given
