@@ -2407,6 +2407,7 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
         // Set section properties
         section.set_name(sit->name());
         section.set_fid(sit->fault_id());
+        section.set_sid(sit->id());
 
         sid = sit->id();
 

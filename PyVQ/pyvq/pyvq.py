@@ -158,7 +158,7 @@ class SaveFile:
         elif uniform_slip is not None and event_id is None:
             return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+self.file_type
         else:
-            raise BaseException("Must specify either uniform_slip or event_id")
+            raise BaseException("\nMust specify either uniform_slip or event_id")
             
     def greens_plot(self, name, field_type, slip):
         return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m"+self.file_type
@@ -323,7 +323,7 @@ class Geometry:
                 self.model.read_file_hdf5(model_file)
                 print("Read fault model from {}".format(model_file))
             else:
-                raise BaseException("Must specify --model_file_type, either hdf5 or text")
+                raise BaseException("\nMust specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
             self._elem_to_fault_map = {elem_num: self.model.section(self.model.element(elem_num).section_id()).fault_id() for elem_num in self.model.getElementIDs()}
             ###!!!!!
@@ -334,7 +334,7 @@ class Geometry:
             
         else:
             if args.use_sections:
-                raise BaseException("Model file required if specifying fault sections.")
+                raise BaseException("\nModel file required if specifying fault sections.")
             return None
 
     def get_fault_traces(self):
@@ -504,11 +504,11 @@ class Events:
             self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
         else:
-            raise BaseException("event_file_type must be hdf5 or text. If text, a sweep_file is required.")
+            raise BaseException("\nevent_file_type must be hdf5 or text. If text, a sweep_file is required.")
             
         if combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and not stress_file.split(".")[-1]=="txt":
             if not os.path.isfile(stress_file) or not os.path.isfile(combine_file):
-                raise BaseException("One or more files does not exist!")
+                raise BaseException("\nOne or more files does not exist!")
             # If stress state was saved as hdf5
             with h5py.File(stress_file) as state_data:
                 stress_state = state_data['stress_state'][()]
@@ -519,7 +519,7 @@ class Events:
             sys.stdout.write("## Combined with: "+combine_file+"\n")
         elif combine_file is not None and event_file_type == 'hdf5' and stress_file is not None and stress_index_file is not None:
             if not os.path.isfile(stress_file) or not os.path.isfile(combine_file) or not os.path.isfile(stress_index_file):
-                raise BaseException("One or more files does not exist!")
+                raise BaseException("\nOne or more files does not exist!")
             # If stress state was saved as text
             add_year, add_evnum, start_rec, end_rec = np.genfromtxt(stress_index_file)
             self._events.append_from_hdf5(combine_file, add_year, int(add_evnum))
@@ -539,7 +539,7 @@ class Events:
             self._filtered_events = new_filtered_events
             self._plot_str += cur_filter.plot_str()
         if len(self._filtered_events) == 0:
-            raise BaseException("No events matching filters found!")
+            raise BaseException("\nNo events matching filters found!")
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
@@ -786,13 +786,13 @@ class Sweeps:
 class SpaceTimePlot:
     def __init__(self, geometry=None, min_year=None, max_year=None, event_file=None, trigger_fault=None, title=None):
         if min_year is None or max_year is None: 
-            raise BaseException("Must specify --min_year and --max_year")
+            raise BaseException("\nMust specify --min_year and --max_year")
         elif geometry is None:
-            raise BaseException("Must specify --model_file")
+            raise BaseException("\nMust specify --model_file")
         elif event_file is None:
-            raise BaseException("Must specify --event_file")
+            raise BaseException("\nMust specify --event_file")
         elif trigger_fault is None :
-            raise BaseException("Must specify a single fault id (example fault #N) with --use_faults N")
+            raise BaseException("\nMust specify a single fault id (example fault #N) with --use_faults N")
         else:
             self.trigger_fault = trigger_fault
             self.num_events = len(events[0]._filtered_events)
@@ -1231,12 +1231,12 @@ class FieldPlotter:
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
         if event_id is None and event is None and element_slips is None:
-            raise BaseException("Must specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field.")
+            raise BaseException("\nMust specify event_id for event fields or element_slips (dictionary of slip indexed by element_id) for custom field.")
         else:
             self.element_ids = element_slips.keys()
             self.element_slips = element_slips
         if len(self.element_slips) != len(self.element_ids):
-            raise BaseException("Must specify slip for all elements.")
+            raise BaseException("\nMust specify slip for all elements.")
         for ele_id in self.element_ids:
             new_ele = geometry.model.create_slipped_element(ele_id)
             new_ele.set_slip(self.element_slips[ele_id])
@@ -2005,12 +2005,12 @@ class BasePlotter:
         fig.suptitle(plot_title, fontsize=10)
         if colors is not None:
             if not (len(x_data) == len(y_data) and len(x_data) == len(colors) and len(colors) == len(labels) and len(linewidths) == len(colors)):
-                raise BaseException("These lists must be the same length: x_data, y_data, colors, labels, linewidths.")
+                raise BaseException("\nThese lists must be the same length: x_data, y_data, colors, labels, linewidths.")
             for i in range(len(x_data)):
                 ax.plot(x_data[i], y_data[i], color=colors[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         else:
             if not (len(x_data) == len(y_data) and len(x_data) == len(labels) and len(linewidths) == len(y_data)):
-                raise BaseException("These lists must be the same length: x_data, y_data, labels, linewidths.")
+                raise BaseException("\nThese lists must be the same length: x_data, y_data, labels, linewidths.")
             for i in range(len(x_data)):
                 ax.plot(x_data[i], y_data[i], label=labels[i], linewidth=linewidths[i], ls=linestyles[i])
         #ax.legend(title=legend_str, loc='best')
@@ -2538,14 +2538,15 @@ class ProbabilityPlot(BasePlotter):
             sys.stdout.write('\n=======================================\n\n')
         self.t0_vs_dt_plot(fig, t0_dt_plot, wait_75, filename)
         
-    def print_prob_table(self, t0_list, events):
-        dt_vals       = [1, 5, 15] # units = years
-        Mag_vals      = [5, 6,  6.5]
+    def print_prob_table(self, t0_list, dt_list, mag_list, events):
+        assert(len(t0_list)==len(mag_list))
+        dt_vals       = dt_list # units = years
+        Mag_vals      = mag_list
         YEAR_INTERVAL = 0.1
         probabilities = {} # Probabilities for the final table
         num_events    = []
         
-        for MAG in Mag_vals:
+        for k,MAG in enumerate(Mag_vals):
             # --------- Set the first event filter for the lower magnitude bound ------------
             event_filters = []
             event_filters.append(MagFilter(min_mag=MAG, max_mag=None))
@@ -2558,8 +2559,7 @@ class ProbabilityPlot(BasePlotter):
             max_t0      = intervals.max() 
             t0_vals     = list(t0_list)+list([max_t0])
             if (max_t0 != max(t0_vals)):
-                sys.stdout.write("A specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.".format(MAG))
-                return 0
+                raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
             else:            
                 t0_to_eval  = list(np.arange(0, max_t0+YEAR_INTERVAL, YEAR_INTERVAL))
                 t0_to_eval  += list(t0_list)
@@ -2577,15 +2577,24 @@ class ProbabilityPlot(BasePlotter):
             prob_in_t0_dt = []
             
             for i in range(len(dt_vals)):
-                t0_rounded = round(t0_list[i],1)
+                t0_rounded = round(t0_list[k],1)
                 prob_in_t0_dt.append(conditional[ t0_rounded ]['y'][ int(dt_vals[i]/YEAR_INTERVAL) ] - conditional[ t0_rounded ]['y'][0])
             
             probabilities[MAG] = prob_in_t0_dt
         
-        sys.stdout.write("\t\t\t{:d} yr \t{:d} yr \t{:d} yr \n".format(dt_vals[0],dt_vals[1],dt_vals[2]))
+        column_headers = "\t\t\t\t"
+        for dt_value in dt_vals:
+            column_headers += "\t{:.1f}yr ".format(dt_value)
+        column_headers += "\n"
+        
+        sys.stdout.write(column_headers)
         for i in range(len(Mag_vals)):
             MAG = Mag_vals[i]
-            sys.stdout.write("(N={})\tM > {}\t{:.2f}\t{:.2f}\t{:.2f}\n".format(num_events[i],MAG,probabilities[MAG][0],probabilities[MAG][1],probabilities[MAG][2]))
+            table_line = "(N={})\tM > {}\t  t0={:.1f}".format(num_events[i],MAG,t0_list[i])
+            for j in range(len(dt_vals)):
+                table_line += "\t{:.2f}".format(probabilities[MAG][j])
+            table_line += "\n"
+            sys.stdout.write(table_line)
         
 
 class Distributions:
@@ -2609,7 +2618,7 @@ class Distributions:
             a = -4.80
             b =  0.69
         else:
-            raise BaseException("Must specify rupture area or mean slip")
+            raise BaseException("\nMust specify rupture area or mean slip")
         x_data = np.linspace(min_mag, max_mag, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         return x_data, y_data
@@ -2623,7 +2632,7 @@ class Distributions:
             a = -3.417
             b =  0.499
         else:
-            raise BaseException("Must specify rupture area or mean slip")
+            raise BaseException("\nMust specify rupture area or mean slip")
         x_data = np.linspace(min_mag, max_mag, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
@@ -2725,7 +2734,11 @@ if __name__ == "__main__":
     parser.add_argument('--probability_table', required=False, action='store_true',
             help="Generate a table of conditional probabilities for the next large earthquakes, must specify the time since the last M>5.0, M>6.0, and M>7.0 earthquakes on the faults being simulated (use --t0 to specify these times in units of decimal years).")
     parser.add_argument('--t0', type=float, nargs='+', required=False,
-            help="List of times [rounded to the nearest 0.1 years] since the last M>5, M>6 and M>7. Example --t0 4.1 12.5 35.9")
+            help="List of times [rounded to the nearest 0.1 years] since the last observed earthquakes of a given magnitude on the modeled faults. Must also specify the same number of --magnitudes arguments. Example --t0 4.1 12.5 35.9 and --magnitudes 5 6 6.5 for the probabilities of M>5, M>6 and M>6.5. Can request specific number of years in the future to evaluate the probabilities with --t.")
+    parser.add_argument('--t', type=float, nargs='+', required=False,
+            help="Number of years into the future to evaluate conditional probabilities. E.g. --t 1 5 10 will evaluate the conditional probabilities for earthquakes with magnitudes given by --magnitudes, with the last-observed earthquake of each magnitude occurring at each value of --t0. Example --t0 4.1 12.5 35.9 --magnitudes 5 6 6.5 --t 1 5 10 for the conditional probabilities of M>5, M>6 and M>6.5 at 1, 5 and 10 years from present if the last earthquakes of each magnitude were --t0 years ago.")
+    parser.add_argument('--magnitudes', type=float, nargs='+', required=False,
+            help="List of magnitudes to compute conditional probability table for. Must also specify the same number of --t0 arguments, where the i-th --t0 value is the time elapsed since the last observed earthquake with magnitude M = i-th --magnitudes value. Example --t0 4.1 12.5 35.9 and --magnitudes 5 6 6.5 for the probabilities of M>5, M>6 and M>6.5. Can request specific number of years in the future to evaluate the probabilities with --t.")
     parser.add_argument('--fit_weibull', action='store_true', required=False,
             help="Fit a Weibull distribution to the simulated earthquake distribution.")
             
@@ -2839,27 +2852,41 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------
     # Catch these errors before reading events to save unneeded computation
     if args.uniform_slip:
-        if float(args.uniform_slip) < 0: raise BaseException("Slip must be positive")
+        if float(args.uniform_slip) < 0: raise BaseException("\nSlip must be positive")
     
     if args.field_plot:
         if args.model_file is None:
-            raise BaseException("Must specify --model_file for field plots")
+            raise BaseException("\nMust specify --model_file for field plots")
         elif args.field_type is None:
-            raise BaseException("Must specify --field_type for field plots")
+            raise BaseException("\nMust specify --field_type for field plots")
             
     if args.traces:
         if args.model_file is None:
-            raise BaseException("Must specify --model_file for fault trace plots")
+            raise BaseException("\nMust specify --model_file for fault trace plots")
             
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
-        raise BaseException("Must specify both beta and tau.")
+        raise BaseException("\nMust specify both beta and tau.")
         
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
         if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
-            raise BaseException("Field type is one of gravity, dilat_gravity, displacement, insar, potential, geoid")
+            raise BaseException("\nField type is one of gravity, dilat_gravity, displacement, insar, potential, geoid")
+            
+    # Pre-check for probability table evaluation. We need the same number of --t0 arguments as --magnitudes
+    if args.t0 or args.magnitudes:
+        if args.magnitudes and args.t0:
+            if len(args.t0) != len(args.magnitudes):
+                raise BaseException("\nFor probability table, must specify the same number of --t0 and --magnitudes arguments, and --magnitudes should be listed in increasing order.")
+        else:
+            raise BaseException("\nFor probability table, must specify both --t0 and --magnitudes, and --magnitudes should be listed in increasing order.")
+    
+    # Apply default values for t if we are making probability table and they are not specified
+    if args.probability_table and args.t is None:
+        args.t = [1.0,5.0,10.0]
+    if args.probability_table and args.t:
+        args.t = [float(t) for t in args.t]
     # ------------------------------------------------------------------------
     
     if args.dpi is None:
@@ -2873,12 +2900,12 @@ if __name__ == "__main__":
         for file in args.event_file:
             # Check that all files exist
             if not os.path.isfile(file):
-                raise BaseException("Event file does not exist: "+file)
+                raise BaseException("\nEvent file does not exist: "+file)
             else:
                 events.append( Events(file, None) )
     elif args.event_file and len(args.event_file)==1 and ( args.sweep_file or args.combine_file or args.stress_file):
         if not os.path.isfile(args.event_file[0]):
-            raise BaseException("Event file does not exist: "+args.event_file[0])
+            raise BaseException("\nEvent file does not exist: "+args.event_file[0])
         else:
             events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
@@ -2930,15 +2957,15 @@ if __name__ == "__main__":
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
         
     if args.use_sections:
-        if not args.model_file: raise BaseException("Must specify --model_file for --use_sections to work.")
+        if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
         event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
 
     if args.use_faults:
-        if not args.model_file: raise BaseException("Must specify --model_file for --use_faults to work.")
+        if not args.model_file: raise BaseException("\nMust specify --model_file for --use_faults to work.")
         #for fault_id in args.use_faults:
         #    if fault_id not in geometry._elem_to_fault_map.values():
         #        print(geometry._elem_to_fault_map)
-        #        raise BaseException("Fault id {} does not exist.".format(fault_id))
+        #        raise BaseException("\nFault id {} does not exist.".format(fault_id))
         event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
 
     if args.event_file:
@@ -2956,13 +2983,13 @@ if __name__ == "__main__":
     
     # Print out event summary data if requested
     if args.summary:
-        if args.model_file is None: raise BaseException("Must specify --model_file for summary.")
+        if args.model_file is None: raise BaseException("\nMust specify --model_file for summary.")
         for i, event in enumerate(events):        
             print("\n Event summary for: "+ args.event_file[i])
             event.largest_event_summary(args.summary, geometry)
 
     if args.event_elements:
-        if args.event_id is None: raise BaseException("Must specify --event_id")
+        if args.event_id is None: raise BaseException("\nMust specify --event_id")
         print("\nEvent {}\n".format(args.event_id))
         print([each for each in events._events[args.event_id].getInvolvedElements()])
 
@@ -3084,10 +3111,10 @@ if __name__ == "__main__":
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.probability_table:
-        if args.t0 is None: raise BaseException("Must specify time since last M>5, M>6, M>7 earthquakes (rounded to the nearest year). Use --t0.")
+        if args.t0 is None: raise BaseException("\nMust specify time since last earthquakes with magnitude values given by --magnitudes. Use --t0 and --magnitudes, they must be the same number of arguments, and --magnitudes should be listed in increasing order.")
         else:
             for event_set in events:
-                ProbabilityPlot().print_prob_table(args.t0, event_set)
+                ProbabilityPlot().print_prob_table(args.t0, args.t, args.magnitudes, event_set)
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
@@ -3097,7 +3124,7 @@ if __name__ == "__main__":
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
         if args.angles: 
             if len(args.angles) != 2:
-                raise BaseException("Must specify 2 angles")
+                raise BaseException("\nMust specify 2 angles")
             else:
                 angles = np.array(args.angles)*np.pi/180.0
         else: angles = None
@@ -3116,7 +3143,7 @@ if __name__ == "__main__":
             event = events[0]._events[args.event_id]
         
         if len(ele_slips.keys()) == 0:
-            raise BaseException("Error in processing slips.")
+            raise BaseException("\nError in processing slips.")
         else:
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
@@ -3131,7 +3158,7 @@ if __name__ == "__main__":
         ele_slips = events[0].get_event_element_slips(args.event_id)
         event = events[0]._events[args.event_id]
         if len(ele_slips.keys()) == 0:
-            raise BaseException("Error in processing slips.")
+            raise BaseException("\nError in processing slips.")
         else:
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
@@ -3172,7 +3199,7 @@ if __name__ == "__main__":
             
     if args.slip_time_series:
         # TODO: Add multi-event file compatibility to compare between different sims
-        if args.elements is None: raise BaseException("Must specify element ids, e.g. --elements 0 1 2")
+        if args.elements is None: raise BaseException("\nMust specify element ids, e.g. --elements 0 1 2")
         if args.min_year is None: args.min_year = 0.0
         if args.max_year is None: args.max_year = 20.0
         if args.dt is None: args.dt = 0.5  # Unit is decimal years
@@ -3207,7 +3234,7 @@ if __name__ == "__main__":
         '''Currently this only works for a the first event file if a list of event files is given
         '''
         if args.event_id is None or args.event_file is None or args.model_file is None:
-            raise BaseException("Must specify an event to plot with --event_id and provide an --event_file and a --model_file.")
+            raise BaseException("\nMust specify an event to plot with --event_id and provide an --event_file and a --model_file.")
         else:
             event = events[0]._events[args.event_id]
             filename = SaveFile().event_kml_plot(args.event_file[0], args.event_id)
@@ -3215,7 +3242,7 @@ if __name__ == "__main__":
             
     if args.block_area_hist:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             units = "km^2"
             fig = plt.figure()
@@ -3233,7 +3260,7 @@ if __name__ == "__main__":
 
     if args.fault_length_hist:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             units = "km"
             fig = plt.figure()
@@ -3251,7 +3278,7 @@ if __name__ == "__main__":
 
     if args.fault_length_distribution:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             cum_len = {}
             lens_x, lens_y = [], []
@@ -3278,7 +3305,7 @@ if __name__ == "__main__":
 
     if args.block_aseismic_hist:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             units = "aseismic fraction"
             fig = plt.figure()
@@ -3293,7 +3320,7 @@ if __name__ == "__main__":
             
     if args.block_length_hist:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             units = "km"
             fig = plt.figure()
@@ -3311,7 +3338,7 @@ if __name__ == "__main__":
 
     if args.block_stress_drop_hist:
         if args.model_file is None:
-            raise BaseException("Must specify a fault model with --model_file.")
+            raise BaseException("\nMust specify a fault model with --model_file.")
         else:
             units = "Pa"
             if args.reference is not None: 
@@ -3373,7 +3400,7 @@ if __name__ == "__main__":
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.event_movie:
         if args.event_file is None or args.event_id is None or args.model_file is None:
-            raise BaseException("Must specify event file, event id, and model file.")
+            raise BaseException("\nMust specify event file, event id, and model file.")
         # If multiple event files are given, only use the first
         event_file = args.event_file[0]
         events = events[0]
@@ -3382,9 +3409,9 @@ if __name__ == "__main__":
         sim_sweeps.event_movie(geometry, events, save_file)
     if args.spacetime:
         if args.use_faults is None:
-            raise BaseException("Must specify a single fault for a spacetime plot, --use_faults #")
+            raise BaseException("\nMust specify a single fault for a spacetime plot, --use_faults #")
         elif len(args.use_faults) != 1:
-            raise BaseException("Must specify a single fault for a spacetime plot, --use_faults #")
+            raise BaseException("\nMust specify a single fault for a spacetime plot, --use_faults #")
         # TODO: Make compatible with multiple event files
         fig = plt.figure()
         ax = fig.add_subplot(111)

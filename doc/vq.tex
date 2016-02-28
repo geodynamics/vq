@@ -2124,11 +2124,11 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5
 \caption{\label{fig:probabilities} \textbf{Left}: Conditional probability of an earthquake $M \geq 7$ on the specified sections as a function of time since the last earthquake $M \geq 7$. \textbf{Right}: Distribution of waiting times until the next earthquake $M \geq 7$ for waiting times with 25\%, 50\% and 75\% probability.}
 \end{figure}
 
-You can also print out a table of conditional earthquake probabilities if you know the observed time since the last earthquakes on your faults. To print out conditional probability table for $M>5$, $M>6$ and $M>7$ for the next 1yr, 5yr and 20yr intervals execute the following command (here we are using observed time since the last California earthquakes). The results are shown in the table above.
+You can also print out a table of conditional earthquake probabilities if you know the observed time since the last earthquakes on your faults. To print out conditional probability table for $M>5$, $M>6$ and $M>7$ for the next 1yr, 5yr and 20yr intervals execute the following command (here we are using observed time since the last California earthquakes for the --t0 values). The results are shown in the table above.
 
 \begin{verbatim}
 $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5   
-     --probability_table --t0 1.0 1.4 5.8     
+     --probability_table --t0 1.0 1.4 5.8 --t 1 5 20 --magnitudes 5 6 7     
 \end{verbatim}
 
 \begin{table}
@@ -2327,7 +2327,11 @@ These parameters can be used in combination with ``--use\_sections'', ``--min\_m
 \hline 
 \texttt{\small{--probability\_table}} & Prints out probabilities of $M>5$, $M>6$ and $M>7$ earthquakes. Must also specify --t0.\tabularnewline
 \hline 
-\texttt{\small{--t0}} & The observed times since the last $M>5$, $M>6$ and $M>7$ earthquakes on the faults in your model (units are decimal years). For California we would specify ``--t0 1.0 1.4 5.8''.\tabularnewline
+\texttt{\small{--t0}} & List of times [rounded to the nearest 0.1 years] since the last observed earthquakes of a given magnitude on the modeled faults. Must also specify the same number of --magnitudes arguments. Example ``--t0 4.1 12.5 35.9 --magnitudes 5 6 6.5'' for the probabilities of $M>5$, $M>6$ and $M>6.5$. Can request specific number of years in the future to evaluate the probabilities with --t. \tabularnewline
+\hline 
+\texttt{\small{--magnitudes}} & List of magnitudes to compute conditional probability table for. Must also specify the same number of --t0 arguments, where the i-th --t0 value is the time elapsed since the last observed earthquake with magnitude M = i-th --magnitudes value. Example  ``--t0 4.1 12.5 35.9 --magnitudes 5 6 6.5'' for the probabilities of $M>5$, $M>6$ and $M>6.5$. Can request specific number of years in the future to evaluate the probabilities with --t. \tabularnewline
+\hline 
+\texttt{\small{--t}} & Number of years into the future to evaluate conditional probabilities. E.g. ``--t 1 5 10'' will evaluate the conditional probabilities for earthquakes with magnitudes given by --magnitudes, with the last-observed earthquake of each magnitude occurring at each value of --t0. Example ``--t0 4.1 12.5 35.9 --magnitudes 5 6 6.5'' for the conditional probabilities of $M>5$, $M>6$ and $M>6.5$ at 1, 5 and 10 years from present if the last earthquakes of each magnitude were --t0 years ago. \tabularnewline
 \hline 
 \texttt{\small{--fit\_weibull}} & Fit the weibull distribution to the probability plots and plot the best fitting Weibull distribution.\tabularnewline
 \hline 
