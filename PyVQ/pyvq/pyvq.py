@@ -2582,7 +2582,7 @@ class ProbabilityPlot(BasePlotter):
             
             probabilities[MAG] = prob_in_t0_dt
         
-        column_headers = "\t\t\t"
+        column_headers = "\t\t\t\t"
         for dt_value in dt_vals:
             column_headers += "\t{:.1f}yr ".format(dt_value)
         column_headers += "\n"
@@ -2590,12 +2590,11 @@ class ProbabilityPlot(BasePlotter):
         sys.stdout.write(column_headers)
         for i in range(len(Mag_vals)):
             MAG = Mag_vals[i]
-            table_line = "(N={})\tM > {}\t".format(num_events[i],MAG)
+            table_line = "(N={})\tM > {}\t  t0={:.1f}".format(num_events[i],MAG,t0_list[i])
             for j in range(len(dt_vals)):
                 table_line += "\t{:.2f}".format(probabilities[MAG][j])
             table_line += "\n"
             sys.stdout.write(table_line)
-            #sys.stdout.write("(N={})\tM > {}\t{:.2f}\t{:.2f}\t{:.2f}\n".format(num_events[i],MAG,probabilities[MAG][0],probabilities[MAG][1],probabilities[MAG][2]))
         
 
 class Distributions:
