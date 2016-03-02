@@ -318,18 +318,18 @@ class Geometry:
             self.model = quakelib.ModelWorld()
             if model_file_type =='text' or model_file.split(".")[-1] == 'txt':
                 self.model.read_file_ascii(model_file)
-                print("Read fault model from {}".format(model_file))
+                sys.stdout.write("Read fault model from {}\n".format(model_file))
             elif model_file_type == 'hdf5' or model_file.split(".")[-1] == 'h5' or model_file.split(".")[-1] == 'hdf5':
                 self.model.read_file_hdf5(model_file)
-                print("Read fault model from {}".format(model_file))
+                sys.stdout.write("Read fault model from {}\n".format(model_file))
             else:
                 raise BaseException("\nMust specify --model_file_type, either hdf5 or text")
             self._elem_to_section_map = {elem_num: self.model.element(elem_num).section_id() for elem_num in self.model.getElementIDs()}
             self._elem_to_fault_map = {elem_num: self.model.section(self.model.element(elem_num).section_id()).fault_id() for elem_num in self.model.getElementIDs()}
             ###!!!!!
-            #print(list(self.model.getElementIDs()))
-            #print("Elem to Section : {}".format(self._elem_to_section_map))
-            #print("Elem to Fault: {}".format(self._elem_to_fault_map))
+            #sys.stdout.write(list(self.model.getElementIDs()))
+            #sys.stdout.write("Elem to Section : {}".format(self._elem_to_section_map))
+            #sys.stdout.write("Elem to Fault: {}".format(self._elem_to_fault_map))
             ###!!!!!
             
         else:
@@ -408,8 +408,8 @@ class Geometry:
 class TriggerSectionFilter:
     def __init__(self, geometry, section_list):
         self._section_list = section_list
-        #self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in range(geometry.model.num_elements())}
-        self._elem_to_section_map = geometry._elem_to_section_map
+        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in geometry.model.getElementIDs()}
+        #self._elem_to_section_map = geometry._elem_to_section_map
 
     def test_event(self, event):
         triggerID = event.getEventTrigger()
@@ -428,12 +428,15 @@ class TriggerSectionFilter:
 class TriggerFaultFilter:
     def __init__(self, geometry, fault_list):
         self._fault_list = fault_list
-        self._elem_to_fault_map = geometry._elem_to_fault_map
+        #self._elem_to_fault_map = geometry._elem_to_fault_map
+        self._elem_to_fault_map = {elem_num: geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() for elem_num in geometry.model.getElementIDs()}
 
     def test_event(self, event):
         triggerID = event.getEventTrigger()
         elem_fault = self._elem_to_fault_map[triggerID]
-        if elem_fault in self._fault_list: return True
+        if elem_fault in self._fault_list: 
+            #sys.stdout.write("Event {} was triggered on fault {}\n".format(event.getEventNumber(),elem_fault))
+            return True
         return False
 
     def plot_str(self):
@@ -479,7 +482,7 @@ def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True,
              (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
              (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
 	if do_print:
-		for rw in data: print(rw)
+		for rw in data: sys.stdout.write(rw)
 	cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
             'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
 	return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
@@ -495,11 +498,11 @@ class Events:
             #if not h5py_available:
             self._events = quakelib.ModelEventSet()
             self._events.read_file_hdf5(event_file)
-            print("Read in events via QuakeLib from {}".format(event_file))
+            sys.stdout.write("Read in events via QuakeLib from {}\n".format(event_file))
             # Reading via h5py
             #else:
             #    self._events = read_events_h5(event_file)
-            #    print("Read in events via h5py from {}".format(event_file))
+            #    sys.stdout.write("Read in events via h5py from {}".format(event_file))
         elif event_file_type == "text" and sweep_file != None:
             self._events = quakelib.ModelEventSet()
             self._events.read_file_ascii(event_file, sweep_file)
@@ -532,8 +535,8 @@ class Events:
         return self._plot_str
 
     def set_filters(self, filter_list):
-        self._filtered_events = [evnum for evnum in range(len(self._events))]
-        self._plot_str = ""
+        #self._filtered_events = [evnum for evnum in range(len(self._events))]
+        #self._plot_str = ""
         for cur_filter in filter_list:
             new_filtered_events = [evnum for evnum in self._filtered_events if cur_filter.test_event(self._events[evnum])]
             self._filtered_events = new_filtered_events
@@ -585,19 +588,19 @@ class Events:
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
         trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
         if min(slips) > 1e-4:
-            print("==============================================================================")
-            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
-            print("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
+            sys.stdout.write("------------------------------------------------------------------------------")
             for k in range(len(evnums)):
-                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
-            print("------------------------------------------------------------------------------\n")
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+            sys.stdout.write("------------------------------------------------------------------------------\n")
         else:
-            print("==============================================================================")
-            print("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
-            print("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
+            sys.stdout.write("------------------------------------------------------------------------------")
             for k in range(len(evnums)):
-                print("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
-            print("------------------------------------------------------------------------------\n")
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events, geometry):
         evnums = self.get_ids_largest_events(num_events)
@@ -629,7 +632,7 @@ class Sweeps:
         self.block_ids = self.sweep_data['block_id'].tolist()
         self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
         self.event_number = event_number
-        print("Read event {} sweeps from {}".format(event_number,sim_file))
+        sys.stdout.write("Read event {} sweeps from {}".format(event_number,sim_file))
         # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
     #
     def plot_event_block_slips(self, block_ids=None, fignum=0):
@@ -698,6 +701,9 @@ class Sweeps:
     def event_movie(self, geometry, events, savefile, FPS=3, DPI=100):
         # Currently only works for perfectly rectangular faults
         # Currently only plotting the elements on the triggering section
+        # TODO: Change the plot to the triggering fault.
+        # TODO: Better element ID and DAS handling so we can plot entire faults with sections that have different depths.
+        #          e.g. A section that is 5 elements deep next to a section that's 4 elements deep.
         triggerID = int(self.sweep_data[ np.where(self.sweep_data['sweep_number']==0) ]['block_id'][0])
         num_sweeps = max([sweep_num for sweep_num in self.sweep_data['sweep_number'] ])+1
         sectionID = geometry.model.element(triggerID).section_id()
@@ -988,7 +994,7 @@ class GreensPlotter:
                                         ls='solid',lw=4.0)
         fig_axes.add_patch(fault_proj)
         plt.savefig(output_file, dpi=args.dpi)
-        print("----Greens function plot saved: "+output_file)
+        sys.stdout.write("----Greens function plot saved: "+output_file)
         plt.clf()
 
 class TracePlotter:
@@ -2292,7 +2298,7 @@ class StressHistoryPlot(BasePlotter):
                     if stress._element_id in elements:
                         stress_histories[element].append(stress._shear_stress)
         for element in elements:
-            print(stress_histories[element])
+            sys.stdout.write(stress_histories[element])
         #self.create_plot("scatter", True, mag_vals, mag_norm, events.plot_str(), "Shear Stress", "Year")
         
 class DiagnosticPlot(BasePlotter):
@@ -2388,7 +2394,7 @@ class ProbabilityPlot(BasePlotter):
         prob['x'] = np.sort(intervals)
         prob['y'] = np.arange(float(intervals.size))/float(intervals.size)
         eq_guaranteed = prob['x'][np.where(prob['y']>0.995)[0][0]]
-        print("EQ probability reaches 99.5% after t={} years".format(eq_guaranteed))
+        sys.stdout.write("EQ probability reaches 99.5% after t={} years".format(eq_guaranteed))
         
         t0_to_eval = np.arange(0.0,int(eq_guaranteed)+1,0.2)
         for t0 in t0_to_eval:
@@ -2548,20 +2554,22 @@ class ProbabilityPlot(BasePlotter):
         
         for k,MAG in enumerate(Mag_vals):
             # --------- Set the first event filter for the lower magnitude bound ------------
-            event_filters = []
-            event_filters.append(MagFilter(min_mag=MAG, max_mag=None))
-            events.set_filters(event_filters)
+            new_event_filter = [MagFilter(min_mag=MAG, max_mag=None)]
+            sys.stdout.write("Events before this MAG > {} filter {}\n".format(MAG,len(events._filtered_events)))    
+            events.set_filters(new_event_filter)
+            sys.stdout.write("Events after this MAG > {} filter {}\n".format(MAG,len(events._filtered_events)))  
             num_events.append(len(events._filtered_events))
             
             # == Compute conditional probs for M > MAG earthquakes in the time ranges "dt_vals" ==
-            intervals   = np.array(events.interevent_times())
-            conditional = {}
-            max_t0      = intervals.max() 
-            t0_vals     = list(t0_list)+list([max_t0])
+            intervals       = np.array(events.interevent_times())
+            num_intervals   = len(intervals)
+            conditional     = {}
+            max_t0          = intervals.max() 
+            t0_vals         = list(t0_list)+list([max_t0])
             if (max_t0 != max(t0_vals)):
                 raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
             else:            
-                t0_to_eval  = list(np.arange(0, max_t0+YEAR_INTERVAL, YEAR_INTERVAL))
+                t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
                 t0_to_eval  += list(t0_list)
                 for t0 in sorted(t0_to_eval):
                     t0 = round(t0,1)
@@ -2582,7 +2590,7 @@ class ProbabilityPlot(BasePlotter):
             
             probabilities[MAG] = prob_in_t0_dt
         
-        column_headers = "\t\t\t\t"
+        column_headers = "\n\t\t\t\t"
         for dt_value in dt_vals:
             column_headers += "\t{:.1f}yr ".format(dt_value)
         column_headers += "\n"
@@ -2590,11 +2598,12 @@ class ProbabilityPlot(BasePlotter):
         sys.stdout.write(column_headers)
         for i in range(len(Mag_vals)):
             MAG = Mag_vals[i]
-            table_line = "(N={})\tM > {}\t  t0={:.1f}".format(num_events[i],MAG,t0_list[i])
+            table_line = "(N={:6d})\tM > {}\t  t0={:.1f}".format(num_events[i],MAG,t0_list[i])
             for j in range(len(dt_vals)):
                 table_line += "\t{:.2f}".format(probabilities[MAG][j])
             table_line += "\n"
             sys.stdout.write(table_line)
+        sys.stdout.write("\n")
         
 
 class Distributions:
@@ -2944,7 +2953,7 @@ if __name__ == "__main__":
     #if args.event_file and args.min_slip is None: 
     #    args.min_slip = 0.01
     #    sys.stdout.write(" >>> Applying detectibility cut, minimum mean event slip 1cm <<< \n")
-    elif args.event_file and args.min_slip is not None and args.min_slip < 0:
+    if args.event_file and args.min_slip is not None and args.min_slip < 0:
         args.min_slip = None
 
     if args.min_slip or args.max_slip:
@@ -2958,14 +2967,19 @@ if __name__ == "__main__":
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
+        for fault_id in args.use_sections:
+            if sec_id not in geometry._elem_to_section_map.values():
+                sys.stdout.write(geometry._elem_to_section_map)
+                raise BaseException("\nSection id {} does not exist.".format(sec_id))
         event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
 
     if args.use_faults:
+        sys.stdout.write("Taking events that begin only on faults {}\n".format(args.use_faults))
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_faults to work.")
-        #for fault_id in args.use_faults:
-        #    if fault_id not in geometry._elem_to_fault_map.values():
-        #        print(geometry._elem_to_fault_map)
-        #        raise BaseException("\nFault id {} does not exist.".format(fault_id))
+        for fault_id in args.use_faults:
+            if fault_id not in geometry._elem_to_fault_map.values():
+                sys.stdout.write(geometry._elem_to_fault_map)
+                raise BaseException("\nFault id {} does not exist.".format(fault_id))
         event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
 
     if args.event_file:
@@ -2985,13 +2999,13 @@ if __name__ == "__main__":
     if args.summary:
         if args.model_file is None: raise BaseException("\nMust specify --model_file for summary.")
         for i, event in enumerate(events):        
-            print("\n Event summary for: "+ args.event_file[i])
+            sys.stdout.write("\n Event summary for: "+ args.event_file[i])
             event.largest_event_summary(args.summary, geometry)
 
     if args.event_elements:
         if args.event_id is None: raise BaseException("\nMust specify --event_id")
-        print("\nEvent {}\n".format(args.event_id))
-        print([each for each in events._events[args.event_id].getInvolvedElements()])
+        sys.stdout.write("\nEvent {}\n".format(args.event_id))
+        sys.stdout.write([each for each in events._events[args.event_id].getInvolvedElements()])
 
     # Generate plots
     if args.diagnostics:
@@ -3016,7 +3030,7 @@ if __name__ == "__main__":
                 else: LABEL = None
                 FrequencyMagnitudePlot().plot(fig, i, event_set, args.event_file[i].split("events_")[-1].split("/")[-1], UCERF2=args.UCERF2, UCERF3=args.UCERF3, label=LABEL)
             else:
-                print("Not plotting frequency/magnitude for {}, found < 5 unique events.".format(args.event_file[i].split("events_")[-1].split("/")[-1]))
+                sys.stdout.write("Not plotting frequency/magnitude for {}, found < 5 unique events.".format(args.event_file[i].split("events_")[-1].split("/")[-1]))
         plt.legend(loc='lower left', fontsize=LABEL_SIZE)
         if args.min_magnitude is not None and args.max_magnitude is not None:
             plt.xlim(args.min_magnitude, args.max_magnitude)
@@ -3429,13 +3443,13 @@ if __name__ == "__main__":
         events = events[0]
         mean_slip = sum(events.event_mean_slip())
         if abs(mean_slip-args.validate_slip_sum)/args.validate_slip_sum > 0.01: err = True
-        print("Calculated mean slip:", mean_slip, "vs. expected:", args.validate_slip_sum)
+        sys.stdout.write("Calculated mean slip:", mean_slip, "vs. expected:", args.validate_slip_sum)
 
     if args.validate_mean_interevent:
         events = events[0]
         ie_times = events.interevent_times()
         mean_ie = sum(ie_times)/len(ie_times)
         if abs(mean_ie-args.mean_interevent)/args.mean_interevent > 0.02: err = True
-        print("Calculated mean interevent:", mean_interevent, "vs. expected:", args.mean_interevent)
+        sys.stdout.write("Calculated mean interevent:", mean_interevent, "vs. expected:", args.mean_interevent)
 
     if err: exit(1)
