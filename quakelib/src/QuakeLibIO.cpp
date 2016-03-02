@@ -2270,6 +2270,7 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
                 faults_with_elements_at_each_das[this_fault][this_element.min_das()].insert(new_element.id());
             }
         }
+        
     }
 
     // Go through the created elements and assign maximum slip based on fault section area.
@@ -2447,16 +2448,18 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
             v1.set_loc(vertex(eit->vertex(1)).lld());
             v1.set_das(vertex(eit->vertex(1)).das());
             v1.set_trace_flag(NOT_ON_TRACE);
-            //v2.set_loc(vertex(eit->vertex(2)).lld());
-            //v2.set_das(vertex(eit->vertex(2)).das());
-            v3.set_loc(vertex(eit->vertex(2)).lld());
-            v3.set_das(vertex(eit->vertex(2)).das());
             v2.set_trace_flag(NOT_ON_TRACE);
-            //v3.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
-            //v3.set_das(vertex(eit->vertex(2)).das());
             v2.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
             v2.set_das(vertex(eit->vertex(2)).das());
+            v3.set_loc(vertex(eit->vertex(2)).lld());
+            v3.set_das(vertex(eit->vertex(2)).das());
             v3.set_trace_flag(NOT_ON_TRACE);
+            // Lines below were incorrect, writing EQSim files with vertices out of order.
+            // The difference is apparent when looking at KML model files.
+            //v2.set_loc(vertex(eit->vertex(2)).lld());
+            //v2.set_das(vertex(eit->vertex(2)).das());
+            //v3.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
+            //v3.set_das(vertex(eit->vertex(2)).das());
         }
     }
 
