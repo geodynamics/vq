@@ -708,16 +708,16 @@ failing.
 
 The stress drops for the fault elements are computed via Wells and Coppersmith 1994 scaling relations along with an analytical solution for the shear stress change per unit slip on a vertical rectangular fault. The simulation is pretty sensitive to these values; large stress drops tend to produce larger earthquakes with longer periods between events, while smaller stress drops produce many more small earthquakes. We provide a tuning parameter that globally adjusts the stress drops, and you must specify this when using the mesher to generate your fault model file. The mesher parameter is \texttt{--stress\_drop\_factor=X.X} where X.X is the value of the stress drop factor. The default value is 0.3 and it's logarithmically scaled, and increasing this value by 0.1 multiplies the stress drops by 1.4, a 40\% increase; typical values range from 0.2-0.8.
 
-We begin by using scaling relations to determine a different characteristic magnitude $M^{char}$ and a characteristic slip $\Delta s^{char}$ for each element in a fault based on the fault's geometry from Wells and Coppersmith 1994 scaling relations
+We begin by using scaling relations to determine a different characteristic magnitude $M^{char}$ and a characteristic slip $\Delta s^{char}$ for each element in a fault based on the fault's geometry from Leonard 2010 (improved upon Wells and Coppersmith 1994) scaling relations
 
 \begin{eqnarray}
-	M^{char}  = 4.07 + 0.98 \log_{10} (A) + \mbox{stress\_drop\_factor}
+	M^{char}  = 4.0 + \log_{10} (A) + \mbox{stress\_drop\_factor}
 \end{eqnarray}
 
 where $A$ is the surface area of the fault in $km^2$. We then use the definition of moment magnitude to determine the mean slip $\Delta s^{char}$
 
 \begin{eqnarray}
-	\Delta s^{char} = \frac{ 10^{ \frac{3}{2} (M^{char} + 10.7) } }{ 10^7 \mu A }
+	\Delta s^{char} = \frac{ 10^{ \frac{3}{2} (M^{char} + 6.0) } }{ \mu A }
 \end{eqnarray}
 
 where $\mu$ is the rigidity (shear modulus) of the elastic half space, and $A$ here is the area of the fault in $m^2$. 
@@ -1351,7 +1351,7 @@ The relationship between element size and minimum magnitude is given
 by:
 
 \begin{equation}
-M_{min}=\frac{2}{3}log_{10}(1e7\mu sL^{2})-10.7
+M_{min}=\frac{2}{3}log_{10}(\mu sL^{2})-6.0
 \end{equation}
 
 
