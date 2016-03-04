@@ -2444,16 +2444,59 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
             // Set vertex properties
             v0.set_loc(vertex(eit->vertex(0)).lld());
             v0.set_das(vertex(eit->vertex(0)).das());
-            v0.set_trace_flag(NOT_ON_TRACE);
+            switch (vertex(eit->vertex(0)).is_trace()) {
+				case 0:
+					v0.set_trace_flag(NOT_ON_TRACE);
+					break;
+
+				case 1:
+					v0.set_trace_flag(MIDDLE_TRACE);
+					break;
+
+				case 2:
+					v0.set_trace_flag(BEGINNING_TRACE);
+					break;
+
+				case 3:
+					v0.set_trace_flag(END_TRACE);
+					break;
+
+				default:
+					v0.set_trace_flag(UNDEFINED_TRACE_STATUS);
+					break;
+            }
+
             v1.set_loc(vertex(eit->vertex(1)).lld());
             v1.set_das(vertex(eit->vertex(1)).das());
             v1.set_trace_flag(NOT_ON_TRACE);
-            v2.set_trace_flag(NOT_ON_TRACE);
+
             v2.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
             v2.set_das(vertex(eit->vertex(2)).das());
+            v2.set_trace_flag(NOT_ON_TRACE);
+
             v3.set_loc(vertex(eit->vertex(2)).lld());
             v3.set_das(vertex(eit->vertex(2)).das());
-            v3.set_trace_flag(NOT_ON_TRACE);
+            switch (vertex(eit->vertex(2)).is_trace()) {
+            	case 0:
+					v3.set_trace_flag(NOT_ON_TRACE);
+					break;
+
+				case 1:
+					v3.set_trace_flag(MIDDLE_TRACE);
+					break;
+
+				case 2:
+					v3.set_trace_flag(BEGINNING_TRACE);
+					break;
+
+				case 3:
+					v3.set_trace_flag(END_TRACE);
+					break;
+
+				default:
+					v3.set_trace_flag(UNDEFINED_TRACE_STATUS);
+					break;
+            }
             // Lines below were incorrect, writing EQSim files with vertices out of order.
             // The difference is apparent when looking at KML model files.
             //v2.set_loc(vertex(eit->vertex(2)).lld());
