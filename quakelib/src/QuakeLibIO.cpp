@@ -3282,6 +3282,15 @@ double quakelib::ModelWorld::section_max_depth(const quakelib::UIndex &sec_id) c
     return max_depth;
 }
 
+quakelib::Vec<3> quakelib::ModelWorld::element_mean_xyz(const quakelib::UIndex &id) const {
+    quakelib::Vec<3> mean_xyz;
+    mean_xyz += _vertices.find(_elements.find(id)->second.vertex(0))->second.xyz();
+    mean_xyz += _vertices.find(_elements.find(id)->second.vertex(1))->second.xyz();
+    mean_xyz += _vertices.find(_elements.find(id)->second.vertex(2))->second.xyz();
+    mean_xyz += create_sim_element(id).implicit_vert();
+    return mean_xyz/4.0;
+}
+
 double quakelib::ModelWorld::element_min_das(const quakelib::UIndex &id) const {
     return _vertices.find(_elements.find(id)->second.vertex(0))->second.das();
 }
