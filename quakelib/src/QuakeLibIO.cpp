@@ -1195,7 +1195,7 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
     siterator           sit;
     UIndex              sid;
     unsigned int        i;
-    double              max_alt, min_alt, depth_along_dip, fault_depth;
+    double              max_alt, min_alt, depth_along_dip, fault_depth, el_height;
     bool                element_on_trace;
     Conversion          c;
     std::string         sec_file_name;
@@ -1229,7 +1229,11 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
         // Go through the elements again and grab those which have vertices at the correct depth
         // TODO: interpolate between elements
         for (eit=begin_element(sid); eit!=end_element(sid); ++eit) {
-            element_on_trace = (vertex(eit->vertex(0)).xyz()[2] == max_alt);
+            //element_on_trace = (vertex(eit->vertex(0)).xyz()[2] == max_alt);
+        	//Wilson: Sometimes trace points aren't at same height; here we use a quarter-element-height tolerance, or check the trace flag
+        	el_height = vertex(eit->vertex(0)).xyz()[2] - vertex(eit->vertex(1)).xyz()[2];
+        	element_on_trace = ( (vertex(eit->vertex(0)).xyz()[2] > max_alt-el_height/4.0) && (vertex(eit->vertex(0)).xyz()[2] < max_alt+el_height/4.0) ) || \
+        			(vertex(eit->vertex(0)).is_trace() > 0);
 
             // If the element is on the trace, print it out
             if (element_on_trace) {
