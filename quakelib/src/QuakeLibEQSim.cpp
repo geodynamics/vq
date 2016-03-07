@@ -1489,6 +1489,7 @@ quakelib::ModelVertex quakelib::EQSimGeometryVertex::create_model_vertex(const q
     new_vertex.set_id(_index);
     new_vertex.set_lld(_loc, base);
     new_vertex.set_das(_das);
+    new_vertex.set_is_trace(_trace_flag);
 
     return new_vertex;
 }
