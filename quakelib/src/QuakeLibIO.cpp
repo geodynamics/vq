@@ -2523,7 +2523,8 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
 
 int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     std::ofstream                                   out_file;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelFault>::const_iterator  	fit;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     LatLonDepth                                     min_bound, max_bound, center;
     Vec<3>                                          min_xyz, max_xyz;
@@ -2568,9 +2569,9 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     out_file << "</Style>\n";
     out_file << "<Folder id=\"fault_names\">\n";
 
-    for (fit=_sections.begin(); fit!=_sections.end(); ++fit) {
-        out_file << "\t<Placemark id=\"section_" << fit->second.id() << "_label\">\n";
-        out_file << "\t\t<name>" << fit->second.id() << " " << fit->second.name() << "</name>\n";
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+        out_file << "\t<Placemark id=\"section_" << sit->second.id() << "_label\">\n";
+        out_file << "\t\t<name>" << sit->second.id() << " " << sit->second.name() << "</name>\n";
         out_file << "\t\t<styleUrl>#sectionLabel</styleUrl>\n";
         out_file << "\t\t<Point>\n";
         out_file << "\t\t\t<extrude>1</extrude>\n";
@@ -2581,7 +2582,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
         ModelVertex     vert;
 
         for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-            if (eit->second.section_id() == fit->second.id()) {
+            if (eit->second.section_id() == sit->second.id()) {
                 for (i=0; i<3; ++i) {
                     cur_alt = _vertices.find(eit->second.vertex(i))->second.lld().altitude();
 
@@ -2618,88 +2619,100 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     double x_min = min_rate;
     double x_max = max_rate;
 
-    // Go through the sections
-    for (fit=_sections.begin(); fit!=_sections.end(); ++fit) {
-        // And output the elements for each section
-        out_file << "\t<Folder id=\"section_" << fit->first << "\">\n";
-        out_file << "\t\t<name>" << fit->first << " " << fit->second.name() << "</name>\n";
+    // Go through the faults
+    for (fit = _faults.begin(); fit!= _faults.end(); ++fit){
+    	out_file << "\t<Folder id=\"fault_" << fit->first << "\">\n";
+    	out_file << "\t\t<name>" << fit->first <<"</name>\n";
 
-        for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-            if (fit->first == eit->second.section_id()) {
-                LatLonDepth         lld[4];
-                unsigned int        i, npoints;
+    	// Go through the sections
+		for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+			// Check if section belongs to this fault
+			if (sit->second.fault_id() == fit->first){
+				// And output the elements for each section
+				out_file << "\t\t<Folder id=\"section_" << sit->first << "\">\n";
+				out_file << "\t\t\t<name>" << sit->first << " " << sit->second.name() << "</name>\n";
 
-                for (i=0; i<3; ++i) {
-                    std::map<UIndex, ModelVertex>::const_iterator   it;
-                    it = _vertices.find(eit->second.vertex(i));
-                    lld[i] = it->second.lld();
-                }
+				for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+					if (sit->first == eit->second.section_id()) {
+						LatLonDepth         lld[4];
+						unsigned int        i, npoints;
 
-                // If this is a quad element, calculate the 4th implicit point
-                if (eit->second.is_quad()) {
-                    Vec<3>              xyz[3];
+						for (i=0; i<3; ++i) {
+							std::map<UIndex, ModelVertex>::const_iterator   it;
+							it = _vertices.find(eit->second.vertex(i));
+							lld[i] = it->second.lld();
+						}
 
-                    for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
+						// If this is a quad element, calculate the 4th implicit point
+						if (eit->second.is_quad()) {
+							Vec<3>              xyz[3];
 
-                    lld[3] = lld[2];
-                    lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
-                }
+							for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
 
-                // Compute blue to red color (RGB)
-                // Keep red scale (min is white, max is red) so red=255
-                // Blue and green are equal and vary from (255 for min vals to 0 for max vals)
-                int blue, green;
-                int red = y_max;
+							lld[3] = lld[2];
+							lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
+						}
 
-                if (eit->second.slip_rate() == 0) {
-                    blue = 0;
-                    green = 0;
-                    red = 0;
-                } else {
-                    int interp_color = (int) linear_interp(eit->second.slip_rate(), x_min, x_max, y_min, y_max);
-                    blue = y_max - interp_color;
-                    green = blue;
-                }
+						// Compute blue to red color (RGB)
+						// Keep red scale (min is white, max is red) so red=255
+						// Blue and green are equal and vary from (255 for min vals to 0 for max vals)
+						int blue, green;
+						int red = y_max;
 
-                // Output the KML format polygon for this element
-                out_file << "\t\t<Placemark>\n";
-                out_file << "\t\t<description>\n";
-                out_file << "Fault name: " << fit->second.name() << "\n";
-                out_file << "Element #: " << eit->second.id() << "\n";
-                out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
-                out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
-                out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
-                out_file << "Aseismic: " << eit->second.aseismic() << "\n";
-                out_file << "\t\t</description>\n";
-                out_file << "\t\t\t<Style>\n";
-                out_file << "\t\t\t\t<LineStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
-                out_file << "\t\t\t\t\t<width>1</width>\n";
-                out_file << "\t\t\t\t</LineStyle>\n";
-                out_file << "\t\t\t\t<PolyStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
-                out_file << "\t\t\t\t</PolyStyle>\n";
-                out_file << "\t\t\t</Style>\n";
-                //out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
-                out_file << "\t\t\t<Polygon>\n";
-                out_file << "\t\t\t\t<extrude>0</extrude>\n";
-                out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
-                out_file << "\t\t\t\t<outerBoundaryIs>\n";
-                out_file << "\t\t\t\t\t<LinearRing>\n";
-                out_file << "\t\t\t\t\t\t<coordinates>\n";
-                npoints = (eit->second.is_quad() ? 4 : 3);
+						if (eit->second.slip_rate() == 0) {
+							blue = 0;
+							green = 0;
+							red = 0;
+						} else {
+							int interp_color = (int) linear_interp(eit->second.slip_rate(), x_min, x_max, y_min, y_max);
+							blue = y_max - interp_color;
+							green = blue;
+						}
 
-                for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+						// Output the KML format polygon for this element
+						out_file << "\t\t\t<Placemark>\n";
+						out_file << "\t\t\t<description>\n";
+						out_file << "Section name: " << sit->second.name() << "\n";
+						out_file << "Element #: " << eit->second.id() << "\n";
+						out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
+						out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
+						out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
+						out_file << "Aseismic: " << eit->second.aseismic() << "\n";
+						out_file << "\t\t\t</description>\n";
+						out_file << "\t\t\t\t<Style>\n";
+						out_file << "\t\t\t\t\t<LineStyle>\n";
+						out_file << "\t\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+						out_file << "\t\t\t\t\t\t<width>1</width>\n";
+						out_file << "\t\t\t\t\t</LineStyle>\n";
+						out_file << "\t\t\t\t\t<PolyStyle>\n";
+						out_file << "\t\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+						out_file << "\t\t\t\t\t</PolyStyle>\n";
+						out_file << "\t\t\t\t</Style>\n";
+						//out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
+						out_file << "\t\t\t\t<Polygon>\n";
+						out_file << "\t\t\t\t\t<extrude>0</extrude>\n";
+						out_file << "\t\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+						out_file << "\t\t\t\t\t<outerBoundaryIs>\n";
+						out_file << "\t\t\t\t\t\t<LinearRing>\n";
+						out_file << "\t\t\t\t\t\t\t<coordinates>\n";
+						npoints = (eit->second.is_quad() ? 4 : 3);
 
-                out_file << "\t\t\t\t\t\t</coordinates>\n";
-                out_file << "\t\t\t\t\t</LinearRing>\n";
-                out_file << "\t\t\t\t</outerBoundaryIs>\n";
-                out_file << "\t\t\t</Polygon>\n";
-                out_file << "\t\t</Placemark>\n";
-            }
-        }
+						for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
-        out_file << "\t</Folder>\n";
+						out_file << "\t\t\t\t\t\t\t</coordinates>\n";
+						out_file << "\t\t\t\t\t\t</LinearRing>\n";
+						out_file << "\t\t\t\t\t</outerBoundaryIs>\n";
+						out_file << "\t\t\t\t</Polygon>\n";
+						out_file << "\t\t\t</Placemark>\n";
+					}
+				}
+
+				out_file << "\t\t</Folder>\n";
+			}
+
+		}
+
+		out_file << "\t</Folder>\n";
     }
 
     out_file << "</Folder>\n";
