@@ -112,6 +112,17 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
             y_ave.append(sum(binned_data[k])/float(len(binned_data[k])))
     return x_ave, y_ave
 
+
+def standardize_time_series(time_series):
+    # This function subtracts the mean from the time series 
+    #    and scales it by the standard deviation.
+    time_series = np.array(time_series)
+    series_mean = np.mean(time_series)
+    series_std  = np.std(time_series)
+    return (time_series - series_mean)/series_std
+
+
+
 class SaveFile:
     def __init__(self):
         if args.pdf: self.file_type = '.pdf'
@@ -396,6 +407,53 @@ class Geometry:
                             except KeyError:
                                 pass # Ignore event elements that we are not asked for (in elements)                            
         return slip_time_series
+        
+        
+    def get_standardized_fault_averaged_slip_time_series(self, events, fault_id=None, min_year=0.0, max_year=None, DT=1.0):
+        # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
+        # Get slip rates for the elements
+        elements     = [elem_num for elem_num in geometry.model.getElementIDs() if geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() == fault_id]
+        num_elements = float(len(elements))
+        slip_rates   = self.get_slip_rates(elements)
+        #Initialize blocks with 0.0 slip at time t=0.0
+        slip_time_series  = {id:[0.0] for id in elements}
+        # Grab the events data
+        event_years = events.event_years()
+        # Restrict the time series values to end after the last EQ
+        event_numbers = events.event_numbers()
+        #Initialize time steps to evaluate slip    
+        time_values = np.arange(min_year+DT, max_year+DT, DT)
+        for k in range(len(time_values)):
+            if k>0:
+                # current time in simulation (think of this as the right edge of a bin with width DT)
+                right_now = time_values[k]
+                # back slip all elements by subtracting the slip_rate*dt
+                for block_id in slip_time_series.keys():
+                    last_slip = slip_time_series[block_id][k-1]
+                    this_slip = slip_rates[block_id]*DT
+                    slip_time_series[block_id].append(last_slip-this_slip)
+                # check if any elements slip as part of simulated event in the window of simulation time
+                # between (current time - DT, current time), add event slips to the slip at current time 
+                # for elements involved
+                for j in range(len(event_numbers)):
+                    evid    = event_numbers[j]
+                    ev_year = event_years[j]
+                    if right_now-DT < ev_year <= right_now:
+                        event_element_slips = events.get_event_element_slips(evid)
+                        for block_id in event_element_slips.keys():
+                            try:
+                                slip_time_series[block_id][k] += event_element_slips[block_id]
+                                #sys.stdout.write("element {} slips {} in event {}\n".format(block_id,event_element_slips[block_id],evid))
+                                #sys.stdout.flush()
+                            except KeyError:
+                                pass # Ignore event elements that we are not asked for (in elements) 
+                                
+        fault_time_series = np.zeros(len(time_values))
+        for ele_id in slip_time_series.keys():
+            fault_time_series += np.array(slip_time_series[ele_id])/num_elements
+        
+        return standardize_time_series(fault_time_series)
+        
 
     def get_stress_drops(self):
         return [self.model.element(ele).stress_drop() for ele in self.model.getElementIDs()]
@@ -2824,6 +2882,8 @@ if __name__ == "__main__":
             help="List of elements for filtering.")
     parser.add_argument('--slip_time_series', required=False, action='store_true',
             help="Return the slip time series for all specified --elements.")
+    parser.add_argument('--fault_time_series', required=False, action='store_true',
+            help="Return the average slip time series for all elements on a fault. To specify fault #1, use --use_faults 1.")
     parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
     parser.add_argument('--event_kml', required=False, action='store_true',
             help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
@@ -2974,11 +3034,11 @@ if __name__ == "__main__":
         event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
 
     if args.use_faults:
-        sys.stdout.write("Taking events that begin only on faults {}\n".format(args.use_faults))
+        sys.stdout.write("Selecting a subset of events that are triggered on faults {}\n".format(args.use_faults))
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_faults to work.")
         for fault_id in args.use_faults:
             if fault_id not in geometry._elem_to_fault_map.values():
-                sys.stdout.write(geometry._elem_to_fault_map)
+                #sys.stdout.write(geometry._elem_to_fault_map)
                 raise BaseException("\nFault id {} does not exist.".format(fault_id))
         event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
 
@@ -2993,7 +3053,7 @@ if __name__ == "__main__":
     if args.event_file: assert(isinstance(events, list))
     
     # Make sure that if labels are specified, the number matches the number of event files
-    if args.label: assert(len(args.label)==len(events))
+    #if args.label: assert(len(args.label)==len(events))
     
     # Print out event summary data if requested
     if args.summary:
@@ -3239,10 +3299,34 @@ if __name__ == "__main__":
             plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         fig = plt.figure()
-        BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, "sim time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
+        BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, "simulation time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
         plt.legend(loc='best')
         plt.savefig(filename, dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+        
+    if args.fault_time_series:
+        if args.use_faults is None: raise BaseException("\nMust specify fault id, e.g. --use_faults 33")
+        if args.min_year is None: args.min_year = 0.0  # TODO: Make this check before events are read, this will be faster
+        if args.max_year is None: args.max_year = 20.0
+        if args.dt is None: args.dt = 0.5  # Unit is decimal years
+        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for fault_id in args.use_faults]+[[args.min_year,args.max_year]]
+        fault_time_series = [list(geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, min_year=args.min_year, max_year=args.max_year, DT=args.dt)) for fid in args.use_faults]+[[0,0]]
+        styles = ["-" for fid in args.use_faults]+["--"]
+        linewidths = [1.0 for fid in args.use_faults]+[1.0]
+        fault_label = ""
+        for fid in args.use_faults:
+            fault_label+="-{:d}".format(fid)
+        if args.label:
+            labels = ["{}".format(lab) for lab in args.label]+[""]
+        else:
+            labels = ["Fault {}".format(fid) for fid in args.use_faults]+[""]
+        filename = SaveFile().diagnostic_plot(args.event_file, "standardized_fault_slip_time_series-Faults{}".format(fault_label), min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        fig = plt.figure()
+        BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", "standardized slip", "", filename, linestyles=styles)
+        plt.legend(loc='best', fontsize=10)
+        plt.savefig(filename, dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+
 
     if args.event_kml:
         '''Currently this only works for a the first event file if a list of event files is given
