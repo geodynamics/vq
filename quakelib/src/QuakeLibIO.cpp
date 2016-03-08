@@ -525,7 +525,7 @@ class TraceSpline {
         };
 };
 
-void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements) {
+void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements, const UIndex &sec_id) {
     Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
     std::vector<UIndex> elem_ids;
     std::set<unsigned int> unused_trace_pts;
@@ -547,6 +547,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     ModelSection &section = new_section();
     section.set_name(section_name);
     section.set_fault_id(fault_id);
+    if (sec_id != -1) section.set_id(sec_id);
 
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
@@ -1136,7 +1137,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
     std::vector<FaultTracePoint>    trace_pts;
     std::string                     cur_section_name;
     unsigned int                    i, num_trace_pts;
-    UIndex                          fault_id;
+    UIndex                          fault_id, sec_id;
     double                          min_lat, min_lon;
 
     // Clear the world first to avoid incorrectly mixing indices
@@ -1154,6 +1155,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
         num_trace_pts = 0;
 
         ss >> fault_id;
+        ss >> sec_id;
         ss >> num_trace_pts;
         ss >> cur_section_name;
 
@@ -1168,7 +1170,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
             min_lon = fmin(min_lon, new_trace_pt.pos().lon());
         }
 
-        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements);
+        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements, sec_id);
         this->insert(new_world);
     }
 
@@ -1279,11 +1281,12 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
 
         // Write the fault header
         out_file << "# fault_id: ID number of the parent fault of this section\n";
+        out_file << "# sec_id: ID number of this section\n";
         out_file << "# num_points: Number of trace points comprising this section\n";
         out_file << "# section_name: Name of the section\n";
 
         // Write out the recorded trace for this fault
-        out_file << sit->fault_id() << " " << trace_pts.size() << " " << sit->name() << "\n";
+        out_file << sit->fault_id() << " " << sit->id() << " " << trace_pts.size() << " " << sit->name() << "\n";
 
         // Write out the trace point header
         out_file << "# latitude: Latitude of trace point\n";
@@ -1417,11 +1420,12 @@ int quakelib::ModelWorld::write_file_trace_latlon_faultwise(void) {
 
         // Write the fault header
         out_file << "# fault_id: ID number of the parent fault of this section\n";
+        out_file << "# sec_id: ID number of this section\n";
         out_file << "# num_points: Number of trace points comprising this section\n";
         out_file << "# section_name: Name of the section\n";
 
         // Write out the recorded trace for this fault
-        out_file << fid << " " << trace_pts.size() << " " << fidstr << "\n";
+        out_file << fid << " " << fid << " " << trace_pts.size() << " " << fidstr << "\n";
 
         // Write out the trace point header
         out_file << "# latitude: Latitude of trace point\n";
