@@ -312,8 +312,8 @@ int main (int argc, char **argv) {
         }
 
         for (n=0; n<types[i].size(); ++n) {
-            if (types[i][n] != "text" && types[i][n] != "hdf5" && types[i][n] != "trace" && types[i][n] != "kml") {
-                std::cerr << "ERROR: " << names[i] << " type must be one of: text, hdf5, trace, kml." << std::endl;
+            if (types[i][n] != "text" && types[i][n] != "hdf5" && types[i][n] != "trace" && types[i][n] != "trace_faultwise" && types[i][n] != "kml") {
+                std::cerr << "ERROR: " << names[i] << " type must be one of: text, hdf5, trace, trace_faultwise, kml." << std::endl;
                 arg_error = true;
             }
 
@@ -449,6 +449,7 @@ int main (int argc, char **argv) {
         else if (types[1][n] == "hdf5") res = world.write_file_hdf5(files[1][n]);
         else if (types[1][n] == "kml") res = world.write_file_kml(files[1][n]);
         else if (types[1][n] == "trace") res = world.write_file_trace_latlon();
+        else if (types[1][n] == "trace_faultwise") res = world.write_file_trace_latlon_faultwise();
 
         if (res) std::cout << "error." << std::endl;
         else std::cout << "done." << std::endl;
