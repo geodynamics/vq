@@ -1392,7 +1392,8 @@ namespace quakelib {
                                 const float &element_size,
                                 const std::string &section_name,
                                 const std::string &taper_method,
-                                const bool resize_trace_elements);
+                                const bool resize_trace_elements,
+                                const UIndex &sec_id = -1);
 
             void compute_stress_drops(const double &stress_drop_factor);
             void create_faults(const std::string &taper_method);
