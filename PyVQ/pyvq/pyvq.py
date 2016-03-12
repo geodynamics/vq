@@ -1252,6 +1252,8 @@ class TracePlotter:
         fig1.savefig(output_file, format='png', dpi=plot_resolution)
         sys.stdout.write('Plot saved: {}\n'.format(output_file))
         sys.stdout.flush()
+
+        
         
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
@@ -2763,7 +2765,11 @@ if __name__ == "__main__":
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
-            help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
+            help="List of model faults to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
+    parser.add_argument('--group1', type=int, nargs='+', required=False,
+            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group2. These subsets are used for computing time series correlations.")
+    parser.add_argument('--group2', type=int, nargs='+', required=False,
+            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group1. These subsets are used for computing time series correlations.")
 
     # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
@@ -2822,7 +2828,6 @@ if __name__ == "__main__":
     parser.add_argument('--levels', type=float, nargs='+', required=False,
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
-    parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
     parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
@@ -2901,6 +2906,8 @@ if __name__ == "__main__":
             help="Save the cumulative distribution of fault lengths in the model.") 
     parser.add_argument('--reference', required=False, type=float,
             help="Reference value for numbers relative to some value.")
+    parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
+    parser.add_argument('--fault_group_traces', required=False, action='store_true', help="Plot the fault traces on a map for two groups of faults, specified by two lists of fault ids using --group1 and --group2.") 
             
     # --------- Spacetime plots -----------
     parser.add_argument('--spacetime', required=False, action='store_true',
@@ -2932,6 +2939,10 @@ if __name__ == "__main__":
     if args.traces:
         if args.model_file is None:
             raise BaseException("\nMust specify --model_file for fault trace plots")
+
+    if args.fault_group_traces:
+        if args.model_file is None or args.group1 is None or args.group2 is None:
+            raise BaseException("\nMust specify --model_file, --group1, and --group2 for fault group trace plots")
             
     # Check that if either beta or tau is given then the other is also given
     if (args.beta and not args.tau) or (args.tau and not args.beta):
@@ -2981,9 +2992,15 @@ if __name__ == "__main__":
     # Read the geometry model if specified
     if args.model_file:
         if args.model_file_type:
-            geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
         else:
-            geometry = Geometry(model_file=args.model_file)
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
