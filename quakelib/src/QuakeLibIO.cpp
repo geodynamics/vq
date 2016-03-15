@@ -812,6 +812,7 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 
         if (_faults.count(sit->second.fault_id())==0) {
             ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.set_name(sit->second.name()); // Currently uses first section's name as fault name
             fault.set_length(sectionlength);
             fault.set_area(sectionarea);
             fault.insert_section_id(sit->first);
@@ -1323,7 +1324,7 @@ int quakelib::ModelWorld::write_file_trace_latlon_faultwise(void) {
     double              max_alt, min_alt, depth_along_dip, section_depth, el_height;
     bool                element_on_trace;
     Conversion          c;
-    std::string         fault_file_name, fidstr;
+    std::string         fault_file_name;
     std::stringstream	ss;
 
     // Write traces by fault
@@ -1332,13 +1333,9 @@ int quakelib::ModelWorld::write_file_trace_latlon_faultwise(void) {
 
 		trace_pts.clear();
 		fid = fit->id();
-		ss << fid;
-		fidstr = ss.str();
-		ss.str("");
-		ss.clear();
 
 		std::ofstream out_file;
-		fault_file_name = "trace_"+fidstr+".txt";
+		fault_file_name = "trace_"+fit->name()+".txt";
 		out_file.open(fault_file_name.c_str());
 
 
@@ -1425,7 +1422,7 @@ int quakelib::ModelWorld::write_file_trace_latlon_faultwise(void) {
         out_file << "# section_name: Name of the section\n";
 
         // Write out the recorded trace for this fault
-        out_file << fid << " " << fid << " " << trace_pts.size() << " " << fidstr << "\n";
+        out_file << fid << " " << fid << " " << trace_pts.size() << " " << fit->name() << "\n";
 
         // Write out the trace point header
         out_file << "# latitude: Latitude of trace point\n";
@@ -2763,7 +2760,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     // Go through the faults
     for (fit = _faults.begin(); fit!= _faults.end(); ++fit){
     	out_file << "\t<Folder id=\"fault_" << fit->first << "\">\n";
-    	out_file << "\t\t<name>" << fit->first <<"</name>\n";
+    	out_file << "\t\t<name>" << fit->second.name() <<"</name>\n";
 
     	// Go through the sections
 		for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
