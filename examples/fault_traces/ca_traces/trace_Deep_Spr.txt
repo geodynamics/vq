@@ -1,8 +1,8 @@
 # fault_id: ID number of the parent fault of this section
+# sec_id: ID number of this section
 # num_points: Number of trace points comprising this section
 # section_name: Name of the section
-94 9 Deep_Spr
-# latitude: Latitude of trace point
+94 94 9 Deep_Spr# latitude: Latitude of trace point
 # longitude: Longitude of trace point
 # altitude: Altitude of trace point (meters)
 # depth_along_dip: Depth along dip (meters)
