@@ -3385,11 +3385,13 @@ quakelib::LatLonDepth quakelib::ModelWorld::max_bound(const UIndex &fid) const {
 void quakelib::ModelWorld::insert(const quakelib::ModelWorld &other_world) {
     UIndex                      next_section_ind, next_element_ind, next_vertex_ind;
     ModelRemapping              remap;
+    std::vector<ModelFault>   	fault_list;
     std::vector<ModelSection>   section_list;
     std::vector<ModelElement>   element_list;
     std::vector<ModelVertex>    vertex_list;
     unsigned int                i;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelFault>::const_iterator  fit;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     std::map<UIndex, ModelVertex>::const_iterator   vit;
     LatLonDepth                 this_lld_min, this_lld_max;
@@ -3403,10 +3405,21 @@ void quakelib::ModelWorld::insert(const quakelib::ModelWorld &other_world) {
     // other model to allow it to be inserted in this model
     remap = other_world.remap_indices_contiguous(next_section_ind, next_element_ind, next_vertex_ind);
 
+    // Make a copy of faults from other world, then insert into this world
+	for (fit=other_world._faults.begin(); fit!=other_world._faults.end(); ++fit) {
+		ModelFault  other_fault = fit->second;
+		// TODO: Add fault remapping
+		fault_list.push_back(other_fault);
+	}
+
+	for (i=0; i<fault_list.size(); ++i) _faults.insert(std::make_pair(fault_list[i].id(), fault_list[i]));
+
+	fault_list.clear();
+
     // Make a copy of sections from other world, apply remapping, then insert into this world
     // Don't directly insert, since there's no guarantee that this world and the other aren't the same
-    for (fit=other_world._sections.begin(); fit!=other_world._sections.end(); ++fit) {
-        ModelSection  other_section = fit->second;
+    for (sit=other_world._sections.begin(); sit!=other_world._sections.end(); ++sit) {
+        ModelSection  other_section = sit->second;
         other_section.apply_remap(remap);
         section_list.push_back(other_section);
     }
