@@ -2760,7 +2760,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     // Go through the faults
     for (fit = _faults.begin(); fit!= _faults.end(); ++fit){
     	out_file << "\t<Folder id=\"fault_" << fit->first << "\">\n";
-    	out_file << "\t\t<name>" << fit->second.name() <<"</name>\n";
+    	out_file << "\t\t<name>" << fit->first << " " << fit->second.name() <<"</name>\n";
 
     	// Go through the sections
 		for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
