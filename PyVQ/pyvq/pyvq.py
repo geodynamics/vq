@@ -52,6 +52,13 @@ try:
 except ImportError:
     h5py_available = False
     
+cPickle_available = True
+try:
+    import cPickle as pickle
+except ImportError:
+    cPickle_available = False
+    
+    
 # ----------------- Global constants -------------------------------------------
 # Kasey: These are only relevent for few-element field plots
 LAT_LON_DIFF_FACTOR = 1.333 
@@ -189,9 +196,9 @@ class SaveFile:
     def diagnostic_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None):
         # Add tags to convey the subsets/cuts being made
         add=""
-        if isinstance(event_file, list): 
-            event_file = event_file[0]
+        if len(event_file) > 1: 
             add += "_MULTI_EVENT_FILE"
+        event_file = event_file[0]
         # Remove any folders in front of model_file name
         if len(event_file.split("/")) > 1:
             event_file = event_file.split("/")[-1]
@@ -209,8 +216,56 @@ class SaveFile:
                 add += "_minMag_"+min_mag
         if combine is not None:
             add += "_combined"
-            
+                        
         return plot_type+"_diagnostic"+add+"_"+event_file.split(".")[0]+self.file_type
+
+    def time_series_plot(self, event_file, plot_type, min_year=None, max_year=None, min_mag=None, combine=None, dt=None):
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        if len(event_file) > 1: 
+            add += "_MULTI_EVENT_FILE"
+        event_file = event_file[0]
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if min_mag is not None:
+            min_mag = str(min_mag)
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
+            else:
+                add += "_minMag_"+min_mag
+        if combine is not None:
+            add += "_combined"
+        if dt is not None:
+            add += "_dt{}yrs".format(dt)
+        return plot_type+"_timeseries"+add+"_"+event_file.split(".")[0]+self.file_type
+        
+    def fault_time_series_pickle(self, event_file, fault_id, min_year=None, max_year=None, min_mag=None, combine=None, dt=None, standardized=False):
+        # Add tags to convey the subsets/cuts being made
+        add=""
+        event_file = event_file[0]
+        # Remove any folders in front of model_file name
+        if len(event_file.split("/")) > 1:
+            event_file = event_file.split("/")[-1]
+        if standardized:
+            add += "_standardized"
+        if min_year is not None: add+="_yearMin"+str(int(min_year))    
+        if max_year is not None: add+="_yearMax"+str(int(max_year))
+        if min_mag is not None:
+            min_mag = str(min_mag)
+            # e.g. min_mag = 7.5, filename has '7-5'
+            if len(min_mag.split(".")) > 1:
+                add += "_minMag_"+min_mag.split(".")[0]+"-"+min_mag.split(".")[1]
+            else:
+                add += "_minMag_"+min_mag
+        if combine is not None:
+            add += "_combined"
+        if dt is not None:
+            add += "_dt{}yrs".format(dt)
+        return "fault_"+str(fault_id)+"_timeseries"+add+"_"+event_file.split(".")[0]+".pickle"
 
     def event_movie(self, event_file, event_id):
         # Remove any folders in front of model_file name
@@ -371,7 +426,9 @@ class Geometry:
         CONVERSION = 3.15576*pow(10,7) 
         return {id:self.model.element(id).slip_rate()*CONVERSION for id in elements}
         
-    def get_slip_time_series(self, events, elements=None, min_year=None, max_year=None, DT=None):
+    def get_slip_time_series(self, events, elements=None, max_year=None, DT=None):
+        if max_year is None:
+            raise BaseException("Must specify --max_year.")
         # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
         # Get slip rates for the elements
         slip_rates = self.get_slip_rates(elements)
@@ -381,7 +438,7 @@ class Geometry:
         event_years = events.event_years()
         event_numbers = events.event_numbers()
         #Initialize time steps to evaluate slip    
-        time_values = np.arange(min_year+DT, max_year+DT, DT)
+        time_values = np.arange(DT, max_year+DT, DT)
         for k in range(len(time_values)):
             if k>0:
                 # current time in simulation
@@ -409,21 +466,26 @@ class Geometry:
         return slip_time_series
         
         
-    def get_standardized_fault_averaged_slip_time_series(self, events, fault_id=None, min_year=0.0, max_year=None, DT=1.0):
-        # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
+    def get_standardized_fault_averaged_slip_time_series(self, events, fault_id=None, max_year=None, DT=1.0):
+        if max_year is None: raise BaseException("Must specify --max_year.")
+        sys.stdout.write("{}...".format(fault_id)) # Update the console as to which fault we are processing now.
+        sys.stdout.flush()  ## Make sure the status prints right now and doesn't lag due to hi CPU demand
+        # slip_time_series    = dictionary indexed by block_id with entries being arrays of slip deficit at each time step
         # Get slip rates for the elements
-        elements     = [elem_num for elem_num in geometry.model.getElementIDs() if geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() == fault_id]
+        all_elements = geometry.model.getElementIDs()
+        elements     = [elem_num for elem_num in all_elements if geometry.model.section(geometry.model.element(elem_num).section_id()).fault_id() == fault_id]
         num_elements = float(len(elements))
         slip_rates   = self.get_slip_rates(elements)
-        #Initialize blocks with 0.0 slip at time t=0.0
-        slip_time_series  = {id:[0.0] for id in elements}
         # Grab the events data
-        event_years = events.event_years()
+        event_years = list(events.event_years())
         # Restrict the time series values to end after the last EQ
-        event_numbers = events.event_numbers()
+        event_numbers = list(events.event_numbers())
         #Initialize time steps to evaluate slip    
-        time_values = np.arange(min_year+DT, max_year+DT, DT)
+        time_values = np.arange(0.0, max_year+DT, DT)
+        #Pre-allocate the full time series array for speed 
+        slip_time_series  = {id:np.zeros(len(time_values)) for id in elements}
         for k in range(len(time_values)):
+            # Skip the k=0 case, we already initialized our slip
             if k>0:
                 # current time in simulation (think of this as the right edge of a bin with width DT)
                 right_now = time_values[k]
@@ -431,12 +493,11 @@ class Geometry:
                 for block_id in slip_time_series.keys():
                     last_slip = slip_time_series[block_id][k-1]
                     this_slip = slip_rates[block_id]*DT
-                    slip_time_series[block_id].append(last_slip-this_slip)
+                    slip_time_series[block_id][k] = last_slip-this_slip
                 # check if any elements slip as part of simulated event in the window of simulation time
                 # between (current time - DT, current time), add event slips to the slip at current time 
                 # for elements involved
-                for j in range(len(event_numbers)):
-                    evid    = event_numbers[j]
+                for j, evid in enumerate(event_numbers):
                     ev_year = event_years[j]
                     if right_now-DT < ev_year <= right_now:
                         event_element_slips = events.get_event_element_slips(evid)
@@ -446,13 +507,16 @@ class Geometry:
                                 #sys.stdout.write("element {} slips {} in event {}\n".format(block_id,event_element_slips[block_id],evid))
                                 #sys.stdout.flush()
                             except KeyError:
-                                pass # Ignore event elements that we are not asked for (in elements) 
+                                pass # Ignore event elements that we are not asking for
                                 
+        ### Average the time series over all elements in the fault
         fault_time_series = np.zeros(len(time_values))
         for ele_id in slip_time_series.keys():
-            fault_time_series += np.array(slip_time_series[ele_id])/num_elements
+            fault_time_series += slip_time_series[ele_id]/num_elements
         
-        return standardize_time_series(fault_time_series)
+        ## Standardize the averaged time series
+        standardized_series = standardize_time_series(fault_time_series)
+        return standardized_series
         
 
     def get_stress_drops(self):
@@ -2746,6 +2810,8 @@ if __name__ == "__main__":
             help="Minimum year of events to process.")
     parser.add_argument('--max_year', type=float, required=False,
             help="Maximum year of events to process.")
+    parser.add_argument('--full_time_range', required=False, action='store_true',
+            help="A speedup for time series plots. If you want a time series for the full range of the simulation, specify this parameter.")
     parser.add_argument('--min_slip', type=float, required=False,
             help="Minimum mean slip of events to process.")
     parser.add_argument('--max_slip', type=float, required=False,
@@ -3019,12 +3085,18 @@ if __name__ == "__main__":
     event_filters = []
     if args.min_magnitude or args.max_magnitude:
         event_filters.append(MagFilter(min_mag=args.min_magnitude, max_mag=args.max_magnitude))
+        sys.stdout.write("Applying magnitude filter...")
 
     if args.min_num_elements or args.max_num_elements:
         event_filters.append(NumElementsFilter(min_num_elements=args.min_num_elements, max_num_elements=args.max_num_elements))
+        sys.stdout.write("Applying number of elements per event filter...")
 
     if args.min_year or args.max_year:
-        event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
+        ## To prevent testing all events when plotting a time series and using --min_year,--max_year as the min/max event times,
+        ##### don't create a filter in this case.
+        if not args.full_time_range:
+            event_filters.append(YearFilter(min_year=args.min_year, max_year=args.max_year))
+            sys.stdout.write("Applying event year filter...")
 
     # Detectability threshold, min slip 1cm
     #if args.event_file and args.min_slip is None: 
@@ -3035,36 +3107,42 @@ if __name__ == "__main__":
 
     if args.min_slip or args.max_slip:
         event_filters.append(SlipFilter(min_slip=args.min_slip, max_slip=args.max_slip))
+        sys.stdout.write("Applying mean slip filter...")
         
     if args.min_area or args.max_area:
         event_filters.append(AreaFilter(min_area=args.min_area, max_area=args.max_area))
+        sys.stdout.write("Applying rupture area filter...")
 
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
+        sys.stdout.write("Applying event number filter...")
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
         for fault_id in args.use_sections:
             if sec_id not in geometry._elem_to_section_map.values():
-                sys.stdout.write(geometry._elem_to_section_map)
+                #sys.stdout.write(geometry._elem_to_section_map)
                 raise BaseException("\nSection id {} does not exist.".format(sec_id))
         event_filters.append(TriggerSectionFilter(geometry, args.use_sections))
+        sys.stdout.write("Applying fault section filter using only fault sections {}...".format(args.use_sections))
 
     if args.use_faults:
-        sys.stdout.write("Selecting a subset of events that are triggered on faults {}\n".format(args.use_faults))
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_faults to work.")
         for fault_id in args.use_faults:
             if fault_id not in geometry._elem_to_fault_map.values():
                 #sys.stdout.write(geometry._elem_to_fault_map)
                 raise BaseException("\nFault id {} does not exist.".format(fault_id))
         event_filters.append(TriggerFaultFilter(geometry, args.use_faults))
+        sys.stdout.write("Applying fault filter using only faults {}...".format(args.use_faults))
 
     if args.event_file:
         if isinstance(args.event_file, list):
             for event_set in events:
                 event_set.set_filters(event_filters)
+                sys.stdout.write("..Event filtering complete.\n")
         else:
             events.set_filters(event_filters)
+            sys.stdout.write("..Event filtering complete.\n")
             
     # Make sure that events is a list
     if args.event_file: assert(isinstance(events, list))
@@ -3291,9 +3369,7 @@ if __name__ == "__main__":
     if args.slip_time_series:
         # TODO: Add multi-event file compatibility to compare between different sims
         if args.elements is None: raise BaseException("\nMust specify element ids, e.g. --elements 0 1 2")
-        if args.min_year is None: args.min_year = 0.0
-        if args.max_year is None: args.max_year = 20.0
-        if args.dt is None: args.dt = 0.5  # Unit is decimal years
+        if args.dt is None: args.dt = 5.0  # Unit is decimal years
         if args.use_sections is not None:
             if len(args.use_sections) > 1:
                 section_name = ""
@@ -3301,20 +3377,20 @@ if __name__ == "__main__":
                     section_name += geometry.model.section(sec).name()+", "
             else:
                 section_name = geometry.model.section(args.use_sections[0]).name()+", "
-        time_series = geometry.get_slip_time_series(events[0], elements=args.elements, min_year=args.min_year, max_year=args.max_year, DT=args.dt)
+        time_series = geometry.get_slip_time_series(events[0], elements=args.elements, max_year=args.max_year, DT=args.dt)
         if len(time_series.keys()) < 10: 
             labels = time_series.keys()+[""]
         else:
             labels = [None for each in range(len(time_series.keys())+1)]
-        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[args.min_year,args.max_year]]
+        x_data = [list(np.arange(args.dt, args.max_year+args.dt, args.dt)) for key in time_series.keys()]+[[0.0,args.max_year]]
         linewidths = [0.8 for key in time_series.keys()]+[1]
         styles = ["-" for key in time_series.keys()]+["--"]
         y_data = time_series.values()+[[0,0]]
         if args.use_sections is not None:
-            plot_title = "Slip time series for {}from years {} to {} with step {}\n{}".format(section_name, args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
+            plot_title = "Slip time series for {}from years 0 to {} with step {}\n{}".format(section_name,args.max_year,args.dt,args.event_file[0].split("/")[-1])
         else:
-            plot_title = "Slip time series for {} elements, from years {} to {} with step {}\n{}".format(len(args.elements), args.min_year,args.max_year,args.dt,args.event_file[0].split("/")[-1])
-        filename = SaveFile().diagnostic_plot(args.event_file, "slip_time_series", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+            plot_title = "Slip time series for {} elements, from years 0 to {} with step {}\n{}".format(len(args.elements),args.max_year,args.dt,args.event_file[0].split("/")[-1])
+        filename = SaveFile().time_series_plot(args.event_file, "slip_", min_year=0, max_year=args.max_year, min_mag=args.min_magnitude,dt=args.dt)
         fig = plt.figure()
         BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, plot_title, "simulation time [years]", "cumulative slip [m]", "", filename, linestyles=styles)
         plt.legend(loc='best')
@@ -3323,11 +3399,25 @@ if __name__ == "__main__":
         
     if args.fault_time_series:
         if args.use_faults is None: raise BaseException("\nMust specify fault id, e.g. --use_faults 33")
-        if args.min_year is None: args.min_year = 0.0  # TODO: Make this check before events are read, this will be faster
-        if args.max_year is None: args.max_year = 20.0
-        if args.dt is None: args.dt = 0.5  # Unit is decimal years
-        x_data = [list(np.arange(args.min_year+args.dt, args.max_year+args.dt, args.dt)) for fault_id in args.use_faults]+[[args.min_year,args.max_year]]
-        fault_time_series = [list(geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, min_year=args.min_year, max_year=args.max_year, DT=args.dt)) for fid in args.use_faults]+[[0,0]]
+        if args.dt is None: args.dt = 5  # Unit is decimal years
+        x_data_list = [list(np.arange(0.0, args.max_year+args.dt, args.dt)) for fault_id in args.use_faults]
+        x_data = x_data_list+[[0.0,args.max_year]]
+        sys.stdout.write("Building fault slip time series for fault ")
+        fault_time_series_data = [geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt) for fid in args.use_faults]
+        ## If the cPickle module is available, pickle each fault time series for easier analysis later.
+        ##### This saves the time series to a file that should be read like    time_data, slip_data = pickle.load(file)
+        if cPickle_available:
+            for i,time_series in enumerate(fault_time_series_data):
+                fault_ID = args.use_faults[i]
+                time_values = x_data_list[i]
+                pickle_file_name = SaveFile().fault_time_series_pickle(args.event_file, fault_ID, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, combine=False, dt=args.dt, standardized=True)
+                pickle_file = open(pickle_file_name, 'wb')
+                pickle.dump([time_values,time_series], pickle_file)
+                pickle_file.close()
+                sys.stdout.write("Wrote time series for fault {} to {}.\n".format(fault_ID,pickle_file_name))
+        else:
+            sys.stdout.write("\n===Tried to save fault time series via Pickling, but cPickle module not available.===\n")
+        fault_time_series = [series for series in fault_time_series_data]+[[0,0]]
         styles = ["-" for fid in args.use_faults]+["--"]
         linewidths = [1.0 for fid in args.use_faults]+[1.0]
         fault_label = ""
@@ -3337,12 +3427,14 @@ if __name__ == "__main__":
             labels = ["{}".format(lab) for lab in args.label]+[""]
         else:
             labels = ["Fault {}".format(fid) for fid in args.use_faults]+[""]
-        filename = SaveFile().diagnostic_plot(args.event_file, "standardized_fault_slip_time_series-Faults{}".format(fault_label), min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        filename = SaveFile().time_series_plot(args.event_file, "standardized_Faults{}".format(fault_label), min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, dt=args.dt)
         fig = plt.figure()
         BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", "standardized slip", "", filename, linestyles=styles)
         plt.legend(loc='best', fontsize=10)
         plt.savefig(filename, dpi=args.dpi)
-        sys.stdout.write("Plot saved: {}\n".format(filename))
+        sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
+        
+        
 
 
     if args.event_kml:
