@@ -788,6 +788,7 @@ void quakelib::ModelWorld::create_faults_minimal(void) {
 
         if (_faults.count(sit->second.fault_id())==0) {
             ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.set_name(sit->second.name()); // Currently uses first section's name as fault name
             fault.insert_section_id(sit->first);
             fault.set_length(0.0);
             fault.set_area(0.0);
