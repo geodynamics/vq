@@ -44,6 +44,7 @@ static struct option longopts[] = {
     { "print_statistics",           required_argument,      NULL,           's' },
     { "do_not_compute_stress_drops",no_argument,            NULL,           'x' },
     { "stress_drop_factor",         required_argument,      NULL,           'q' },
+    { "vertex_das_by_section",      no_argument,     		NULL,           'v' },
 
     { NULL,                         0,                      NULL,           0 }
 };
@@ -163,6 +164,8 @@ void print_usage(int argc, char **argv) {
     std::cerr << "\tDo not compute stress drops, must specify from EQSim friction instead." << std::endl;
     std::cerr << "-q FACTOR, --stress_drop_factor=FACTOR" << std::endl;
     std::cerr << "\tSpecify the stress drop factor (usually 0.2-0.6). It's a multiplier for the computed stress drops (it's logarithmic, 0.1 increase means multiplying stress drops by 1.4)." << std::endl;
+    std::cerr << "-v, --vertex_das_by_section" << std::endl;
+	std::cerr << "\tUse if imported vertex distances along strikes are given with respect to section instead of whole fault." << std::endl;
 
     std::cerr << std::endl;
     std::cerr << "FILE IMPORT" << std::endl;
@@ -197,7 +200,7 @@ void print_usage(int argc, char **argv) {
 
 int main (int argc, char **argv) {
     quakelib::ModelWorld        world;
-    bool                        delete_unused, merge_duplicate_vertices, resize_trace_elements, compute_stress_drops=true;
+    bool                        delete_unused, merge_duplicate_vertices, resize_trace_elements, compute_stress_drops=true, vertDASbysec=false;
     bool                        arg_error, failed;
     std::string                 names[2] = {"import", "export"};
     std::string                 eqsim_geom_in_file, eqsim_fric_in_file, eqsim_cond_in_file;
@@ -214,7 +217,7 @@ int main (int argc, char **argv) {
     eqsim_geom_in_file = eqsim_fric_in_file = eqsim_cond_in_file = "";
     eqsim_geom_out_file = eqsim_fric_out_file = eqsim_cond_out_file = "";
 
-    while ((ch = getopt_long(argc, argv, "mdr:x:s:q:D:R:M:C:F:G:i:j:e:f:l:t:", longopts, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "mdr:x:s:q:D:R:M:C:F:G:i:j:e:f:l:t:v:", longopts, NULL)) != -1) {
         switch (ch) {
             case 'd':
                 delete_unused = true;
@@ -288,6 +291,10 @@ int main (int argc, char **argv) {
             case 't':
                 taper_fault_method = optarg;
                 break;
+            case 'v':
+				vertDASbysec = true;
+				std::cout << " === Recomputing vertex DAS with respect to fault ==="  << std::endl;
+				break;
 
             default:
                 std::cerr << "Unknown argument " << argv[optind] << std::endl;
@@ -426,7 +433,7 @@ int main (int argc, char **argv) {
     // Create ModelFault objects and correctly rewrites DAS for each vertex to be relative to fault
     // Also applies horizontal tapering at ends of each fault if requested.
     // NOTE: the tapering method specified for the first trace file is used for the whole fault model.
-    world.create_faults(taper_fault_method);
+    world.create_faults(taper_fault_method, vertDASbysec);
 
 
     // Schultz: Moving stress drop computation here (used to be in UpdateBlockStress.cpp.

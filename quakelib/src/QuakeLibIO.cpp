@@ -805,7 +805,7 @@ void quakelib::ModelWorld::create_faults_minimal(void) {
 
 
 
-void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
+void quakelib::ModelWorld::create_faults(const std::string &taper_method, const bool &vertDASbysec) {
     std::map<UIndex, ModelFault>::const_iterator fit;
     std::map<UIndex, ModelSection>::const_iterator sit;
     std::map<UIndex, ModelElement>::iterator eit;
@@ -861,10 +861,12 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
         }
     }
 
-    // Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
-    for (vit=_vertices.begin(); vit!=_vertices.end(); vit++) {
-        vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
-    }
+    if (vertDASbysec == true){
+		// Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
+		for (vit=_vertices.begin(); vit!=_vertices.end(); vit++) {
+			vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
+		}
+	}
 
     // If tapering, loop through elements, calc their midpoint DAS,
     // assign horizontal sqrt tapering in end 12km.
