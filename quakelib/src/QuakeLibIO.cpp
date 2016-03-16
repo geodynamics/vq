@@ -111,7 +111,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "name";
-    field_desc.details = "Name of the fault.";
+    field_desc.details = "Name of the section.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SectionData, _name);
     field_desc.type = section_name_datatype;
@@ -125,6 +125,13 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 
 void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
+#ifdef HDF5_FOUND
+    int           fault_name_datatype;
+
+    // Create the datatype for the fault name strings
+    fault_name_datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(fault_name_datatype, (size_t)NAME_MAX_LEN);
+#endif
 
     field_desc.name = "id";
     field_desc.details = "Unique ID of the fault.";
@@ -132,6 +139,15 @@ void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.offset = HOFFSET(FaultData, _id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "fault_name";
+    field_desc.details = "Name of the Fault.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(FaultData, _name);
+    field_desc.type = fault_name_datatype;
+    field_desc.size = sizeof(char)*NAME_MAX_LEN;
 #endif
     descs.push_back(field_desc);
 
@@ -182,6 +198,7 @@ void quakelib::ModelSection::read_ascii(std::istream &in_stream) {
 void quakelib::ModelFault::read_ascii(std::istream &in_stream) {
     std::stringstream   ss(next_line(in_stream));
     ss >> _data._id;
+    ss >> _data._name;
     ss >> _data._area;
     ss >> _data._length;
 }
@@ -196,6 +213,7 @@ void quakelib::ModelSection::write_ascii(std::ostream &out_stream) const {
 
 void quakelib::ModelFault::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._id << " ";
+    out_stream << _data._name << " ";
     out_stream << _data._area << " ";
     out_stream << _data._length;
 
