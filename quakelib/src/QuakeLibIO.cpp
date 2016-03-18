@@ -111,7 +111,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
     descs.push_back(field_desc);
 
     field_desc.name = "name";
-    field_desc.details = "Name of the fault.";
+    field_desc.details = "Name of the section.";
 #ifdef HDF5_FOUND
     field_desc.offset = HOFFSET(SectionData, _name);
     field_desc.type = section_name_datatype;
@@ -125,6 +125,13 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 
 void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
+#ifdef HDF5_FOUND
+    int           fault_name_datatype;
+
+    // Create the datatype for the fault name strings
+    fault_name_datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(fault_name_datatype, (size_t)NAME_MAX_LEN);
+#endif
 
     field_desc.name = "id";
     field_desc.details = "Unique ID of the fault.";
@@ -132,6 +139,15 @@ void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
     field_desc.offset = HOFFSET(FaultData, _id);
     field_desc.type = H5T_NATIVE_UINT;
     field_desc.size = sizeof(UIndex);
+#endif
+    descs.push_back(field_desc);
+
+    field_desc.name = "fault_name";
+    field_desc.details = "Name of the Fault.";
+#ifdef HDF5_FOUND
+    field_desc.offset = HOFFSET(FaultData, _name);
+    field_desc.type = fault_name_datatype;
+    field_desc.size = sizeof(char)*NAME_MAX_LEN;
 #endif
     descs.push_back(field_desc);
 
@@ -182,6 +198,7 @@ void quakelib::ModelSection::read_ascii(std::istream &in_stream) {
 void quakelib::ModelFault::read_ascii(std::istream &in_stream) {
     std::stringstream   ss(next_line(in_stream));
     ss >> _data._id;
+    ss >> _data._name;
     ss >> _data._area;
     ss >> _data._length;
 }
@@ -196,6 +213,7 @@ void quakelib::ModelSection::write_ascii(std::ostream &out_stream) const {
 
 void quakelib::ModelFault::write_ascii(std::ostream &out_stream) const {
     out_stream << _data._id << " ";
+    out_stream << _data._name << " ";
     out_stream << _data._area << " ";
     out_stream << _data._length;
 
@@ -525,7 +543,7 @@ class TraceSpline {
         };
 };
 
-void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements) {
+void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements, const UIndex &sec_id) {
     Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
     std::vector<UIndex> elem_ids;
     std::set<unsigned int> unused_trace_pts;
@@ -547,6 +565,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     ModelSection &section = new_section();
     section.set_name(section_name);
     section.set_fault_id(fault_id);
+    if (sec_id != -1) section.set_id(sec_id);
 
     // Create a spline with the trace points
     for (i=0; i<num_trace_pts; ++i) {
@@ -811,6 +830,7 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
 
         if (_faults.count(sit->second.fault_id())==0) {
             ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.set_name(sit->second.name()); // Currently uses first section's name as fault name
             fault.set_length(sectionlength);
             fault.set_area(sectionarea);
             fault.insert_section_id(sit->first);
@@ -1136,7 +1156,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
     std::vector<FaultTracePoint>    trace_pts;
     std::string                     cur_section_name;
     unsigned int                    i, num_trace_pts;
-    UIndex                          fault_id;
+    UIndex                          fault_id, sec_id;
     double                          min_lat, min_lon;
 
     // Clear the world first to avoid incorrectly mixing indices
@@ -1154,6 +1174,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
         num_trace_pts = 0;
 
         ss >> fault_id;
+        ss >> sec_id;
         ss >> num_trace_pts;
         ss >> cur_section_name;
 
@@ -1168,7 +1189,7 @@ int quakelib::ModelWorld::read_file_trace_latlon(std::vector<unsigned int> &unus
             min_lon = fmin(min_lon, new_trace_pt.pos().lon());
         }
 
-        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements);
+        new_world.create_section(unused_trace_segments, trace_pts, LatLonDepth(min_lat, min_lon), fault_id, elem_size, cur_section_name, taper_method, resize_trace_elements, sec_id);
         this->insert(new_world);
     }
 
@@ -1187,8 +1208,7 @@ void quakelib::ModelWorld::reset_base_coord(const LatLonDepth &new_base) {
     _base = new_base;
 }
 
-// TODO: Currently only supports sections where top element is at the same depth, change to support more complex faults
-// Also assumes elements will be in order along the trace
+// Assumes elements will be in order along the trace
 // TODO: add element comments to output
 int quakelib::ModelWorld::write_file_trace_latlon(void) {
     eiterator           eit, last_element;
@@ -1280,11 +1300,12 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
 
         // Write the fault header
         out_file << "# fault_id: ID number of the parent fault of this section\n";
+        out_file << "# sec_id: ID number of this section\n";
         out_file << "# num_points: Number of trace points comprising this section\n";
         out_file << "# section_name: Name of the section\n";
 
         // Write out the recorded trace for this fault
-        out_file << sit->fault_id() << " " << trace_pts.size() << " " << sit->name() << "\n";
+        out_file << sit->fault_id() << " " << sit->id() << " " << trace_pts.size() << " " << sit->name() << "\n";
 
         // Write out the trace point header
         out_file << "# latitude: Latitude of trace point\n";
@@ -1304,6 +1325,141 @@ int quakelib::ModelWorld::write_file_trace_latlon(void) {
         // Close the file
         out_file.close();
         std::cout << "Wrote trace file: " << sec_file_name << std::endl;
+    }
+
+    return 0;
+}
+
+// Write a single trace file for each fault; useful for remeshing long faults with many small segments (eg UCERF3)
+//TODO: Keep track of fault names, add those names to the file name and header
+int quakelib::ModelWorld::write_file_trace_latlon_faultwise(void) {
+    eiterator           eit, last_element;
+    siterator           sit;
+    fiterator           fit;
+    UIndex				fid;
+    UIndex              sid;
+    unsigned int        i;
+    double              max_alt, min_alt, depth_along_dip, section_depth, el_height;
+    bool                element_on_trace;
+    Conversion          c;
+    std::string         fault_file_name;
+    std::stringstream	ss;
+
+    // Write traces by fault
+    for (fit=begin_fault(); fit!=end_fault(); ++fit){
+    	std::vector<FaultTracePoint>    trace_pts;
+
+		trace_pts.clear();
+		fid = fit->id();
+
+		std::ofstream out_file;
+		fault_file_name = "trace_"+fit->name()+".txt";
+		out_file.open(fault_file_name.c_str());
+
+
+		for (sit=begin_section(); sit!=end_section(); ++sit) {
+
+			sid = sit->id();
+
+			if (sit->fault_id()==fid){
+
+				// Start by going through all elements
+				max_alt = -DBL_MAX;
+				min_alt = DBL_MAX;
+
+				for (eit=begin_element(sid); eit!=end_element(sid); ++eit) {
+					for (i=0; i<3; ++i) {
+						max_alt = fmax(max_alt, vertex(eit->vertex(i)).xyz()[2]);
+						min_alt = fmin(min_alt, vertex(eit->vertex(i)).xyz()[2]);
+					}
+				}
+
+				// Schultz: Here I am assuming a constant depth for the section.
+				// This should be improved later.
+				section_depth = fabs(max_alt-min_alt);
+
+				// Go through the elements again and grab those which have vertices at the correct depth
+				// TODO: interpolate between elements
+				for (eit=begin_element(sid); eit!=end_element(sid); ++eit) {
+					//Wilson: Sometimes trace points aren't at same height; here we use a quarter-element-height tolerance, or check the trace flag
+					el_height = vertex(eit->vertex(0)).xyz()[2] - vertex(eit->vertex(1)).xyz()[2];
+					element_on_trace = ( (vertex(eit->vertex(0)).xyz()[2] > max_alt-el_height/4.0) && (vertex(eit->vertex(0)).xyz()[2] < max_alt+el_height/4.0) ) || \
+							(vertex(eit->vertex(0)).is_trace() > 0);
+
+					// If the element is on the trace, print it out
+					if (element_on_trace) {
+						Vec<3>      a, b;
+						double      dip_angle;
+						a = vertex(eit->vertex(1)).xyz() - vertex(eit->vertex(0)).xyz();
+						b = vertex(eit->vertex(2)).xyz() - vertex(eit->vertex(0)).xyz();
+						dip_angle = a.cross(b).unit_vector().vector_angle(Vec<3>(0,0,1));
+
+						// Using the dip angle, compute the depth along dip
+						if (dip_angle <= M_PI/2.0) {
+							depth_along_dip = section_depth/sin(dip_angle);
+						} else {
+							depth_along_dip = section_depth/sin(M_PI - dip_angle);
+						}
+
+						FaultTracePoint trace_pt(vertex(eit->vertex(0)).lld(),
+												 depth_along_dip,
+												 c.m_per_sec2cm_per_yr(eit->slip_rate()),
+												 eit->aseismic(),
+												 c.rad2deg(eit->rake()),
+												 c.rad2deg(dip_angle),
+												 eit->lame_mu(),
+												 eit->lame_lambda());
+						trace_pts.push_back(trace_pt);
+						last_element = eit;
+					}
+				}
+
+				Vec<3>      a, b;
+				double      dip_angle;
+				a = vertex(last_element->vertex(1)).xyz() - vertex(last_element->vertex(0)).xyz();
+				b = vertex(last_element->vertex(2)).xyz() - vertex(last_element->vertex(0)).xyz();
+				dip_angle = a.cross(b).unit_vector().vector_angle(Vec<3>(0,0,1));
+				FaultTracePoint trace_pt(vertex(last_element->vertex(2)).lld(),
+										 depth_along_dip,
+										 c.m_per_sec2cm_per_yr(last_element->slip_rate()),
+										 last_element->aseismic(),
+										 c.rad2deg(last_element->rake()),
+										 c.rad2deg(dip_angle),
+										 last_element->lame_mu(),
+										 last_element->lame_lambda());
+				trace_pts.push_back(trace_pt);
+
+			}
+
+		}
+
+        // Write the fault header
+        out_file << "# fault_id: ID number of the parent fault of this section\n";
+        out_file << "# sec_id: ID number of this section\n";
+        out_file << "# num_points: Number of trace points comprising this section\n";
+        out_file << "# section_name: Name of the section\n";
+
+        // Write out the recorded trace for this fault
+        out_file << fid << " " << fid << " " << trace_pts.size() << " " << fit->name() << "\n";
+
+        // Write out the trace point header
+        out_file << "# latitude: Latitude of trace point\n";
+        out_file << "# longitude: Longitude of trace point\n";
+        out_file << "# altitude: Altitude of trace point (meters)\n";
+        out_file << "# depth_along_dip: Depth along dip (meters)\n";
+        out_file << "# slip_rate: Slip rate at trace point (centimeters/year)\n";
+        out_file << "# aseismic: Fraction of slip that is aseismic at point\n";
+        out_file << "# rake: Fault rake at trace point (degrees)\n";
+        out_file << "# dip: Fault dip at trace point (degrees)\n";
+        out_file << "# lame_mu: Lame's mu parameter at trace point (Pascals)\n";
+        out_file << "# lame_lambda: Lame's lambda parameter at trace point (Pascals)\n";
+
+        // And each of the trace points
+        for (i=0; i<trace_pts.size(); ++i) trace_pts[i].write_ascii(out_file);
+
+        // Close the file
+        out_file.close();
+        std::cout << "Wrote trace file: " << fault_file_name << std::endl;
     }
 
     return 0;
@@ -2523,7 +2679,8 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
 
 int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     std::ofstream                                   out_file;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelFault>::const_iterator  	fit;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     LatLonDepth                                     min_bound, max_bound, center;
     Vec<3>                                          min_xyz, max_xyz;
@@ -2568,9 +2725,9 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     out_file << "</Style>\n";
     out_file << "<Folder id=\"fault_names\">\n";
 
-    for (fit=_sections.begin(); fit!=_sections.end(); ++fit) {
-        out_file << "\t<Placemark id=\"section_" << fit->second.id() << "_label\">\n";
-        out_file << "\t\t<name>" << fit->second.id() << " " << fit->second.name() << "</name>\n";
+    for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+        out_file << "\t<Placemark id=\"section_" << sit->second.id() << "_label\">\n";
+        out_file << "\t\t<name>" << sit->second.id() << " " << sit->second.name() << "</name>\n";
         out_file << "\t\t<styleUrl>#sectionLabel</styleUrl>\n";
         out_file << "\t\t<Point>\n";
         out_file << "\t\t\t<extrude>1</extrude>\n";
@@ -2581,7 +2738,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
         ModelVertex     vert;
 
         for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-            if (eit->second.section_id() == fit->second.id()) {
+            if (eit->second.section_id() == sit->second.id()) {
                 for (i=0; i<3; ++i) {
                     cur_alt = _vertices.find(eit->second.vertex(i))->second.lld().altitude();
 
@@ -2618,88 +2775,100 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
     double x_min = min_rate;
     double x_max = max_rate;
 
-    // Go through the sections
-    for (fit=_sections.begin(); fit!=_sections.end(); ++fit) {
-        // And output the elements for each section
-        out_file << "\t<Folder id=\"section_" << fit->first << "\">\n";
-        out_file << "\t\t<name>" << fit->first << " " << fit->second.name() << "</name>\n";
+    // Go through the faults
+    for (fit = _faults.begin(); fit!= _faults.end(); ++fit){
+    	out_file << "\t<Folder id=\"fault_" << fit->first << "\">\n";
+    	out_file << "\t\t<name>" << fit->first << " " << fit->second.name() <<"</name>\n";
 
-        for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
-            if (fit->first == eit->second.section_id()) {
-                LatLonDepth         lld[4];
-                unsigned int        i, npoints;
+    	// Go through the sections
+		for (sit=_sections.begin(); sit!=_sections.end(); ++sit) {
+			// Check if section belongs to this fault
+			if (sit->second.fault_id() == fit->first){
+				// And output the elements for each section
+				out_file << "\t\t<Folder id=\"section_" << sit->first << "\">\n";
+				out_file << "\t\t\t<name>" << sit->first << " " << sit->second.name() << "</name>\n";
 
-                for (i=0; i<3; ++i) {
-                    std::map<UIndex, ModelVertex>::const_iterator   it;
-                    it = _vertices.find(eit->second.vertex(i));
-                    lld[i] = it->second.lld();
-                }
+				for (eit=_elements.begin(); eit!=_elements.end(); ++eit) {
+					if (sit->first == eit->second.section_id()) {
+						LatLonDepth         lld[4];
+						unsigned int        i, npoints;
 
-                // If this is a quad element, calculate the 4th implicit point
-                if (eit->second.is_quad()) {
-                    Vec<3>              xyz[3];
+						for (i=0; i<3; ++i) {
+							std::map<UIndex, ModelVertex>::const_iterator   it;
+							it = _vertices.find(eit->second.vertex(i));
+							lld[i] = it->second.lld();
+						}
 
-                    for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
+						// If this is a quad element, calculate the 4th implicit point
+						if (eit->second.is_quad()) {
+							Vec<3>              xyz[3];
 
-                    lld[3] = lld[2];
-                    lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
-                }
+							for (i=0; i<3; ++i) xyz[i] = c.convert2xyz(lld[i]);
 
-                // Compute blue to red color (RGB)
-                // Keep red scale (min is white, max is red) so red=255
-                // Blue and green are equal and vary from (255 for min vals to 0 for max vals)
-                int blue, green;
-                int red = y_max;
+							lld[3] = lld[2];
+							lld[2] = c.convert2LatLon(xyz[2]+(xyz[1]-xyz[0]));
+						}
 
-                if (eit->second.slip_rate() == 0) {
-                    blue = 0;
-                    green = 0;
-                    red = 0;
-                } else {
-                    int interp_color = (int) linear_interp(eit->second.slip_rate(), x_min, x_max, y_min, y_max);
-                    blue = y_max - interp_color;
-                    green = blue;
-                }
+						// Compute blue to red color (RGB)
+						// Keep red scale (min is white, max is red) so red=255
+						// Blue and green are equal and vary from (255 for min vals to 0 for max vals)
+						int blue, green;
+						int red = y_max;
 
-                // Output the KML format polygon for this element
-                out_file << "\t\t<Placemark>\n";
-                out_file << "\t\t<description>\n";
-                out_file << "Fault name: " << fit->second.name() << "\n";
-                out_file << "Element #: " << eit->second.id() << "\n";
-                out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
-                out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
-                out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
-                out_file << "Aseismic: " << eit->second.aseismic() << "\n";
-                out_file << "\t\t</description>\n";
-                out_file << "\t\t\t<Style>\n";
-                out_file << "\t\t\t\t<LineStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
-                out_file << "\t\t\t\t\t<width>1</width>\n";
-                out_file << "\t\t\t\t</LineStyle>\n";
-                out_file << "\t\t\t\t<PolyStyle>\n";
-                out_file << "\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
-                out_file << "\t\t\t\t</PolyStyle>\n";
-                out_file << "\t\t\t</Style>\n";
-                //out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
-                out_file << "\t\t\t<Polygon>\n";
-                out_file << "\t\t\t\t<extrude>0</extrude>\n";
-                out_file << "\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
-                out_file << "\t\t\t\t<outerBoundaryIs>\n";
-                out_file << "\t\t\t\t\t<LinearRing>\n";
-                out_file << "\t\t\t\t\t\t<coordinates>\n";
-                npoints = (eit->second.is_quad() ? 4 : 3);
+						if (eit->second.slip_rate() == 0) {
+							blue = 0;
+							green = 0;
+							red = 0;
+						} else {
+							int interp_color = (int) linear_interp(eit->second.slip_rate(), x_min, x_max, y_min, y_max);
+							blue = y_max - interp_color;
+							green = blue;
+						}
 
-                for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
+						// Output the KML format polygon for this element
+						out_file << "\t\t\t<Placemark>\n";
+						out_file << "\t\t\t<description>\n";
+						out_file << "Section name: " << sit->second.name() << "\n";
+						out_file << "Element #: " << eit->second.id() << "\n";
+						out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
+						out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
+						out_file << "Rake: " << c.rad2deg(eit->second.rake()) << " degrees\n";
+						out_file << "Aseismic: " << eit->second.aseismic() << "\n";
+						out_file << "\t\t\t</description>\n";
+						out_file << "\t\t\t\t<Style>\n";
+						out_file << "\t\t\t\t\t<LineStyle>\n";
+						out_file << "\t\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+						out_file << "\t\t\t\t\t\t<width>1</width>\n";
+						out_file << "\t\t\t\t\t</LineStyle>\n";
+						out_file << "\t\t\t\t\t<PolyStyle>\n";
+						out_file << "\t\t\t\t\t\t<color>"<< rgb2hex(red, green, blue) <<"</color>\n";
+						out_file << "\t\t\t\t\t</PolyStyle>\n";
+						out_file << "\t\t\t\t</Style>\n";
+						//out_file << "\t\t\t<styleUrl>#baseStyle</styleUrl>\n";
+						out_file << "\t\t\t\t<Polygon>\n";
+						out_file << "\t\t\t\t\t<extrude>0</extrude>\n";
+						out_file << "\t\t\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n";
+						out_file << "\t\t\t\t\t<outerBoundaryIs>\n";
+						out_file << "\t\t\t\t\t\t<LinearRing>\n";
+						out_file << "\t\t\t\t\t\t\t<coordinates>\n";
+						npoints = (eit->second.is_quad() ? 4 : 3);
 
-                out_file << "\t\t\t\t\t\t</coordinates>\n";
-                out_file << "\t\t\t\t\t</LinearRing>\n";
-                out_file << "\t\t\t\t</outerBoundaryIs>\n";
-                out_file << "\t\t\t</Polygon>\n";
-                out_file << "\t\t</Placemark>\n";
-            }
-        }
+						for (i=0; i<npoints+1; ++i) out_file << "\t\t\t\t\t\t\t" << lld[i%npoints].lon() << "," << lld[i%npoints].lat() << "," << max_depth + lld[i%npoints].altitude() << "\n";
 
-        out_file << "\t</Folder>\n";
+						out_file << "\t\t\t\t\t\t\t</coordinates>\n";
+						out_file << "\t\t\t\t\t\t</LinearRing>\n";
+						out_file << "\t\t\t\t\t</outerBoundaryIs>\n";
+						out_file << "\t\t\t\t</Polygon>\n";
+						out_file << "\t\t\t</Placemark>\n";
+					}
+				}
+
+				out_file << "\t\t</Folder>\n";
+			}
+
+		}
+
+		out_file << "\t</Folder>\n";
     }
 
     out_file << "</Folder>\n";

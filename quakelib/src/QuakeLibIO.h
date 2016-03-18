@@ -379,6 +379,7 @@ namespace quakelib {
         UIndex              _id;
         float               _length;
         float               _area;
+        char                _name[NAME_MAX_LEN];
     };
 
     class ModelFault : public ModelIO {
@@ -389,6 +390,8 @@ namespace quakelib {
         public:
             ModelFault(void) {
                 _data._id = INVALID_INDEX;
+                strncpy(_data._name, "(invalid)", NAME_MAX_LEN);
+                _data._name[NAME_MAX_LEN-1] = '\0';
             };
 
             FaultData data(void) const {
@@ -426,6 +429,13 @@ namespace quakelib {
             void set_area(const float &area) {
                 _data._area = area;
             };
+            std::string name(void) const {
+				return _data._name;
+			};
+			void set_name(const std::string &name) {
+				strncpy(_data._name, name.c_str(), NAME_MAX_LEN);
+				_data._name[NAME_MAX_LEN-1] = '\0';
+			};
 
             static void get_field_descs(std::vector<FieldDesc> &descs);
             void write_ascii(std::ostream &out_stream) const;
@@ -1392,7 +1402,8 @@ namespace quakelib {
                                 const float &element_size,
                                 const std::string &section_name,
                                 const std::string &taper_method,
-                                const bool resize_trace_elements);
+                                const bool resize_trace_elements,
+                                const UIndex &sec_id = -1);
 
             void compute_stress_drops(const double &stress_drop_factor);
             void create_faults(const std::string &taper_method);
@@ -1403,6 +1414,7 @@ namespace quakelib {
 
             int read_file_trace_latlon(std::vector<unsigned int> &unused_trace_segments, const std::string &file_name, const float &elem_size, const std::string &taper_method, const bool resize_trace_elements);
             int write_file_trace_latlon(void);
+            int write_file_trace_latlon_faultwise(void);
 
             int read_file_hdf5(const std::string &file_name);
             int write_file_hdf5(const std::string &file_name) const;
