@@ -129,6 +129,28 @@ def standardize_time_series(time_series):
     return (time_series - series_mean)/series_std
 
 
+def get_fault_group_average_time_series_from_pickle(file_list):
+    if not cPickle_available:
+        raise BaseException("\nRequested time series cannot be fetched, cPickle module is not available.")
+    else:
+        num_faults = len(file_list)
+        average_time_series = [] ## create the object used for averaging
+        num_points = 0
+        for i, file_name in enumerate(file_list):
+            this_file = open(file_name, 'r')
+            time_data, time_series = pickle.load(this_file)
+            this_file.close()
+            sys.stdout.write("Read time series from {}\n".format(file_name))
+            if i==0:
+                ## Being slick here and creating the average time series as soon as we know the number of points per time series.
+                ## This should make it faster for very large numbers time series points.
+                num_points = len(time_series)
+                average_time_series = np.zeros(num_points)
+            else:
+                ## If we have read a time series already, make sure we read the same number of data points as the previous series.
+                assert(len(time_series)==num_points)
+            average_time_series += time_series/float(num_faults)
+        return [time_data, average_time_series]
 
 class SaveFile:
     def __init__(self):
@@ -426,12 +448,16 @@ class Geometry:
         CONVERSION = 3.15576*pow(10,7) 
         return {id:self.model.element(id).slip_rate()*CONVERSION for id in elements}
         
+    def get_aseismics(self, elements):
+        return {id:self.model.element(block_id).aseismic() for id in elements}
+        
     def get_slip_time_series(self, events, elements=None, max_year=None, DT=None):
         if max_year is None:
             raise BaseException("Must specify --max_year.")
         # slip_time_series    = dictionary indexed by block_id with entries being arrays of absolute slip at each time step
         # Get slip rates for the elements
         slip_rates = self.get_slip_rates(elements)
+        aseismic_fracs = self.get_aseismics(elements)
         #Initialize blocks with 0.0 slip at time t=0.0
         slip_time_series  = {id:[0.0] for id in elements}
         # Grab the events data
@@ -446,7 +472,7 @@ class Geometry:
                 # back slip all elements by subtracting the slip_rate*dt
                 for block_id in slip_time_series.keys():
                     last_slip = slip_time_series[block_id][k-1]
-                    this_slip = slip_rates[block_id]*DT
+                    this_slip = (1-geometry.model.element(block_id).aseismic())*slip_rates[block_id]*DT
                     slip_time_series[block_id].append(last_slip-this_slip)
                 # check if any elements slip as part of simulated event in the window of simulation time
                 # between (current time - DT, current time), add event slips to the slip at current time 
@@ -492,7 +518,8 @@ class Geometry:
                 # back slip all elements by subtracting the slip_rate*dt
                 for block_id in slip_time_series.keys():
                     last_slip = slip_time_series[block_id][k-1]
-                    this_slip = slip_rates[block_id]*DT
+                    # Must reduce the slip rate by the aseismic fraction.
+                    this_slip = (1-geometry.model.element(block_id).aseismic())*slip_rates[block_id]*DT
                     slip_time_series[block_id][k] = last_slip-this_slip
                 # check if any elements slip as part of simulated event in the window of simulation time
                 # between (current time - DT, current time), add event slips to the slip at current time 
@@ -517,7 +544,7 @@ class Geometry:
         ## Standardize the averaged time series
         standardized_series = standardize_time_series(fault_time_series)
         return standardized_series
-        
+
 
     def get_stress_drops(self):
         return [self.model.element(ele).stress_drop() for ele in self.model.getElementIDs()]
@@ -2832,10 +2859,14 @@ if __name__ == "__main__":
             help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
             help="List of model faults to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
-    parser.add_argument('--group1', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group2. These subsets are used for computing time series correlations.")
-    parser.add_argument('--group2', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group1. These subsets are used for computing time series correlations.")
+    parser.add_argument('--group1_ids', type=int, nargs='+', required=False,
+            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group2_ids. These subsets are used for computing time series correlations.")
+    parser.add_argument('--group2_ids', type=int, nargs='+', required=False,
+            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group1_ids. These subsets are used for computing time series correlations.")
+    parser.add_argument('--group1_files', type=str, nargs='+', required=False,
+            help="List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for computing time series correlations.")
+    parser.add_argument('--group2_files', type=str, nargs='+', required=False,
+            help="List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for computing time series correlations.")
 
     # Statisical plotting arguments
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
@@ -2955,6 +2986,10 @@ if __name__ == "__main__":
             help="Return the slip time series for all specified --elements.")
     parser.add_argument('--fault_time_series', required=False, action='store_true',
             help="Return the average slip time series for all elements on a fault. To specify fault #1, use --use_faults 1.")
+    parser.add_argument('--fault_group_time_series_plot', required=False, action='store_true',
+            help="After using --fault_time_series to save fault time series data for each fault, make a plot of time series averaged over groups of faults by specifying the fault time series files for each group of faults with --group1_files and --group2_files.")
+    parser.add_argument('--fault_group_time_series_correlate', required=False, action='store_true',
+            help="After using --fault_time_series to save fault time series data for each fault, correlate the time series and make a plot by specifying the fault time series files for each group of faults with --group1_files and --group2_files.")
     parser.add_argument('--dt', required=False, type=float, help="Time step for slip rate plots, unit is decimal years.")
     parser.add_argument('--event_kml', required=False, action='store_true',
             help="Save a KML (Google Earth) file of the event elements, colored by event slip.")
@@ -2973,7 +3008,7 @@ if __name__ == "__main__":
     parser.add_argument('--reference', required=False, type=float,
             help="Reference value for numbers relative to some value.")
     parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
-    parser.add_argument('--fault_group_traces', required=False, action='store_true', help="Plot the fault traces on a map for two groups of faults, specified by two lists of fault ids using --group1 and --group2.") 
+    parser.add_argument('--fault_group_traces', required=False, action='store_true', help="Plot the fault traces on a map for two groups of faults, specified by two lists of fault ids using --group1_ids and --group2_ids.") 
             
     # --------- Spacetime plots -----------
     parser.add_argument('--spacetime', required=False, action='store_true',
@@ -3007,7 +3042,7 @@ if __name__ == "__main__":
             raise BaseException("\nMust specify --model_file for fault trace plots")
 
     if args.fault_group_traces:
-        if args.model_file is None or args.group1 is None or args.group2 is None:
+        if args.model_file is None or args.group1_ids is None or args.group2_ids is None:
             raise BaseException("\nMust specify --model_file, --group1, and --group2 for fault group trace plots")
             
     # Check that if either beta or tau is given then the other is also given
@@ -3404,6 +3439,8 @@ if __name__ == "__main__":
         x_data = x_data_list+[[0.0,args.max_year]]
         sys.stdout.write("Building fault slip time series for fault ")
         fault_time_series_data = [geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt) for fid in args.use_faults]
+        sys.stdout.write("done.\n") ## Write that the fault time series computation is finished.
+        sys.stdout.flush()  ## Always flush after you're finished
         ## If the cPickle module is available, pickle each fault time series for easier analysis later.
         ##### This saves the time series to a file that should be read like    time_data, slip_data = pickle.load(file)
         if cPickle_available:
@@ -3433,7 +3470,35 @@ if __name__ == "__main__":
         plt.legend(loc='best', fontsize=10)
         plt.savefig(filename, dpi=args.dpi)
         sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
+
+
+    if args.fault_group_time_series_plot:
+        if args.group1_files is None or args.group2_files is None:
+            raise BaseException("\nMust specify the fault time series files for each group of faults with --group1 and --group2.")
+        time_data_1, average_time_series_1 = get_fault_group_average_time_series_from_pickle(args.group1_files)
+        time_data_2, average_time_series_2 = get_fault_group_average_time_series_from_pickle(args.group2_files)
+        x_data = [time_data_1, time_data_2]
+        y_data = [average_time_series_1, average_time_series_2]
+        labels = ["fault group 1", "fault group 2"]
+        if args.label:
+            labels = ["{}".format(lab) for lab in args.label]
+        styles = ["-", "-"]
+        linewidths = [1.0, 1.0]
+        colors = ['r','b']
+        filename = "fault_group_"+"_".join(args.group1_files[0].split('.pickle')[0].split('fault')[1].split("_")[2:])+".png"
+        fig = plt.figure()
+        BasePlotter().multi_line_plot(fig, x_data, y_data, labels, linewidths, " ", "simulation time [years]", "standardized slip", "", filename, linestyles=styles, colors=colors)
+        plt.legend(loc='best', fontsize=13)
+        plt.savefig(filename, dpi=args.dpi)
+        sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
         
+        
+    if args.fault_group_time_series_correlate:
+        if args.group1_files is None or args.group2_files is None:
+            raise BaseException("\nMust specify the fault time series files for each group of faults with --group1 and --group2.")
+        time_data_1, average_time_series_1 = get_fault_group_average_time_series_from_pickle(args.group1_files)
+        time_data_2, average_time_series_2 = get_fault_group_average_time_series_from_pickle(args.group2_files)
+        total_time = max(time_data_1)-min(time_data_1)
         
 
 
