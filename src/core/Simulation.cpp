@@ -756,7 +756,6 @@ void Simulation::distributeUpdateField(void) {
     for (i=0; i<numLocalBlocks(); ++i) {
         bid = updateFieldSendIDs[i];
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];       // getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
-        // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
 
     // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?

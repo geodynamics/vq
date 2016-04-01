@@ -410,28 +410,22 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     triggerID = sim->getCurrentEvent().getEventTrigger();
     trigger_fault = sim->getBlock(triggerID).getFaultID();
     sweep_num = 0;
-    //
+    
 
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
 
-    //
+    
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
-        // Schultz: Loose_elements have been removed, it was an unecessary modification to the
-        //   dynamic trigger checking.
-        //loose_elements.insert(triggerID);
     }
 
-    //
+    
     // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present)
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
-    //
-    // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
-    unsigned int event_sweeps_pos = 0;
 
-    //
+
     // While there are still failed blocks to handle
     while (more_blocks_to_fail || final_sweep) {
         // Share the failed blocks with other processors to correctly handle
@@ -483,27 +477,27 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // note: setInitStresses() called in processBlocksOrigFail().
         // note: processBlocksOrigFail() is entirely local (no MPI).
         processBlocksOrigFail(sim, event_sweeps);
-        
-        
-        // Schultz:: Do we now need to communicate the updated slip deficits among the processors?
-        
 
-        // Recalculate CFF for all blocks where slipped blocks don't contribute
+        // Now, each process has updated slips for its elements but only that process has the update.
+        // We must communicate these updates among all processes.
         for (it=sim->begin(); it!=sim->end(); ++it) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
-
-            ////////// Schultz:
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            ///////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slips computed in processBlocksOrigFail().
-            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            // Although we are adding slip deficits for all elements not just the local ones, when we execute the 
+            //   distributeUpdateField() command below only the local elements are selected.
         }
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
+
+
 
         /////////////
         // Schultz:: VC used this to set the dynamic triggering factor for ruptured element neighbors to the simulation parameter value,
@@ -523,10 +517,13 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         //            }
         //        }
 
-        //
+        
+        
         // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
         // multiply greenSchear() x getUpdateFieldPtr() --> getShearStressPtr() ... right?
-        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to (i think) sim->getRhogd(gid) -- see code a couple paragraphs above.
+        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to sim->getRhogd(gid) -- see code a couple paragraphs above.
+        //
+        // The following matrix operation adds in normal/shear changes due to the current slip deficits and the Greens function interaction matrix.
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
@@ -541,11 +538,16 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sim->computeCFFs();
 
-        // ------------------------------------
+
+
+
+        // ------------------------------------------------------------------------------------------------------------
         // Schultz:: The directive from Rundle is to simplify VQ back to the VC rupture model. 
         //    This means pulling out secondary failures.
-        // ------------------------------------
+        //
+        //
         // Create the matrix equation, including interactions, and solve the system for slips
+        /*
         processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
@@ -582,45 +584,14 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         //
         sim->computeCFFs();
-        //
-        // Record the final stresses of blocks that failed during this sweep
-        BlockIDProcMapping::iterator        fit;
-
-        //
-        // yoder: there are a  couple ways to see that we loop over all the necessary elements. here's an approach that starts with the original code.
-        // i recommend leaving these comments in place for a revision or two, just until we make a final decision about how we're going to do this
-        // (process these two populations of block failures).
-        //
-        // this is the original code, to loop over all new failures. nominally, we want to do this plus loop over secondary failures as well.
-        // this loop ignores all secondary slip events. do we loop over a different list, or do we need to maintain a collective global_failed_element list (aka,
-        // not re-initialize it every sweep)? ... and of course, we must ask: is this by design? can we loop over event_sweeps (or at least new entries therein) directly?
-        /*
-        for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
-            if (sim->isLocalBlockID(fit->first)) {
-                printf("**Debug: setFinalStresses(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
-                event_sweeps.setFinalStresses(sweep_num,
-                                              fit->first,
-                                              sim->getShearStress(fit->first),
-                                              sim->getNormalStress(fit->first));
-            }
-        }
-        // yoder: now, this loops over a global list of secondary failures (which has/d been moved to a class-wide declaration, if this is how we want to handle this).
-        for (fit=global_secondary_id_list.begin(); fit!=global_secondary_id_list.end(); ++fit) {
-            if (sim->isLocalBlockID(fit->first)) {
-                printf("**Debug: setFinalStresses_secondary(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
-                //if (not fit->_slip>0) {continue;};        // note: i think nan will always throw a false, so this should work for both nan and <=0.
-                event_sweeps.setFinalStresses(sweep_num,
-                                              fit->first,
-                                              sim->getShearStress(fit->first),
-                                              sim->getNormalStress(fit->first));
-            }
-        }
         */
-        //
-        //
+        // ------------------------------------------------------------------------------------------------------------
+        
+        
+        
         // and this loop updates final_stress values by looping directly over the current sweeps list.
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
-        for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
+        for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it) {
             //
             // yoder: as per request by KS, change std::isnan() --> std::isnan(); std::isnan() appears to throw an error on some platforms.
             // Eric: Probably don't need this if check
