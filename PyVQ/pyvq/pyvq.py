@@ -492,7 +492,7 @@ class Geometry:
         return slip_time_series
         
         
-    def get_standardized_fault_averaged_slip_time_series(self, events, fault_id=None, max_year=None, DT=1.0):
+    def get_fault_averaged_slip_time_series(self, events, fault_id=None, max_year=None, DT=1.0, standardized=False):
         if max_year is None: raise BaseException("Must specify --max_year.")
         sys.stdout.write("{}...".format(fault_id)) # Update the console as to which fault we are processing now.
         sys.stdout.flush()  ## Make sure the status prints right now and doesn't lag due to hi CPU demand
@@ -542,8 +542,12 @@ class Geometry:
             fault_time_series += slip_time_series[ele_id]/num_elements
         
         ## Standardize the averaged time series
-        standardized_series = standardize_time_series(fault_time_series)
-        return standardized_series
+        if standardized:
+            return standardize_time_series(fault_time_series)
+        else:
+            return fault_time_series
+            
+        
 
 
     def get_stress_drops(self):
@@ -646,6 +650,7 @@ class Events:
             # Reading in via QuakeLib
             #if not h5py_available:
             self._events = quakelib.ModelEventSet()
+            sys.stdout.write("Reading the HDF5 event file.....".format(event_file))
             self._events.read_file_hdf5(event_file)
             sys.stdout.write("Read in events via QuakeLib from {}\n".format(event_file))
             # Reading via h5py
@@ -654,7 +659,9 @@ class Events:
             #    sys.stdout.write("Read in events via h5py from {}".format(event_file))
         elif event_file_type == "text" and sweep_file != None:
             self._events = quakelib.ModelEventSet()
+            sys.stdout.write("Reading the TEXT event file.....".format(event_file))
             self._events.read_file_ascii(event_file, sweep_file)
+            sys.stdout.write("Read in events via QuakeLib from {}\n".format(event_file))
         else:
             raise BaseException("\nevent_file_type must be hdf5 or text. If text, a sweep_file is required.")
             
@@ -2984,6 +2991,8 @@ if __name__ == "__main__":
             help="List of elements for filtering.")
     parser.add_argument('--slip_time_series', required=False, action='store_true',
             help="Return the slip time series for all specified --elements.")
+    parser.add_argument('--standardized', required=False, action='store_true',
+            help="Standardize the time series by subtracting the mean and dividing by the standard deviation.")            
     parser.add_argument('--fault_time_series', required=False, action='store_true',
             help="Return the average slip time series for all elements on a fault. To specify fault #1, use --use_faults 1.")
     parser.add_argument('--fault_group_time_series_plot', required=False, action='store_true',
@@ -3435,10 +3444,12 @@ if __name__ == "__main__":
     if args.fault_time_series:
         if args.use_faults is None: raise BaseException("\nMust specify fault id, e.g. --use_faults 33")
         if args.dt is None: args.dt = 5  # Unit is decimal years
+        standardized = args.standardized
+        if args.standardized is None: standardized=False
         x_data_list = [list(np.arange(0.0, args.max_year+args.dt, args.dt)) for fault_id in args.use_faults]
         x_data = x_data_list+[[0.0,args.max_year]]
         sys.stdout.write("Building fault slip time series for fault ")
-        fault_time_series_data = [geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt) for fid in args.use_faults]
+        fault_time_series_data = [geometry.get_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt, standardized=standardized) for fid in args.use_faults]
         sys.stdout.write("done.\n") ## Write that the fault time series computation is finished.
         sys.stdout.flush()  ## Always flush after you're finished
         ## If the cPickle module is available, pickle each fault time series for easier analysis later.
@@ -3447,7 +3458,7 @@ if __name__ == "__main__":
             for i,time_series in enumerate(fault_time_series_data):
                 fault_ID = args.use_faults[i]
                 time_values = x_data_list[i]
-                pickle_file_name = SaveFile().fault_time_series_pickle(args.event_file, fault_ID, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, combine=False, dt=args.dt, standardized=True)
+                pickle_file_name = SaveFile().fault_time_series_pickle(args.event_file, fault_ID, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, combine=False, dt=args.dt, standardized=standardized)
                 pickle_file = open(pickle_file_name, 'wb')
                 pickle.dump([time_values,time_series], pickle_file)
                 pickle_file.close()
@@ -3464,9 +3475,15 @@ if __name__ == "__main__":
             labels = ["{}".format(lab) for lab in args.label]+[""]
         else:
             labels = ["Fault {}".format(fid) for fid in args.use_faults]+[""]
-        filename = SaveFile().time_series_plot(args.event_file, "standardized_Faults{}".format(fault_label), min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, dt=args.dt)
+        file_label = "Faults{}".format(fault_label)
+        if standardized:
+            file_label = "standardized_"+file_label
+            y_label = "standardized cumulative slip"
+        else:
+            y_label = "cumulative slip [m]"
+        filename = SaveFile().time_series_plot(args.event_file, file_label, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, dt=args.dt)
         fig = plt.figure()
-        BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", "standardized slip", "", filename, linestyles=styles)
+        BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", y_label, "", filename, linestyles=styles)
         plt.legend(loc='best', fontsize=10)
         plt.savefig(filename, dpi=args.dpi)
         sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
