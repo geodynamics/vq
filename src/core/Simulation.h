@@ -231,7 +231,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             R = sqrt(fault_length*fault_length + fault_width*fault_width);
             nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
 
-            // Get current expected slip from the current event area
+            // Get current expected slip from the current event area (M vs A relations use A in km^2)
             char_magnitude = 4.0+log10(current_event_area*1e-6) + stressDropFactor();
             char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(getBlock(gid).lame_mu()*current_event_area);
 
