@@ -171,10 +171,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! (where significant is defined in terms of dynamic_val).
         bool dynamicFailure(const BlockID gid, const FaultID event_fault) const {
             return (getBlock(gid).getFaultID() == event_fault &&
-                    cff[gid] > cff0[gid] &&
-                    // Schultz: Removing this absolute value, we only want to allow dynamic failure
-                    //   for stress increases.
-                    (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
+                    cff[gid] > cff0[gid] && (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
+                    // Schultz: Removing the absolute value around (cff0[gid]-cff[gid]), 
+                    //       we only want to allow dynamic failure for stress increases.
         }
 
         //! Calculate the expected recurrence of this block in years.
@@ -231,7 +230,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             R = sqrt(fault_length*fault_length + fault_width*fault_width);
             nu = 0.5*getBlock(gid).lame_lambda()/(getBlock(gid).lame_mu() + getBlock(gid).lame_lambda());
 
-            // Get current expected slip from the current event area
+            // Get current expected slip from the current event area (M vs A relations use A in km^2)
             char_magnitude = 4.0+log10(current_event_area*1e-6) + stressDropFactor();
             char_slip = pow(10, (3.0/2.0)*(char_magnitude+6.0))/(getBlock(gid).lame_mu()*current_event_area);
 
