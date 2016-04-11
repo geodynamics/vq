@@ -420,6 +420,11 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     double current_event_area = sim->getBlock(triggerID).area();
     all_event_blocks.insert(triggerID);
     
+    
+    ///// DEBUG OUTPUT //////////
+    sim->console() << std::endl << "Initialized all_event_blocks and current area [km^2] is :" << current_event_area/1000000.0 << std::endl;
+    ///// DEBUG OUTPUT //////////
+    
 
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
@@ -440,6 +445,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
+
+
+        ///// DEBUG OUTPUT //////////
+        sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area [km^2] = " << current_event_area/1000000.0 << std::endl;
+        ///// DEBUG OUTPUT //////////
+
 
 
         ///////////////////////////////////////////////////////////////////
