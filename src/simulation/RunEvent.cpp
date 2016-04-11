@@ -417,7 +417,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     // Keep track of all the elements that have slipped in the event.
     // Use this to determine current event area.
     quakelib::ElementIDSet all_event_blocks;
-    double current_event_area = 0.0;
+    double current_event_area = sim->getBlock(triggerID).area();
+    all_event_blocks.insert(triggerID);
     
 
     // Clear the list of failed blocks, and add the trigger block
