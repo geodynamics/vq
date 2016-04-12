@@ -448,7 +448,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
 
         ///// DEBUG OUTPUT //////////
-        sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area [km^2] = " << current_event_area/1000000.0 << std::endl;
+        sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area/Fault Area = " << current_event_area/sim->getFaultArea(sim->getBlock(triggerID).getFaultID()) << std::endl;
         ///// DEBUG OUTPUT //////////
 
 
@@ -481,11 +481,21 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             }
 
             for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
-                if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
+                if (current_event_area < 0.95*(sim->getFaultArea(sim->getBlock(*cit).getFaultID()))) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
                     sim->setStressDrop(*cit, dynamicStressDrop);
+                    
+                    ///// DEBUG OUTPUT //////////
+                    sim->console() << "Element " << *cit << "   Stress Drop/Max Drop = " << sim->getStressDrop(*cit)/sim->getMaxStressDrop(*cit) << "  " << std::endl;
+                    ///// DEBUG OUTPUT //////////
+                    
+                    
                 } else {
+                    ///// DEBUG OUTPUT //////////
+                    sim->console() << "=====Event area = Fault area =======" << std::endl;
+                    ///// DEBUG OUTPUT //////////
+                    
                     sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
                 }
             }
