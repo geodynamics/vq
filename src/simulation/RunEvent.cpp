@@ -33,12 +33,6 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
 
-        // Heien: Blocks can only fail once per event, after that they slide freely
-        //  !!! NEW !!!!
-        // Schultz: Let's allow multiple failures, allowing CFF to adjust our stress available for slip.
-        //if (sim->getFailed(gid)) continue;
-        //  !!! NEW !!!!
-
         // Add this block if it has a static CFF failure
         add = sim->cffFailure(gid) ||  sim->dynamicFailure(gid, trigger_fault);
 
@@ -48,17 +42,11 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         // Allow dynamic failure if the block is "loose" (next to a previously failed block)
         //if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
-
-        // Schultz: We may also want to limit the number of failures per block per event.
-        //   VC implemented a limit of 10 failures per block per event. VC's code pasted below::::
-        //         if(add && num_failures[gid] < 10) {
-		//              num_failures[gid] += 1;
-        //              sim->getBlock(gid).setFailed(true);
-        //              sim->getBlock(gid).setFailedThisSweep(true);
-		//              blocks2fail.insert(gid);
-		//          }
-
-        if (add) {
+        //  !!! NEW !!!!
+        // Schultz: We want to limit the number of failures per block per event.
+        //   VC implemented a limit of 10 failures per block per event. 
+        if (add && num_failures[gid] < 10) {
+            num_failures[gid] += 1;
             sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
         }
@@ -183,6 +171,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
+        num_failures[triggerID] += 1;
         sim->setFailed(triggerID, true);
     }
 
@@ -232,7 +221,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             }
 
             for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
-                if (current_event_area < 0.95*(sim->getFaultArea(sim->getBlock(*cit).getFaultID()))) {
+                if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
                     sim->setStressDrop(*cit, dynamicStressDrop);
@@ -548,6 +537,10 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Save stress information at the beginning of the event
     // This is used to determine dynamic block failure
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->saveStresses(sim->getGlobalBID(lid));
+
+    // Schultz: Clear the number of failures counter
+    //  !!! NEW !!!!
+    num_failures.clear();
 
     // If there's a specific block that triggered the event, it's a static stress failure type event
     //sim->barrier();
