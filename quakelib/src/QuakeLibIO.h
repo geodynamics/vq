@@ -65,7 +65,7 @@ namespace quakelib {
         std::string details;
 #ifdef HDF5_FOUND
         size_t      offset;
-        int       type;
+        hid_t       type;
         size_t      size;
 #endif
     };
