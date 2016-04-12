@@ -95,9 +95,6 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
             num_bins = 100
     x = np.array(x)
     y = np.array(y)
-    #if np.min(x) == 0:
-    #    bin_min = 1
-    #else:
     if log_bin: bin_min = math.floor(math.log(np.min(x),10))
     else: bin_min = math.floor(np.min(x))
     if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
@@ -107,10 +104,11 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     inds = np.digitize(x, bins)
     binned_data = {}
     for n, i in enumerate(inds):
+        # i-> i-1, bins are 1-indexed, want arrays storing 0-indexed stuff
         try:
-            binned_data[i].append(y[n])
+            binned_data[i-1].append(y[n])
         except KeyError:
-            binned_data[i] = [y[n]]
+            binned_data[i-1] = [y[n]]
     x_ave = []
     y_ave = []
     for k in sorted(binned_data.keys()):
