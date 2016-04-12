@@ -772,11 +772,17 @@ class Events:
     def event_final_normal_stresses(self):
         return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]  
         
-    def number_of_sweeps(self):
+    def number_of_sweep_records(self):
         return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
-    def get_num_sweeps(self, evnum):
+    def get_num_sweep_records(self, evnum):
         return self._events[evnum].getNumRecordedSweeps()
+        
+    def number_of_sweeps(self):
+        return [self._events[evnum].getMaxSweepNum() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
+
+    def get_num_sweeps(self, evnum):
+        return self._events[evnum].getMaxSweepNum()
 
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
