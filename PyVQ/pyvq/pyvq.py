@@ -95,9 +95,6 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
             num_bins = 100
     x = np.array(x)
     y = np.array(y)
-    #if np.min(x) == 0:
-    #    bin_min = 1
-    #else:
     if log_bin: bin_min = math.floor(math.log(np.min(x),10))
     else: bin_min = math.floor(np.min(x))
     if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
@@ -107,10 +104,11 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     inds = np.digitize(x, bins)
     binned_data = {}
     for n, i in enumerate(inds):
+        # i-> i-1, bins are 1-indexed, want arrays storing 0-indexed stuff
         try:
-            binned_data[i].append(y[n])
+            binned_data[i-1].append(y[n])
         except KeyError:
-            binned_data[i] = [y[n]]
+            binned_data[i-1] = [y[n]]
     x_ave = []
     y_ave = []
     for k in sorted(binned_data.keys()):
@@ -774,11 +772,17 @@ class Events:
     def event_final_normal_stresses(self):
         return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]  
         
-    def number_of_sweeps(self):
+    def number_of_sweep_records(self):
         return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
-    def get_num_sweeps(self, evnum):
+    def get_num_sweep_records(self, evnum):
         return self._events[evnum].getNumRecordedSweeps()
+        
+    def number_of_sweeps(self):
+        return [self._events[evnum].getMaxSweepNum() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
+
+    def get_num_sweeps(self, evnum):
+        return self._events[evnum].getMaxSweepNum()
 
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
