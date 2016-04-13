@@ -45,10 +45,10 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         //  !!! NEW !!!!
         // Schultz: We want to limit the number of failures per block per event.
         //   VC implemented a limit of 10 failures per block per event. 
-        if (add && num_failures[gid] < 10) {
-            num_failures[gid] += 1;
+        if (add && num_failures[gid] < sim->getFailLimit()) {
             sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
+            num_failures[gid] += 1;
         }
     }
 }
@@ -515,25 +515,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeUpdateField();
 
 
-
-        /////////////
-        // Schultz:: VC used this to set the dynamic triggering factor for ruptured element neighbors to the simulation parameter value,
-        // and set non-neighbors to double that. But that seems unphysical. Until verified, it's removed.
-        ////////////
-        // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
-        //        for (it=sim->begin(); it!=sim->end(); ++it) {
-        //            BlockID gid = it->getBlockID();
-        //
-        //            // Add block neighbors if the block has slipped
-        //            if (sim->getFailed(gid)) {
-        //                nbr_start_end = sim->getNeighbors(gid);
-        //
-        //                for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
-        //                    loose_elements.insert(*nit);
-        //                }
-        //            }
-        //        }
-
         
         
         // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
@@ -790,6 +771,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Schultz: Clear the number of failures counter
     //  !!! NEW !!!!
     num_failures.clear();
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) num_failures[sim->getGlobalBID(lid)] = 0;
 
     // If there's a specific block that triggered the event, it's a static stress failure type event
     //sim->barrier();
