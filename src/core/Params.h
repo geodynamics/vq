@@ -248,6 +248,10 @@ class VCParams {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
 
+        int getFailLimit(void) const {
+            return params.read<int>("sim.friction.num_element_fails");
+        };
+
         // Schultz: Cellular automata model means we don't use interactions in secondary rupture model
         //   matrix solutions for slip. AKA: True = Michael's VC type, False: Eric's VQ type
         //        bool doCellularAutomata(void) const {
