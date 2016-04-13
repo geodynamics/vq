@@ -135,7 +135,7 @@ void solve_it(int n, double *x, double *A, double *b) {
     }
 }
 
-void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps) {
+void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps, double &current_event_area, quakelib::ElementIDSet &all_event_blocks) {
     // yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
     // logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
     // 1) first, distribute the A,B arrays (an array and a vector) between the nodes.
@@ -184,9 +184,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // ==== DYNAMIC STRESS DROPS ========== 
     // Schultz: now that we know how many elements are involved, assign dynamic stress drops
     if (sim->doDynamicStressDrops()) {
-        double current_event_area = 0.0;
         double dynamicStressDrop;
-        quakelib::ElementIDSet current_blocks;
         quakelib::ElementIDSet::const_iterator cit;
         BlockIDProcMapping::const_iterator  bit;
 
@@ -194,22 +192,22 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // Add in global_failed_elements
         for (bit=global_failed_elements.begin(); bit!=global_failed_elements.end(); ++bit) {
             // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
+            if (!all_event_blocks.count(bit->first)) {
                 current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
+                all_event_blocks.insert(bit->first);
             }
         }
 
         // Also add in the area from the secondary failed elements
         for (bit=global_secondary_id_list.begin(); bit!=global_secondary_id_list.end(); ++bit) {
             // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
+            if (!all_event_blocks.count(bit->first)) {
                 current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
+                all_event_blocks.insert(bit->first);
             }
         }
 
-        for (cit=current_blocks.begin(); cit!=current_blocks.end(); ++cit) {
+        for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
             if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                 // If the current area is smaller than the section area, scale the stress drop
                 dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
@@ -219,6 +217,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             }
         }
     }
+    // Note: For multiprocessing, we do not need to distribute/communicate these changes to the stress drops.
+    // We have computed new stress drops for our local elements, and when we communicate the b-vector around,
+    // the appropriate stress drops will be communicated to other processors. 
 
 
     //int num_local_failed = local_id_list.size();

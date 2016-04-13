@@ -39,7 +39,7 @@ class RunEvent : public SimPlugin {
         std::map<BlockID, unsigned int> num_failures;
         
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
-        void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
+        void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps, double &current_event_area, quakelib::ElementIDSet &all_event_blocks);
         void processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps);
         virtual void markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(Simulation *sim);
