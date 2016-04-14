@@ -77,7 +77,7 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
             // So if stress_drop > 0, the element shouldn't be slipping. We must allow it to happen if it does.
             // Perhaps the system needs this due to element loading thru interactions.
-            //if (slip < 0) slip = 0;
+            if (slip < 0) slip = 0;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
