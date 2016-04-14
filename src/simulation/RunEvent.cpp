@@ -85,10 +85,8 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             slip = (stress_drop/sim->getSelfStresses(gid));
 
             ////// Schultz:
-            // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
-            // So if stress_drop > 0, the element shouldn't be slipping. We must allow it to happen if it does.
-            // Perhaps the system needs this due to element stress loading thru interactions.
-            //if (slip < 0) slip = 0;
+            // Do not allow negative slips, it prevents regularity for single fault case.
+            if (slip < 0) slip = 0;
 
             // Record how much the block slipped in this sweep and initial stresses
             sweeps.setSlipAndArea(sweep_num,
@@ -135,7 +133,7 @@ void solve_it(int n, double *x, double *A, double *b) {
     }
 }
 
-void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps, double &current_event_area, quakelib::ElementIDSet &all_event_blocks) {
+void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     // yoder:  This bit of code is a likely candidate for the heisenbug/heisen_hang problem. basically, i think the is_root(),send/receive
     // logic loop has a tendency to get hung up for complex operations. revise that code block, nominally into two "isRoot()" blocks.
     // 1) first, distribute the A,B arrays (an array and a vector) between the nodes.
@@ -369,21 +367,22 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
         //
         ////// Schultz:
-        // We may be destabilizing the system here if the solution includes negative slipped elements.
-        // We cannot solve the whole system then throw out a few elements.
+        // Must not allow negative slips. It prevents periodicity in single fault sims.
+        if (slip > 0) {
 
-        // Record how much the block slipped in this sweep and initial stresses
-        sweeps.setSlipAndArea(sweep_num,
-                              *it,
-                              slip,
-                              block.area(),
-                              block.lame_mu());
-        sweeps.setInitStresses(sweep_num,
-                               *it,
-                               sim->getShearStress(*it),
-                               sim->getNormalStress(*it));
-        //
-        sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
+            // Record how much the block slipped in this sweep and initial stresses
+            sweeps.setSlipAndArea(sweep_num,
+                                  *it,
+                                  slip,
+                                  block.area(),
+                                  block.lame_mu());
+            sweeps.setInitStresses(sweep_num,
+                                   *it,
+                                   sim->getShearStress(*it),
+                                   sim->getNormalStress(*it));
+            //
+            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
+        }
     }
 
     //
@@ -414,23 +413,21 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     triggerID = sim->getCurrentEvent().getEventTrigger();
     trigger_fault = sim->getBlock(triggerID).getFaultID();
     sweep_num = 0;
-    
-    // Keep track of all the elements that have slipped in the event.
-    // Use this to determine current event area.
-    quakelib::ElementIDSet all_event_blocks;
-    double current_event_area = sim->getBlock(triggerID).area();
-    all_event_blocks.insert(triggerID);
-    
 
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
-
     
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
-
+    
+    // Keep track of all the elements that have slipped in the event.
+    // Use this to determine current event area.
+    double current_event_area = sim->getBlock(triggerID).area();
+    all_event_blocks.clear();
+    all_event_blocks.insert(triggerID);
+    
     
     // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present)
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
@@ -552,7 +549,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         //
         // Create the matrix equation, including interactions, and solve the system for slips
-        processBlocksSecondaryFailures(sim, event_sweeps, current_event_area, all_event_blocks);
+        processBlocksSecondaryFailures(sim, event_sweeps);
 
         // Set the update field to the slip of all blocks
         for (it=sim->begin(); it!=sim->end(); ++it) {
