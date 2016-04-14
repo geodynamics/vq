@@ -544,16 +544,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->computeCFFs();
 
 
-
-
-        // ------------------------------------------------------------------------------------------------------------
-        // Schultz:: The directive from Rundle is to simplify VQ back to the VC rupture model. 
-        //    This means pulling out secondary failures.
-        //
         //
         // Create the matrix equation, including interactions, and solve the system for slips
-        /*
-        processBlocksSecondaryFailures(sim, event_sweeps);
+        processBlocksSecondaryFailures(sim, event_sweeps, current_event_area, all_event_blocks);
 
         // Set the update field to the slip of all blocks
         for (it=sim->begin(); it!=sim->end(); ++it) {
@@ -589,7 +582,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         //
         sim->computeCFFs();
-        */
+
         // ------------------------------------------------------------------------------------------------------------
         
         
