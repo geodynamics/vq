@@ -33,9 +33,6 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
 
-        // Blocks can only fail once per event, after that they slide freely
-        if (sim->getFailed(gid)) continue;
-
         // Add this block if it has a static CFF failure
         add = sim->cffFailure(gid) ||  sim->dynamicFailure(gid, trigger_fault);
 
@@ -45,19 +42,13 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         // Allow dynamic failure if the block is "loose" (next to a previously failed block)
         //if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
-
-        // Schultz: We may also want to limit the number of failures per block per event.
-        //   VC implemented a limit of 10 failures per block per event. VC's code pasted below::::
-        //         if(add && num_failures[gid] < 10) {
-		//              num_failures[gid] += 1;
-        //              sim->getBlock(gid).setFailed(true);
-        //              sim->getBlock(gid).setFailedThisSweep(true);
-		//              blocks2fail.insert(gid);
-		//          }
-
-        if (add) {
+        //  !!! NEW !!!!
+        // Schultz: We want to limit the number of failures per block per event.
+        //   VC implemented a limit of 10 failures per block per event. 
+        if (add && num_failures[gid] < sim->getFailLimit()) {
             sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
+            num_failures[gid] += 1;
         }
     }
 }
@@ -411,6 +402,17 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     trigger_fault = sim->getBlock(triggerID).getFaultID();
     sweep_num = 0;
     
+    // Keep track of all the elements that have slipped in the event.
+    // Use this to determine current event area.
+    quakelib::ElementIDSet all_event_blocks;
+    double current_event_area = sim->getBlock(triggerID).area();
+    all_event_blocks.insert(triggerID);
+    
+    
+    ///// DEBUG OUTPUT //////////
+    //sim->console() << std::endl << "Initialized all_event_blocks and current area [km^2] is :" << current_event_area/1000000.0 << std::endl;
+    ///// DEBUG OUTPUT //////////
+    
 
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
@@ -418,6 +420,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
+        num_failures[triggerID] += 1;
         sim->setFailed(triggerID, true);
     }
 
@@ -433,6 +436,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
 
 
+        ///// DEBUG OUTPUT //////////
+        //sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area/Fault Area = " << current_event_area/sim->getFaultArea(sim->getBlock(triggerID).getFaultID()) << std::endl;
+        ///// DEBUG OUTPUT //////////
+
+
+
         ///////////////////////////////////////////////////////////////////
         // Schultz:: Uncomment the following to write out simulation variables during a simulation
         //     that are other wise unobservable.
@@ -446,9 +455,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // ==== DYNAMIC STRESS DROPS ========== 
         // Schultz: now that we know how many elements are involved, assign dynamic stress drops
         if (sim->doDynamicStressDrops()) {
-            double current_event_area = 0.0;
             double dynamicStressDrop;
-            quakelib::ElementIDSet current_blocks;
             quakelib::ElementIDSet::const_iterator cit;
             BlockIDProcMapping::const_iterator  bit;
 
@@ -456,18 +463,28 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // Add in global_failed_elements
             for (bit=global_failed_elements.begin(); bit!=global_failed_elements.end(); ++bit) {
                 // Avoid double counting
-                if (!current_blocks.count(bit->first)) {
+                if (!all_event_blocks.count(bit->first)) {
                     current_event_area += sim->getBlock(bit->first).area();
-                    current_blocks.insert(bit->first);
+                    all_event_blocks.insert(bit->first);
                 }
             }
 
-            for (cit=current_blocks.begin(); cit!=current_blocks.end(); ++cit) {
+            for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
                 if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
                     sim->setStressDrop(*cit, dynamicStressDrop);
+                    
+                    ///// DEBUG OUTPUT //////////
+                    //sim->console() << "Element " << *cit << "   Stress Drop/Max Drop = " << sim->getStressDrop(*cit)/sim->getMaxStressDrop(*cit) << "  " << std::endl;
+                    ///// DEBUG OUTPUT //////////
+                    
+                    
                 } else {
+                    ///// DEBUG OUTPUT //////////
+                    //sim->console() << "=====Event area = Fault area =======" << std::endl;
+                    ///// DEBUG OUTPUT //////////
+                    
                     sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
                 }
             }
@@ -497,25 +514,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
 
-
-
-        /////////////
-        // Schultz:: VC used this to set the dynamic triggering factor for ruptured element neighbors to the simulation parameter value,
-        // and set non-neighbors to double that. But that seems unphysical. Until verified, it's removed.
-        ////////////
-        // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
-        //        for (it=sim->begin(); it!=sim->end(); ++it) {
-        //            BlockID gid = it->getBlockID();
-        //
-        //            // Add block neighbors if the block has slipped
-        //            if (sim->getFailed(gid)) {
-        //                nbr_start_end = sim->getNeighbors(gid);
-        //
-        //                for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
-        //                    loose_elements.insert(*nit);
-        //                }
-        //            }
-        //        }
 
         
         
@@ -769,6 +767,11 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // Save stress information at the beginning of the event
     // This is used to determine dynamic block failure
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->saveStresses(sim->getGlobalBID(lid));
+
+    // Schultz: Clear the number of failures counter
+    //  !!! NEW !!!!
+    num_failures.clear();
+    for (lid=0; lid<sim->numLocalBlocks(); ++lid) num_failures[sim->getGlobalBID(lid)] = 0;
 
     // If there's a specific block that triggered the event, it's a static stress failure type event
     //sim->barrier();

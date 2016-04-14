@@ -35,7 +35,9 @@ class RunEvent : public SimPlugin {
         // Schultz: Removing this for now, VC did not use this.
         //quakelib::ElementIDSet  loose_elements;
         unsigned int            sweep_num;
-        //
+        // Keep track of the number of failures per element during an event
+        std::map<BlockID, unsigned int> num_failures;
+        
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps);
