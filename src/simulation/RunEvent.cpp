@@ -76,7 +76,6 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
 
-            // ORIGINAL ----------------------------------------
             ///// Schultz:
             // Even if we're doing dynamic stress drops, they've already been adjusted before this method
             // has been called.
@@ -84,10 +83,6 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
 
             // Slip is in m
             slip = (stress_drop/sim->getSelfStresses(gid));
-
-            // Schultz:: HACK HACK HACK
-            // Since we are setting slip decficit to zero later after this method finishes, record that amount of slip.
-            slip = -1.0*(sim->getSlipDeficit(gid));
 
             ////// Schultz:
             // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
@@ -497,8 +492,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            // ORIGINAL
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
             
             ///////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
@@ -506,7 +500,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // the current slip of all elements, or else we throw away the slips computed in processBlocksOrigFail().
             /////// Uncommenting the line below, and commenting out the setUpdateField command above causes the simulation to
             ///     have large magnitude runaway sequence.
-            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
             // Although we are adding slip deficits for all elements not just the local ones, when we execute the 
             //   distributeUpdateField() command below only the local elements are selected.
         }
