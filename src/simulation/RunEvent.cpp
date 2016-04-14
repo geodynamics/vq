@@ -299,7 +299,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 // send these values to node-rank jt->second:
                 // yoder: try using synchronous send, MPI_Ssend()
                 //MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                /// THIS WAS THE FIX FOR HEISENBUG ////////////////////////
                 MPI_Ssend(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                //////////////////////////////////////////////////////////
 #else
                 assertThrow(false, "Single processor version of code, but faults mapped to multiple   processors.");
 #endif
@@ -325,6 +327,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             // yoder: We must use synchronous MPI_Ssend() (this waits for all processors to report back before proceeding).
             //MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             //MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            /// THIS WAS THE FIX FOR HEISENBUG ////////////////////////
             MPI_Ssend(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Ssend(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
@@ -489,12 +492,15 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            
             ///////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
             // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
             // the current slip of all elements, or else we throw away the slips computed in processBlocksOrigFail().
-            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            /////// Uncommenting the line below, and commenting out the setUpdateField command above causes the simulation to
+            ///     have large magnitude runaway sequence.
+            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
             // Although we are adding slip deficits for all elements not just the local ones, when we execute the 
             //   distributeUpdateField() command below only the local elements are selected.
         }
