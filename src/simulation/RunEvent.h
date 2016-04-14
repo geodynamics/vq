@@ -30,16 +30,18 @@
  */
 class RunEvent : public SimPlugin {
     private:
-        quakelib::ElementIDSet  local_failed_elements;
-        BlockIDProcMapping      global_failed_elements;
+        quakelib::ElementIDSet          local_failed_elements;
+        BlockIDProcMapping              global_failed_elements;
         // Schultz: Removing this for now, VC did not use this.
         //quakelib::ElementIDSet  loose_elements;
-        unsigned int            sweep_num;
+        unsigned int                    sweep_num;
         // Keep track of the number of failures per element during an event
         std::map<BlockID, unsigned int> num_failures;
+        quakelib::ElementIDSet          all_event_blocks;
+        double                          current_event_area;
         
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
-        void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps, double &current_event_area, quakelib::ElementIDSet &all_event_blocks);
+        void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps);
         virtual void markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault);
         void recordEventStresses(Simulation *sim);
