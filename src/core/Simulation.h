@@ -171,10 +171,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! (where significant is defined in terms of dynamic_val).
         bool dynamicFailure(const BlockID gid, const FaultID event_fault) const {
             return (getBlock(gid).getFaultID() == event_fault &&
-                    cff[gid] > cff0[gid] &&
-                    // Schultz: Removing this absolute value, we only want to allow dynamic failure
-                    //   for stress increases.
-                    (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
+                    cff[gid] > cff0[gid] && (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
+                    // Schultz: Removing the absolute value around (cff0[gid]-cff[gid]), 
+                    //       we only want to allow dynamic failure for stress increases.
         }
 
         //! Calculate the expected recurrence of this block in years.
