@@ -742,18 +742,18 @@ class Events:
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
         trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
         if min(slips) > 1e-4:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
         else:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events, geometry):
@@ -3086,6 +3086,19 @@ if __name__ == "__main__":
     if args.dpi is None:
         args.dpi = 100
 
+     # Read the geometry model if specified
+    if args.model_file:
+        if args.model_file_type:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
+        else:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file)
+                             
     # Read the event and sweeps files
     if args.event_file and args.sweep_file is None and args.combine_file is None:
         # If given multiple event files
@@ -3103,18 +3116,6 @@ if __name__ == "__main__":
         else:
             events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
-    # Read the geometry model if specified
-    if args.model_file:
-        if args.model_file_type:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
-        else:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
