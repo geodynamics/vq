@@ -2828,7 +2828,7 @@ int quakelib::ModelWorld::write_file_kml(const std::string &file_name) {
 						// Output the KML format polygon for this element
 						out_file << "\t\t\t<Placemark>\n";
 						out_file << "\t\t\t<description>\n";
-						out_file << "Section name: " << sit->second.name() << "\n";
+						out_file << "Section name (id  " << sit->second.id() << "): " << sit->second.name() << "\n";
 						out_file << "Element #: " << eit->second.id() << "\n";
 						out_file << "DAS [km]: " << element_min_das(eit->first)/1000.0 << " to " << element_max_das(eit->first)/1000.0 << "\n";
 						out_file << "Slip rate: " << c.m_per_sec2cm_per_yr(eit->second.slip_rate()) << " cm/year\n";
