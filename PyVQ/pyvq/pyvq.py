@@ -3168,7 +3168,7 @@ if __name__ == "__main__":
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
-        for fault_id in args.use_sections:
+        for sec_id in args.use_sections:
             if sec_id not in geometry._elem_to_section_map.values():
                 #sys.stdout.write(geometry._elem_to_section_map)
                 raise BaseException("\nSection id {} does not exist.".format(sec_id))
