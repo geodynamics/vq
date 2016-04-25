@@ -2727,22 +2727,23 @@ class ProbabilityPlot(BasePlotter):
             num_intervals   = len(intervals)
             conditional     = {}
             max_t0          = intervals.max() 
-            t0_vals         = list(t0_list)+list([max_t0])
-            if (max_t0 != max(t0_vals)):
-                raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
-            else:            
-                t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
-                t0_to_eval  += list(t0_list)
-                for t0 in sorted(t0_to_eval):
-                    t0 = round(t0,1)
-                    int_t0 = intervals[np.where( intervals > t0 )]
-                    if int_t0.size != 0:
-                        conditional[t0] = {'x':[],'y':[]}
-                        for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
-                            int_t0_dt = intervals[np.where( intervals > t0+dt )]
-                            conditional[t0]['x'].append(t0+dt)
-                            prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                            conditional[t0]['y'].append(prob_t0_dt)
+            #t0_vals         = list(t0_list)+list([max_t0])
+            #print("max_t0 {}, t0_vals {}".format(max_t0, t0_vals))
+            #if (max_t0 != max(t0_vals)):
+            #    raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
+            #else:
+            t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
+            t0_to_eval  += list(t0_list)
+            for t0 in sorted(t0_to_eval):
+                t0 = round(t0,1)
+                int_t0 = intervals[np.where( intervals > t0 )]
+                if int_t0.size != 0:
+                    conditional[t0] = {'x':[],'y':[]}
+                    for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
+                        int_t0_dt = intervals[np.where( intervals > t0+dt )]
+                        conditional[t0]['x'].append(t0+dt)
+                        prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                        conditional[t0]['y'].append(prob_t0_dt)
             
             prob_in_t0_dt = []
             
@@ -3168,7 +3169,7 @@ if __name__ == "__main__":
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
-        for fault_id in args.use_sections:
+        for sec_id in args.use_sections:
             if sec_id not in geometry._elem_to_section_map.values():
                 #sys.stdout.write(geometry._elem_to_section_map)
                 raise BaseException("\nSection id {} does not exist.".format(sec_id))
