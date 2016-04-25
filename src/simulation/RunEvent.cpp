@@ -684,6 +684,7 @@ void RunEvent::processAftershock(Simulation *sim) {
         as = sim->popAftershock();
 
         // Calculate the distance from the aftershock to all elements
+        ////// Schultz: This is very inefficient. Makes aftershock simulations slow.
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             double as_to_elem_dist = sim->getBlock(gid).center().dist(as.loc());
             as_elem_dists.insert(std::make_pair(as_to_elem_dist, gid));
@@ -692,14 +693,17 @@ void RunEvent::processAftershock(Simulation *sim) {
         // Determine the target rupture area given the aftershock magnitude
         // TODO:
         // user_defined_constants (flag this for later revisions in which we move these contant definitions to a parameters file).
-        double rupture_area = pow(10, as.mag-4.0);
+        double rupture_area = convert.sqkm2sqm(pow(10, as.mag-4.0));
+        // Schultz: This scaling relation returns rupture area in km^2. Lets keep everything in M.K.S. units.
+        // Scaling relations come from Leonard 2010 paper:
+        // "Earthquake Fault Scaling: Self-Consistent Relating of Rupture Length, Width, Average Displacement, and Moment Release"
         double selected_rupture_area = 0;
         double selected_rupture_area_mu = 0;
 
         // Go through the elements, closest first, until we find enough to match the rupture area
         for (it=as_elem_dists.begin(); it!=as_elem_dists.end(); ++it) {
             Block &b=sim->getBlock(it->second);
-            selected_rupture_area += convert.sqm2sqkm(b.area());
+            selected_rupture_area += b.area();
             selected_rupture_area_mu += b.area()*b.lame_mu();
             id_set.insert(it->second);
 
