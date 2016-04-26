@@ -362,10 +362,11 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
         Block &block = sim->getBlock(*it);
-        //
-        double slip = x[i] - sim->getSlipDeficit(*it);
-
-        //
+        ///////////////
+        // Schultz:: The matrix solution solves for the slip, not the final slip deficit.
+        double slip = x[i];
+        ///////////////
+        
         ////// Schultz:
         // Must not allow negative slips. It prevents periodicity in single fault sims.
         if (slip > 0) {
