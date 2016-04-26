@@ -245,11 +245,14 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         };
 
         //! Set the stress drop for this block in Pascals.
-        void setStressDrop(const BlockID gid, double new_stress_drop) {
+        void setStressDrop(const BlockID gid, double new_stress_drop, bool compute_coefficient = true) {
             if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
 
             stress_drop[gid] = new_stress_drop;
-            calcFriction(gid);
+            
+            // Schultz: With the dynamic stress drop model, we do not want to recompute
+            //    the coefficient of friction when we change the stress drop.
+            if (compute_coefficient) calcFriction(gid);
         };
 
         //! Set the stress drop factor for the simulation.
