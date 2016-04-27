@@ -45,11 +45,11 @@ void EventOutput::initDesc(const SimFramework *_sim) const {
  */
 #ifdef HDF5_FOUND
 void EventOutput::open_hdf5_file(const std::string &hdf5_file_name, const double &start_year, const double &end_year) {
-    int   plist_id;
+    hid_t   plist_id;
     herr_t  status;
     double  tmp[2];
-    int   sim_years_set;
-    int   pair_val_dataspace;
+    hid_t   sim_years_set;
+    hid_t   pair_val_dataspace;
     hsize_t dimsf[2];
 
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
