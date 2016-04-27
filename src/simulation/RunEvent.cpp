@@ -86,20 +86,21 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
 
             ////// Schultz:
             // Do not allow negative slips, it prevents regularity for single fault case.
-            if (slip < 0) slip = 0;
+            if (slip > 0) {
 
-            // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(sweep_num,
-                                  b.getBlockID(),
-                                  slip,
-                                  b.area(),
-                                  b.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   b.getBlockID(),
-                                   sim->getShearStress(gid),
-                                   sim->getNormalStress(gid));
+                // Record how much the block slipped in this sweep and initial stresses
+                sweeps.setSlipAndArea(sweep_num,
+                                      b.getBlockID(),
+                                      slip,
+                                      b.area(),
+                                      b.lame_mu());
+                sweeps.setInitStresses(sweep_num,
+                                       b.getBlockID(),
+                                       sim->getShearStress(gid),
+                                       sim->getNormalStress(gid));
 
-            sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
+                sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
+            }
         }
     }
 }
@@ -209,9 +210,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                 // If the current area is smaller than the section area, scale the stress drop
                 dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                sim->setStressDrop(*cit, dynamicStressDrop);
+                sim->setStressDrop(*cit, dynamicStressDrop, false);
             } else {
-                sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
+                sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
             }
         }
     }
@@ -472,9 +473,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                 if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                    sim->setStressDrop(*cit, dynamicStressDrop);
+                    sim->setStressDrop(*cit, dynamicStressDrop, false);
                 } else {
-                    sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
+                    sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
                 }
             }
         }
@@ -490,7 +491,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
             
             ///////// Schultz:
             // We need to ensure our slip economics books are balanced. I suspect we need here
@@ -498,7 +499,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // the current slip of all elements, or else we throw away the slips computed in processBlocksOrigFail().
             /////// Uncommenting the line below, and commenting out the setUpdateField command above causes the simulation to
             ///     have large magnitude runaway sequence.
-            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
             // Although we are adding slip deficits for all elements not just the local ones, when we execute the 
             //   distributeUpdateField() command below only the local elements are selected.
         }
