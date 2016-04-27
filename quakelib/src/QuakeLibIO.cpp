@@ -85,7 +85,7 @@ void quakelib::ModelIO::next_line(std::ostream &out_stream) const {
 void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
 #ifdef HDF5_FOUND
-    int           section_name_datatype;
+    hid_t           section_name_datatype;
 
     // Create the datatype for the section name strings
     section_name_datatype = H5Tcopy(H5T_C_S1);
@@ -126,7 +126,7 @@ void quakelib::ModelSection::get_field_descs(std::vector<FieldDesc> &descs) {
 void quakelib::ModelFault::get_field_descs(std::vector<FieldDesc> &descs) {
     FieldDesc       field_desc;
 #ifdef HDF5_FOUND
-    int           fault_name_datatype;
+    hid_t           fault_name_datatype;
 
     // Create the datatype for the fault name strings
     fault_name_datatype = H5Tcopy(H5T_C_S1);
@@ -1623,7 +1623,7 @@ int quakelib::ModelWorld::read_file_hdf5(const std::string &file_name) {
 }
 
 #ifdef HDF5_FOUND
-void quakelib::ModelWorld::read_fault_hdf5(const int &data_file) {
+void quakelib::ModelWorld::read_fault_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelFault>::const_iterator  fit;
     hsize_t                     num_fields, num_faults;
@@ -1671,7 +1671,7 @@ void quakelib::ModelWorld::read_fault_hdf5(const int &data_file) {
 }
 
 
-void quakelib::ModelWorld::read_section_hdf5(const int &data_file) {
+void quakelib::ModelWorld::read_section_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelSection>::const_iterator  fit;
     hsize_t                     num_fields, num_sections;
@@ -1718,7 +1718,7 @@ void quakelib::ModelWorld::read_section_hdf5(const int &data_file) {
 
 }
 
-void quakelib::ModelWorld::read_element_hdf5(const int &data_file) {
+void quakelib::ModelWorld::read_element_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelElement>::const_iterator  fit;
     hsize_t                     num_fields, num_elements;
@@ -1763,7 +1763,7 @@ void quakelib::ModelWorld::read_element_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelWorld::read_vertex_hdf5(const int &data_file) {
+void quakelib::ModelWorld::read_vertex_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelVertex>::const_iterator  fit;
     hsize_t                     num_fields, num_vertices;
@@ -1809,10 +1809,10 @@ void quakelib::ModelWorld::read_vertex_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelWorld::write_stress_drop_factor_hdf5(const int &data_file) const {
+void quakelib::ModelWorld::write_stress_drop_factor_hdf5(const hid_t &data_file) const {
     double  tmp[2];
-    int     values_set;
-    int     pair_val_dataspace;
+    hid_t   values_set;
+    hid_t   pair_val_dataspace;
     hsize_t dimsf[2];
     herr_t  status, res;
 
@@ -1834,7 +1834,7 @@ void quakelib::ModelWorld::write_stress_drop_factor_hdf5(const int &data_file) c
     res = H5Dclose(values_set);
 }
 
-void quakelib::ModelWorld::read_stress_drop_factor_hdf5(const int &data_file) {
+void quakelib::ModelWorld::read_stress_drop_factor_hdf5(const hid_t &data_file) {
     double  tmp;
     herr_t  res;
     hid_t   data_id, data_access_properties;
@@ -1857,7 +1857,7 @@ void quakelib::ModelWorld::read_stress_drop_factor_hdf5(const int &data_file) {
 
 }
 
-void quakelib::ModelWorld::write_fault_hdf5(const int &data_file) const {
+void quakelib::ModelWorld::write_fault_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelFault>::const_iterator  fit;
     size_t                      num_fields, num_faults;
@@ -1946,7 +1946,7 @@ void quakelib::ModelWorld::write_fault_hdf5(const int &data_file) const {
     delete field_sizes;
 }
 
-void quakelib::ModelWorld::write_section_hdf5(const int &data_file) const {
+void quakelib::ModelWorld::write_section_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelSection>::const_iterator  fit;
     size_t                      num_fields, num_sections;
@@ -2035,7 +2035,7 @@ void quakelib::ModelWorld::write_section_hdf5(const int &data_file) const {
     delete field_sizes;
 }
 
-void quakelib::ModelWorld::write_element_hdf5(const int &data_file) const {
+void quakelib::ModelWorld::write_element_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     size_t                      num_fields, num_elements;
@@ -2124,7 +2124,7 @@ void quakelib::ModelWorld::write_element_hdf5(const int &data_file) const {
     delete field_sizes;
 }
 
-void quakelib::ModelWorld::write_vertex_hdf5(const int &data_file) const {
+void quakelib::ModelWorld::write_vertex_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                          descs;
     std::map<UIndex, ModelVertex>::const_iterator   vit;
     size_t                      num_fields, num_vertices;
@@ -3827,7 +3827,7 @@ void quakelib::ModelSweeps::write_ascii_header(std::ostream &out_stream) {
 }
 
 #ifdef HDF5_FOUND
-void quakelib::ModelSweeps::setup_sweeps_hdf5(const int &data_file) {
+void quakelib::ModelSweeps::setup_sweeps_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
     unsigned int            i;
@@ -3906,7 +3906,7 @@ void quakelib::ModelSweeps::setup_sweeps_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelSweeps::append_sweeps_hdf5(const int &data_file) const {
+void quakelib::ModelSweeps::append_sweeps_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                  descs;
     std::vector<SweepData>::const_iterator  it;
     size_t                                  num_fields, num_sweeps;
@@ -4069,7 +4069,7 @@ void quakelib::ModelEvent::write_ascii_header(std::ostream &out_stream) {
 }
 
 #ifdef HDF5_FOUND
-void quakelib::ModelEvent::setup_event_hdf5(const int &data_file) {
+void quakelib::ModelEvent::setup_event_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
     unsigned int            i;
@@ -4153,7 +4153,7 @@ void quakelib::ModelEvent::setup_event_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelEvent::append_event_hdf5(const int &data_file) const {
+void quakelib::ModelEvent::append_event_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
     unsigned int            i;
@@ -4259,7 +4259,7 @@ int quakelib::ModelEventSet::read_file_hdf5(const std::string &file_name) {
 
 }
 
-void quakelib::ModelEventSet::read_events_hdf5(const int &data_file) {
+void quakelib::ModelEventSet::read_events_hdf5(const hid_t &data_file) {
 #ifdef HDF5_FOUND
     std::vector<FieldDesc>                        descs;
     std::map<UIndex, ModelEvent>::const_iterator  fit;
@@ -4311,7 +4311,7 @@ void quakelib::ModelEventSet::read_events_hdf5(const int &data_file) {
 
 }
 
-void quakelib::ModelEventSet::read_sweeps_hdf5(const int &data_file) {
+void quakelib::ModelEventSet::read_sweeps_hdf5(const hid_t &data_file) {
 #ifdef HDF5_FOUND
     std::vector<FieldDesc>                          descs;
     ModelEventSet::iterator                   fit;
@@ -4405,7 +4405,7 @@ int quakelib::ModelEventSet::append_from_hdf5(const std::string &file_name, cons
     return 0;
 }
 
-void quakelib::ModelEventSet::append_events_hdf5(const int &data_file, const double &add_year, const unsigned int &add_evnum) {
+void quakelib::ModelEventSet::append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum) {
 #ifdef HDF5_FOUND
     std::vector<FieldDesc>                        descs;
     std::map<UIndex, ModelEvent>::const_iterator  fit;
@@ -4462,7 +4462,7 @@ void quakelib::ModelEventSet::append_events_hdf5(const int &data_file, const dou
 #endif
 }
 
-void quakelib::ModelEventSet::append_sweeps_hdf5(const int &data_file, const unsigned int &last_evnum) {
+void quakelib::ModelEventSet::append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum) {
 #ifdef HDF5_FOUND
     std::vector<FieldDesc>                    descs;
     ModelEventSet::iterator                   fit;
@@ -4551,7 +4551,7 @@ void quakelib::ModelStress::write_ascii(std::ostream &out_stream) const {
 }
 
 #ifdef HDF5_FOUND
-void quakelib::ModelStress::setup_stress_hdf5(const int &data_file) {
+void quakelib::ModelStress::setup_stress_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     size_t                  num_fields;
     unsigned int            i;
@@ -4623,7 +4623,7 @@ void quakelib::ModelStress::setup_stress_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelStress::append_stress_hdf5(const int &data_file) const {
+void quakelib::ModelStress::append_stress_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                  descs;
     std::vector<StressData>::const_iterator it;
     herr_t                      res;
@@ -4757,7 +4757,7 @@ void quakelib::ModelStressState::write_ascii_header(std::ostream &out_stream) {
 }
 
 #ifdef HDF5_FOUND
-void quakelib::ModelStressState::setup_stress_state_hdf5(const int &data_file) {
+void quakelib::ModelStressState::setup_stress_state_hdf5(const hid_t &data_file) {
     std::vector<FieldDesc>  descs;
     unsigned int            i;
     StressDataTime          blank_data;
@@ -4830,7 +4830,7 @@ void quakelib::ModelStressState::setup_stress_state_hdf5(const int &data_file) {
     delete [] field_sizes;
 }
 
-void quakelib::ModelStressState::append_stress_state_hdf5(const int &data_file) const {
+void quakelib::ModelStressState::append_stress_state_hdf5(const hid_t &data_file) const {
     std::vector<FieldDesc>                  descs;
     std::vector<StressData>::const_iterator it;
     herr_t                      res;
