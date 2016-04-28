@@ -675,9 +675,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         elem_lame_lambda = inner_t *trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
         // Set up the vertical step to go along the dip
-        //    LEFT HANDED CONVENTION
-        //vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
-        //vert_step = vert_step.rotate_around_axis(element_step_vec, elem_dip);
+        ///// Schultz: We need a right handed convention. This complies with geological convention.
         //    RIGHT HANDED CONVENTION
         vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
         vert_step = vert_step.rotate_around_axis(element_step_vec, M_PI-elem_dip);
@@ -768,9 +766,6 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     }
 
     // Go through the created elements and assign maximum slip based on the total fault area
-    // From Table 2A in Wells Coppersmith 1994
-    //double moment_magnitude = 4.07+0.98*log10(conv.sqm2sqkm(fault_area));
-
     // Schultz: Updating these to a newer paper. From Leonard 2010
     double moment_magnitude = 4.0+log10(conv.sqm2sqkm(fault_area));
 
@@ -940,14 +935,6 @@ void quakelib::ModelWorld::compute_stress_drops(const double &stress_drop_factor
         stress_drop = -2*eit->second.lame_mu()*char_slip*( (1-nu)*fault_length/fault_width + fault_width/fault_length )/( (1-nu)*M_PI*R );
 
         eit->second.set_stress_drop(stress_drop);
-
-
-        /////
-        // TEMPORARY ASEISMIC CUT OFF, anything less than 0.13 gets set to 0
-        /////
-        //        if (eit->second.aseismic() <= 0.13 ) {
-        //            eit->second.set_aseismic(0.0);
-        //        }
 
     }
 
@@ -2491,13 +2478,6 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
 
 
 
-            ///// DEBUG ---------------------
-            //            std::cout << "--- ID: " << eit->id() << "  DAS: " << this_element.min_das() << "  This Depth:  " << this_element.max_depth() <<  "  Max Depth at DAS: " << max_depth_at_das << std::endl;
-            //            std::cout << "This min depth: " << this_element.min_depth() << "  This max depth: " << this_element.max_depth() << std::endl;
-            //            std::cout << "Dip: " << this_element.dip() << " Adjusted Dip: " << adjusted_dip << "  This depth down dip: " << this_depth_down_dip << "  Max D.D.D.: " << max_depth_down_dip_at_das << "  Z: " << z << std::endl << std::endl;
-
-
-
         }
 
         section_taper_flow[eit->section_id()] += taper_t *eit->slip_rate()*eqsim_world.create_sim_element(eit->id()).area();
@@ -2519,30 +2499,6 @@ int quakelib::ModelWorld::read_files_eqsim(const std::string &geom_file_name, co
         }
     }
 
-
-    //////// DEBUG OUT ///////////
-    //    typedef std::map<double, ElementIDSet> inner_map;
-    //    typedef std::map<UIndex, inner_map> outer_map;
-    //    outer_map::iterator i;
-    //    inner_map::iterator j;
-    //    ElementIDSet::iterator k;
-    //    for (i = faults_with_elements_at_each_das.begin(); i!=faults_with_elements_at_each_das.end(); ++i) {
-    //        std::cout << "-----------------------------------" << std::endl;
-    //        std::cout << "Fault: " << i->first << std::endl;
-    //
-    //        inner_map &elements_per_das = i->second;
-    //        for (j=elements_per_das.begin(); j!=elements_per_das.end(); ++j) {
-    //            std::cout << "--- DAS: " << j->first;
-    //            std::cout << "  Elements: ";
-    //
-    //            ElementIDSet &these_elements = j ->second;
-    //            for (k=these_elements.begin(); k!=these_elements.end(); ++k) {
-    //                std::cout << *k << "  ";
-    //            }
-    //
-    //            std::cout << std::endl;
-    //        }
-    //    }
 
     insert(eqsim_world);
 
@@ -2657,12 +2613,6 @@ int quakelib::ModelWorld::write_files_eqsim(const std::string &geom_file_name, c
 					v3.set_trace_flag(UNDEFINED_TRACE_STATUS);
 					break;
             }
-            // Lines below were incorrect, writing EQSim files with vertices out of order.
-            // The difference is apparent when looking at KML model files.
-            //v2.set_loc(vertex(eit->vertex(2)).lld());
-            //v2.set_das(vertex(eit->vertex(2)).das());
-            //v3.set_loc(c.convert2LatLon(sim_elem.implicit_vert()));
-            //v3.set_das(vertex(eit->vertex(2)).das());
         }
     }
 
@@ -3657,25 +3607,10 @@ void quakelib::ModelSweeps::read_ascii(std::istream &in_stream, const unsigned i
 }
 
 void quakelib::ModelSweeps::write_ascii(std::ostream &out_stream) const {
-    std::vector<SweepData>::const_iterator it;      // declre an iterator (const_iterator) object (named it) to a vector<SweepData> container...
-
-    // which will point to _sweeps, which is a member of the class ModelSweeps()
-    // yoder: we're seeing a valgrind complaint from this block; it might actually be the case that _normal_final is broken (not allocated properly).
+    std::vector<SweepData>::const_iterator it;      
+    
     for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
-        /*
-        printf("**Debug: _normal_init: %f\n", it->_normal_init);
-        printf("**Debug: _normal_final: %f\n", it->_normal_final);
-        printf("**Debug: _shear_init: %f\n", it->_shear_init);
-        printf("**Debug: _shear_final: %f\n", it->_shear_final);
-        printf("**Degub:\n");
-        //
-        std::cout << "**Debug cout: _normal_init: " << it->_normal_init << "\n";
-        std::cout << "**Debug cout: _normal_final: " <<  it->_normal_final << "\n";
-        std::cout << "**Debug cout: _shear_init: " <<  it->_shear_init << "\n";
-        std::cout << "**Debug cout: _shear_final: " <<  it->_shear_final << "\n";
-        std::cout << "**Debug cout:\n";
-        */
-        //
+    
         out_stream << it->_event_number << " ";
         out_stream << it->_sweep_number << " ";
         out_stream << it->_element_id << " ";
@@ -5015,15 +4950,6 @@ void quakelib::ModelStressState::get_field_descs(std::vector<quakelib::FieldDesc
     field_desc.size = sizeof(unsigned int);
 #endif
     descs.push_back(field_desc);
-
-    //    field_desc.name = "sweep_num";
-    //    field_desc.details = "Sweep number this stress state corresponds to.";
-    //#ifdef HDF5_FOUND
-    //    field_desc.offset = HOFFSET(StressDataTime, _sweep_num);
-    //    field_desc.type = H5T_NATIVE_UINT;
-    //    field_desc.size = sizeof(unsigned int);
-    //#endif
-    //    descs.push_back(field_desc);
 
     field_desc.name = "start_rec";
     field_desc.details = "Starting record of stress values for this time.";
