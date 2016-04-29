@@ -1178,8 +1178,15 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     //
     // yoder: ... and now, specify blockID values in max/min() to distinguish (off)diag greens elements.
     //
-    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear, getGreenShearMax(r,c))));
-    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal, getGreenNormalMax(r,c))));
+    
+    // Schultz:: Add a factor from 0 to 1 that multiplies off diagonal
+    double factor = getGreenOffDiagMultiplier();
+    if (r == c || factor < 0 || factor > 1) {
+        factor = 1.0;
+    }
+    
+    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear*factor, getGreenShearMax(r,c))));
+    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal*factor, getGreenNormalMax(r,c))));
 
     // original update code:
     /*
