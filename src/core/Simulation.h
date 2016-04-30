@@ -244,6 +244,14 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return stress_drop[gid];
         };
 
+        //! Get the effective stress drop for this block in Pascals.
+        double getEffectiveStressDrop(const BlockID gid) const {
+            // max_stress_drop - CFF represents amount of accumulated stress available for slipping
+            double frac = stress_drop[gid]/max_stress_drop[gid];
+            return frac*(max_stress_drop[gid]-cff[gid]);
+        };
+
+
         //! Set the stress drop for this block in Pascals.
         void setStressDrop(const BlockID gid, double new_stress_drop, bool compute_coefficient = true) {
             if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
