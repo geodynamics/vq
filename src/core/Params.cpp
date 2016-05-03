@@ -121,7 +121,7 @@ void VCParams::read_params(const std::string &param_file_name) {
     //
 
 
-    params.readSet<bool>("sim.friction.dynamic_stress_drops", false);
+    params.readSet<bool>("sim.friction.dynamic_stress_drops", true);
 
     //params.readSet<bool>("sim.system.cellular_automata_model", 0);
 

@@ -77,7 +77,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         int numFaults(void) const;
         void getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
 
-        void sumStresses(const quakelib::ElementIDSet &block_set, double &shear_stress_sum, double &shear_stress0_sum, double &normal_stress_sum, double &normal_stress0_sum) const;
+        //void sumStresses(const quakelib::ElementIDSet &block_set, double &shear_stress_sum, double &shear_stress0_sum, double &normal_stress_sum, double &normal_stress0_sum) const;
 
         double sumGreenShear(const BlockID &r) const {
             double sum = 0;
