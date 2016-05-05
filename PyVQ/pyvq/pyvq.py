@@ -29,11 +29,7 @@ try:
     import matplotlib.patches as mpatches
     from PIL import Image 
     import matplotlib.animation as manimation
-    #TODO: Move this guy
-
     # we only want to execute this in the __main__ part of the script, so we can also run plotting scripts interactively.
-    #plt.switch_backend('agg') #Required for map plots
-
     #plt.switch_backend('agg') #Required for map plots
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -626,17 +622,20 @@ def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
 
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
-	if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
-	# Grab data
-	data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+    if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
+    # Grab data
+    print(sweeps)
+    sys.exit()
+    
+    data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
              rw['shear_final'], rw['normal_init'],rw['normal_final'], 
              (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
              (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
-	if do_print:
-		for rw in data: sys.stdout.write(rw)
-	cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
+    if do_print:
+        for rw in data: sys.stdout.write(rw)
+    cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
             'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
-	return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
+    return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
     
     
 class Events:
@@ -742,18 +741,18 @@ class Events:
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
         trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
         if min(slips) > 1e-4:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
         else:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events, geometry):
@@ -2269,7 +2268,7 @@ class BasePlotter:
         widths = [x_bounds[i][1] - x_bounds[i][0]for i in range(len(x_bounds))]
         heigths = [y_bounds[i][1] - y_bounds[i][0]for i in range(len(y_bounds))]
         for i in range(len(x_bounds)):
-            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r', label='{} 95% confidence bounds'.format(err_label)))
+            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r', label='{} 95% confidence'.format(err_label)))
             else: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r'))
         
         ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE, zorder=10)
@@ -2493,6 +2492,21 @@ class DiagnosticPlot(BasePlotter):
             x_ave, y_ave = None, None
             ave_label = ""
         self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        
+    def plot_shear_stress_changes_vs_magnitude(self, fig, color_index, events, filename):
+        shear_init = np.array(events.event_initial_shear_stresses())
+        shear_final = np.array(events.event_final_shear_stresses())
+        mags = events.event_magnitudes()
+        stress_changes = (shear_final-shear_init)/shear_init
+        # Generate the binned averages too
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(mags,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, mags, stress_changes, x_ave, y_ave, ave_label, "Event shear stress changes", "Magnitude", "fractional change", filename)
         
     def plot_number_of_sweeps(self, fig, color_index, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
@@ -2727,22 +2741,23 @@ class ProbabilityPlot(BasePlotter):
             num_intervals   = len(intervals)
             conditional     = {}
             max_t0          = intervals.max() 
-            t0_vals         = list(t0_list)+list([max_t0])
-            if (max_t0 != max(t0_vals)):
-                raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
-            else:            
-                t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
-                t0_to_eval  += list(t0_list)
-                for t0 in sorted(t0_to_eval):
-                    t0 = round(t0,1)
-                    int_t0 = intervals[np.where( intervals > t0 )]
-                    if int_t0.size != 0:
-                        conditional[t0] = {'x':[],'y':[]}
-                        for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
-                            int_t0_dt = intervals[np.where( intervals > t0+dt )]
-                            conditional[t0]['x'].append(t0+dt)
-                            prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                            conditional[t0]['y'].append(prob_t0_dt)
+            #t0_vals         = list(t0_list)+list([max_t0])
+            #print("max_t0 {}, t0_vals {}".format(max_t0, t0_vals))
+            #if (max_t0 != max(t0_vals)):
+            #    raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
+            #else:
+            t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
+            t0_to_eval  += list(t0_list)
+            for t0 in sorted(t0_to_eval):
+                t0 = round(t0,1)
+                int_t0 = intervals[np.where( intervals > t0 )]
+                if int_t0.size != 0:
+                    conditional[t0] = {'x':[],'y':[]}
+                    for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
+                        int_t0_dt = intervals[np.where( intervals > t0+dt )]
+                        conditional[t0]['x'].append(t0+dt)
+                        prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                        conditional[t0]['y'].append(prob_t0_dt)
             
             prob_in_t0_dt = []
             
@@ -2804,7 +2819,10 @@ class Distributions:
             b =  0.499
         else:
             raise BaseException("\nMust specify rupture area or mean slip")
-        x_data = np.linspace(min_mag, max_mag, num=num)
+        if min_mag < max_mag:
+            x_data = np.linspace(min_mag, max_mag, num=num)
+        else:
+            x_data = np.linspace(4, 8, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
         return x_data, y_data
@@ -2973,6 +2991,8 @@ if __name__ == "__main__":
             help="Plot shear stress changes for events")
     parser.add_argument('--event_normal_stress', required=False, action='store_true',
             help="Plot normal stress changes for events")
+    parser.add_argument('--event_shear_stress_vs_magnitude', required=False, action='store_true',
+            help="Plot shear stress changes for events vs magnitude")    
     parser.add_argument('--event_mean_slip', required=False, action='store_true',
             help="Plot the mean slip for events")
     parser.add_argument('--zoom', required=False, action='store_true',
@@ -3086,6 +3106,19 @@ if __name__ == "__main__":
     if args.dpi is None:
         args.dpi = 100
 
+     # Read the geometry model if specified
+    if args.model_file:
+        if args.model_file_type:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
+        else:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file)
+                             
     # Read the event and sweeps files
     if args.event_file and args.sweep_file is None and args.combine_file is None:
         # If given multiple event files
@@ -3103,18 +3136,6 @@ if __name__ == "__main__":
         else:
             events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
-    # Read the geometry model if specified
-    if args.model_file:
-        if args.model_file_type:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
-        else:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -3167,7 +3188,7 @@ if __name__ == "__main__":
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
-        for fault_id in args.use_sections:
+        for sec_id in args.use_sections:
             if sec_id not in geometry._elem_to_section_map.values():
                 #sys.stdout.write(geometry._elem_to_section_map)
                 raise BaseException("\nSection id {} does not exist.".format(sec_id))
@@ -3214,15 +3235,17 @@ if __name__ == "__main__":
     if args.diagnostics:
         args.num_sweeps = True
         args.event_shear_stress = True
+        args.event_shear_stress_vs_magnitude = True
         args.event_normal_stress = True
         args.event_mean_slip = True
         args.plot_freq_mag = True
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.leonard = True
+        
     if args.plot_freq_mag:
         if args.label is None: LABEL_SIZE = 8
-        else: LABEL_SIZE = 11
+        else: LABEL_SIZE = 10
         fig = plt.figure()
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
@@ -3258,7 +3281,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='lower left', fontsize=8)
+        plt.legend(loc='upper left', fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_mean_slip:
@@ -3275,7 +3298,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='lower left', fontsize=8)
+        plt.legend(loc='upper left', fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t:
@@ -3679,6 +3702,15 @@ if __name__ == "__main__":
         filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_normal_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+    if args.event_shear_stress_vs_magnitude:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress_vs_mag", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_shear_stress_changes_vs_magnitude(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
