@@ -53,7 +53,7 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
  */
 void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     quakelib::ElementIDSet::iterator    fit;
-    double                              slip, stress_drop;
+    double                              slip;
 
 
     // For each block that fails in this sweep, calculate how much it slips
@@ -64,11 +64,8 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
 
             ///// Schultz: This has been moved to the function called getEffectiveStressDrop in Simulation.h
             //stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
-
-            // Slip is in m
+            // Slip is in meters
             slip = sim->getEffectiveStressDrop(gid)/sim->getSelfStresses(gid);
-            /// Schultz: The hack below implements Eric's version. It's non-ideal, but it works. To be improved later.
-            //slip = -1.0*(sim->getSlipDeficit(gid));
 
 
             ////// Schultz:
