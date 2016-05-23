@@ -44,6 +44,7 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         if (add) {
             sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
+            num_failures[gid] += 1;
         }
     }
 }
@@ -405,6 +406,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
+        num_failures[triggerID] += 1;
         sim->setFailed(triggerID, true);
     }
     
@@ -424,6 +426,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
+
+
+        ///// DEBUG OUTPUT //////////
+        //sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area/Fault Area = " << current_event_area/sim->getFaultArea(sim->getBlock(triggerID).getFaultID()) << std::endl;
+        ///// DEBUG OUTPUT //////////
+
 
 
         ///////////////////////////////////////////////////////////////////
@@ -457,6 +465,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                 if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
+                    
                     // Try to make the triggering element slip enough to trigger others.
                     if (*cit == triggerID && sweep_num == 0) {
                         sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
@@ -491,7 +500,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
-
         
         
         // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
