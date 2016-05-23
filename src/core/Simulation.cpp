@@ -428,8 +428,9 @@ void Simulation::computeCFFs(void) {
 }
 
 //! Calculates and stores the CFF of this block.
+// Schultz: We do not want absolute values here.
 void Simulation::calcCFF(const BlockID gid) {
-    cff[gid] = fabs(shear_stress[gid]) - fabs(friction[gid]*normal_stress[gid]);
+    cff[gid] = shear_stress[gid] - friction[gid]*normal_stress[gid];
 }
 
 /*!
