@@ -262,12 +262,16 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     int                     lid;
     quakelib::Conversion    convert;
 
-    // Set up the temporary buffer and update field
+    // Schultz: The temp buffer will collect the dCFF/dt values by multiplying the 
+    ///     Greens function matrices by the effective slip rates (aka the update field).
+    ///     The matrixVectorMultiplyAccum() multiplies matrices and adds the result to tmpBuffer.
+    /////////////////////
     for (it=sim->begin(); it!=sim->end(); ++it) {
         tmpBuffer[it->getBlockID()] = 0.0;
 
         // Set the update field to be the slip rate of each block (note: these are local blockID values.)
-        sim->setUpdateField(it->getBlockID(), it->slip_rate());
+        // Schultz: Since aseismic fraction limits the effective slip rate, we must include it here
+        sim->setUpdateField(it->getBlockID(), it->slip_rate()*(1.0 - it->aseismic()));
     }
 
     // update the temporary buffer with the Greens function applied to the block slip rates
@@ -280,7 +284,8 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     if (sim->doNormalStress()) {
         for (it=sim->begin(); it!=sim->end(); ++it) {
             BlockID gid = it->getBlockID();
-            sim->setUpdateField(gid, -sim->getFriction(gid)*it->slip_rate());
+            // Schultz: Since aseismic fraction limits the effective slip rate, we must include it here
+            sim->setUpdateField(gid, -sim->getFriction(gid)*it->slip_rate()*(1.0 - it->aseismic()));
         }
 
         sim->matrixVectorMultiplyAccum(tmpBuffer,
