@@ -301,20 +301,28 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
 
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
-        Block &block = sim->getBlock(gid);
+        //Block &block = sim->getBlock(gid);
+        
+        // Since slip rates are in meters/sec, must convert the answer for time to years
+        ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
+        std::cout << tmpBuffer[gid] << "   " << sim->getCFF(gid) << "   " << ts << std::endl;
 
+        // Schultz: There is no reason to treat elements with aseismic > 0 differently. We just 
+        //   use the aseismic fraction to give elements an effective slip rate of rate*(1-aseismic).
+        //   Also, with constant linear stress increase, there is no reason to include CFF in dCFF/dt.
+        //
         // Calculate the time until this block will fail
         // If the block has aseismic slip, the calculation is the exact solution of the
         // differential equation d(cff)/dt = rate_of_stress_change + cff*aseismic_frac*self_shear/recurrence
-        if (block.aseismic() > 0) {
-            double      A, B, K;
-            A = -tmpBuffer[gid];
-            B = -block.aseismic()*sim->getSelfStresses(gid)/sim->getRecurrence(gid);
-            K = -log(A+B*sim->getCFF(gid))/B;
-            ts = K + log(A)/B;
-        } else {
-            ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
-        }
+        //if (block.aseismic() > 0) {
+        //    double      A, B, K;
+        //    A = -tmpBuffer[gid];
+        //    B = -block.aseismic()*sim->getSelfStresses(gid)/sim->getRecurrence(gid);
+        //    K = -log(A+B*sim->getCFF(gid))/B;
+        //    ts = K + log(A)/B;
+        //} else {
+        //    ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
+        //}
 
         // Blocks with negative timesteps are skipped. These effectively mean the block
         // should have failed already but didn't. This can happen in the starting phase
