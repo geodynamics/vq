@@ -1633,6 +1633,11 @@ To implement these bounds for the shear stress Greens functions, in your simulat
 \end{figure}
 	
 
+You can also use the simulation parameter  ``sim.greens.offdiag\_multiplier'' to reduce the interactions in the Green's function matrices. The value can range from 0 to 1.
+
+
+
+
 
 
 \subsection{Periodically Saving the Simulation State}
@@ -2301,6 +2306,10 @@ These parameters are used to select subsets of the faults or subsets of events. 
 \hline 
 \texttt{\small{--fault\_group\_time\_series}} & After using --fault\_time\_series to save fault time series data for each fault, make a plot of time series averaged over groups of faults by specifying the fault time series files for each group of faults with --group1\_files and --group2\_files. \tabularnewline
 \hline 
+\texttt{\small{--group1\_files}} & "List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\hline 
+\texttt{\small{--group2\_files}} & List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\hline 
 \texttt{\small{--num\_sweeps}} & Plot, for each event, the number of event sweeps as a function of simulation time.\tabularnewline
 \hline 
 \texttt{\small{--event\_mean\_slip}} & Plot, for each event, the mean slip as a function of simulation time.\tabularnewline
@@ -2503,6 +2512,8 @@ or just the Green's shear function.\tabularnewline
 remain the same.\tabularnewline
 \hline 
 \texttt{\small{sim.greens.sample\_distance = 1000.0}} & When calculating the Green's function, take samples at this minimum distance between samples.  This allows better convergence between models with few large elements and models with many small elements.  If the element size is smaller than this value, it has no effect.\tabularnewline
+\hline 
+\texttt{\small{sim.greens.offdiag\_multiplier = 1.0}} &  If specified, this multiplies the interaction Greens function values by a factor between 0 and 1.\tabularnewline
 \hline 
 \texttt{\small{sim.greens.shear\_offdiag\_min}} & Double, no default value. If specified, this truncates the shear interaction Greens function values to some minimum. Sometimes required if the mesher puts fault elements too close together.\tabularnewline
 \hline 

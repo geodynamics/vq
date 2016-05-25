@@ -2889,9 +2889,9 @@ if __name__ == "__main__":
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
             help="List of model faults to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
     parser.add_argument('--group1_ids', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group2_ids. These subsets are used for computing time series correlations.")
+            help="List of model faults to use. Earthquakes will have initiated on the specified faults. Must also specify --group2_ids. These subsets are used for computing time series correlations.")
     parser.add_argument('--group2_ids', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group1_ids. These subsets are used for computing time series correlations.")
+            help="List of model faults to use. Earthquakes will have initiated on the specified faults. Must also specify --group1_ids. These subsets are used for computing time series correlations.")
     parser.add_argument('--group1_files', type=str, nargs='+', required=False,
             help="List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for computing time series correlations.")
     parser.add_argument('--group2_files', type=str, nargs='+', required=False,
