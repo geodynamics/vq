@@ -199,14 +199,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                 // If the current area is smaller than the section area, scale the stress drop
                 dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                
-                // Try to make the triggering element slip enough to trigger others.
-                if (*cit == sim->getCurrentEvent().getEventTrigger() && sweep_num == 0) {
-                    sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
-                } else {
-                    sim->setStressDrop(*cit, dynamicStressDrop, false);
-                }
-                
+                sim->setStressDrop(*cit, dynamicStressDrop, false);
             } else {
                 sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
             }
@@ -457,12 +450,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
                 if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                    // Try to make the triggering element slip enough to trigger others.
-                    if (*cit == triggerID && sweep_num == 0) {
-                        sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
-                    } else {
-                        sim->setStressDrop(*cit, dynamicStressDrop, false);
-                    }
+                    sim->setStressDrop(*cit, dynamicStressDrop, false);
                 } else {
                     sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
                 }
