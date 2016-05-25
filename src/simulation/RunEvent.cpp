@@ -419,6 +419,12 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
 
 
+        ///// DEBUG OUTPUT //////////
+        //sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area/Fault Area = " << current_event_area/sim->getFaultArea(sim->getBlock(triggerID).getFaultID()) << std::endl;
+        ///// DEBUG OUTPUT //////////
+
+
+
         ///////////////////////////////////////////////////////////////////
         // Schultz:: Uncomment the following to write out simulation variables during a simulation
         //     that are other wise unobservable.
@@ -479,7 +485,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
-
         
         
         // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
