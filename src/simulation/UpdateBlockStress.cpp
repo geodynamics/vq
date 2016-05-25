@@ -305,7 +305,6 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
         
         // Since slip rates are in meters/sec, must convert the answer for time to years
         ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
-        std::cout << tmpBuffer[gid] << "   " << sim->getCFF(gid) << "   " << ts << std::endl;
 
         // Schultz: There is no reason to treat elements with aseismic > 0 differently. We just 
         //   use the aseismic fraction to give elements an effective slip rate of rate*(1-aseismic).
