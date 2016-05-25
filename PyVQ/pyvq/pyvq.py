@@ -3537,6 +3537,10 @@ if __name__ == "__main__":
         sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
         
         
+    ### TO-DO: Finish this correlation function.
+    ## T is total time, s1(t) and s2(t) are the slip time series for different faults at time t, 
+    ##     tau is the time difference or lag, dt is time step. 
+    ###   C(tau) = (1/T)*Sum_from_0_to_T( s1(t)*s2(t+tau)*dt )
     if args.fault_group_time_series_correlate:
         if args.group1_files is None or args.group2_files is None:
             raise BaseException("\nMust specify the fault time series files for each group of faults with --group1 and --group2.")
