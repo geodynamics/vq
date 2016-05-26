@@ -183,14 +183,18 @@ class SaveFile:
 
         return plot_type+add+"_"+event_file.split(".")[0]+self.file_type
         
-    def field_plot(self, model_file, field_type, uniform_slip, event_id):
+    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
+        if wavelength is None:
+            wave = ""
+        else:
+            wave = "_"+str(int(round(wavelenth*100,0)))+"cm"
         if uniform_slip is None and event_id is not None:
-            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
         elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
         else:
             raise BaseException("\nMust specify either uniform_slip or event_id")
             
@@ -623,9 +627,6 @@ def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
     if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
-    # Grab data
-    print(sweeps)
-    sys.exit()
     
     data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
              rw['shear_final'], rw['normal_init'],rw['normal_final'], 
@@ -1370,7 +1371,7 @@ class FieldPlotter:
         max_map_width = 690.0
         max_map_height = 658.0
         map_res  = 'i'
-        padding  = 0.2
+        padding  = 0.5
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
