@@ -1358,7 +1358,7 @@ class TracePlotter:
         
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
-                cbar_max=None, levels=None, g0=None):
+                cbar_max=None, levels=None, g0=None, wavelength=0.3):
         if g0 is None: 
             self.g0 = 9.80665
         else:
@@ -1370,7 +1370,7 @@ class FieldPlotter:
         max_map_width = 690.0
         max_map_height = 658.0
         map_res  = 'i'
-        padding  = 0.08
+        padding  = 0.4
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
@@ -1394,7 +1394,7 @@ class FieldPlotter:
             self.dX_min = sys.float_info.max
             self.dY_min = sys.float_info.max
             self.dZ_min = sys.float_info.max
-            self.wavelength = 0.03
+            self.wavelength = wavelength
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
         if event_id is None and event is None and element_slips is None:
@@ -1774,6 +1774,13 @@ class FieldPlotter:
                     XX,YY = np.meshgrid(map_x, map_y)
                     self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
                     self.m2.contourf(XX, YY, self.field_transformed, self.levels, cmap=cmap, norm=self.norm, extend='both')
+                    
+            #-----------------------------------------------------------------------
+            # Fig3 is the land/sea mask.
+            #-----------------------------------------------------------------------
+            fig3 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
+            self.m3.ax = fig3.add_axes((0,0,1,1))
+            self.m3.fillcontinents(color='#000000', lake_color='#ffffff')
         
         else:
             # make sure the values are located at the correct location on the map
@@ -1820,12 +1827,30 @@ class FieldPlotter:
         # FIGURE 2 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
         buf = np.roll ( buf, 3, axis = 2 )
         im2 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        
+        if self.field_type == 'displacement' or self.field_type == 'insar':
+            # FIGURE 3 draw the renderer for the sea mask
+            fig3.canvas.draw()
+            # FIGURE 3 Get the RGBA buffer from the figure
+            w,h = fig3.canvas.get_width_height()
+            buf = np.fromstring ( fig3.canvas.tostring_argb(), dtype=np.uint8 )
+            buf.shape = ( w, h,4 )
+     
+            # FIGURE 3 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+            buf = np.roll ( buf, 3, axis = 2 )
+            im3 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+            mask = im3.convert('L')
+        
         # Clear all three figures
         fig1.clf()
         fig2.clf()
         plt.close('all')
         gc.collect()
-        return im2
+        if self.field_type == 'displacement' or self.field_type == 'insar': 
+            fig3.clf()
+            return Image.composite(im1, im2, mask)
+        else:
+            return im2
 
     def plot_field(self, output_file=None, angles=None):
         map_image = self.create_field_image(angles=angles)
@@ -2951,6 +2976,8 @@ if __name__ == "__main__":
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
+    parser.add_argument('--wavelength', type=float, nargs='+', required=False,
+            help="Observing wavelength for InSAR or displacement plots, in meters. Default is 0.3m")
     parser.add_argument('--levels', type=float, nargs='+', required=False,
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
@@ -3388,7 +3415,10 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         
-        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g)
+        if args.wavelength is None:
+            args.wavelength = 0.3
+        
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g, wavelength=args.wavelength)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles)
     if args.field_eval:
