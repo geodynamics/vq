@@ -190,7 +190,7 @@ class SaveFile:
         if wavelength is None:
             wave = ""
         else:
-            wave = "_"+str(int(round(wavelenth*100,0)))+"cm"
+            wave = "_"+str(int(round(wavelength*100,0)))+"cm"
         if uniform_slip is None and event_id is not None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
         elif uniform_slip is not None and event_id is None:
@@ -3389,7 +3389,7 @@ if __name__ == "__main__":
         else: cbar_max = None
         if args.levels: levels = args.levels
         else: levels = None
-        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
+        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id, args.wavelength)
         if args.angles: 
             if len(args.angles) != 2:
                 raise BaseException("\nMust specify 2 angles")
