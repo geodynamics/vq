@@ -44,7 +44,6 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
         if (add) {
             sim->setFailed(gid, true);
             local_failed_elements.insert(gid);
-            num_failures[gid] += 1;
         }
     }
 }
@@ -399,7 +398,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
-        num_failures[triggerID] += 1;
         sim->setFailed(triggerID, true);
     }
     
