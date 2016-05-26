@@ -1370,7 +1370,7 @@ class FieldPlotter:
         max_map_width = 690.0
         max_map_height = 658.0
         map_res  = 'i'
-        padding  = 0.4
+        padding  = 0.2
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
@@ -2976,7 +2976,7 @@ if __name__ == "__main__":
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
-    parser.add_argument('--wavelength', type=float, nargs='+', required=False,
+    parser.add_argument('--wavelength', type=float, required=False,
             help="Observing wavelength for InSAR or displacement plots, in meters. Default is 0.3m")
     parser.add_argument('--levels', type=float, nargs='+', required=False,
             help="Levels for contour plot.")
