@@ -29,11 +29,7 @@ try:
     import matplotlib.patches as mpatches
     from PIL import Image 
     import matplotlib.animation as manimation
-    #TODO: Move this guy
-
     # we only want to execute this in the __main__ part of the script, so we can also run plotting scripts interactively.
-    #plt.switch_backend('agg') #Required for map plots
-
     #plt.switch_backend('agg') #Required for map plots
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -95,9 +91,6 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
             num_bins = 100
     x = np.array(x)
     y = np.array(y)
-    #if np.min(x) == 0:
-    #    bin_min = 1
-    #else:
     if log_bin: bin_min = math.floor(math.log(np.min(x),10))
     else: bin_min = math.floor(np.min(x))
     if log_bin: bin_max = math.ceil(math.log(np.max(x),10))
@@ -107,10 +100,11 @@ def calculate_averages(x,y,log_bin=False,num_bins=None):
     inds = np.digitize(x, bins)
     binned_data = {}
     for n, i in enumerate(inds):
+        # i-> i-1, bins are 1-indexed, want arrays storing 0-indexed stuff
         try:
-            binned_data[i].append(y[n])
+            binned_data[i-1].append(y[n])
         except KeyError:
-            binned_data[i] = [y[n]]
+            binned_data[i-1] = [y[n]]
     x_ave = []
     y_ave = []
     for k in sorted(binned_data.keys()):
@@ -189,14 +183,18 @@ class SaveFile:
 
         return plot_type+add+"_"+event_file.split(".")[0]+self.file_type
         
-    def field_plot(self, model_file, field_type, uniform_slip, event_id):
+    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
+        if wavelength is None:
+            wave = ""
+        else:
+            wave = "_"+str(int(round(wavelength*100,0)))+"cm"
         if uniform_slip is None and event_id is not None:
-            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
         elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
         else:
             raise BaseException("\nMust specify either uniform_slip or event_id")
             
@@ -492,7 +490,7 @@ class Geometry:
         return slip_time_series
         
         
-    def get_standardized_fault_averaged_slip_time_series(self, events, fault_id=None, max_year=None, DT=1.0):
+    def get_fault_averaged_slip_time_series(self, events, fault_id=None, max_year=None, DT=1.0, standardized=False):
         if max_year is None: raise BaseException("Must specify --max_year.")
         sys.stdout.write("{}...".format(fault_id)) # Update the console as to which fault we are processing now.
         sys.stdout.flush()  ## Make sure the status prints right now and doesn't lag due to hi CPU demand
@@ -542,8 +540,12 @@ class Geometry:
             fault_time_series += slip_time_series[ele_id]/num_elements
         
         ## Standardize the averaged time series
-        standardized_series = standardize_time_series(fault_time_series)
-        return standardized_series
+        if standardized:
+            return standardize_time_series(fault_time_series)
+        else:
+            return fault_time_series
+            
+        
 
 
     def get_stress_drops(self):
@@ -624,17 +626,17 @@ def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
 
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
-	if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
-	# Grab data
-	data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+    if sweeps is None: sweeps = read_sweeps_h5(sim_file, block_id=block_id, event_number=event_number)
+    
+    data = [[rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
              rw['shear_final'], rw['normal_init'],rw['normal_final'], 
              (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
              (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
-	if do_print:
-		for rw in data: sys.stdout.write(rw)
-	cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
+    if do_print:
+        for rw in data: sys.stdout.write(rw)
+    cols = ['sweep_number', 'block_id', 'block_slip', 'shear_init', 
             'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
-	return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
+    return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
     
     
 class Events:
@@ -646,6 +648,7 @@ class Events:
             # Reading in via QuakeLib
             #if not h5py_available:
             self._events = quakelib.ModelEventSet()
+            sys.stdout.write("Reading the HDF5 event file.....".format(event_file))
             self._events.read_file_hdf5(event_file)
             sys.stdout.write("Read in events via QuakeLib from {}\n".format(event_file))
             # Reading via h5py
@@ -654,7 +657,9 @@ class Events:
             #    sys.stdout.write("Read in events via h5py from {}".format(event_file))
         elif event_file_type == "text" and sweep_file != None:
             self._events = quakelib.ModelEventSet()
+            sys.stdout.write("Reading the TEXT event file.....".format(event_file))
             self._events.read_file_ascii(event_file, sweep_file)
+            sys.stdout.write("Read in events via QuakeLib from {}\n".format(event_file))
         else:
             raise BaseException("\nevent_file_type must be hdf5 or text. If text, a sweep_file is required.")
             
@@ -737,18 +742,18 @@ class Events:
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
         trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
         if min(slips) > 1e-4:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
         else:
-            sys.stdout.write("==============================================================================")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault")
-            sys.stdout.write("------------------------------------------------------------------------------")
+            sys.stdout.write("==============================================================================\n")
+            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault\n")
+            sys.stdout.write("------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
+                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
             sys.stdout.write("------------------------------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events, geometry):
@@ -767,11 +772,17 @@ class Events:
     def event_final_normal_stresses(self):
         return [self._events[evnum].getNormalStressFinal() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]  
         
-    def number_of_sweeps(self):
+    def number_of_sweep_records(self):
         return [self._events[evnum].getNumRecordedSweeps() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
 
-    def get_num_sweeps(self, evnum):
+    def get_num_sweep_records(self, evnum):
         return self._events[evnum].getNumRecordedSweeps()
+        
+    def number_of_sweeps(self):
+        return [self._events[evnum].getMaxSweepNum() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())] 
+
+    def get_num_sweeps(self, evnum):
+        return self._events[evnum].getMaxSweepNum()
 
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
@@ -1348,7 +1359,7 @@ class TracePlotter:
         
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
-                cbar_max=None, levels=None, g0=None):
+                cbar_max=None, levels=None, g0=None, wavelength=0.3):
         if g0 is None: 
             self.g0 = 9.80665
         else:
@@ -1360,7 +1371,7 @@ class FieldPlotter:
         max_map_width = 690.0
         max_map_height = 658.0
         map_res  = 'i'
-        padding  = 0.08
+        padding  = 0.5
         map_proj = 'cyl'
         self.norm = None
         # Define how the cutoff value scales if it is not explitly set.
@@ -1384,7 +1395,7 @@ class FieldPlotter:
             self.dX_min = sys.float_info.max
             self.dY_min = sys.float_info.max
             self.dZ_min = sys.float_info.max
-            self.wavelength = 0.03
+            self.wavelength = wavelength
         # Read elements and slips into the SlippedElementList
         self.elements = quakelib.SlippedElementList()
         if event_id is None and event is None and element_slips is None:
@@ -1764,6 +1775,13 @@ class FieldPlotter:
                     XX,YY = np.meshgrid(map_x, map_y)
                     self.norm = mcolor.Normalize(vmin=self.dmc['cbar_min'], vmax=self.dmc['cbar_max'])
                     self.m2.contourf(XX, YY, self.field_transformed, self.levels, cmap=cmap, norm=self.norm, extend='both')
+                    
+            #-----------------------------------------------------------------------
+            # Fig3 is the land/sea mask.
+            #-----------------------------------------------------------------------
+            fig3 = plt.figure(figsize=(mwi, mhi), dpi=plot_resolution)
+            self.m3.ax = fig3.add_axes((0,0,1,1))
+            self.m3.fillcontinents(color='#000000', lake_color='#ffffff')
         
         else:
             # make sure the values are located at the correct location on the map
@@ -1810,12 +1828,30 @@ class FieldPlotter:
         # FIGURE 2 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
         buf = np.roll ( buf, 3, axis = 2 )
         im2 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        
+        if self.field_type == 'displacement' or self.field_type == 'insar':
+            # FIGURE 3 draw the renderer for the sea mask
+            fig3.canvas.draw()
+            # FIGURE 3 Get the RGBA buffer from the figure
+            w,h = fig3.canvas.get_width_height()
+            buf = np.fromstring ( fig3.canvas.tostring_argb(), dtype=np.uint8 )
+            buf.shape = ( w, h,4 )
+     
+            # FIGURE 3 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+            buf = np.roll ( buf, 3, axis = 2 )
+            im3 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+            mask = im3.convert('L')
+        
         # Clear all three figures
         fig1.clf()
         fig2.clf()
         plt.close('all')
         gc.collect()
-        return im2
+        if self.field_type == 'displacement' or self.field_type == 'insar': 
+            fig3.clf()
+            return Image.composite(im1, im2, mask)
+        else:
+            return im2
 
     def plot_field(self, output_file=None, angles=None):
         map_image = self.create_field_image(angles=angles)
@@ -2258,7 +2294,7 @@ class BasePlotter:
         widths = [x_bounds[i][1] - x_bounds[i][0]for i in range(len(x_bounds))]
         heigths = [y_bounds[i][1] - y_bounds[i][0]for i in range(len(y_bounds))]
         for i in range(len(x_bounds)):
-            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r', label='{} 95% confidence bounds'.format(err_label)))
+            if i==0: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r', label='{} 95% confidence'.format(err_label)))
             else: ax.add_patch(mpatches.Rectangle(x0_y0[i], widths[i], heigths[i], alpha=0.4, facecolor='r'))
         
         ax.scatter(x_data, y_data, label=label, alpha=SCATTER_ALPHA, color=STAT_COLOR_CYCLE[0], s=SCATTER_SIZE, zorder=10)
@@ -2482,6 +2518,21 @@ class DiagnosticPlot(BasePlotter):
             x_ave, y_ave = None, None
             ave_label = ""
         self.scatter_and_line(fig, color_index, False, years, stress_changes, x_ave, y_ave, ave_label, "Event normal stress changes", "simulation time [years]", "fractional change", filename)
+        
+    def plot_shear_stress_changes_vs_magnitude(self, fig, color_index, events, filename):
+        shear_init = np.array(events.event_initial_shear_stresses())
+        shear_final = np.array(events.event_final_shear_stresses())
+        mags = events.event_magnitudes()
+        stress_changes = (shear_final-shear_init)/shear_init
+        # Generate the binned averages too
+        # Don't bin it if we're looking at a single fault model with a single repeating earthquake
+        if len(np.unique(np.array(stress_changes))) > 1:
+            x_ave, y_ave = calculate_averages(mags,stress_changes,log_bin=False,num_bins=20)
+            ave_label = "binned average"
+        else:
+            x_ave, y_ave = None, None
+            ave_label = ""
+        self.scatter_and_line(fig, color_index, False, mags, stress_changes, x_ave, y_ave, ave_label, "Event shear stress changes", "Magnitude", "fractional change", filename)
         
     def plot_number_of_sweeps(self, fig, color_index, events, filename):
         num_sweeps = np.array(events.number_of_sweeps())
@@ -2716,22 +2767,23 @@ class ProbabilityPlot(BasePlotter):
             num_intervals   = len(intervals)
             conditional     = {}
             max_t0          = intervals.max() 
-            t0_vals         = list(t0_list)+list([max_t0])
-            if (max_t0 != max(t0_vals)):
-                raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
-            else:            
-                t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
-                t0_to_eval  += list(t0_list)
-                for t0 in sorted(t0_to_eval):
-                    t0 = round(t0,1)
-                    int_t0 = intervals[np.where( intervals > t0 )]
-                    if int_t0.size != 0:
-                        conditional[t0] = {'x':[],'y':[]}
-                        for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
-                            int_t0_dt = intervals[np.where( intervals > t0+dt )]
-                            conditional[t0]['x'].append(t0+dt)
-                            prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
-                            conditional[t0]['y'].append(prob_t0_dt)
+            #t0_vals         = list(t0_list)+list([max_t0])
+            #print("max_t0 {}, t0_vals {}".format(max_t0, t0_vals))
+            #if (max_t0 != max(t0_vals)):
+            #    raise BaseException("\nA specified t0 value exceeds all recurrence intervals for M>{:.1f}, consider changing Mag_vals to a smaller maximum value.\n".format(MAG))
+            #else:
+            t0_to_eval  = list(np.linspace(0, max_t0+YEAR_INTERVAL, num=num_intervals))
+            t0_to_eval  += list(t0_list)
+            for t0 in sorted(t0_to_eval):
+                t0 = round(t0,1)
+                int_t0 = intervals[np.where( intervals > t0 )]
+                if int_t0.size != 0:
+                    conditional[t0] = {'x':[],'y':[]}
+                    for dt in np.arange(0.0,max_t0-int(t0), YEAR_INTERVAL):
+                        int_t0_dt = intervals[np.where( intervals > t0+dt )]
+                        conditional[t0]['x'].append(t0+dt)
+                        prob_t0_dt    = 1.0 - float(int_t0_dt.size)/float(int_t0.size)
+                        conditional[t0]['y'].append(prob_t0_dt)
             
             prob_in_t0_dt = []
             
@@ -2793,7 +2845,10 @@ class Distributions:
             b =  0.499
         else:
             raise BaseException("\nMust specify rupture area or mean slip")
-        x_data = np.linspace(min_mag, max_mag, num=num)
+        if min_mag < max_mag:
+            x_data = np.linspace(min_mag, max_mag, num=num)
+        else:
+            x_data = np.linspace(4, 8, num=num)
         y_data = np.array([pow(10,a+b*m) for m in x_data])
         #y_err  = np.array([log_10*y_data[i]*np.sqrt(sig_a**2 + sig_b**2 * x_data[i]**2) for i in range(len(x_data))])
         return x_data, y_data
@@ -2860,9 +2915,9 @@ if __name__ == "__main__":
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
             help="List of model faults to use (all sections used if unspecified). Earthquakes will have initiated on the specfified faults.")
     parser.add_argument('--group1_ids', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group2_ids. These subsets are used for computing time series correlations.")
+            help="List of model faults to use. Earthquakes will have initiated on the specified faults. Must also specify --group2_ids. These subsets are used for computing time series correlations.")
     parser.add_argument('--group2_ids', type=int, nargs='+', required=False,
-            help="List of model faults to use. Earthquakes will have initiated on the specfified faults. Must also specify --group1_ids. These subsets are used for computing time series correlations.")
+            help="List of model faults to use. Earthquakes will have initiated on the specified faults. Must also specify --group1_ids. These subsets are used for computing time series correlations.")
     parser.add_argument('--group1_files', type=str, nargs='+', required=False,
             help="List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for computing time series correlations.")
     parser.add_argument('--group2_files', type=str, nargs='+', required=False,
@@ -2922,6 +2977,8 @@ if __name__ == "__main__":
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
+    parser.add_argument('--wavelength', type=float, required=False,
+            help="Observing wavelength for InSAR or displacement plots, in meters. Default is 0.3m")
     parser.add_argument('--levels', type=float, nargs='+', required=False,
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
@@ -2962,6 +3019,8 @@ if __name__ == "__main__":
             help="Plot shear stress changes for events")
     parser.add_argument('--event_normal_stress', required=False, action='store_true',
             help="Plot normal stress changes for events")
+    parser.add_argument('--event_shear_stress_vs_magnitude', required=False, action='store_true',
+            help="Plot shear stress changes for events vs magnitude")    
     parser.add_argument('--event_mean_slip', required=False, action='store_true',
             help="Plot the mean slip for events")
     parser.add_argument('--zoom', required=False, action='store_true',
@@ -2984,6 +3043,8 @@ if __name__ == "__main__":
             help="List of elements for filtering.")
     parser.add_argument('--slip_time_series', required=False, action='store_true',
             help="Return the slip time series for all specified --elements.")
+    parser.add_argument('--standardized', required=False, action='store_true',
+            help="Standardize the time series by subtracting the mean and dividing by the standard deviation.")            
     parser.add_argument('--fault_time_series', required=False, action='store_true',
             help="Return the average slip time series for all elements on a fault. To specify fault #1, use --use_faults 1.")
     parser.add_argument('--fault_group_time_series_plot', required=False, action='store_true',
@@ -3073,6 +3134,19 @@ if __name__ == "__main__":
     if args.dpi is None:
         args.dpi = 100
 
+     # Read the geometry model if specified
+    if args.model_file:
+        if args.model_file_type:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
+        else:
+            if not os.path.isfile(args.model_file):
+                raise BaseException("\nModel file does not exist: "+args.model_file)
+            else:
+                geometry = Geometry(model_file=args.model_file)
+                             
     # Read the event and sweeps files
     if args.event_file and args.sweep_file is None and args.combine_file is None:
         # If given multiple event files
@@ -3090,18 +3164,6 @@ if __name__ == "__main__":
         else:
             events = [Events(args.event_file[0], args.sweep_file, stress_file=args.stress_file, combine_file=args.combine_file, stress_index_file=args.stress_index_file)]
 
-    # Read the geometry model if specified
-    if args.model_file:
-        if args.model_file_type:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file, model_file_type=args.model_file_type)
-        else:
-            if not os.path.isfile(args.model_file):
-                raise BaseException("\nModel file does not exist: "+args.model_file)
-            else:
-                geometry = Geometry(model_file=args.model_file)
 
     # Read the stress files if specified
     if args.stress_index_file and args.stress_file:
@@ -3154,7 +3216,7 @@ if __name__ == "__main__":
         
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
-        for fault_id in args.use_sections:
+        for sec_id in args.use_sections:
             if sec_id not in geometry._elem_to_section_map.values():
                 #sys.stdout.write(geometry._elem_to_section_map)
                 raise BaseException("\nSection id {} does not exist.".format(sec_id))
@@ -3201,15 +3263,17 @@ if __name__ == "__main__":
     if args.diagnostics:
         args.num_sweeps = True
         args.event_shear_stress = True
+        args.event_shear_stress_vs_magnitude = True
         args.event_normal_stress = True
         args.event_mean_slip = True
         args.plot_freq_mag = True
         args.plot_mag_mean_slip = True
         args.plot_mag_rupt_area = True
         args.leonard = True
+        
     if args.plot_freq_mag:
         if args.label is None: LABEL_SIZE = 8
-        else: LABEL_SIZE = 11
+        else: LABEL_SIZE = 10
         fig = plt.figure()
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "freq_mag", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
@@ -3245,7 +3309,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='lower left', fontsize=8)
+        plt.legend(loc='upper left', fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_mag_mean_slip:
@@ -3262,7 +3326,7 @@ if __name__ == "__main__":
             plt.xlim(args.min_magnitude, plt.xlim()[1])
         elif args.max_magnitude is not None:
             plt.xlim(plt.xlim()[0], args.max_magnitude)
-        plt.legend(loc='lower left', fontsize=8)
+        plt.legend(loc='upper left', fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
     if args.plot_prob_vs_t:
@@ -3325,7 +3389,7 @@ if __name__ == "__main__":
         else: cbar_max = None
         if args.levels: levels = args.levels
         else: levels = None
-        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id)
+        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id, args.wavelength)
         if args.angles: 
             if len(args.angles) != 2:
                 raise BaseException("\nMust specify 2 angles")
@@ -3352,7 +3416,10 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         
-        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g)
+        if args.wavelength is None:
+            args.wavelength = 0.3
+        
+        FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g, wavelength=args.wavelength)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles)
     if args.field_eval:
@@ -3435,10 +3502,12 @@ if __name__ == "__main__":
     if args.fault_time_series:
         if args.use_faults is None: raise BaseException("\nMust specify fault id, e.g. --use_faults 33")
         if args.dt is None: args.dt = 5  # Unit is decimal years
+        standardized = args.standardized
+        if args.standardized is None: standardized=False
         x_data_list = [list(np.arange(0.0, args.max_year+args.dt, args.dt)) for fault_id in args.use_faults]
         x_data = x_data_list+[[0.0,args.max_year]]
         sys.stdout.write("Building fault slip time series for fault ")
-        fault_time_series_data = [geometry.get_standardized_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt) for fid in args.use_faults]
+        fault_time_series_data = [geometry.get_fault_averaged_slip_time_series(events[0], fault_id=fid, max_year=args.max_year, DT=args.dt, standardized=standardized) for fid in args.use_faults]
         sys.stdout.write("done.\n") ## Write that the fault time series computation is finished.
         sys.stdout.flush()  ## Always flush after you're finished
         ## If the cPickle module is available, pickle each fault time series for easier analysis later.
@@ -3447,7 +3516,7 @@ if __name__ == "__main__":
             for i,time_series in enumerate(fault_time_series_data):
                 fault_ID = args.use_faults[i]
                 time_values = x_data_list[i]
-                pickle_file_name = SaveFile().fault_time_series_pickle(args.event_file, fault_ID, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, combine=False, dt=args.dt, standardized=True)
+                pickle_file_name = SaveFile().fault_time_series_pickle(args.event_file, fault_ID, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, combine=False, dt=args.dt, standardized=standardized)
                 pickle_file = open(pickle_file_name, 'wb')
                 pickle.dump([time_values,time_series], pickle_file)
                 pickle_file.close()
@@ -3464,9 +3533,15 @@ if __name__ == "__main__":
             labels = ["{}".format(lab) for lab in args.label]+[""]
         else:
             labels = ["Fault {}".format(fid) for fid in args.use_faults]+[""]
-        filename = SaveFile().time_series_plot(args.event_file, "standardized_Faults{}".format(fault_label), min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, dt=args.dt)
+        file_label = "Faults{}".format(fault_label)
+        if standardized:
+            file_label = "standardized_"+file_label
+            y_label = "standardized cumulative slip"
+        else:
+            y_label = "cumulative slip [m]"
+        filename = SaveFile().time_series_plot(args.event_file, file_label, min_year=0, max_year=args.max_year, min_mag=args.min_magnitude, dt=args.dt)
         fig = plt.figure()
-        BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", "standardized slip", "", filename, linestyles=styles)
+        BasePlotter().multi_line_plot(fig, x_data, fault_time_series, labels, linewidths, " ", "simulation time [years]", y_label, "", filename, linestyles=styles)
         plt.legend(loc='best', fontsize=10)
         plt.savefig(filename, dpi=args.dpi)
         sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
@@ -3493,6 +3568,10 @@ if __name__ == "__main__":
         sys.stdout.write("\nPlot saved: {}\n\n".format(filename))
         
         
+    ### TO-DO: Finish this correlation function.
+    ## T is total time, s1(t) and s2(t) are the slip time series for different faults at time t, 
+    ##     tau is the time difference or lag, dt is time step. 
+    ###   C(tau) = (1/T)*Sum_from_0_to_T( s1(t)*s2(t+tau)*dt )
     if args.fault_group_time_series_correlate:
         if args.group1_files is None or args.group2_files is None:
             raise BaseException("\nMust specify the fault time series files for each group of faults with --group1 and --group2.")
@@ -3658,6 +3737,15 @@ if __name__ == "__main__":
         filename = SaveFile().diagnostic_plot(args.event_file, "normal_stress", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
         for i, event_set in enumerate(events):
             DiagnosticPlot().plot_normal_stress_changes(fig, i, event_set, args.event_file[i].split("events_")[-1])
+        plt.legend(loc='best', fontsize=8)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+    if args.event_shear_stress_vs_magnitude:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().diagnostic_plot(args.event_file, "shear_stress_vs_mag", min_year=args.min_year, max_year=args.max_year, min_mag=args.min_magnitude)
+        for i, event_set in enumerate(events):
+            DiagnosticPlot().plot_shear_stress_changes_vs_magnitude(fig, i, event_set, args.event_file[i].split("events_")[-1])
         plt.legend(loc='best', fontsize=8)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))

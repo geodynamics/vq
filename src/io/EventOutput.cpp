@@ -188,21 +188,21 @@ SimRequest EventOutput::run(SimFramework *_sim) {
 void EventOutput::finish(SimFramework *_sim) {
     Simulation        *sim = static_cast<Simulation *>(_sim);
     //
-    // debugging and runtime note: this code will execute on all nodes. however, as vq is parameterized now, if(data_file)==true only
+    // Yoder (old): debugging and runtime note: this code will execute on all nodes. however, as vq is parameterized now, if(data_file)==true only
     // on the root node, so the h5/txt actions will occur only on the head node. in the event that we allow parallel writing,
-    // we may need to be more careful about flushing output from chile nodes and closing only from the root node after the child nodes finish.
+    // we may need to be more careful about flushing output from child nodes and closing only from the root node after the child nodes finish.
 #ifdef HDF5_FOUND
 
     //
     if (data_file) {
-        // should this only happen on the root node? is this only called by the root node?
-        //printf("**Debug(%d/%d): Closing h5 data file.\n", sim->getNodeRank(), getpid());
         herr_t res = H5Fclose(data_file);
 
         if (res < 0) exit(-1);
     }
 
-    // Schultz: Need to explicitly close the HDF5 stress output file
+    // Schultz: Need to explicitly close the HDF5 stress output file.
+    ////// THIS IS UNFINISHED. I could not figure out why, but hdf5 stress state writing does not work
+    ////// for large fault models (~15000 elements or more). Just use the text file output.
     //    if (sim->isRootNode()) {
     //        int stress_data_file = sim->getStressDataFileHandle();
     //
@@ -224,5 +224,4 @@ void EventOutput::finish(SimFramework *_sim) {
         sweep_outfile.close();
     }
 
-    //printf("**Debug(%d/%d): Finish EventOuput::finish().\n", sim->getNodeRank(), getpid());
 }

@@ -359,58 +359,61 @@ void Simulation::getInitialFinalStresses(const quakelib::ElementIDSet &block_set
     }
 }
 
-void Simulation::sumStresses(const quakelib::ElementIDSet &block_set,
-                             double &shear_stress_sum,
-                             double &shear_stress0_sum,
-                             double &normal_stress_sum,
-                             double &normal_stress0_sum) const {
-    quakelib::ElementIDSet::const_iterator      it;
-
-    shear_stress_sum = shear_stress0_sum = normal_stress_sum = normal_stress0_sum = 0;
-
-    for (it=block_set.begin(); it!=block_set.end(); ++it) {
-        shear_stress_sum += getShearStress(*it);
-        shear_stress0_sum += shear_stress0[*it];
-        normal_stress_sum += getNormalStress(*it);
-        normal_stress0_sum += normal_stress0[*it];
-    }
-}
+// Schultz: This is not used.
+//void Simulation::sumStresses(const quakelib::ElementIDSet &block_set,
+//                             double &shear_stress_sum,
+//                             double &shear_stress0_sum,
+//                             double &normal_stress_sum,
+//                             double &normal_stress0_sum) const {
+//    quakelib::ElementIDSet::const_iterator      it;
+//
+//    shear_stress_sum = shear_stress0_sum = normal_stress_sum = normal_stress0_sum = 0;
+//
+//    for (it=block_set.begin(); it!=block_set.end(); ++it) {
+//        shear_stress_sum += getShearStress(*it);
+//        shear_stress0_sum += shear_stress0[*it];
+//        normal_stress_sum += getNormalStress(*it);
+//        normal_stress0_sum += normal_stress0[*it];
+//    }
+//}
 
 void Simulation::printTimers(void) {
     if (!dry_run) printAllTimers(console(), world_size, node_rank, ROOT_NODE_RANK);
 }
 
-void Simulation::determineBlockNeighbors(void) {
-    BlockList::iterator     bit, iit;
-    quakelib::ElementIDSet  all_sweeps;
-    double                  block_size;
+// Schultz: This is not used.
+//void Simulation::determineBlockNeighbors(void) {
+//    BlockList::iterator     bit, iit;
+//    quakelib::ElementIDSet  all_sweeps;
+//    double                  block_size;
+//
+//    for (bit=begin(); bit!=end(); ++bit) {
+//        for (iit=begin(); iit!=end(); ++iit) {
+//            block_size  = floor(bit->largest_dimension() * 1e-3) * 1e3;
+//
+//            if (bit->getBlockID() != iit->getBlockID() &&           // ensure blocks are not the same
+//                bit->getFaultID() == iit->getFaultID() &&           // ensure blocks are on the same fault
+//                bit->center().dist(iit->center()) < block_size * 2.0) { // ensure blocks are "nearby" each other
+//                neighbor_map[bit->getBlockID()].insert(iit->getBlockID());
+//                neighbor_map[iit->getBlockID()].insert(bit->getBlockID());
+//            }
+//        }
+//    }
+//}
 
-    for (bit=begin(); bit!=end(); ++bit) {
-        for (iit=begin(); iit!=end(); ++iit) {
-            block_size  = floor(bit->largest_dimension() * 1e-3) * 1e3;
-
-            if (bit->getBlockID() != iit->getBlockID() &&           // ensure blocks are not the same
-                bit->getFaultID() == iit->getFaultID() &&           // ensure blocks are on the same fault
-                bit->center().dist(iit->center()) < block_size * 2.0) { // ensure blocks are "nearby" each other
-                neighbor_map[bit->getBlockID()].insert(iit->getBlockID());
-                neighbor_map[iit->getBlockID()].insert(bit->getBlockID());
-            }
-        }
-    }
-}
-
-std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> Simulation::getNeighbors(const BlockID &bid) const {
-    std::map<BlockID, quakelib::ElementIDSet>::const_iterator       it;
-    quakelib::ElementIDSet      empty_set;
-
-    it = neighbor_map.find(bid);
-
-    if (it != neighbor_map.end()) {
-        return std::make_pair(it->second.begin(), it->second.end());
-    } else {
-        return std::make_pair(empty_set.end(), empty_set.end());
-    }
-}
+// Schultz: This is not used.
+//std::pair<quakelib::ElementIDSet::const_iterator, quakelib::ElementIDSet::const_iterator> Simulation::getNeighbors(const BlockID &bid) const {
+//    std::map<BlockID, quakelib::ElementIDSet>::const_iterator       it;
+//    quakelib::ElementIDSet      empty_set;
+//
+//    it = neighbor_map.find(bid);
+//
+//    if (it != neighbor_map.end()) {
+//        return std::make_pair(it->second.begin(), it->second.end());
+//    } else {
+//        return std::make_pair(empty_set.end(), empty_set.end());
+//    }
+//}
 
 /*!
  Computes CFF values for all blocks on this node.
@@ -425,8 +428,9 @@ void Simulation::computeCFFs(void) {
 }
 
 //! Calculates and stores the CFF of this block.
+// Schultz: We do not want absolute values here.
 void Simulation::calcCFF(const BlockID gid) {
-    cff[gid] = fabs(shear_stress[gid]) - fabs(friction[gid]*normal_stress[gid]);
+    cff[gid] = shear_stress[gid] - friction[gid]*normal_stress[gid];
 }
 
 /*!
@@ -756,7 +760,6 @@ void Simulation::distributeUpdateField(void) {
     for (i=0; i<numLocalBlocks(); ++i) {
         bid = updateFieldSendIDs[i];
         updateFieldSendBuf[i] = getUpdateFieldPtr()[bid];       // getUpdateField{Send/Recv}Buff[] declared in core/Comm.h as double * . note that it is "new"
-        // allocated as type GREEN_VAL, which is macro-defined as #define GREEN_VAL       double in core/Block.h
     }
 
     // check the buffer allocations for correct size. what about numLocalBlocks() what if this is 0?
@@ -1179,8 +1182,16 @@ void Simulation::setGreens(const BlockID &r, const BlockID &c, const double &new
     //
     // yoder: ... and now, specify blockID values in max/min() to distinguish (off)diag greens elements.
     //
-    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear, getGreenShearMax(r,c))));
-    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal, getGreenNormalMax(r,c))));
+
+    // Schultz:: Add a factor from 0 to 1 that multiplies off diagonal
+    double factor = getGreenOffDiagMultiplier();
+
+    if (r == c || factor < 0 || factor > 1) {
+        factor = 1.0;
+    }
+
+    greenShear()->setVal(getLocalInd(r), c, std::max(getGreenShearMin(r,c), std::min(new_green_shear*factor, getGreenShearMax(r,c))));
+    greenNormal()->setVal(getLocalInd(r), c, std::max(getGreenNormalMin(r,c), std::min(new_green_normal*factor, getGreenNormalMax(r,c))));
 
     // original update code:
     /*

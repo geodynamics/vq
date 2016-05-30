@@ -42,7 +42,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual Quake User Manual}
 \author{Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\John M. Wilson\\John B. Rundle\\Donald L. Turcotte\\\\ \copyright University of California, Davis\\
-Version 2.1.3}
+Version 2.2.0}
 %\date{\noindent \today}
 
 
@@ -107,7 +107,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.1.3}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.2.0}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -207,7 +207,7 @@ Seismological Research Letters, November/December 2012, v. 83, p.
 
 And to cite the manual:
 \begin{itemize}
-\item K. W. Schultz, E. M. Heien, M. K. Sachs, M. R. Yoder, J. M. Wilson,  J. B. Rundle, D. L. Turcotte (2015), Virtual Quake User Manual, Version 2.1.3. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{http://geodynamics.org/cig/software/github/vq/v2.1.3/vq_manual_2.1.3.pdf}{geodynamics.org/cig/software/github/vq/v2.1.3/vq\_manual\_2.1.3.pdf}
+\item K. W. Schultz, E. M. Heien, M. K. Sachs, M. R. Yoder, J. M. Wilson,  J. B. Rundle, D. L. Turcotte (2016), Virtual Quake User Manual, Version 2.2.0. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{http://geodynamics.org/cig/software/github/vq/v2.2.0/vq_manual_2.2.0.pdf}{geodynamics.org/cig/software/github/vq/v2.2.0/vq\_manual\_2.2.0.pdf}
 \end{itemize}
 
 The developers also request that in your oral presentations and in
@@ -1633,6 +1633,11 @@ To implement these bounds for the shear stress Greens functions, in your simulat
 \end{figure}
 	
 
+You can also use the simulation parameter  ``sim.greens.offdiag\_multiplier'' to reduce the interactions in the Green's function matrices. The value can range from 0 to 1.
+
+
+
+
 
 
 \subsection{Periodically Saving the Simulation State}
@@ -2297,6 +2302,14 @@ These parameters are used to select subsets of the faults or subsets of events. 
 \hline 
 \texttt{\small{--dt}} & Time step in decimal years for slip time series plots.\tabularnewline
 \hline 
+\texttt{\small{--fault\_time\_series}} & Plot the slip time series for an entire fault, use with --use\_faults. Ex. ``--use\_faults 1'' to plot fault time series for fault \#1. You can specify multiple faults, and it saves one file for each fault time series. \tabularnewline
+\hline 
+\texttt{\small{--fault\_group\_time\_series}} & After using --fault\_time\_series to save fault time series data for each fault, make a plot of time series averaged over groups of faults by specifying the fault time series files for each group of faults with --group1\_files and --group2\_files. \tabularnewline
+\hline 
+\texttt{\small{--group1\_files}} & "List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\hline 
+\texttt{\small{--group2\_files}} & List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\hline 
 \texttt{\small{--num\_sweeps}} & Plot, for each event, the number of event sweeps as a function of simulation time.\tabularnewline
 \hline 
 \texttt{\small{--event\_mean\_slip}} & Plot, for each event, the mean slip as a function of simulation time.\tabularnewline
@@ -2499,6 +2512,8 @@ or just the Green's shear function.\tabularnewline
 remain the same.\tabularnewline
 \hline 
 \texttt{\small{sim.greens.sample\_distance = 1000.0}} & When calculating the Green's function, take samples at this minimum distance between samples.  This allows better convergence between models with few large elements and models with many small elements.  If the element size is smaller than this value, it has no effect.\tabularnewline
+\hline 
+\texttt{\small{sim.greens.offdiag\_multiplier = 1.0}} &  If specified, this multiplies the interaction Greens function values by a factor between 0 and 1.\tabularnewline
 \hline 
 \texttt{\small{sim.greens.shear\_offdiag\_min}} & Double, no default value. If specified, this truncates the shear interaction Greens function values to some minimum. Sometimes required if the mesher puts fault elements too close together.\tabularnewline
 \hline 
