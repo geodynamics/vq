@@ -430,12 +430,12 @@ namespace quakelib {
                 _data._area = area;
             };
             std::string name(void) const {
-				return _data._name;
-			};
-			void set_name(const std::string &name) {
-				strncpy(_data._name, name.c_str(), NAME_MAX_LEN);
-				_data._name[NAME_MAX_LEN-1] = '\0';
-			};
+                return _data._name;
+            };
+            void set_name(const std::string &name) {
+                strncpy(_data._name, name.c_str(), NAME_MAX_LEN);
+                _data._name[NAME_MAX_LEN-1] = '\0';
+            };
 
             static void get_field_descs(std::vector<FieldDesc> &descs);
             void write_ascii(std::ostream &out_stream) const;
@@ -837,13 +837,13 @@ namespace quakelib {
             }
 
             // Schultz: This doesn't really reflect the number of iterations during a rupture.
-            //   This number returns the number of sweep records. Say element 0 slips in sweep 0 and 
+            //   This number returns the number of sweep records. Say element 0 slips in sweep 0 and
             //   again in sweep 2 (the last sweep, so 3 sweeps), and elements 1 and 2  slip in sweeps 1 and 2.
             //   This produces 6 sweep records (2 per element per sweep) even though there were only 3 sweeps.
             unsigned int getNumRecordedSweeps(void) const {
                 return _data._end_sweep_rec - _data._start_sweep_rec;
             };
-            
+
             // Schultz: Instead we need the maximum sweep number from the sweep records.
             unsigned int getMaxSweepNum(void) const {
                 ModelSweeps::const_iterator   it;
@@ -857,9 +857,9 @@ namespace quakelib {
 
                 return max_sweep_num;
             }
-            
-            
-            
+
+
+
             double getShearStressInit(void) {
                 return _data._shear_stress_init;
             };

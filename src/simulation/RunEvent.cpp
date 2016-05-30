@@ -85,8 +85,8 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
 
                 sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
             } else {
-              // Schultz; If slip <= 0, then CFF <= max_stress_drop and we must have over-slipped.
-              //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
+                // Schultz; If slip <= 0, then CFF <= max_stress_drop and we must have over-slipped.
+                //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
                 if (sim->getCFF(gid) <= sim->getMaxStressDrop(gid)) {
                     sim->setFailed(gid, false);
                 }
@@ -169,7 +169,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // global_ is like [(gid, p_rank), (gid, p_rank)...], and each pair item is accessed like global_[rw_num]->first /->second
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
 
-    // ==== DYNAMIC STRESS DROPS ========== 
+    // ==== DYNAMIC STRESS DROPS ==========
     // Schultz: now that we know how many elements are involved, assign dynamic stress drops
     if (sim->doDynamicStressDrops()) {
         double dynamicStressDrop;
@@ -205,9 +205,10 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             }
         }
     }
+
     // Note: For multiprocessing, we do not need to distribute/communicate these changes to the stress drops.
     // We have computed new stress drops for our local elements, and when we communicate the b-vector around,
-    // the appropriate stress drops will be communicated to other processors. 
+    // the appropriate stress drops will be communicated to other processors.
 
 
     //int num_local_failed = local_id_list.size();
@@ -338,7 +339,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // Schultz:: The matrix solution solves for the slip, not the final slip deficit.
         double slip = x[i];
         ///////////////
-        
+
         ////// Schultz:
         // Must not allow negative slips. It prevents periodicity in single fault sims.
         if (slip > 0) {
@@ -356,11 +357,11 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
             //
             sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
         } else {
-              // Schultz; If slip <= 0, then CFF <= stress_drop and we must have over-slipped.
-              //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
-                if (sim->getCFF(gid) <= sim->getMaxStressDrop(gid)) {
-                    sim->setFailed(gid, false);
-                }
+            // Schultz; If slip <= 0, then CFF <= stress_drop and we must have over-slipped.
+            //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
+            if (sim->getCFF(gid) <= sim->getMaxStressDrop(gid)) {
+                sim->setFailed(gid, false);
+            }
         }
     }
 
@@ -395,19 +396,19 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
-    
+
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
-    
+
     // Keep track of all the elements that have slipped in the event.
     // Use this to determine current event area.
     double current_event_area = sim->getBlock(triggerID).area();
     all_event_blocks.clear();
     all_event_blocks.insert(triggerID);
-    
-    
+
+
     // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present)
     more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
 
@@ -435,7 +436,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         ///////////////////////////////////////////////////////////////////
 
 
-        // ==== DYNAMIC STRESS DROPS ========== 
+        // ==== DYNAMIC STRESS DROPS ==========
         // Schultz: now that we know how many elements are involved, assign dynamic stress drops
         if (sim->doDynamicStressDrops()) {
             double dynamicStressDrop;
@@ -476,17 +477,17 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setNormalStress(gid, sim->getRhogd(gid));
             //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
             ///////// Schultz:
-            // Update the stresses using the current slip of all elements, or else we throw away the slips 
+            // Update the stresses using the current slip of all elements, or else we throw away the slips
             //   computed in processBlocksOrigFail().
             sim->setUpdateField(gid, sim->getSlipDeficit(gid));
-            // Although we are adding slip deficits for all elements not just the local ones, when we execute the 
+            // Although we are adding slip deficits for all elements not just the local ones, when we execute the
             //   distributeUpdateField() command below only the local elements are selected.
         }
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
-        
-        
+
+
         // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
         // multiply greenSchear() x getUpdateFieldPtr() --> getShearStressPtr() ... right?
         // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to sim->getRhogd(gid) -- see code a couple paragraphs above.
@@ -528,7 +529,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         // Communicate the slip deficits between processors.
         sim->distributeUpdateField();
-        
+
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
@@ -547,9 +548,9 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         sim->computeCFFs();
 
         // ------------------------------------------------------------------------------------------------------------
-        
-        
-        
+
+
+
         // and this loop updates final_stress values by looping directly over the current sweeps list.
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
         for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it) {
@@ -571,7 +572,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear();  // we are done with these blocks
 
-        
+
         // Find any blocks that fail because of the new stresses (all local; no MPI).
         markBlocks2Fail(sim, trigger_fault);
 

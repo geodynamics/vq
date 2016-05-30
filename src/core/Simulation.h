@@ -172,8 +172,8 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         bool dynamicFailure(const BlockID gid, const FaultID event_fault) const {
             return (getBlock(gid).getFaultID() == event_fault &&
                     cff[gid] > cff0[gid] && fabs(cff[gid]-cff0[gid])/fabs(cff0[gid]) > dynamic_val[gid]);
-                    //// Schultz: Adding absolute value since we also check that the CFF has increased, 
-                    // the absolute value will enable handling of CFF>0 or CFF<0.
+            //// Schultz: Adding absolute value since we also check that the CFF has increased,
+            // the absolute value will enable handling of CFF>0 or CFF<0.
         }
 
         //! Calculate the expected recurrence of this block in years.
@@ -257,7 +257,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
 
             stress_drop[gid] = new_stress_drop;
-            
+
             // Schultz: With the dynamic stress drop model, we do not want to recompute
             //    the coefficient of friction when we change the stress drop.
             if (compute_coefficient) calcFriction(gid);

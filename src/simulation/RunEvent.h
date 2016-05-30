@@ -37,7 +37,7 @@ class RunEvent : public SimPlugin {
         unsigned int                    sweep_num;
         quakelib::ElementIDSet          all_event_blocks;
         double                          current_event_area;
-        
+
         void processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSweeps &sweeps);
         void processBlocksSecondaryFailuresCellularAutomata(Simulation *sim, quakelib::ModelSweeps &sweeps);

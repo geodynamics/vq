@@ -262,7 +262,7 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     int                     lid;
     quakelib::Conversion    convert;
 
-    // Schultz: The temp buffer will collect the dCFF/dt values by multiplying the 
+    // Schultz: The temp buffer will collect the dCFF/dt values by multiplying the
     ///     Greens function matrices by the effective slip rates (aka the update field).
     ///     The matrixVectorMultiplyAccum() multiplies matrices and adds the result to tmpBuffer.
     /////////////////////
@@ -302,11 +302,11 @@ void UpdateBlockStress::nextStaticFailure(BlockVal &next_static_fail) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
         //Block &block = sim->getBlock(gid);
-        
+
         // Since slip rates are in meters/sec, must convert the answer for time to years
         ts = convert.sec2year(sim->getCFF(gid)/tmpBuffer[gid]);
 
-        // Schultz: There is no reason to treat elements with aseismic > 0 differently. We just 
+        // Schultz: There is no reason to treat elements with aseismic > 0 differently. We just
         //   use the aseismic fraction to give elements an effective slip rate of rate*(1-aseismic).
         //   Also, with constant linear stress increase, there is no reason to include CFF in dCFF/dt.
         //

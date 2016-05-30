@@ -202,7 +202,7 @@ class VCParams {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
 
-        // Schultz:: Multiply diagonal of greens function matrix by a number 0 to 1, to 
+        // Schultz:: Multiply diagonal of greens function matrix by a number 0 to 1, to
         //   suppress offdiagonals.
         double getGreenOffDiagMultiplier(void) const {
             return params.read<double>("sim.greens.offdiag_multiplier");
