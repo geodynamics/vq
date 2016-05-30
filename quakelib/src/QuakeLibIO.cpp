@@ -881,7 +881,7 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
             fault_taper_full[fid] += simElem.area() * eit->second.slip_rate();
 
             faultlength = _faults[fid].length();
-            innerdist = faultlength/2.0 - std::abs(faultlength/2.0 - eldas);
+            innerdist = faultlength/2.0 - fabs(faultlength/2.0 - eldas);
 
             if (innerdist < 12000) {
                 taper_factor = sqrt(innerdist/12000.0);

@@ -3417,7 +3417,8 @@ if __name__ == "__main__":
         sys.stdout.flush()
         
         if args.wavelength is None:
-            args.wavelength = 0.3
+            args.wavelength = 0.21
+            ## L-band 21cm is default
         
         FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g, wavelength=args.wavelength)
         FP.compute_field(cutoff=1000)
