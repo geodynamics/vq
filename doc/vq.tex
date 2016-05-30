@@ -2188,7 +2188,7 @@ $ python path/to/vq/pyvq/pyvq.py --model_file path/to/model.txt --model_file_typ
 \caption{\label{fig:single_element} \textbf{Left}: Gravity changes for 5m slip on a 10km by 10km vertical strikeslip fault. \textbf{Right}: Gravity changes for 1m slip on a 10km by 10km normal fault with dip angle 30 degrees.}
 \end{figure}
 
-To compute the gravity changes and InSAR interferogram for event \#210 from your simulation (Figures \ref{fig:event_insar} and \ref{fig:event_gravity}):
+To compute the gravity changes and InSAR interferogram (observing with L-band 21cm) for event \#210 from your simulation (Figures \ref{fig:event_insar} and \ref{fig:event_gravity}):
 
 \begin{verbatim}
 $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5  --model_file 
@@ -2197,7 +2197,7 @@ $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5  --model_file
      
 $ python path/to/vq/pyvq/pyvq.py --event_file path/to/sim_file.h5   --model_file 
      path/to/model.txt --model_file_type 'text' --field_plot 
-     --field_type 'insar' --event_id 210
+     --field_type 'insar' --event_id 210 --wavelength 0.21
 \end{verbatim}
 
 
@@ -2306,9 +2306,9 @@ These parameters are used to select subsets of the faults or subsets of events. 
 \hline 
 \texttt{\small{--fault\_group\_time\_series}} & After using --fault\_time\_series to save fault time series data for each fault, make a plot of time series averaged over groups of faults by specifying the fault time series files for each group of faults with --group1\_files and --group2\_files. \tabularnewline
 \hline 
-\texttt{\small{--group1\_files}} & "List of files containing the fault slip time series. Must also specify --group2_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\texttt{\small{--group1\_files}} & "List of files containing the fault slip time series. Must also specify --group2\_files. These subsets are used for plotting fault group average time series. \tabularnewline
 \hline 
-\texttt{\small{--group2\_files}} & List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for plotting fault group average time series. \tabularnewline
+\texttt{\small{--group2\_files}} & List of files containing the fault slip time series. Must also specify --group1\_files. These subsets are used for plotting fault group average time series. \tabularnewline
 \hline 
 \texttt{\small{--num\_sweeps}} & Plot, for each event, the number of event sweeps as a function of simulation time.\tabularnewline
 \hline 
@@ -2361,6 +2361,8 @@ For any field plot you must specify ``--model\_file'' and ``--model\_file\_type'
 \texttt{\small{--field\_plot}} & Required to plot any fields\tabularnewline
 \hline 
 \texttt{\small{--field\_type}} & The type of co-seismic field to plot. Options are: ``gravity'', ``dilat\_gravity'' (dilatational), ``displacement'', ``insar'', ``potential'' (gravitational potential), ``geoid'' (geoid height changes). \tabularnewline
+\hline 
+\texttt{\small{--wavelength}} & The observing wavelength for the InSAR interferogram, default is 21cm. \tabularnewline
 \hline 
 \texttt{\small{--event\_id}} & The number of the event to plot. \tabularnewline
 \hline 
