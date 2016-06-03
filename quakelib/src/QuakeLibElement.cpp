@@ -275,8 +275,8 @@ quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points,
                 gravity_change = 0.0;
             } else {
 
-                xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
-                yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+                xp = (x-xp0) * strike_sin + (y-yp0) * strike_cos;
+                yp = -(x-xp0) * strike_cos + (y-yp0) * strike_sin;
 
                 gravity_change = block_okada.calc_dg(quakelib::Vec<2>(xp,yp), c, dip, L, W, US, UD, UT, lambda, mu);
 
@@ -358,8 +358,8 @@ quakelib::FloatList quakelib::SlipMap::dilat_gravity_changes(const VectorList &p
                 gravity_change = 0.0;
             } else {
 
-                xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
-                yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+            	xp = (x-xp0) * strike_sin + (y-yp0) * strike_cos;
+				yp = -(x-xp0) * strike_cos + (y-yp0) * strike_sin;
 
                 gravity_change = block_okada.calc_dg_dilat(quakelib::Vec<2>(xp,yp), c, dip, L, W, US, UD, UT, lambda, mu);
             }
@@ -453,8 +453,8 @@ quakelib::VectorList quakelib::SlipMap::displacements(const VectorList &points, 
                 dy = 0.0;
                 dz = 0.0;
             } else {
-                xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
-                yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+            	xp = (x-xp0) * strike_sin + (y-yp0) * strike_cos;
+				yp = -(x-xp0) * strike_cos + (y-yp0) * strike_sin;
 
                 displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, lambda, mu);
 
@@ -544,8 +544,8 @@ quakelib::FloatList quakelib::SlipMap::potential_changes(const VectorList &point
                 potential_change = 0.0;
             } else {
 
-                xp = (x-xp0) * strike_sin - (y-yp0) * strike_cos;
-                yp = (x-xp0) * strike_cos + (y-yp0) * strike_sin;
+            	xp = (x-xp0) * strike_sin + (y-yp0) * strike_cos;
+				yp = -(x-xp0) * strike_cos + (y-yp0) * strike_sin;
 
                 // CHANGE this to enable dV calculations below z=0
                 zp = 0.0;
