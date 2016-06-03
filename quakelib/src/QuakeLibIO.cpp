@@ -784,6 +784,7 @@ void quakelib::ModelWorld::create_faults_minimal(void) {
 
         if (_faults.count(sit->second.fault_id())==0) {
             ModelFault &fault = new_fault(sit->second.fault_id());
+            fault.set_name(sit->second.name()); // Currently uses first section's name as fault name
             fault.insert_section_id(sit->first);
             fault.set_length(0.0);
             fault.set_area(0.0);
@@ -800,7 +801,7 @@ void quakelib::ModelWorld::create_faults_minimal(void) {
 
 
 
-void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
+void quakelib::ModelWorld::create_faults(const std::string &taper_method, const bool &vertDASbysec) {
     std::map<UIndex, ModelFault>::const_iterator fit;
     std::map<UIndex, ModelSection>::const_iterator sit;
     std::map<UIndex, ModelElement>::iterator eit;
@@ -856,10 +857,12 @@ void quakelib::ModelWorld::create_faults(const std::string &taper_method) {
         }
     }
 
-    // Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
-    for (vit=_vertices.begin(); vit!=_vertices.end(); vit++) {
-        vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
-    }
+    if (vertDASbysec == true){
+		// Re-record each vertex DAS as it's currently known section DAS + DAS at beginning of section
+		for (vit=_vertices.begin(); vit!=_vertices.end(); vit++) {
+			vit->second.set_das(vit->second.das() + sectStartDAS[vertSects[vit->second.id()]]);
+		}
+	}
 
     // If tapering, loop through elements, calc their midpoint DAS,
     // assign horizontal sqrt tapering in end 12km.
@@ -3335,11 +3338,13 @@ quakelib::LatLonDepth quakelib::ModelWorld::max_bound(const UIndex &fid) const {
 void quakelib::ModelWorld::insert(const quakelib::ModelWorld &other_world) {
     UIndex                      next_section_ind, next_element_ind, next_vertex_ind;
     ModelRemapping              remap;
+    std::vector<ModelFault>   	fault_list;
     std::vector<ModelSection>   section_list;
     std::vector<ModelElement>   element_list;
     std::vector<ModelVertex>    vertex_list;
     unsigned int                i;
-    std::map<UIndex, ModelSection>::const_iterator  fit;
+    std::map<UIndex, ModelFault>::const_iterator  fit;
+    std::map<UIndex, ModelSection>::const_iterator  sit;
     std::map<UIndex, ModelElement>::const_iterator  eit;
     std::map<UIndex, ModelVertex>::const_iterator   vit;
     LatLonDepth                 this_lld_min, this_lld_max;
@@ -3353,10 +3358,21 @@ void quakelib::ModelWorld::insert(const quakelib::ModelWorld &other_world) {
     // other model to allow it to be inserted in this model
     remap = other_world.remap_indices_contiguous(next_section_ind, next_element_ind, next_vertex_ind);
 
+    // Make a copy of faults from other world, then insert into this world
+	for (fit=other_world._faults.begin(); fit!=other_world._faults.end(); ++fit) {
+		ModelFault  other_fault = fit->second;
+		// TODO: Add fault remapping
+		fault_list.push_back(other_fault);
+	}
+
+	for (i=0; i<fault_list.size(); ++i) _faults.insert(std::make_pair(fault_list[i].id(), fault_list[i]));
+
+	fault_list.clear();
+
     // Make a copy of sections from other world, apply remapping, then insert into this world
     // Don't directly insert, since there's no guarantee that this world and the other aren't the same
-    for (fit=other_world._sections.begin(); fit!=other_world._sections.end(); ++fit) {
-        ModelSection  other_section = fit->second;
+    for (sit=other_world._sections.begin(); sit!=other_world._sections.end(); ++sit) {
+        ModelSection  other_section = sit->second;
         other_section.apply_remap(remap);
         section_list.push_back(other_section);
     }
