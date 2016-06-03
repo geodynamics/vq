@@ -243,8 +243,8 @@ quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points,
             strike_sin = 0.0;
         }
 
-        xp0 = involved_elements[ele_id].vert(0)[0];
-        yp0 = involved_elements[ele_id].vert(0)[1];
+        xp0 = involved_elements[ele_id].vert(1)[0];
+        yp0 = involved_elements[ele_id].vert(1)[1];
 
         xp3 = involved_elements[ele_id].implicit_vert()[0];
         yp3 = involved_elements[ele_id].implicit_vert()[1];
@@ -341,8 +341,8 @@ quakelib::FloatList quakelib::SlipMap::dilat_gravity_changes(const VectorList &p
             strike_sin = 0.0;
         }
 
-        xp0 = involved_elements[ele_id].vert(0)[0];
-        yp0 = involved_elements[ele_id].vert(0)[1];
+        xp0 = involved_elements[ele_id].vert(1)[0];
+        yp0 = involved_elements[ele_id].vert(1)[1];
 
         xp3 = involved_elements[ele_id].implicit_vert()[0];
         yp3 = involved_elements[ele_id].implicit_vert()[1];
@@ -423,8 +423,8 @@ quakelib::VectorList quakelib::SlipMap::displacements(const VectorList &points, 
             strike_sin = 0.0;
         }
 
-        xp0 = involved_elements[ele_id].vert(0)[0];
-        yp0 = involved_elements[ele_id].vert(0)[1];
+        xp0 = involved_elements[ele_id].vert(1)[0];
+        yp0 = involved_elements[ele_id].vert(1)[1];
 
         /*
         std::cout << "v1: <" << involved_elements[ele_id].vert(0)[0] << ", " << involved_elements[ele_id].vert(0)[1] << ", " << involved_elements[ele_id].vert(0)[2] << ">" << std::endl;
@@ -527,8 +527,8 @@ quakelib::FloatList quakelib::SlipMap::potential_changes(const VectorList &point
             strike_sin = 0.0;
         }
 
-        xp0 = involved_elements[ele_id].vert(0)[0];
-        yp0 = involved_elements[ele_id].vert(0)[1];
+        xp0 = involved_elements[ele_id].vert(1)[0];
+        yp0 = involved_elements[ele_id].vert(1)[1];
 
         xp3 = involved_elements[ele_id].implicit_vert()[0];
         yp3 = involved_elements[ele_id].implicit_vert()[1];
