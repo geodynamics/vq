@@ -77,7 +77,7 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         int numFaults(void) const;
         void getInitialFinalStresses(const quakelib::ElementIDSet &block_set, double &shear_init, double &shear_final, double &normal_init, double &normal_final) const;
 
-        void sumStresses(const quakelib::ElementIDSet &block_set, double &shear_stress_sum, double &shear_stress0_sum, double &normal_stress_sum, double &normal_stress0_sum) const;
+        //void sumStresses(const quakelib::ElementIDSet &block_set, double &shear_stress_sum, double &shear_stress0_sum, double &normal_stress_sum, double &normal_stress0_sum) const;
 
         double sumGreenShear(const BlockID &r) const {
             double sum = 0;
@@ -171,10 +171,9 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
         //! (where significant is defined in terms of dynamic_val).
         bool dynamicFailure(const BlockID gid, const FaultID event_fault) const {
             return (getBlock(gid).getFaultID() == event_fault &&
-                    cff[gid] > cff0[gid] &&
-                    // Schultz: Removing this absolute value, we only want to allow dynamic failure
-                    //   for stress increases.
-                    (cff0[gid]-cff[gid])/cff0[gid] > dynamic_val[gid]);
+                    cff[gid] > cff0[gid] && fabs(cff[gid]-cff0[gid])/fabs(cff0[gid]) > dynamic_val[gid]);
+            //// Schultz: Adding absolute value since we also check that the CFF has increased,
+            // the absolute value will enable handling of CFF>0 or CFF<0.
         }
 
         //! Calculate the expected recurrence of this block in years.
@@ -245,12 +244,23 @@ class Simulation : public SimFramework, public VCParams, public VCSimData, publi
             return stress_drop[gid];
         };
 
+        //! Get the effective stress drop for this block in Pascals.
+        double getEffectiveStressDrop(const BlockID gid) const {
+            // max_stress_drop - CFF represents amount of accumulated stress available for slipping
+            double frac = stress_drop[gid]/max_stress_drop[gid];
+            return frac*(max_stress_drop[gid]-cff[gid]);
+        };
+
+
         //! Set the stress drop for this block in Pascals.
-        void setStressDrop(const BlockID gid, double new_stress_drop) {
+        void setStressDrop(const BlockID gid, double new_stress_drop, bool compute_coefficient = true) {
             if (new_stress_drop > 0) new_stress_drop = -new_stress_drop;
 
             stress_drop[gid] = new_stress_drop;
-            calcFriction(gid);
+
+            // Schultz: With the dynamic stress drop model, we do not want to recompute
+            //    the coefficient of friction when we change the stress drop.
+            if (compute_coefficient) calcFriction(gid);
         };
 
         //! Set the stress drop factor for the simulation.

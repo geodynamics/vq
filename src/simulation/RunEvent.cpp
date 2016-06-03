@@ -33,16 +33,13 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) {
         gid = sim->getGlobalBID(lid);
 
-        // Blocks can only fail once per event, after that they slide freely
-        if (sim->getFailed(gid)) continue;
+        // Blocks can only fail once per event, after that they slide freely (in secondary ruptures).
+        // Also, we don't want to add elements that have over-slipped and have very negative CFFs (i.e. negative shear stress).
+        // These elements won't statically fail, but they may meet the dynamic failure criteria, so skip them.
+        if (sim->getFailed(gid) || sim->getCFF(gid) < sim->getMaxStressDrop(gid)) continue;
 
-        // Add this block if it has a static CFF failure
+        // Add this block if it has a static or dynamic CFF failure
         add = sim->cffFailure(gid) ||  sim->dynamicFailure(gid, trigger_fault);
-
-        // Schultz: Restoring the dynamic triggering check to be the same as VC.
-        // add = sim->cffFailure(gid)
-        // Allow dynamic failure if the block is "loose" (next to a previously failed block)
-        //if (loose_elements.count(gid) > 0) add |= sim->dynamicFailure(gid, trigger_fault);
 
         if (add) {
             sim->setFailed(gid, true);
@@ -56,7 +53,7 @@ void RunEvent::markBlocks2Fail(Simulation *sim, const FaultID &trigger_fault) {
  */
 void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &sweeps) {
     quakelib::ElementIDSet::iterator    fit;
-    double                              slip, stress_drop;
+    double                              slip;
 
 
     // For each block that fails in this sweep, calculate how much it slips
@@ -65,32 +62,35 @@ void RunEvent::processBlocksOrigFail(Simulation *sim, quakelib::ModelSweeps &swe
             BlockID gid = *fit;
             Block &b = sim->getBlock(*fit);
 
-            ///// Schultz:
-            // Even if we're doing dynamic stress drops, they've already been adjusted before this method
-            // has been called.
-            stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            ///// Schultz: This has been moved to the function called getEffectiveStressDrop in Simulation.h
+            //stress_drop = sim->getStressDrop(gid) - sim->getCFF(gid);
+            // Slip is in meters
+            slip = sim->getEffectiveStressDrop(gid)/sim->getSelfStresses(gid);
 
-            // Slip is in m
-            slip = (stress_drop/sim->getSelfStresses(gid));
 
             ////// Schultz:
-            // The only  reason for slip < 0 is stress_drop > 0, which occurs when CFF << getStressDrop(gid).
-            // So if stress_drop > 0, the element shouldn't be slipping. We must allow it to happen if it does.
-            // Perhaps the system needs this due to element loading thru interactions.
-            //if (slip < 0) slip = 0;
+            // Do not allow negative slips, it means you are allowing an element to gain stress during an event.
+            if (slip > 0) {
 
-            // Record how much the block slipped in this sweep and initial stresses
-            sweeps.setSlipAndArea(sweep_num,
-                                  b.getBlockID(),
-                                  slip,
-                                  b.area(),
-                                  b.lame_mu());
-            sweeps.setInitStresses(sweep_num,
-                                   b.getBlockID(),
-                                   sim->getShearStress(gid),
-                                   sim->getNormalStress(gid));
+                // Record how much the block slipped in this sweep and initial stresses
+                sweeps.setSlipAndArea(sweep_num,
+                                      b.getBlockID(),
+                                      slip,
+                                      b.area(),
+                                      b.lame_mu());
+                sweeps.setInitStresses(sweep_num,
+                                       b.getBlockID(),
+                                       sim->getShearStress(gid),
+                                       sim->getNormalStress(gid));
 
-            sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
+                sim->setSlipDeficit(gid, sim->getSlipDeficit(gid)+slip);
+            } else {
+                // Schultz; If slip <= 0, then CFF <= max_stress_drop and we must have over-slipped.
+                //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
+                if (sim->getCFF(gid) <= sim->getMaxStressDrop(gid)) {
+                    sim->setFailed(gid, false);
+                }
+            }
         }
     }
 }
@@ -153,7 +153,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
 
         //
         // If the block has already failed (but not in this sweep) then adjust the slip
-        // do we have the correct list of global failed elements?
         if (sim->getFailed(gid) && global_failed_elements.count(gid) == 0) {
             //local_id_list.insert(gid);
             local_secondary_id_list.insert(gid);
@@ -165,18 +164,15 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     // Figure out how many failures there were over all processors
     //sim->distributeBlocks(local_id_list, global_id_list);
     // can this somehow distribute a block to global_failed_elements twice? (multiple copies of same value?)
-    //sim->barrier();
     // yoder (note): after we distributeBlocks(), we can check to see that all items in local_ exist in global_ exactly once.
     // if not, throw an exception... and then we'll figure out how this is happening. remember, local_ is like [gid, gig, gid...]
     // global_ is like [(gid, p_rank), (gid, p_rank)...], and each pair item is accessed like global_[rw_num]->first /->second
     sim->distributeBlocks(local_secondary_id_list, global_secondary_id_list);
-    //sim->barrier();   //yoder: (debug)
 
+    // ==== DYNAMIC STRESS DROPS ==========
     // Schultz: now that we know how many elements are involved, assign dynamic stress drops
     if (sim->doDynamicStressDrops()) {
-        double current_event_area = 0.0;
         double dynamicStressDrop;
-        quakelib::ElementIDSet current_blocks;
         quakelib::ElementIDSet::const_iterator cit;
         BlockIDProcMapping::const_iterator  bit;
 
@@ -184,31 +180,35 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // Add in global_failed_elements
         for (bit=global_failed_elements.begin(); bit!=global_failed_elements.end(); ++bit) {
             // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
+            if (!all_event_blocks.count(bit->first)) {
                 current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
+                all_event_blocks.insert(bit->first);
             }
         }
 
         // Also add in the area from the secondary failed elements
         for (bit=global_secondary_id_list.begin(); bit!=global_secondary_id_list.end(); ++bit) {
             // Avoid double counting
-            if (!current_blocks.count(bit->first)) {
+            if (!all_event_blocks.count(bit->first)) {
                 current_event_area += sim->getBlock(bit->first).area();
-                current_blocks.insert(bit->first);
+                all_event_blocks.insert(bit->first);
             }
         }
 
-        for (cit=current_blocks.begin(); cit!=current_blocks.end(); ++cit) {
+        for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
             if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                 // If the current area is smaller than the section area, scale the stress drop
                 dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                sim->setStressDrop(*cit, dynamicStressDrop);
+                sim->setStressDrop(*cit, dynamicStressDrop, false);
             } else {
-                sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
+                sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
             }
         }
     }
+
+    // Note: For multiprocessing, we do not need to distribute/communicate these changes to the stress drops.
+    // We have computed new stress drops for our local elements, and when we communicate the b-vector around,
+    // the appropriate stress drops will be communicated to other processors.
 
 
     //int num_local_failed = local_id_list.size();
@@ -235,53 +235,13 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         ///// Schultz:
         // Even if we are doing dynamic stress drops, they've already been set. Check processStaticFailure() and
         // the beginning of this method
-        b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
+        //b[i] = sim->getStressDrop(*it) - sim->getCFF(*it);
+        b[i] = sim->getEffectiveStressDrop(*it);
     }
 
     //
-    // heisenbug/heisen_hang likely candidate...
-    //sim->barrier();     // yoder: (debug)
-    //
     // so A,b are calculated for each local node (with dimension n_local x n_global and now they'll be consolidated on the root node. note that
     // the corresponding mpi_send comes after this block. the root node blocks until child nodes have sent A,b and root_node has received A,b.
-    //
-    /*
-    #ifdef MPI_C_FOUND
-        // yoder (debug):
-        // (but this does not appear to be the problem; this exception is not being thrown, and we're still getting heisen_hang).
-        // before we start our loops, let's see that we're all on the same event (and?) sweep.
-        // use MPI_Allgather(*send, send_count, mpi_type_send, *rec, rec_count, mpi_type_rec, mpi_comm)
-        // for now, check on all processes that each process thinks all other processes are on the same event, sweep.
-        // use sim->getWorldSize() to get worldsize.
-        int n_procs = sim->getWorldSize();
-        int process_event_ids[n_procs];
-        int process_sweep_ids[n_procs];
-        int this_event_id = sim->getCurrentEvent().getEventNumber();
-        int this_sweep_id = sweep_num;      // declared on the RunEvent class level. we don't really need to copy it.
-        // to test on all processes:
-        //MPI_Allgather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, MPI_COMM_WORLD);
-        //MPI_Allgather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, MPI_COMM_WORLD);
-        // to test on only root_node:
-        MPI_Gather(&this_event_id, 1, MPI_INT, &process_event_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Gather(&this_sweep_id, 1, MPI_INT, &process_sweep_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        //
-        if (sim->getNodeRank()==0) {
-            // and nominally, this test could also be if (sim->isRootNode() ), but really, any node can be "root" for the purposes of "gather", so we should be specific.
-            // it might be slick to assign events and sweeps to different nodes, but hopefully we'll be removing this bit eventually.
-            // now, see that all event,sweep values are the same:
-            //printf("**Debug(%d/%d/%d):: event_ids: ", sim->getNodeRank(), getpid(), n_procs);
-            for (int j=0; j<n_procs;++j) {
-                //
-                //printf("(%d/%d), ", process_event_ids[0], process_event_ids[j]);
-                assertThrow(process_event_ids[j]==process_event_ids[0], "Processes do not have same EventID: (0: " << process_event_ids[0] << "), (" << j << ": " << process_event_ids[j] << "\n");
-                };
-                //printf("\n");
-            for (int j=0; j<n_procs;++j) assertThrow(process_sweep_ids[j]==process_sweep_ids[0], "Processes do not have same SweepID: (0: " << process_sweep_ids[0] << "), (" << j << ": " << process_sweep_ids[j] << "\n");
-        };
-        // and everybody waits until we've evaluated this.
-        //
-    #endif
-    */
 
     /////////////
     //
@@ -291,10 +251,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         double *fullx = new double[num_global_failed];
 
         // Fill in the A matrix and b vector from the various processes
-        // note: for an empty global_id_list, this list will do nothing, so MPI_Recv() will not execute, and we'll probably end up with a hanging MPI_Send().
-        //       can that ever happen? global_secondary_id_list is empty on one node but not on another? maybe between iterations?
-        //sim->barrier();       //yoder: (debug)        note: this (and the other one too... sim->barrier() is paried with an ifRoot==False set.
-        //
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
             if (jt->second != sim->getNodeRank()) {
@@ -305,7 +261,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 // MPI_Recv(in_buff{out}, in_len, mpi_dtype, src_node, tag, comm, status{out})
                 // note that in_buff and status are technically "output" parameters for the MPI_Recv function; we read data into in_buff by
                 // calling MPI_Recv()
-                //printf("**Debug[%d/%d]: A[],b MPI_Recv root-node blocking...\n", sim->getNodeRank(), getpid());
                 MPI_Recv(&(fullA[i*num_global_failed]), num_global_failed, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(&(fullb[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 #else
@@ -322,24 +277,7 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         //
         // Solve the global system on the root node (we're inside an if (sim->isRootNode()) {} block )
         solve_it(num_global_failed, fullx, fullA, fullb);
-        //
-        // root node regroups (barrier() ), then does its sending bit:
-        //sim->barrier();       //yoder: (debug)
 
-        /*
-                // Debug:
-        #ifdef MPI_C_FOUND
-                // how many elements do we expect to send back to processes?
-                //int id_counts[sim->getWorldSize()];
-                int id_counts[n_procs];
-                for (int j=0; j<n_procs; ++j) id_counts[j]=0;   // noting that we initilize our own count,j=0, which we won't use.
-                for (jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt) ++id_counts[jt->second];
-                for (int w=1; w<sim->getWorldSize();++w) {
-                    MPI_Send(&(id_counts[w]), 1, MPI_INT, w, 0, MPI_COMM_WORLD);
-                    }
-        #endif
-                // END DEBUG
-        */
         // Send back the resulting values from x to each process
         //for (i=0,n=0,jt=global_id_list.begin(); jt!=global_id_list.end(); ++jt,++i) {
         for (i=0,n=0,jt=global_secondary_id_list.begin(); jt!=global_secondary_id_list.end(); ++jt,++i) {
@@ -348,7 +286,9 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
                 // send these values to node-rank jt->second:
                 // yoder: try using synchronous send, MPI_Ssend()
                 //MPI_Send(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                /// THIS WAS THE FIX FOR HEISENBUG ////////////////////////
                 MPI_Ssend(&(fullx[i]), 1, MPI_DOUBLE, jt->second, 0, MPI_COMM_WORLD);
+                //////////////////////////////////////////////////////////
 #else
                 assertThrow(false, "Single processor version of code, but faults mapped to multiple   processors.");
 #endif
@@ -369,45 +309,19 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
         // NOT root_node:
 #ifdef MPI_C_FOUND
         // send these values to root (rank 0) node:
-        // ... and note that if there are no local failures, these MPI_Send() commands will not execute. do we end up with a hanging send/receive pair?
         // Child Nodes do their sending bit:
-        //sim->barrier();       //yoder: (debug)        note: this (and the other one too... sim->barrier() is paried with an ifRoot==True set.
         for (i=0; i<num_local_failed; ++i) {
-            //printf("**Debug[%d/%d]: A[],b MPI_Send child-node blocking...\n", sim->getNodeRank(), getpid());
-            // yoder: try using synchronous MPI_Ssend()
+            // yoder: We must use synchronous MPI_Ssend() (this waits for all processors to report back before proceeding).
             //MPI_Send(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             //MPI_Send(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            /// THIS WAS THE FIX FOR HEISENBUG ////////////////////////
             MPI_Ssend(&(A[i*num_global_failed]), num_global_failed, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
             MPI_Ssend(&(b[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
         }
 
-        //
-        // regroup (barrier()), then child nodes do their receiving bit:
-        //sim->barrier();       //yoder: (debug)
-        // fetch x[i] from root (rank 0) node:
-        // yoder (debugging):
-        // check to see that the local ids exist in the global ids:
-
-        /*
-        // Debugging:
-        //bool loc_glob_ok = true;
-        // start with the count. how many entries does the root_node expect to send?
-        int expected_recv_count = 0;
-        MPI_Recv(&expected_recv_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        if (expected_recv_count!=num_local_failed) {
-            printf("**ERROR(%d/%d): expected recv_count does not match root node: %d/%d\n", sim->getNodeRank(), getpid(), expected_recv_count, num_local_failed);
-            assertThrow(0, "send/receive count does not match in secondary blocks.\n");
-            };
-        ////
-        */
 
         //
         for (i=0; i<num_local_failed; ++i) {
-            // yoder: (debug) this is, apparently, where heisen_hang happens.
-            //    has apparently moved on; it looks like having finished the secondary loop.
-            //    so it seems likely that the problem is that one or more secondary blocks ends up on multiple processors, but is listed only once in the globals (??)
-            //    so let's try to verify that our list of local_failed blocks is compatible with the root list of gloabal_failed. we might, yet, end up just
-            //    rewriting this section with MPI_Gatherv()...
             MPI_Recv(&(x[i]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         }
@@ -421,32 +335,34 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     //for (i=0,it=local_id_list.begin(); it!=local_id_list.end(); ++i,++it) {
     for (i=0,it=local_secondary_id_list.begin(); it!=local_secondary_id_list.end(); ++i,++it) {
         Block &block = sim->getBlock(*it);
-        //
-        double slip = x[i] - sim->getSlipDeficit(*it);
-
-        //
-        ////// Schultz:
-        // We may be destabilizing the system here if the solution includes negative slipped elements.
-        // We cannot solve the whole system then throw out a few elements.
+        ///////////////
+        // Schultz:: The matrix solution solves for the slip, not the final slip deficit.
+        double slip = x[i];
+        ///////////////
 
         ////// Schultz:
-        // Not allowing negative slips for the cellular automata model, avoiding the
-        // slip-then-slip-back scenarios and conforming to Sachs' VC model.
-        // If we aren't doing CA model, record no matter the slip
-        // If we are doing CA model, Only record positive slips.
-        //if ( !(sim->doCellularAutomata()) || (slip > 0 && sim->doCellularAutomata())) {
-        // Record how much the block slipped in this sweep and initial stresses
-        sweeps.setSlipAndArea(sweep_num,
-                              *it,
-                              slip,
-                              block.area(),
-                              block.lame_mu());
-        sweeps.setInitStresses(sweep_num,
-                               *it,
-                               sim->getShearStress(*it),
-                               sim->getNormalStress(*it));
-        //
-        sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
+        // Must not allow negative slips. It prevents periodicity in single fault sims.
+        if (slip > 0) {
+
+            // Record how much the block slipped in this sweep and initial stresses
+            sweeps.setSlipAndArea(sweep_num,
+                                  *it,
+                                  slip,
+                                  block.area(),
+                                  block.lame_mu());
+            sweeps.setInitStresses(sweep_num,
+                                   *it,
+                                   sim->getShearStress(*it),
+                                   sim->getNormalStress(*it));
+            //
+            sim->setSlipDeficit(*it, sim->getSlipDeficit(*it)+slip);
+        } else {
+            // Schultz; If slip <= 0, then CFF <= stress_drop and we must have over-slipped.
+            //   Therefore we should consider it as not failed, so it won't contribute any later in the rupture.
+            if (sim->getCFF(gid) <= sim->getMaxStressDrop(gid)) {
+                sim->setFailed(gid, false);
+            }
+        }
     }
 
     //
@@ -454,7 +370,6 @@ void RunEvent::processBlocksSecondaryFailures(Simulation *sim, quakelib::ModelSw
     delete [] A;
     delete [] b;
     delete [] x;
-    //sim->barrier();
 }
 
 
@@ -478,55 +393,53 @@ void RunEvent::processStaticFailure(Simulation *sim) {
     triggerID = sim->getCurrentEvent().getEventTrigger();
     trigger_fault = sim->getBlock(triggerID).getFaultID();
     sweep_num = 0;
-    //
-    // Clear the list of "loose" (can dynamically fail) blocks
-    //loose_elements.clear();
-    //
+
     // Clear the list of failed blocks, and add the trigger block
     local_failed_elements.clear();
 
-    //
     if (sim->getCurrentEvent().getEventTriggerOnThisNode()) {
         local_failed_elements.insert(triggerID);
-        //loose_elements.insert(triggerID);
         sim->setFailed(triggerID, true);
     }
 
-    //
-    // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present),
-    // ... but since it's only the one "all-hands" call, it is not a likely candidate for heisen_hang.
-    // also note that blocksToFail() involves some bool/int conversions that might warrant further inspection and clarification.
-    more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
-    //
-    // use this iterator/counter to efficiently walk through the event_sweeps list when we update stresses:
-    unsigned int event_sweeps_pos = 0;
+    // Keep track of all the elements that have slipped in the event.
+    // Use this to determine current event area.
+    double current_event_area = sim->getBlock(triggerID).area();
+    all_event_blocks.clear();
+    all_event_blocks.insert(triggerID);
 
-    //
+
+    // yoder (note): Comm::blocksToFail() executes a single MPI_Allreduce() (when MPI is present)
+    more_blocks_to_fail = sim->blocksToFail(!local_failed_elements.empty());
+
+
     // While there are still failed blocks to handle
-    //sim->barrier();
     while (more_blocks_to_fail || final_sweep) {
         // Share the failed blocks with other processors to correctly handle
         // faults that are split among different processors
-        //sim->barrier();    // yoder: (debug)   (fwe're probably safe without this barrier() )... but at some point, i was able to generate a hang during distributeBlocks()
-        // so let's try it with this in place...
         sim->distributeBlocks(local_failed_elements, global_failed_elements);
-        //sim->barrier(); // yoder: (debug)
-        //
+
+
+        ///// DEBUG OUTPUT //////////
+        //sim->console() << "Sweep " << sweep_num << "    Current N_elements = " << all_event_blocks.size() << "     Current Area/Fault Area = " << current_event_area/sim->getFaultArea(sim->getBlock(triggerID).getFaultID()) << std::endl;
+        ///// DEBUG OUTPUT //////////
+
 
 
         ///////////////////////////////////////////////////////////////////
-        // TEMPORARY OUTPUT, only works on 1 proc
+        // Schultz:: Uncomment the following to write out simulation variables during a simulation
+        //     that are other wise unobservable.
+        // -----  OUTPUT HACK, only works on 1 proc --------------------
         //        for (unsigned int gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         //            sim->console() << sweep_num << "  " << gid << "  " << sim->getShearStress(gid) << "  " << sim->getNormalStress(gid) << "  " << sim->getCFF(gid) << "  " << sim->getStressDrop(gid) << std::endl;
         //        }
         ///////////////////////////////////////////////////////////////////
 
 
+        // ==== DYNAMIC STRESS DROPS ==========
         // Schultz: now that we know how many elements are involved, assign dynamic stress drops
         if (sim->doDynamicStressDrops()) {
-            double current_event_area = 0.0;
             double dynamicStressDrop;
-            quakelib::ElementIDSet current_blocks;
             quakelib::ElementIDSet::const_iterator cit;
             BlockIDProcMapping::const_iterator  bit;
 
@@ -534,68 +447,52 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             // Add in global_failed_elements
             for (bit=global_failed_elements.begin(); bit!=global_failed_elements.end(); ++bit) {
                 // Avoid double counting
-                if (!current_blocks.count(bit->first)) {
+                if (!all_event_blocks.count(bit->first)) {
                     current_event_area += sim->getBlock(bit->first).area();
-                    current_blocks.insert(bit->first);
+                    all_event_blocks.insert(bit->first);
                 }
             }
 
-            for (cit=current_blocks.begin(); cit!=current_blocks.end(); ++cit) {
+            for (cit=all_event_blocks.begin(); cit!=all_event_blocks.end(); ++cit) {
                 if (current_event_area < sim->getFaultArea(sim->getBlock(*cit).getFaultID())) {
                     // If the current area is smaller than the section area, scale the stress drop
                     dynamicStressDrop = sim->computeDynamicStressDrop(*cit, current_event_area);
-                    sim->setStressDrop(*cit, dynamicStressDrop);
+                    sim->setStressDrop(*cit, dynamicStressDrop, false);
                 } else {
-                    sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit));
+                    sim->setStressDrop(*cit, sim->getMaxStressDrop(*cit), false);
                 }
             }
         }
 
-        // Process the blocks that failed.
+        // Process the slips for the blocks that have failed.
         // note: setInitStresses() called in processBlocksOrigFail().
         // note: processBlocksOrigFail() is entirely local (no MPI).
         processBlocksOrigFail(sim, event_sweeps);
 
-        // Recalculate CFF for all blocks where slipped blocks don't contribute
+        // Now, each process has updated slips for its elements but only that process has the update.
+        // We must communicate these updates among all processes.
         for (it=sim->begin(); it!=sim->end(); ++it) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 :sim->getSlipDeficit(gid) )); // ... also check for nan values
-            sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
-
-            ////////// Schultz:
-            // We need to ensure our slip economics books are balanced. I suspect we need here
-            // instead: sim->setUpdateField(gid, sim->getSlipDeficit(gid) ). Update the stresses using
-            // the current slip of all elements, or else we throw away the slip information from primary ruptures.
-            //sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            //sim->setUpdateField(gid, (sim->getFailed(gid) ? 0 : sim->getSlipDeficit(gid)));
+            ///////// Schultz:
+            // Update the stresses using the current slip of all elements, or else we throw away the slips
+            //   computed in processBlocksOrigFail().
+            sim->setUpdateField(gid, sim->getSlipDeficit(gid));
+            // Although we are adding slip deficits for all elements not just the local ones, when we execute the
+            //   distributeUpdateField() command below only the local elements are selected.
         }
 
         // Distribute the update field values to other processors
         sim->distributeUpdateField();
 
-        /////////////
-        // Schultz:: VC used this to set the dynamic triggering factor for ruptured element neighbors to the simulation parameter value,
-        // and set non-neighbors to double that. But that seems unphysical. Until verified, it's removed.
-        ////////////
-        // Set dynamic triggering on for any blocks neighboring blocks that slipped in the last sweep
-        //        for (it=sim->begin(); it!=sim->end(); ++it) {
-        //            BlockID gid = it->getBlockID();
-        //
-        //            // Add block neighbors if the block has slipped
-        //            if (sim->getFailed(gid)) {
-        //                nbr_start_end = sim->getNeighbors(gid);
-        //
-        //                for (nit=nbr_start_end.first; nit!=nbr_start_end.second; ++nit) {
-        //                    loose_elements.insert(*nit);
-        //                }
-        //            }
-        //        }
 
-        //
-        // Calculate the CFFs based on the stuck blocks
+        // Calculate the new CFFs based on the slips computed in processBlocksOrigFail()
         // multiply greenSchear() x getUpdateFieldPtr() --> getShearStressPtr() ... right?
-        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to (i think) sim->getRhogd(gid) -- see code a couple paragraphs above.
+        // assign stress values (shear stresses at this stage are all set to 0; normal stresses are set to sim->getRhogd(gid) -- see code a couple paragraphs above.
+        //
+        // The following matrix operation adds in normal/shear changes due to the current slip deficits and the Greens function interaction matrix.
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
                                        sim->getUpdateFieldPtr(),
@@ -610,6 +507,8 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         sim->computeCFFs();
 
+
+        //
         // Create the matrix equation, including interactions, and solve the system for slips
         processBlocksSecondaryFailures(sim, event_sweeps);
 
@@ -618,10 +517,6 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             BlockID gid = it->getBlockID();
             sim->setShearStress(gid, 0.0);
             sim->setNormalStress(gid, sim->getRhogd(gid));
-            //
-            // if this is a current/original failure, then 0 else...
-            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : sim->getSlipDeficit(gid)));
-            //sim->setUpdateField(gid, (global_failed_elements.count(gid)>0 ? 0 : std::isnan(sim->getSlipDeficit(gid)) ? 0 : sim->getSlipDeficit(gid)));
 
             //////// Schultz: try setting updatefield 0 for newly failed elements this sweep
             //sim->setUpdateField(gid, ((sim->getFailed(gid) && global_failed_elements.count(gid) == 0) ? 0 : sim->getSlipDeficit(gid)));
@@ -631,16 +526,10 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             sim->setUpdateField(gid, sim->getSlipDeficit(gid));
         }
 
-        //
-        //
-        // could we be getting MPI conflicts here? if one process is trying to distribute original failures (using update_field), and another process is already
-        // trying to distribute secondary failures, this could (???) cause a conflict and hang???
-        // let's try an MPI_Barrier here (i think we've got this wrapped up in an ifmpi block somewhere...):
-        //
-        //sim->barrier();    // yoder: (debug)
+
+        // Communicate the slip deficits between processors.
         sim->distributeUpdateField();
-        //sim->barrier();    // yoder: (debug)
-        //
+
         // Calculate the new shear stresses and CFFs given the new update field values
         sim->matrixVectorMultiplyAccum(sim->getShearStressPtr(),
                                        sim->greenShear(),
@@ -657,45 +546,14 @@ void RunEvent::processStaticFailure(Simulation *sim) {
 
         //
         sim->computeCFFs();
-        //
-        // Record the final stresses of blocks that failed during this sweep
-        BlockIDProcMapping::iterator        fit;
 
-        //
-        // yoder: there are a  couple ways to see that we loop over all the necessary elements. here's an approach that starts with the original code.
-        // i recommend leaving these comments in place for a revision or two, just until we make a final decision about how we're going to do this
-        // (process these two populations of block failures).
-        //
-        // this is the original code, to loop over all new failures. nominally, we want to do this plus loop over secondary failures as well.
-        // this loop ignores all secondary slip events. do we loop over a different list, or do we need to maintain a collective global_failed_element list (aka,
-        // not re-initialize it every sweep)? ... and of course, we must ask: is this by design? can we loop over event_sweeps (or at least new entries therein) directly?
-        /*
-        for (fit=global_failed_elements.begin(); fit!=global_failed_elements.end(); ++fit) {
-            if (sim->isLocalBlockID(fit->first)) {
-                printf("**Debug: setFinalStresses(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
-                event_sweeps.setFinalStresses(sweep_num,
-                                              fit->first,
-                                              sim->getShearStress(fit->first),
-                                              sim->getNormalStress(fit->first));
-            }
-        }
-        // yoder: now, this loops over a global list of secondary failures (which has/d been moved to a class-wide declaration, if this is how we want to handle this).
-        for (fit=global_secondary_id_list.begin(); fit!=global_secondary_id_list.end(); ++fit) {
-            if (sim->isLocalBlockID(fit->first)) {
-                printf("**Debug: setFinalStresses_secondary(): sweep: %d, gid: %d, ss: %f, ns: %f\n", sweep_num, fit->first, sim->getShearStress(fit->first), sim->getNormalStress(fit->first));
-                //if (not fit->_slip>0) {continue;};        // note: i think nan will always throw a false, so this should work for both nan and <=0.
-                event_sweeps.setFinalStresses(sweep_num,
-                                              fit->first,
-                                              sim->getShearStress(fit->first),
-                                              sim->getNormalStress(fit->first));
-            }
-        }
-        */
-        //
-        //
+        // ------------------------------------------------------------------------------------------------------------
+
+
+
         // and this loop updates final_stress values by looping directly over the current sweeps list.
         //  note that event_sweeps is of type quakelib::ModelSweeps, which contains a vector<SweepData> _sweeps.
-        for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it, ++event_sweeps_pos) {
+        for (quakelib::ModelSweeps::iterator s_it=event_sweeps.begin(); s_it!=event_sweeps.end(); ++s_it) {
             //
             // yoder: as per request by KS, change std::isnan() --> std::isnan(); std::isnan() appears to throw an error on some platforms.
             // Eric: Probably don't need this if check
@@ -714,7 +572,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
         global_failed_elements.clear(); // we are done with these blocks
         local_failed_elements.clear();  // we are done with these blocks
 
-        //
+
         // Find any blocks that fail because of the new stresses (all local; no MPI).
         markBlocks2Fail(sim, trigger_fault);
 
@@ -787,6 +645,7 @@ void RunEvent::processAftershock(Simulation *sim) {
         as = sim->popAftershock();
 
         // Calculate the distance from the aftershock to all elements
+        ////// Schultz: This is very inefficient. Makes aftershock simulations slow.
         for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
             double as_to_elem_dist = sim->getBlock(gid).center().dist(as.loc());
             as_elem_dists.insert(std::make_pair(as_to_elem_dist, gid));
@@ -795,14 +654,17 @@ void RunEvent::processAftershock(Simulation *sim) {
         // Determine the target rupture area given the aftershock magnitude
         // TODO:
         // user_defined_constants (flag this for later revisions in which we move these contant definitions to a parameters file).
-        double rupture_area = pow(10, as.mag-4.0);
+        double rupture_area = convert.sqkm2sqm(pow(10, as.mag-4.0));
+        // Schultz: This scaling relation returns rupture area in km^2. Lets keep everything in M.K.S. units.
+        // Scaling relations come from Leonard 2010 paper:
+        // "Earthquake Fault Scaling: Self-Consistent Relating of Rupture Length, Width, Average Displacement, and Moment Release"
         double selected_rupture_area = 0;
         double selected_rupture_area_mu = 0;
 
         // Go through the elements, closest first, until we find enough to match the rupture area
         for (it=as_elem_dists.begin(); it!=as_elem_dists.end(); ++it) {
             Block &b=sim->getBlock(it->second);
-            selected_rupture_area += convert.sqm2sqkm(b.area());
+            selected_rupture_area += b.area();
             selected_rupture_area_mu += b.area()*b.lame_mu();
             id_set.insert(it->second);
 
@@ -874,8 +736,6 @@ SimRequest RunEvent::run(SimFramework *_sim) {
     // This is used to determine dynamic block failure
     for (lid=0; lid<sim->numLocalBlocks(); ++lid) sim->saveStresses(sim->getGlobalBID(lid));
 
-    // If there's a specific block that triggered the event, it's a static stress failure type event
-    //sim->barrier();
     if (sim->getCurrentEvent().getEventTrigger() != UNDEFINED_ELEMENT_ID) {
         processStaticFailure(sim);
     } else {
@@ -883,11 +743,7 @@ SimRequest RunEvent::run(SimFramework *_sim) {
         processAftershock(sim);
     }
 
-    //sim->barrier();
-
     // Record the stress in the system before and after the event.
-    // yoder: note that recordEventStresses() emloyes a bit of MPI action, so it might be advisable to
-    // add some barrier() blocking (which might have been added above to barrier()-wrap the process_{earthquake type}() call).
     recordEventStresses(sim);
 
     // Reset the failed status for each local block

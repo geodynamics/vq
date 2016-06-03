@@ -65,7 +65,7 @@ namespace quakelib {
         std::string details;
 #ifdef HDF5_FOUND
         size_t      offset;
-        int       type;
+        hid_t       type;
         size_t      size;
 #endif
     };
@@ -430,12 +430,12 @@ namespace quakelib {
                 _data._area = area;
             };
             std::string name(void) const {
-				return _data._name;
-			};
-			void set_name(const std::string &name) {
-				strncpy(_data._name, name.c_str(), NAME_MAX_LEN);
-				_data._name[NAME_MAX_LEN-1] = '\0';
-			};
+                return _data._name;
+            };
+            void set_name(const std::string &name) {
+                strncpy(_data._name, name.c_str(), NAME_MAX_LEN);
+                _data._name[NAME_MAX_LEN-1] = '\0';
+            };
 
             static void get_field_descs(std::vector<FieldDesc> &descs);
             void write_ascii(std::ostream &out_stream) const;
@@ -736,8 +736,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "sweeps";
             };
-            static void setup_sweeps_hdf5(const int &data_file);
-            void append_sweeps_hdf5(const int &data_file) const;
+            static void setup_sweeps_hdf5(const hid_t &data_file);
+            void append_sweeps_hdf5(const hid_t &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -836,10 +836,30 @@ namespace quakelib {
                 end_sweep = _data._end_sweep_rec;
             }
 
-
+            // Schultz: This doesn't really reflect the number of iterations during a rupture.
+            //   This number returns the number of sweep records. Say element 0 slips in sweep 0 and
+            //   again in sweep 2 (the last sweep, so 3 sweeps), and elements 1 and 2  slip in sweeps 1 and 2.
+            //   This produces 6 sweep records (2 per element per sweep) even though there were only 3 sweeps.
             unsigned int getNumRecordedSweeps(void) const {
                 return _data._end_sweep_rec - _data._start_sweep_rec;
             };
+
+            // Schultz: Instead we need the maximum sweep number from the sweep records.
+            unsigned int getMaxSweepNum(void) const {
+                ModelSweeps::const_iterator   it;
+                unsigned int                  max_sweep_num = 0;
+
+                for (it=_sweeps.begin(); it!=_sweeps.end(); ++it) {
+                    if (it->_sweep_number > max_sweep_num) {
+                        max_sweep_num = it->_sweep_number;
+                    }
+                }
+
+                return max_sweep_num;
+            }
+
+
+
             double getShearStressInit(void) {
                 return _data._shear_stress_init;
             };
@@ -1000,8 +1020,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "events";
             };
-            static void setup_event_hdf5(const int &data_file);
-            void append_event_hdf5(const int &data_file) const;
+            static void setup_event_hdf5(const hid_t &data_file);
+            void append_event_hdf5(const hid_t &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -1019,10 +1039,10 @@ namespace quakelib {
         private:
             std::vector<ModelEvent>     _events;
 
-            void read_events_hdf5(const int &data_file);
-            void read_sweeps_hdf5(const int &data_file);
-            void append_events_hdf5(const int &data_file, const double &add_year, const unsigned int &add_evnum);
-            void append_sweeps_hdf5(const int &data_file, const unsigned int &last_evnum);
+            void read_events_hdf5(const hid_t &data_file);
+            void read_sweeps_hdf5(const hid_t &data_file);
+            void append_events_hdf5(const hid_t &data_file, const double &add_year, const unsigned int &add_evnum);
+            void append_sweeps_hdf5(const hid_t &data_file, const unsigned int &last_evnum);
 
         public:
             typedef std::vector<ModelEvent>::iterator       iterator;
@@ -1102,8 +1122,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "stresses";
             };
-            static void setup_stress_hdf5(const int &data_file);
-            void append_stress_hdf5(const int &data_file) const;
+            static void setup_stress_hdf5(const hid_t &data_file);
+            void append_stress_hdf5(const hid_t &data_file) const;
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
             static void write_ascii_header(std::ostream &out_stream);
@@ -1168,8 +1188,8 @@ namespace quakelib {
             static std::string hdf5_table_name(void) {
                 return "stress_state";
             };
-            static void setup_stress_state_hdf5(const int &data_file);
-            void append_stress_state_hdf5(const int &data_file) const;
+            static void setup_stress_state_hdf5(const hid_t &data_file);
+            void append_stress_state_hdf5(const hid_t &data_file) const;
             void read_data(const StressDataTime &in_data);
 #endif
             static void get_field_descs(std::vector<FieldDesc> &descs);
@@ -1225,8 +1245,8 @@ namespace quakelib {
             std::vector<ModelStressState>   _states;
 
 #ifdef HDF5_FOUND
-            void read_state_hdf5(const int &data_file);
-            void read_stress_hdf5(const int &data_file);
+            void read_state_hdf5(const hid_t &data_file);
+            void read_stress_hdf5(const hid_t &data_file);
 #endif
 
         public:
@@ -1271,18 +1291,18 @@ namespace quakelib {
             double _stress_drop_factor;
 
 #ifdef HDF5_FOUND
-            void read_section_hdf5(const int &data_file);
-            void read_element_hdf5(const int &data_file);
-            void read_vertex_hdf5(const int &data_file);
-            void read_fault_hdf5(const int &data_file);
+            void read_section_hdf5(const hid_t &data_file);
+            void read_element_hdf5(const hid_t &data_file);
+            void read_vertex_hdf5(const hid_t &data_file);
+            void read_fault_hdf5(const hid_t &data_file);
 
-            void write_fault_hdf5(const int &data_file) const;
-            void write_section_hdf5(const int &data_file) const;
-            void write_element_hdf5(const int &data_file) const;
-            void write_vertex_hdf5(const int &data_file) const;
+            void write_fault_hdf5(const hid_t &data_file) const;
+            void write_section_hdf5(const hid_t &data_file) const;
+            void write_element_hdf5(const hid_t &data_file) const;
+            void write_vertex_hdf5(const hid_t &data_file) const;
 
-            void write_stress_drop_factor_hdf5(const int &data_file) const;
-            void read_stress_drop_factor_hdf5(const int &data_file);
+            void write_stress_drop_factor_hdf5(const hid_t &data_file) const;
+            void read_stress_drop_factor_hdf5(const hid_t &data_file);
 #endif
 
         public:

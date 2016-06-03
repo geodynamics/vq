@@ -202,6 +202,13 @@ class VCParams {
             return params.read<double>("sim.greens.normal_offdiag_min");
         };
 
+        // Schultz:: Multiply diagonal of greens function matrix by a number 0 to 1, to
+        //   suppress offdiagonals.
+        double getGreenOffDiagMultiplier(void) const {
+            return params.read<double>("sim.greens.offdiag_multiplier");
+        };
+
+
         // Kasey: new parameter. Compute dynamic stress drops (True) or
         // computing from standard method (False)
         bool doDynamicStressDrops(void) const {
@@ -246,6 +253,10 @@ class VCParams {
         };
         double getGreenNormalOffDiagMin(void) const {
             return params.read<double>("sim.greens.normal_offdiag_min");
+        };
+
+        int getFailLimit(void) const {
+            return params.read<int>("sim.friction.num_element_fails");
         };
 
         // Schultz: Cellular automata model means we don't use interactions in secondary rupture model

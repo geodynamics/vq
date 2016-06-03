@@ -37,7 +37,7 @@ class EventOutput : public SimPlugin {
     private:
 #ifdef HDF5_FOUND
         // HDF5 handle to data file
-        int               data_file;
+        hid_t               data_file;
         void open_hdf5_file(const std::string &hdf5_file_name, const double &start_year, const double &end_year);
 #endif
         unsigned int        next_pause_check;
