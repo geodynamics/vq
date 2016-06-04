@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+## NOTE: If you edit this, set your "tab" to be 4 spaces in your text editor.
+
 import math
 import sys
 import argparse
@@ -1134,7 +1136,7 @@ class GreensPlotter:
             BOTTOM = False
         cbar_ax.tick_params(axis='x',labelbottom=BOTTOM,labeltop=TOP,
                         bottom='off',top='off',right='off',left='off',pad=PAD)
-        if self.field_type == "gravity" or self.field_type == "dilat_gravity":
+        if self.field_type == "gravity" or self.field_type == "dilat_gravity" or self.field_type == "satellite_gravity":
             forced_ticks  = [int(num) for num in np.linspace(-self.cbar_max, self.cbar_max, len(cbar_ax.xaxis.get_ticklabels()))]
         else:
             forced_ticks  = [round(num, 3) for num in np.linspace(-self.cbar_max, self.cbar_max, len(cbar_ax.xaxis.get_ticklabels()))]
@@ -1377,7 +1379,7 @@ class FieldPlotter:
         # Define how the cutoff value scales if it is not explitly set.
         # Cutoff is the max distance away from elements to compute
         # the field given in units of element length.
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
             self.cutoff_min_size = 20.0
             self.cutoff_min = 20.0
             self.cutoff_p2_size = 65.0
@@ -1512,18 +1514,18 @@ class FieldPlotter:
         }
         # Set field-specific plotting arguments
         if cbar_max is None:
-            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'satellite_gravity':
                 cbar_max = 20
             elif self.field_type == 'potential':
                 cbar_max = 0.002
             elif self.field_type == 'geoid':
                 cbar_max = 0.00015
                 
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid'  or self.field_type == 'satellite_gravity':
             self.dmc['cmap'] = plt.get_cmap('seismic')
             self.dmc['cbar_min'] = -cbar_max
             self.dmc['cbar_max'] = cbar_max
-            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'satellite_gravity':
                 self.dmc['cb_fontsize'] = 20.0
             elif self.field_type == 'potential':
                 self.dmc['cb_fontsize'] = 16.0
@@ -1618,9 +1620,13 @@ class FieldPlotter:
                 cutoff = self.cutoff_min
         sys.stdout.write('{:0.2f} cutoff [units of element length] : '.format(cutoff))
         self.fringes = False
-        if self.field_type == "gravity":
+        if self.field_type == "gravity" or self.field_type == "satellite_gravity":
             sys.stdout.write(" Computing gravity field :")
-            self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            ## For satellite observations, we exclude the free air effect
+            free_air_effect = True
+            if self.field_type == "satellite_gravity": 
+                free_air_effect = False
+            self.field_1d = self.slip_map.gravity_changes(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff, free_air_effect)
             # Reshape field
             self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))
         if self.field_type == "dilat_gravity":
@@ -1662,7 +1668,7 @@ class FieldPlotter:
     def plot_str(self):
         return self._plot_str
         
-    def create_field_image(self, angles=None):
+    def create_field_image(self, angles=None, masked=True):
         #-----------------------------------------------------------------------
         # Set all of the plotting properties
         #-----------------------------------------------------------------------
@@ -1680,16 +1686,12 @@ class FieldPlotter:
                 self.look_azimuth = angles[0]
                 self.look_elevation = angles[1]
             else:
-                if self.field_type == 'insar':
-                    # Typical angles for InSAR are approx 30 deg and 40 deg respectively
-                    self.look_azimuth = 30.0*np.pi/180.0
-                    self.look_elevation = 40.0*np.pi/180.0
-                else:
-                    self.look_azimuth = 0.0
-                    self.look_elevation = 0.0
+                # Typical angles for InSAR are approx 30 deg and 40 deg respectively
+                self.look_azimuth = 30.0*np.pi/180.0
+                self.look_elevation = 40.0*np.pi/180.0
             sys.stdout.write("Displacements projected along azimuth={:.1f}deg and elevation={:.1f}deg : ".format(self.look_azimuth*180.0/np.pi, self.look_elevation*180.0/np.pi))
             
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
             cmap            = self.dmc['cmap']
             water_color     = self.dmc['water_color']
             boundary_color  = self.dmc['boundary_color']
@@ -1792,6 +1794,7 @@ class FieldPlotter:
         
             # Changed units to microgals (multiply MKS unit by 10^8)
             if self.field_type == 'gravity': self.field_transformed *= float(pow(10,8))
+            if self.field_type == 'satellite_gravity': self.field_transformed *= float(pow(10,8))
             if self.field_type == 'dilat_gravity': self.field_transformed *= float(pow(10,8))
             if self.field_type == 'geoid': self.field_transformed *= float(pow(10,2))
             
@@ -1849,12 +1852,15 @@ class FieldPlotter:
         gc.collect()
         if self.field_type == 'displacement' or self.field_type == 'insar': 
             fig3.clf()
-            return Image.composite(im1, im2, mask)
+            if masked:
+                return Image.composite(im1, im2, mask)
+            else:   
+                return im2
         else:
             return im2
 
-    def plot_field(self, output_file=None, angles=None):
-        map_image = self.create_field_image(angles=angles)
+    def plot_field(self, output_file=None, angles=None, mask=True):
+        map_image = self.create_field_image(angles=angles, masked=mask)
         
         sys.stdout.write('map overlay : ')
         sys.stdout.flush()
@@ -2074,7 +2080,7 @@ class FieldPlotter:
             if self.fringes:
                 cb_title = 'Displacement [m]'
             else:
-                cb_title = 'Total displacement [m]'
+                cb_title = 'Line-of-sight displacement [m]'
                 if self.levels:
                     # Make first and last ticks on colorbar be <MIN and >MAX.
                     # Values of colorbar min/max are set in FieldPlotter init.
@@ -2084,7 +2090,7 @@ class FieldPlotter:
                     cb_ax.set_xticklabels(cb_tick_labs)
     
         else:
-            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity':
+            if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'satellite_gravity':
                 cb_title = r'Gravity changes [$\mu gal$]'
             elif self.field_type == 'potential':
                 cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
@@ -2971,7 +2977,7 @@ if __name__ == "__main__":
     # Field plotting arguments
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
-    parser.add_argument('--field_type', required=False, help="Field type: gravity, dilat_gravity, displacement, insar, potential, geoid")
+    parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
@@ -2979,6 +2985,8 @@ if __name__ == "__main__":
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
     parser.add_argument('--wavelength', type=float, required=False,
             help="Observing wavelength for InSAR or displacement plots, in meters. Default is 0.3m")
+    parser.add_argument('--no_mask', required=False, action='store_true',
+            help="This does not mask the ocean for displacement and InSAR plots.")
     parser.add_argument('--levels', type=float, nargs='+', required=False,
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
@@ -3113,8 +3121,8 @@ if __name__ == "__main__":
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid":
-            raise BaseException("\nField type is one of gravity, dilat_gravity, displacement, insar, potential, geoid")
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid" and type != "satellite_gravity":
+            raise BaseException("\nField type is one of gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
             
     # Pre-check for probability table evaluation. We need the same number of --t0 arguments as --magnitudes
     if args.t0 or args.magnitudes:
@@ -3390,6 +3398,7 @@ if __name__ == "__main__":
         if args.levels: levels = args.levels
         else: levels = None
         filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id, args.wavelength)
+        if args.no_mask is None: args.no_mask=False
         if args.angles: 
             if len(args.angles) != 2:
                 raise BaseException("\nMust specify 2 angles")
@@ -3422,7 +3431,7 @@ if __name__ == "__main__":
         
         FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g, wavelength=args.wavelength)
         FP.compute_field(cutoff=1000)
-        FP.plot_field(output_file=filename, angles=angles)
+        FP.plot_field(output_file=filename, angles=angles, mask = not args.no_mask)
     if args.field_eval:
         filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id)
         sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
