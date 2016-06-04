@@ -195,7 +195,7 @@ quakelib::Tensor<3,3> quakelib::SimElement::calc_stress_tensor(const Vec<3> &loc
 }
 
 // Gravity change equations taken from Okubo 1992
-quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
+quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff, bool free_air) {
     quakelib::FloatList gravity_changes;
     Okada block_okada;
     double gravity_change, slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, xp3, yp3, x, y, xp, yp;
@@ -278,7 +278,7 @@ quakelib::FloatList quakelib::SlipMap::gravity_changes(const VectorList &points,
                 xp = (x-xp0) * strike_sin + (y-yp0) * strike_cos;
                 yp = -(x-xp0) * strike_cos + (y-yp0) * strike_sin;
 
-                gravity_change = block_okada.calc_dg(quakelib::Vec<2>(xp,yp), c, dip, L, W, US, UD, UT, lambda, mu);
+                gravity_change = block_okada.calc_dg(quakelib::Vec<2>(xp,yp), c, dip, L, W, US, UD, UT, lambda, mu, free_air);
 
             }
 

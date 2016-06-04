@@ -136,7 +136,7 @@ namespace quakelib {
             // [duxdz,duydz,duzdz]
             Vec<3> calc_dudz(const Vec<3> location, const double c, const double dip, const double L, const double W, const double US, const double UD, const double UT, const double lambda, const double mu) throw(std::invalid_argument);
 
-            double calc_dg(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
+            double calc_dg(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu, bool free_air = true);
             double calc_dV(Vec<3> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
             double calc_dg_dilat(Vec<2> location, double c, double dip, double L, double W, double US, double UD, double UT, double lambda, double mu);
 
