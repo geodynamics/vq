@@ -556,6 +556,29 @@ class Geometry:
 
 
 
+class InvolvedSectionFilter:
+    def __init__(self, geometry, event_file, section_list):
+        self._section_list = section_list
+        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in geometry.model.getElementIDs()}
+        self._event_file = event_file
+        self._all_sweeps = AllSweeps(self._event_file)
+        #self._elem_to_section_map = geometry._elem_to_section_map
+
+    def test_event(self, event):
+        #event_sweeps = Sweeps(self._event_file, event.getEventNumber())
+        event_id = event.getEventNumber()
+        event_secs = [self._elem_to_section_map[elID] for elID in self._all_sweeps.event_elements[event_id]]
+        for sec in self._section_list:
+            if sec in event_secs: return True
+        return False
+
+    def plot_str(self):
+        label_str = "  partSections"
+        for sec in self._section_list:
+            label_str += "-"+geometry.model.section(sec).name()
+        return label_str
+
+
 class TriggerSectionFilter:
     def __init__(self, geometry, section_list):
         self._section_list = section_list
@@ -610,19 +633,43 @@ def read_events_h5(sim_file, event_numbers=None):
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
         else:
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
-	return events
+    return events
+
+def read_all_sweeps_h5(sim_file, block_ids=None):
+    # Read sweeps sequence for multiple blocks (unless block_id specified)
+    with h5py.File(sim_file) as vq_data:
+        sweeps = vq_data['sweeps'][()]
+    # If block_id specified, only return those sweeps for that block
+    if block_ids is not None:
+        d_type = sweeps.dtype
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+    return sweeps
+
+def parse_all_sweeps_h5(sim_file=None, block_id=None, do_print=True, sweeps=None):
+    # Read sweep data if not provided
+    if sweeps is None: sweeps = read_all_sweeps_h5(sim_file, block_id=block_id)
+    
+    data = [[rw['event_number'], rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+             rw['shear_final'], rw['normal_init'],rw['normal_final'], 
+             (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
+             (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
+    if do_print:
+        for rw in data: sys.stdout.write(rw)
+    cols = ['event_number', 'sweep_number', 'block_id', 'block_slip', 'shear_init', 
+            'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
+    return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
 
 def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
-	# Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
-	with h5py.File(sim_file) as vq_data:
-		sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
+    # Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
+    with h5py.File(sim_file) as vq_data:
+        sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
                        vq_data['events'][event_number]['end_sweep_rec']]
-		sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
-	# If block_id specified, only return those sweeps for that block
-	if block_ids is not None:
-		d_type = sweeps.dtype
-		sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
-	return sweeps
+        sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
+    # If block_id specified, only return those sweeps for that block
+    if block_ids is not None:
+        d_type = sweeps.dtype
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+    return sweeps
 
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
@@ -784,6 +831,23 @@ class Events:
     def get_num_sweeps(self, evnum):
         return self._events[evnum].getMaxSweepNum()
 
+class AllSweeps:
+    # A class for reading/analyzing data from all sweeps
+    def __init__(self, sim_file, block_ids=None):
+        self.sweeps = read_all_sweeps_h5(sim_file, block_ids=block_ids)
+        self.sweep_data = parse_all_sweeps_h5(sweeps=self.sweeps, do_print=False)
+        self.block_ids = self.sweep_data['block_id'].tolist()
+        sys.stdout.write("\nRead all sweeps from {}".format(sim_file))
+        self.event_elements = {0:[]}
+        cur_event = 0
+        for rw in self.sweep_data:
+            if rw['event_number'] != cur_event:
+                cur_event = rw['event_number']
+                self.event_elements[rw['event_number']]=[rw['block_id']]
+            else:
+                self.event_elements[rw['event_number']].append(rw['block_id'])
+        
+
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
     def __init__(self, sim_file, event_number=0, block_ids=None):
@@ -792,7 +856,7 @@ class Sweeps:
         self.block_ids = self.sweep_data['block_id'].tolist()
         self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
         self.event_number = event_number
-        sys.stdout.write("Read event {} sweeps from {}".format(event_number,sim_file))
+        sys.stdout.write("\nRead event {} sweeps from {}".format(event_number,sim_file))
         # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
     #
     def plot_event_block_slips(self, block_ids=None, fignum=0):
@@ -2910,6 +2974,8 @@ if __name__ == "__main__":
                         help="Minimum number of elements involved in an event")
     parser.add_argument('--max_num_elements', type=float, required=False,
                         help="Maximum number of elements involved in an event")
+    parser.add_argument('--involved_sections', type=int, nargs='+', required=False,
+                        help="List of model sections to use (all sections used if unspecified). All earthquakes involving specified sections included.")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
@@ -3213,7 +3279,16 @@ if __name__ == "__main__":
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
         sys.stdout.write("Applying event number filter...")
-        
+    
+    if args.involved_sections:
+        if not args.model_file: raise BaseException("\nMust specify --model_file for --involved_sections to work.")
+        for sec_id in args.involved_sections:
+            if sec_id not in geometry._elem_to_section_map.values():
+                #sys.stdout.write(geometry._elem_to_section_map)
+                raise BaseException("\nSection id {} does not exist.".format(sec_id))
+        event_filters.append(InvolvedSectionFilter(geometry, args.event_file[0], args.involved_sections))
+        sys.stdout.write("Applying fault section filter involving only fault sections {}...".format(args.involved_sections))
+    
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
         for sec_id in args.use_sections:
