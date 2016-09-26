@@ -744,6 +744,10 @@ class Events:
             self._plot_str += cur_filter.plot_str()
         if len(self._filtered_events) == 0:
             raise BaseException("\nNo events matching filters found!")
+        sys.stdout.write("Number of filtered events: "+str(len(self._filtered_events)))
+        #for evnt in self._filtered_events:
+        #    sys.stdout.write("\n eventID = {}, eventMag = {}".format(self._events[evnt].getEventNumber(), 
+        #                        self._events[evnt].getMagnitude()))
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
@@ -2624,6 +2628,30 @@ class DiagnosticPlot(BasePlotter):
             ave_label = ""
         self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, ave_label, " ", "simulation time [years]", "event mean slip [m]", filename)
 
+class MomentRatePlot(BasePlotter):
+    
+    def plot_momrate_of_t(self, fig, events, filename):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Moment Rate"
+        # Calculate 10 year (?) running average of moment rate from event magnitudes and times.
+        eventYears = events.event_years()
+        eventMags = events.event_magnitudes()
+        year_magPairs = zip(eventYears, eventMags)
+        windowSize = (max(eventYears)-min(eventYears))/100 #years
+        intervalSize = windowSize/3 #years
+        
+        times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
+        momentRates = []
+        
+        for time in times:
+            relevantMoments = np.array([10**(1.5*(year_mag[1]+6)) for year_mag in year_magPairs if year_mag[0] > time-windowSize/2 and year_mag[0] < time+windowSize/2])
+            momentRates.append(np.sum(relevantMoments)/windowSize)
+        
+        self.create_plot(fig, 0, "line", False, times, np.array(momentRates), PLOT_TITLE, "Year", "{}-year average Moment Rate  (J/yr)".format(int(windowSize)), filename)
+
+
+
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, fig, events, filename, fit_weibull):
         PLOT_TITLE = events.plot_str()
@@ -3008,7 +3036,9 @@ if __name__ == "__main__":
             help="Plot Leonard 2010 scaling relations.")
     parser.add_argument('--plot_recurrence', required=False, action='store_true',
             help="Plot distribution of recurrence intervals.")
-
+    parser.add_argument('--plot_momentRate', required=False, action='store_true',
+            help="Plot time series of moment rate running average.")
+            
     # Probability plotting arguments
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t plot.")
@@ -3097,6 +3127,8 @@ if __name__ == "__main__":
             help="Specify the DPI for plots that are saved.")
     parser.add_argument('--no_titles', required=False, action='store_true',
             help="Specify no titles on plots.")
+    parser.add_argument('--generic_titles', required=False, action='store_true',
+            help="Specify minimal generic titles on plots.")
     parser.add_argument('--pdf', required=False, action='store_true',
             help="Save plots as PDF instead of PNG.")
     parser.add_argument('--eps', required=False, action='store_true',
@@ -3450,14 +3482,25 @@ if __name__ == "__main__":
         times = [event_set.interevent_times() for event_set in events]
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for time in times:
-            BasePlotter().create_plot(fig, 0, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
+            BasePlotter().create_plot(fig, 0, "hist", False, time, None, "Paleoseismic site recurrence times", "interevent time [years]", "", filename)#events[0].plot_str(), "interevent time [years]", "", filename)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+        
+    if args.plot_momentRate:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().event_plot(args.event_file, "momentRate", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
+        for event_set in events:
+            MomentRatePlot().plot_momrate_of_t(fig, event_set, filename)
+        ax.legend(loc='best',fontsize=10)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+        
     if args.probability_table:
         if args.t0 is None: raise BaseException("\nMust specify time since last earthquakes with magnitude values given by --magnitudes. Use --t0 and --magnitudes, they must be the same number of arguments, and --magnitudes should be listed in increasing order.")
         else:
             for event_set in events:
-                ProbabilityPlot().print_prob_table(args.t0, args.t, args.magnitudes, event_set)
+                MomentRatePlot().plot_momrate_of_t(args.t0, args.t, args.magnitudes, event_set)
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
@@ -3499,7 +3542,7 @@ if __name__ == "__main__":
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles)
     if args.field_eval:
-        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id)
+        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id, args.wavelength)
         sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
         sys.stdout.flush()
         ele_slips = events[0].get_event_element_slips(args.event_id)
