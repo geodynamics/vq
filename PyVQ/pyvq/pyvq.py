@@ -2427,6 +2427,8 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
         min_mag, max_mag = min(mag_list), max(mag_list)
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Magnitude Rupture Area for UCERF3 Paleoseismic Sites (m > 6)"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('area')
@@ -2469,6 +2471,8 @@ class MagnitudeMeanSlipPlot(BasePlotter):
         min_mag, max_mag = min(mag_list), max(mag_list)
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Magnitude Mean Slip for UCERF3 Paleoseismic Sites (m > 6)"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('slip')
@@ -2507,6 +2511,7 @@ class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, fig, color_index, events, filename, UCERF2 = False, UCERF3 = False, label=None):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Frequency Magnitude for UCERF3 Paleoseismic Sites (m > 6)"
         # California observed seismicity rates and errorbars (UCERF2)
         x_UCERF2 = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
         y_UCERF2 = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
@@ -2537,11 +2542,12 @@ class FrequencyMagnitudePlot(BasePlotter):
         #    fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
         #    add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
         #    add_label = "b==1"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if UCERF2 and color_index == 0:
             self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif UCERF3 and color_index == 0:
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif not UCERF2 and not UCERF3 and color_index == 0:
             self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label)
         else:
@@ -2634,27 +2640,47 @@ class DiagnosticPlot(BasePlotter):
             ave_label = ""
         self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, ave_label, " ", "simulation time [years]", "event mean slip [m]", filename)
 
-class MomentRatePlot(BasePlotter):
+
+class RatePlot(BasePlotter):
     
     def plot_momrate_of_t(self, fig, events, filename):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
         if args.generic_titles: PLOT_TITLE = "Moment Rate"
-        # Calculate 10 year (?) running average of moment rate from event magnitudes and times.
+        # Calculate running average of moment rate from event magnitudes and times.
         eventYears = events.event_years()
         eventMags = events.event_magnitudes()
         year_magPairs = zip(eventYears, eventMags)
         windowSize = (max(eventYears)-min(eventYears))/100 #years
         intervalSize = windowSize/3 #years
-        
         times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
         momentRates = []
-        
+        if args.generic_titles: label = ""
+        if label == None: label = filename
         for time in times:
             relevantMoments = np.array([10**(1.5*(year_mag[1]+6)) for year_mag in year_magPairs if year_mag[0] > time-windowSize/2 and year_mag[0] < time+windowSize/2])
-            momentRates.append(np.sum(relevantMoments)/windowSize)
+            momentRates.append(np.sum(relevantMoments)/float(windowSize))
+        self.create_plot(fig, 0, "line", False, times, np.array(momentRates), PLOT_TITLE, "Year", "{}-year average Moment Rate  (J/yr)".format(int(windowSize)), label)
         
-        self.create_plot(fig, 0, "line", False, times, np.array(momentRates), PLOT_TITLE, "Year", "{}-year average Moment Rate  (J/yr)".format(int(windowSize)), filename)
+    def plot_numrate_of_t(self, fig, events, filename):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Number Rate"
+        # Calculate number rate from event times.
+        eventYears = events.event_years()
+        windowSize = (max(eventYears)-min(eventYears))/100 #years
+        intervalSize = windowSize/3 #years
+        times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
+        numRate = []
+        if args.generic_titles: label = "50k yr Simulation"
+        if label == None: label = filename
+        for time in times:
+            thistimeCount = 0
+            for year in eventYears:
+                if year > time-windowSize/2 and year < time+windowSize/2:
+                    thistimeCount += 1
+            numRate.append(thistimeCount/float(windowSize))
+        self.create_plot(fig, 0, "line", False, times, np.array(numRate), PLOT_TITLE, "Year", "{}-year average Number Rate ($yr^{-1}$)".format(int(windowSize)), label)
 
 
 
@@ -2961,7 +2987,7 @@ if __name__ == "__main__":
     # Specify arguments
     parser = argparse.ArgumentParser(description="PyVQ.")
 
-    # Event/model file arguments
+    # ---------  Event/model file arguments -----------
     parser.add_argument('--event_file', required=False, type=str, nargs='+',
             help="Name of event file to analyze.")
     parser.add_argument('--sweep_file', required=False,
@@ -2981,7 +3007,7 @@ if __name__ == "__main__":
     parser.add_argument('--label', required=False, type=str, nargs='+',
             help="Custom label to use for plot legends, specify one per event file.")
 
-    # Event filtering arguments
+    # ---------  Event filtering arguments -----------
     parser.add_argument('--min_magnitude', type=float, required=False,
             help="Minimum magnitude of events to process.")
     parser.add_argument('--max_magnitude', type=float, required=False,
@@ -3023,7 +3049,7 @@ if __name__ == "__main__":
     parser.add_argument('--group2_files', type=str, nargs='+', required=False,
             help="List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for computing time series correlations.")
 
-    # Statisical plotting arguments
+    # ---------  Statisical plotting arguments -----------
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
             help="Generate frequency magnitude plot.")
     parser.add_argument('--UCERF2', required=False, action='store_true',
@@ -3044,8 +3070,10 @@ if __name__ == "__main__":
             help="Plot distribution of recurrence intervals.")
     parser.add_argument('--plot_momentRate', required=False, action='store_true',
             help="Plot time series of moment rate running average.")
+    parser.add_argument('--plot_numberRate', required=False, action='store_true',
+            help="Plot time series of earthquake number rate running average.")
             
-    # Probability plotting arguments
+    # ---------  Probability plotting arguments -----------
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t plot.")
     parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False, action='store_true',
@@ -3070,7 +3098,7 @@ if __name__ == "__main__":
             help="Fit a Weibull distribution to the simulated earthquake distribution.")
             
             
-    # Field plotting arguments
+    # ---------  Field plotting arguments -----------
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
     parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
@@ -3089,7 +3117,7 @@ if __name__ == "__main__":
     parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
-    # Greens function plotting arguments
+    # ---------  Greens function plotting arguments -----------
     parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.") 
     parser.add_argument('--save_greens', required=False, action='store_true', help="Save single element Okubo Green's function values.")            
     parser.add_argument('--plot_name', required=False, help="Name for saving the plot to file.")
@@ -3108,11 +3136,11 @@ if __name__ == "__main__":
     parser.add_argument('--_lambda', required=False, type=float, help="Lame's first parameter, default 3.2e10.")
     parser.add_argument('--mu', required=False, type=float, help="Shear modulus, default 3.0e10.")
     
-    # Stress plotting arguments
+    # ---------  Stress plotting arguments -----------
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
             
-    # Diagnostic plots
+    # ---------  Diagnostic plots -----------
     parser.add_argument('--diagnostics', required=False, action='store_true',
             help="Plot all diagnostic plotsall")
     parser.add_argument('--event_elements', required=False, action='store_true',
@@ -3130,7 +3158,7 @@ if __name__ == "__main__":
     parser.add_argument('--zoom', required=False, action='store_true',
             help="Force zoomed bounds on scatter and line plots")
 
-    # Customization
+    # ---------  Customization -----------
     parser.add_argument('--dpi', required=False, type=float,
             help="Specify the DPI for plots that are saved.")
     parser.add_argument('--no_titles', required=False, action='store_true',
@@ -3142,7 +3170,7 @@ if __name__ == "__main__":
     parser.add_argument('--eps', required=False, action='store_true',
             help="Save plots as EPS instead of PNG.")
             
-    # Geometry
+    # ---------  Geometry -----------
     parser.add_argument('--slip_rates', required=False, action='store_true',
             help="Print element id and slip rate for all elements.")
     parser.add_argument('--elements', type=int, nargs='+', required=False,
@@ -3181,11 +3209,11 @@ if __name__ == "__main__":
     parser.add_argument('--spacetime', required=False, action='store_true',
             help="Plot a spacetime plot of ruptures for a single fault. Must specify the fault to use with --use_faults.")
             
-    # Event movies
+    # ---------  Event movies -----------
     parser.add_argument('--event_movie', required=False, action='store_true',
             help="Make a movie of a specified event, must use --event_id.")
 
-    # Validation/testing arguments
+    # ---------  Validation/testing arguments -----------
     parser.add_argument('--validate_slip_sum', required=False,
             help="Ensure the sum of mean slip for all events is within 1 percent of the specified value.")
     parser.add_argument('--validate_mean_interevent', required=False,
@@ -3484,13 +3512,14 @@ if __name__ == "__main__":
         ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+        
     if args.plot_recurrence:
         fig = plt.figure()
         ax = fig.add_subplot(111)
         times = [event_set.interevent_times() for event_set in events]
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for time in times:
-            BasePlotter().create_plot(fig, 0, "hist", False, time, None, "Paleoseismic site recurrence times", "interevent time [years]", "", filename)#events[0].plot_str(), "interevent time [years]", "", filename)
+            BasePlotter().create_plot(fig, 0, "hist", False, time, None, "Interevent Time PDF, UCERF3 Paleoseismic Sites (m > 6)", "Interevent Time (years)", "", filename)#events[0].plot_str(), "interevent time [years]", "", filename)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
         
@@ -3499,16 +3528,25 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111)
         filename = SaveFile().event_plot(args.event_file, "momentRate", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for event_set in events:
-            MomentRatePlot().plot_momrate_of_t(fig, event_set, filename)
+            RatePlot().plot_momrate_of_t(fig, event_set, filename)
         ax.legend(loc='best',fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+    if args.plot_numberRate:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().event_plot(args.event_file, "numberRate", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
+        for event_set in events:
+            RatePlot().plot_numrate_of_t(fig, event_set, filename)
+        ax.legend(loc='best',fontsize=10)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+
     if args.probability_table:
         if args.t0 is None: raise BaseException("\nMust specify time since last earthquakes with magnitude values given by --magnitudes. Use --t0 and --magnitudes, they must be the same number of arguments, and --magnitudes should be listed in increasing order.")
         else:
             for event_set in events:
-                MomentRatePlot().plot_momrate_of_t(args.t0, args.t, args.magnitudes, event_set)
+                ProbabilityPlot().print_prob_table(args.t0, args.t, args.magnitudes, event_set)
     if args.field_plot:
         type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
