@@ -2672,7 +2672,7 @@ class RatePlot(BasePlotter):
         intervalSize = windowSize/3 #years
         times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
         numRate = []
-        if args.generic_titles: label = "50k yr Simulation"
+        if args.generic_titles: label = ""
         if label == None: label = filename
         for time in times:
             thistimeCount = 0
@@ -2680,7 +2680,7 @@ class RatePlot(BasePlotter):
                 if year > time-windowSize/2 and year < time+windowSize/2:
                     thistimeCount += 1
             numRate.append(thistimeCount/float(windowSize))
-        self.create_plot(fig, 0, "line", False, times, np.array(numRate), PLOT_TITLE, "Year", "{}-year average Number Rate ($yr^{-1}$)".format(int(windowSize)), label)
+        self.create_plot(fig, 0, "line", False, times, np.array(numRate), PLOT_TITLE, "Year", "{}-year average Number Rate (Count/yr)".format(int(windowSize)), label)
 
 
 
@@ -3205,7 +3205,7 @@ if __name__ == "__main__":
     parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
     parser.add_argument('--fault_group_traces', required=False, action='store_true', help="Plot the fault traces on a map for two groups of faults, specified by two lists of fault ids using --group1_ids and --group2_ids.") 
             
-    # --------- Spacetime plots -----------
+    # ---------  Spacetime plots -----------
     parser.add_argument('--spacetime', required=False, action='store_true',
             help="Plot a spacetime plot of ruptures for a single fault. Must specify the fault to use with --use_faults.")
             
@@ -3512,7 +3512,7 @@ if __name__ == "__main__":
         ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+    
     if args.plot_recurrence:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -3522,7 +3522,7 @@ if __name__ == "__main__":
             BasePlotter().create_plot(fig, 0, "hist", False, time, None, "Interevent Time PDF, UCERF3 Paleoseismic Sites (m > 6)", "Interevent Time (years)", "", filename)#events[0].plot_str(), "interevent time [years]", "", filename)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-        
+    
     if args.plot_momentRate:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -3532,6 +3532,7 @@ if __name__ == "__main__":
         ax.legend(loc='best',fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+    
     if args.plot_numberRate:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -3541,7 +3542,7 @@ if __name__ == "__main__":
         ax.legend(loc='best',fontsize=10)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
-
+    
     if args.probability_table:
         if args.t0 is None: raise BaseException("\nMust specify time since last earthquakes with magnitude values given by --magnitudes. Use --t0 and --magnitudes, they must be the same number of arguments, and --magnitudes should be listed in increasing order.")
         else:
