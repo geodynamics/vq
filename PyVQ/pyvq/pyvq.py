@@ -558,6 +558,29 @@ class Geometry:
 
 
 
+class InvolvedSectionFilter:
+    def __init__(self, geometry, event_file, section_list):
+        self._section_list = section_list
+        self._elem_to_section_map = {elem_num: geometry.model.element(elem_num).section_id() for elem_num in geometry.model.getElementIDs()}
+        self._event_file = event_file
+        self._all_sweeps = AllSweeps(self._event_file)
+        #self._elem_to_section_map = geometry._elem_to_section_map
+
+    def test_event(self, event):
+        #event_sweeps = Sweeps(self._event_file, event.getEventNumber())
+        event_id = event.getEventNumber()
+        event_secs = [self._elem_to_section_map[elID] for elID in self._all_sweeps.event_elements[event_id]]
+        for sec in self._section_list:
+            if sec in event_secs: return True
+        return False
+
+    def plot_str(self):
+        label_str = "  partSections"
+        for sec in self._section_list:
+            label_str += "-"+geometry.model.section(sec).name()
+        return label_str
+
+
 class TriggerSectionFilter:
     def __init__(self, geometry, section_list):
         self._section_list = section_list
@@ -612,19 +635,43 @@ def read_events_h5(sim_file, event_numbers=None):
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
         else:
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
-	return events
+    return events
+
+def read_all_sweeps_h5(sim_file, block_ids=None):
+    # Read sweeps sequence for multiple blocks (unless block_id specified)
+    with h5py.File(sim_file) as vq_data:
+        sweeps = vq_data['sweeps'][()]
+    # If block_id specified, only return those sweeps for that block
+    if block_ids is not None:
+        d_type = sweeps.dtype
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+    return sweeps
+
+def parse_all_sweeps_h5(sim_file=None, block_id=None, do_print=True, sweeps=None):
+    # Read sweep data if not provided
+    if sweeps is None: sweeps = read_all_sweeps_h5(sim_file, block_id=block_id)
+    
+    data = [[rw['event_number'], rw['sweep_number'], rw['block_id'], rw['block_slip'], rw['shear_init'],
+             rw['shear_final'], rw['normal_init'],rw['normal_final'], 
+             (rw['shear_final']-rw['shear_init'])/rw['shear_init'], 
+             (rw['normal_final']-rw['normal_init'])/rw['normal_init']] for rw in sweeps]
+    if do_print:
+        for rw in data: sys.stdout.write(rw)
+    cols = ['event_number', 'sweep_number', 'block_id', 'block_slip', 'shear_init', 
+            'shear_final', 'normal_init', 'normal_final', 'shear_change', 'normal_change']
+    return np.core.records.fromarrays(zip(*data), names=cols, formats = [type(x).__name__ for x in data[0]])
 
 def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
-	# Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
-	with h5py.File(sim_file) as vq_data:
-		sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
+    # Read sweeps sequence for multiple blocks (unless block_id specified) in a single event.
+    with h5py.File(sim_file) as vq_data:
+        sweep_range = [vq_data['events'][event_number]['start_sweep_rec'],
                        vq_data['events'][event_number]['end_sweep_rec']]
-		sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
-	# If block_id specified, only return those sweeps for that block
-	if block_ids is not None:
-		d_type = sweeps.dtype
-		sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
-	return sweeps
+        sweeps = vq_data['sweeps'][sweep_range[0]:sweep_range[1]][()]
+    # If block_id specified, only return those sweeps for that block
+    if block_ids is not None:
+        d_type = sweeps.dtype
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+    return sweeps
 
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
     # Read sweep data if not provided
@@ -699,6 +746,10 @@ class Events:
             self._plot_str += cur_filter.plot_str()
         if len(self._filtered_events) == 0:
             raise BaseException("\nNo events matching filters found!")
+        sys.stdout.write("Number of filtered events: "+str(len(self._filtered_events)))
+        #for evnt in self._filtered_events:
+        #    sys.stdout.write("\n eventID = {}, eventMag = {}".format(self._events[evnt].getEventNumber(), 
+        #                        self._events[evnt].getMagnitude()))
 
     def interevent_times(self):
         event_times = [self._events[evnum].getEventYear() for evnum in self._filtered_events if not np.isnan(self._events[evnum].getMagnitude())]
@@ -786,6 +837,23 @@ class Events:
     def get_num_sweeps(self, evnum):
         return self._events[evnum].getMaxSweepNum()
 
+class AllSweeps:
+    # A class for reading/analyzing data from all sweeps
+    def __init__(self, sim_file, block_ids=None):
+        self.sweeps = read_all_sweeps_h5(sim_file, block_ids=block_ids)
+        self.sweep_data = parse_all_sweeps_h5(sweeps=self.sweeps, do_print=False)
+        self.block_ids = self.sweep_data['block_id'].tolist()
+        sys.stdout.write("\nRead all sweeps from {}".format(sim_file))
+        self.event_elements = {0:[]}
+        cur_event = 0
+        for rw in self.sweep_data:
+            if rw['event_number'] != cur_event:
+                cur_event = rw['event_number']
+                self.event_elements[rw['event_number']]=[rw['block_id']]
+            else:
+                self.event_elements[rw['event_number']].append(rw['block_id'])
+        
+
 class Sweeps:
     # A class for reading/analyzing data from the event sweeps
     def __init__(self, sim_file, event_number=0, block_ids=None):
@@ -794,7 +862,7 @@ class Sweeps:
         self.block_ids = self.sweep_data['block_id'].tolist()
         self.mag = read_events_h5(sim_file,event_numbers=event_number)['event_magnitude'][0]
         self.event_number = event_number
-        sys.stdout.write("Read event {} sweeps from {}".format(event_number,sim_file))
+        sys.stdout.write("\nRead event {} sweeps from {}".format(event_number,sim_file))
         # we could also, at this point, parse out the individual block sequences, maybe make a class Block().
     #
     def plot_event_block_slips(self, block_ids=None, fignum=0):
@@ -2359,6 +2427,8 @@ class MagnitudeRuptureAreaPlot(BasePlotter):
         min_mag, max_mag = min(mag_list), max(mag_list)
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Magnitude Rupture Area for UCERF3 Paleoseismic Sites (m > 6)"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('area')
@@ -2401,6 +2471,8 @@ class MagnitudeMeanSlipPlot(BasePlotter):
         min_mag, max_mag = min(mag_list), max(mag_list)
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Magnitude Mean Slip for UCERF3 Paleoseismic Sites (m > 6)"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if WC94 and not leonard and color_index == 0:
             scale_x, scale_y = Distributions().wells_coppersmith('slip')
@@ -2439,6 +2511,7 @@ class FrequencyMagnitudePlot(BasePlotter):
     def plot(self, fig, color_index, events, filename, UCERF2 = False, UCERF3 = False, label=None):
         PLOT_TITLE = events.plot_str()
         if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Frequency Magnitude for UCERF3 Paleoseismic Sites (m > 6)"
         # California observed seismicity rates and errorbars (UCERF2)
         x_UCERF2 = [5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
         y_UCERF2 = [4.73, 2.15, 0.71, 0.24, 0.074, 0.020]
@@ -2469,11 +2542,12 @@ class FrequencyMagnitudePlot(BasePlotter):
         #    fit_point = freq_x[(np.abs(np.array(freq_x)-MIN_FIT_MAG)).argmin()]
         #    add_y = 10**(math.log(fit_point,10)+freq_x[0]-add_x)
         #    add_label = "b==1"
+        if args.generic_titles: label = "50k year simulation"
         if label is None: label = filename
         if UCERF2 and color_index == 0:
             self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF2, y_UCERF2, y_error_UCERF2, "UCERF2", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif UCERF3 and color_index == 0:
-            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
+            self.scatter_and_error_polygon(fig, True, freq_x, freq_y, x_UCERF3, y_UCERF3, y_error_UCERF3, "UCERF3", PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year mag > M", label, add_x=add_x, add_y=add_y, add_label=add_label)
         elif not UCERF2 and not UCERF3 and color_index == 0:
             self.scatter_and_line(fig, color_index, True, freq_x, freq_y, add_x, add_y, add_label, PLOT_TITLE, "Magnitude (M)", "cumulative number of events per year with mag > M", label)
         else:
@@ -2565,6 +2639,50 @@ class DiagnosticPlot(BasePlotter):
             x_ave, y_ave = None, None
             ave_label = ""
         self.scatter_and_line(fig, color_index, True, years, slips, x_ave, y_ave, ave_label, " ", "simulation time [years]", "event mean slip [m]", filename)
+
+
+class RatePlot(BasePlotter):
+    
+    def plot_momrate_of_t(self, fig, events, filename):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Moment Rate"
+        # Calculate running average of moment rate from event magnitudes and times.
+        eventYears = events.event_years()
+        eventMags = events.event_magnitudes()
+        year_magPairs = zip(eventYears, eventMags)
+        windowSize = (max(eventYears)-min(eventYears))/100 #years
+        intervalSize = windowSize/3 #years
+        times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
+        momentRates = []
+        if args.generic_titles: label = ""
+        if label == None: label = filename
+        for time in times:
+            relevantMoments = np.array([10**(1.5*(year_mag[1]+6)) for year_mag in year_magPairs if year_mag[0] > time-windowSize/2 and year_mag[0] < time+windowSize/2])
+            momentRates.append(np.sum(relevantMoments)/float(windowSize))
+        self.create_plot(fig, 0, "line", False, times, np.array(momentRates), PLOT_TITLE, "Year", "{}-year average Moment Rate  (J/yr)".format(int(windowSize)), label)
+        
+    def plot_numrate_of_t(self, fig, events, filename):
+        PLOT_TITLE = events.plot_str()
+        if args.no_titles: PLOT_TITLE = " "
+        if args.generic_titles: PLOT_TITLE = "Number Rate"
+        # Calculate number rate from event times.
+        eventYears = events.event_years()
+        windowSize = (max(eventYears)-min(eventYears))/100 #years
+        intervalSize = windowSize/3 #years
+        times = np.arange(np.floor(min(eventYears))+windowSize/2, np.ceil(max(eventYears))-windowSize/2, intervalSize)
+        numRate = []
+        if args.generic_titles: label = ""
+        if label == None: label = filename
+        for time in times:
+            thistimeCount = 0
+            for year in eventYears:
+                if year > time-windowSize/2 and year < time+windowSize/2:
+                    thistimeCount += 1
+            numRate.append(thistimeCount/float(windowSize))
+        self.create_plot(fig, 0, "line", False, times, np.array(numRate), PLOT_TITLE, "Year", "{}-year average Number Rate (Count/yr)".format(int(windowSize)), label)
+
+
 
 class ProbabilityPlot(BasePlotter):
     def plot_p_of_t(self, fig, events, filename, fit_weibull):
@@ -2869,7 +2987,7 @@ if __name__ == "__main__":
     # Specify arguments
     parser = argparse.ArgumentParser(description="PyVQ.")
 
-    # Event/model file arguments
+    # ---------  Event/model file arguments -----------
     parser.add_argument('--event_file', required=False, type=str, nargs='+',
             help="Name of event file to analyze.")
     parser.add_argument('--sweep_file', required=False,
@@ -2889,7 +3007,7 @@ if __name__ == "__main__":
     parser.add_argument('--label', required=False, type=str, nargs='+',
             help="Custom label to use for plot legends, specify one per event file.")
 
-    # Event filtering arguments
+    # ---------  Event filtering arguments -----------
     parser.add_argument('--min_magnitude', type=float, required=False,
             help="Minimum magnitude of events to process.")
     parser.add_argument('--max_magnitude', type=float, required=False,
@@ -2916,6 +3034,8 @@ if __name__ == "__main__":
                         help="Minimum number of elements involved in an event")
     parser.add_argument('--max_num_elements', type=float, required=False,
                         help="Maximum number of elements involved in an event")
+    parser.add_argument('--involved_sections', type=int, nargs='+', required=False,
+                        help="List of model sections to use (all sections used if unspecified). All earthquakes involving specified sections included.")
     parser.add_argument('--use_sections', type=int, nargs='+', required=False,
             help="List of model sections to use (all sections used if unspecified). Earthquakes will have initiated on the specfified sections.")
     parser.add_argument('--use_faults', type=int, nargs='+', required=False,
@@ -2929,7 +3049,7 @@ if __name__ == "__main__":
     parser.add_argument('--group2_files', type=str, nargs='+', required=False,
             help="List of files containing the fault slip time series. Must also specify --group1_files. These subsets are used for computing time series correlations.")
 
-    # Statisical plotting arguments
+    # ---------  Statisical plotting arguments -----------
     parser.add_argument('--plot_freq_mag', required=False, action='store_true',
             help="Generate frequency magnitude plot.")
     parser.add_argument('--UCERF2', required=False, action='store_true',
@@ -2948,8 +3068,12 @@ if __name__ == "__main__":
             help="Plot Leonard 2010 scaling relations.")
     parser.add_argument('--plot_recurrence', required=False, action='store_true',
             help="Plot distribution of recurrence intervals.")
-
-    # Probability plotting arguments
+    parser.add_argument('--plot_momentRate', required=False, action='store_true',
+            help="Plot time series of moment rate running average.")
+    parser.add_argument('--plot_numberRate', required=False, action='store_true',
+            help="Plot time series of earthquake number rate running average.")
+            
+    # ---------  Probability plotting arguments -----------
     parser.add_argument('--plot_prob_vs_t', required=False, action='store_true',
             help="Generate earthquake recurrence probability at time t plot.")
     parser.add_argument('--plot_prob_vs_t_fixed_dt', required=False, action='store_true',
@@ -2974,7 +3098,7 @@ if __name__ == "__main__":
             help="Fit a Weibull distribution to the simulated earthquake distribution.")
             
             
-    # Field plotting arguments
+    # ---------  Field plotting arguments -----------
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
     parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
@@ -2993,7 +3117,7 @@ if __name__ == "__main__":
     parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
-    # Greens function plotting arguments
+    # ---------  Greens function plotting arguments -----------
     parser.add_argument('--greens', required=False, action='store_true', help="Plot single element Okubo Green's functions. Field type also required.") 
     parser.add_argument('--save_greens', required=False, action='store_true', help="Save single element Okubo Green's function values.")            
     parser.add_argument('--plot_name', required=False, help="Name for saving the plot to file.")
@@ -3012,11 +3136,11 @@ if __name__ == "__main__":
     parser.add_argument('--_lambda', required=False, type=float, help="Lame's first parameter, default 3.2e10.")
     parser.add_argument('--mu', required=False, type=float, help="Shear modulus, default 3.0e10.")
     
-    # Stress plotting arguments
+    # ---------  Stress plotting arguments -----------
     parser.add_argument('--stress_elements', type=int, nargs='+', required=False,
             help="List of elements to plot stress history for.")
             
-    # Diagnostic plots
+    # ---------  Diagnostic plots -----------
     parser.add_argument('--diagnostics', required=False, action='store_true',
             help="Plot all diagnostic plotsall")
     parser.add_argument('--event_elements', required=False, action='store_true',
@@ -3034,17 +3158,19 @@ if __name__ == "__main__":
     parser.add_argument('--zoom', required=False, action='store_true',
             help="Force zoomed bounds on scatter and line plots")
 
-    # Customization
+    # ---------  Customization -----------
     parser.add_argument('--dpi', required=False, type=float,
             help="Specify the DPI for plots that are saved.")
     parser.add_argument('--no_titles', required=False, action='store_true',
             help="Specify no titles on plots.")
+    parser.add_argument('--generic_titles', required=False, action='store_true',
+            help="Specify minimal generic titles on plots.")
     parser.add_argument('--pdf', required=False, action='store_true',
             help="Save plots as PDF instead of PNG.")
     parser.add_argument('--eps', required=False, action='store_true',
             help="Save plots as EPS instead of PNG.")
             
-    # Geometry
+    # ---------  Geometry -----------
     parser.add_argument('--slip_rates', required=False, action='store_true',
             help="Print element id and slip rate for all elements.")
     parser.add_argument('--elements', type=int, nargs='+', required=False,
@@ -3079,15 +3205,15 @@ if __name__ == "__main__":
     parser.add_argument('--traces', required=False, action='store_true', help="Plot the fault traces from a fault model on a map.") 
     parser.add_argument('--fault_group_traces', required=False, action='store_true', help="Plot the fault traces on a map for two groups of faults, specified by two lists of fault ids using --group1_ids and --group2_ids.") 
             
-    # --------- Spacetime plots -----------
+    # ---------  Spacetime plots -----------
     parser.add_argument('--spacetime', required=False, action='store_true',
             help="Plot a spacetime plot of ruptures for a single fault. Must specify the fault to use with --use_faults.")
             
-    # Event movies
+    # ---------  Event movies -----------
     parser.add_argument('--event_movie', required=False, action='store_true',
             help="Make a movie of a specified event, must use --event_id.")
 
-    # Validation/testing arguments
+    # ---------  Validation/testing arguments -----------
     parser.add_argument('--validate_slip_sum', required=False,
             help="Ensure the sum of mean slip for all events is within 1 percent of the specified value.")
     parser.add_argument('--validate_mean_interevent', required=False,
@@ -3221,7 +3347,16 @@ if __name__ == "__main__":
     if args.min_event_num or args.max_event_num:
         event_filters.append(EventNumFilter(min_event_num=args.min_event_num, max_event_num=args.max_event_num))
         sys.stdout.write("Applying event number filter...")
-        
+    
+    if args.involved_sections:
+        if not args.model_file: raise BaseException("\nMust specify --model_file for --involved_sections to work.")
+        for sec_id in args.involved_sections:
+            if sec_id not in geometry._elem_to_section_map.values():
+                #sys.stdout.write(geometry._elem_to_section_map)
+                raise BaseException("\nSection id {} does not exist.".format(sec_id))
+        event_filters.append(InvolvedSectionFilter(geometry, args.event_file[0], args.involved_sections))
+        sys.stdout.write("Applying fault section filter involving only fault sections {}...".format(args.involved_sections))
+    
     if args.use_sections:
         if not args.model_file: raise BaseException("\nMust specify --model_file for --use_sections to work.")
         for sec_id in args.use_sections:
@@ -3377,15 +3512,37 @@ if __name__ == "__main__":
         ax.legend(loc='best')
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+    
     if args.plot_recurrence:
         fig = plt.figure()
         ax = fig.add_subplot(111)
         times = [event_set.interevent_times() for event_set in events]
         filename = SaveFile().event_plot(args.event_file, "recurrence", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
         for time in times:
-            BasePlotter().create_plot(fig, 0, "hist", False, time, None, events[0].plot_str(), "interevent time [years]", "", filename)
+            BasePlotter().create_plot(fig, 0, "hist", False, time, None, "Interevent Time PDF, UCERF3 Paleoseismic Sites (m > 6)", "Interevent Time (years)", "", filename)#events[0].plot_str(), "interevent time [years]", "", filename)
         plt.savefig(filename,dpi=args.dpi)
         sys.stdout.write("Plot saved: {}\n".format(filename))
+    
+    if args.plot_momentRate:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().event_plot(args.event_file, "momentRate", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
+        for event_set in events:
+            RatePlot().plot_momrate_of_t(fig, event_set, filename)
+        ax.legend(loc='best',fontsize=10)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+    
+    if args.plot_numberRate:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        filename = SaveFile().event_plot(args.event_file, "numberRate", args.min_magnitude, args.min_year, args.max_year, args.combine_file)
+        for event_set in events:
+            RatePlot().plot_numrate_of_t(fig, event_set, filename)
+        ax.legend(loc='best',fontsize=10)
+        plt.savefig(filename,dpi=args.dpi)
+        sys.stdout.write("Plot saved: {}\n".format(filename))
+    
     if args.probability_table:
         if args.t0 is None: raise BaseException("\nMust specify time since last earthquakes with magnitude values given by --magnitudes. Use --t0 and --magnitudes, they must be the same number of arguments, and --magnitudes should be listed in increasing order.")
         else:
@@ -3433,7 +3590,7 @@ if __name__ == "__main__":
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles, mask = not args.no_mask)
     if args.field_eval:
-        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id)
+        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id, args.wavelength)
         sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
         sys.stdout.flush()
         ele_slips = events[0].get_event_element_slips(args.event_id)
