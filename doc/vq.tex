@@ -107,7 +107,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {2.2.0}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {3.0.0}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -419,9 +419,10 @@ fault is in the file \texttt{examples/fault\_traces/single\_fault\_trace.txt}
 and is also shown below.
 \begin{verbatim}
 # fault_id: ID number of the parent fault of this section
+# sec_id: ID number of this section
 # num_points: Number of trace points comprising this section
 # section_name: Name of the section
-0 2 One_Element_Example
+0 0 2 One_Element_Example
 # latitude: Latitude of trace point
 # longitude: Longitude of trace point
 # altitude: Altitude of trace point (meters)
@@ -435,9 +436,9 @@ and is also shown below.
 0 0 0 12000 1 0 180 90 3e+10 3.2e+10
 0 0.1078 0 12000 1 0 180 90 3e+10 3.2e+10
 \end{verbatim}
-The first non-comment line in this file gives the fault ID, number
+The first non-comment line in this file gives the fault ID, section ID, number
 of trace points, and section name. In this example, the section is named
-``One\_Fault\_Example''. The section is associated with fault number 0.
+``One\_Fault\_Example'' and has section number 0. The section is associated with fault number 0.
 This naming convention is used to allow a large fault to be split into multiple
 sections for identification, but maintain the same physical properties as
 a single full fault.
@@ -1023,16 +1024,15 @@ For bugs found in the manual or source code, or to make feature requests please 
 
 \section{System Requirements}
 
-Installation of Virtual Quake requires a C++ compiler.  Optional requirements are the
+Installation of Virtual Quake requires a C++ compiler.  Other requirements are the
 headers and development libraries for
 \begin{itemize}
-\item MPI
-\item OpenMP
-\item HDF5
+\item OpenMPI
+\item HDF5 (OpenMPI version)
 \item SWIG
 \item CMake
 \end{itemize}
-You must also have Python 2.7 or greater installed.
+You must also have Python 2.7 or greater installed, with h5py.
 
 
 \section{Obtaining Source}
@@ -1494,9 +1494,10 @@ The basic outline for a fault trace file is given in Section
 and physical parameters. An example is printed below.
 \begin{verbatim}
  # fault_id: ID number of the parent fault of this section
+ # sec_id: ID number of this section
  # num_points: Number of trace points comprising this section
  # section_name: Name of the section
- 0 2 One_Fault_Example
+ 0 0 2 One_Fault_Example
  # latitude: Latitude of trace point
  # longitude: Longitude of trace point
  # altitude: Altitude of trace point (meters)
@@ -1691,9 +1692,10 @@ Golden Gate Bridge in San Francisco. The trace file is printed below
 and the fault element is shown above ground in Figure \ref{fig:Golden_Gate_single}.
 \begin{verbatim}
  # fault_id: ID number of the parent fault of this section
+ # sec_id: ID number of this section
  # num_points: Number of trace points comprising this section
  # section_name: Name of the section
- 0 2 One_Fault_GG_Example
+ 0 0 2 One_Fault_GG_Example
  # latitude: Latitude of trace point
  # longitude: Longitude of trace point
  # altitude: Altitude of trace point (meters)
@@ -2678,6 +2680,8 @@ outlines the fault described in the file using the following attributes:\vspace*
 \texttt{fault\_id} & ID number of the parent fault of this section. Used to unify multi-segment
 faults defined in separate files.\tabularnewline
 \hline 
+\texttt{sec\_id} & ID number of this section.\tabularnewline
+\hline 
 \texttt{num\_points} & The number of trace points comprising this section.\tabularnewline
 \hline 
 \texttt{section\_name} & Name of the section, may not contain whitespace.\tabularnewline
@@ -2747,8 +2751,8 @@ are grouped by their functionality.
 -q -\/-stress\_drop\_factor & Default is 0.3, this factor is a stress drop multiplier on a log scale. Increasing by 0.1 implies a global stress drop increase of 40\%. See section \ref{sec:stress_drops}.\tabularnewline
 \hline 
 -t METHOD, -\/-taper\_fault\_method=METHOD & Specify the how to taper the imported fault model when meshing. Choices for taper method are: none,
-taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tapering.
-\tabularnewline \hline
+taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tapering.\tabularnewline 
+\hline
 \end{tabular}
 
 
@@ -2759,7 +2763,7 @@ taper, taper\_full, taper\_renorm. See \ref{sec:taper} for a description of tape
 \hline 
 -i FILE, -\/-import\_file=FILE & Specify a model file to import and merge. Must have a paired import\_file\_type.\tabularnewline
 \hline 
--j TYPE, -\/-import\_file\_type=TYPE & Specify a model file type for importing. Must have a paired import\_file.\tabularnewline
+-j TYPE, -\/-import\_file\_type=TYPE & Specify a model file type for importing. Must have a paired import\_file. Must be one of trace, text, or hdf5.\tabularnewline
 \hline 
 -l FILE, -\/-import\_trace\_element\_size=FILE & Specify the element size to use for trace file meshing. Must have
 a paired trace type file import.\tabularnewline
@@ -2770,6 +2774,8 @@ a paired trace type file import.\tabularnewline
 \hline 
 -G FILE, -\/-import\_eqsim\_geometry=FILE & Specify an EQSim geometry file to import for the model.\tabularnewline
 \hline 
+-v, -\/-vertex\_das\_by\_section & Use if imported vertex distances along strikes (from EQSim file) are given with respect to section instead of whole fault..\tabularnewline
+\hline
 \end{tabular}
 
 
@@ -2781,8 +2787,7 @@ a paired trace type file import.\tabularnewline
 -e FILE, -\/-export\_file=FILE & Specify a file to export the completed model to. Must have a paired
 export\_file\_type.\tabularnewline
 \hline 
--f TYPE, -\/-export\_file\_type=TYPE & Specify a file type to export the completed model. Must have a paired
-export\_file.\tabularnewline
+-f TYPE, -\/-export\_file\_type=TYPE & Specify a file type to export the completed model. Must have a paired export\_file. Must be one of trace, trace\_faultwise, text, or hdf5.\tabularnewline
 \hline 
 -D FILE, -\/-export\_eqsim\_condition=FILE & Specify an EQSim condition file to export for the model.\tabularnewline
 \hline 
