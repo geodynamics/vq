@@ -54,7 +54,13 @@ cPickle_available = True
 try:
     import cPickle as pickle
 except ImportError:
-    cPickle_available = False
+    cPickle_available = False    
+    
+netCDF4_available = True
+try:
+    from netCDF4 import Dataset
+except ImportError:
+    netCDF4_available = False
     
     
 # ----------------- Global constants -------------------------------------------
@@ -2221,21 +2227,57 @@ class FieldEvaluator:
         for i in range(len(self.lons_1d)):
             self.grid_1d.append(self.convert.convert2xyz(quakelib.LatLonDepth(self.lats_1d[i],self.lons_1d[i])))
     #            
-    def compute_field(self):        
+    def compute_field(self, netCDF_arg):        
         self.lame_lambda = 3.2e10
         self.lame_mu     = 3.0e10
         self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
-        outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)+".txt"
-        outfile = open(outname,'w')
-        # Write the header with the number of points
-        outfile.write("#### number of points ####\n")
-        outfile.write("{}\n".format(len(self.field_1d)))
-        outfile.write("##########################\n")
-        for i in range(len(self.field_1d)):
-            outfile.write("{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2]))
-        outfile.close()
-        sys.stdout.write("\n---> Event displacements written to "+outname)
-        sys.stdout.write("\n")
+        outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)
+        
+        #move file extension inside these
+        if netCDF_arg:
+            if not netCDF4_available:
+                raise BaseException("\nCannot save as netCDF, netCDF4 module is not available.")
+            else:
+                #Heres the netCDF file builder
+                outname = outname+".nc"
+                lats = []
+                lons = []
+                uplift = []
+                for i, lon in enumerate(self.lons_1d):
+                    if self.lats_1d[i] not in lats: lats.append(self.lats_1d[i])
+                    if lon not in lons: lons.append(lon)
+                    uplift.append(self.field_1d[i][2])
+                
+                uplift = np.array(uplift)
+                uplift = np.reshape(uplift, (np.size(lats), np.size(lons)))
+                                
+                uplift_dataset = Dataset(outname, 'w', format='NETCDF4')
+                
+                uplift_dataset.createDimension('lat', len(lats))
+                uplift_dataset.createDimension('lon', len(lons))
+                                
+                lats_data   = uplift_dataset.createVariable('latitude', 'f4', ('lat',))
+                lons_data   = uplift_dataset.createVariable('longitude', 'f4', ('lon',))
+                uplift_data = uplift_dataset.createVariable('uplift', 'f4', ('lat','lon'))
+                
+                lats_data[:]     = lats
+                lons_data[:]     = lons
+                uplift_data[:,:] = uplift
+            
+                uplift_dataset.close()
+
+        else:
+            outname = outname+".txt"
+            outfile = open(outname,'w')
+            # Write the header with the number of points
+            outfile.write("#### number of points ####\n")
+            outfile.write("{}\n".format(len(self.field_1d)))
+            outfile.write("##########################\n")
+            for i in range(len(self.field_1d)):
+                outfile.write("{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2]))
+            outfile.close()
+            sys.stdout.write("\n---> Event displacements written to "+outname)
+            sys.stdout.write("\n")
 
 
 
@@ -3115,6 +3157,7 @@ if __name__ == "__main__":
             help="Levels for contour plot.")
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
     parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
+    parser.add_argument('--netCDF', required=False, action='store_true', help="Store field evaluation in netCDF format")
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
     # ---------  Greens function plotting arguments -----------
@@ -3601,7 +3644,7 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
-        FE.compute_field()
+        FE.compute_field(args.netCDF)
     if args.greens:
         # Set default values
         if args.dip is None: sys.exit("Must specify --dip")
