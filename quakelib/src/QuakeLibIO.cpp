@@ -544,7 +544,7 @@ class TraceSpline {
 };
 
 void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trace_segments, const std::vector<FaultTracePoint> &trace, const LatLonDepth &base_coord, const UIndex &fault_id, const float &element_size, const std::string &section_name, const std::string &taper_method, const bool resize_trace_elements, const UIndex &sec_id) {
-    Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step;
+    Vec<3>              cur_trace_point, next_trace_point, element_end, element_step_vec, vert_step, vert_ele_vec, full_trace_vec;
     std::vector<UIndex> elem_ids;
     std::set<unsigned int> unused_trace_pts;
     double              elem_depth, elem_slip_rate, elem_aseismic;
@@ -559,6 +559,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
     if (element_size <= 0) return;
 
     num_trace_pts = trace.size();
+    full_trace_vec = conv.convert2xyz(trace.back().pos()) - conv.convert2xyz(trace.front().pos());
 
     if (num_trace_pts == 0 || num_trace_pts == 1) return;
 
@@ -622,6 +623,7 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
     double  horiz_elem_size = best_step;
     double  vert_elem_size;
+	double  horiz_vert_angle, vert_ele_angle;
     unsigned int cur_elem_ind, next_elem_ind;
     double cur_t = 0, next_t;
 
@@ -655,18 +657,6 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         // Use the t value between the trace points for interpolation
         elem_depth = inner_t *trace.at(next_elem_ind).depth_along_dip()+(1.0-inner_t)*trace.at(cur_elem_ind).depth_along_dip();
 
-        /*Wilson: removing this so all elements are square
-        // Change vertical element size to exactly match the required depth
-        num_vert_elems = round(elem_depth/element_size);
-        vert_elem_size = elem_depth / num_vert_elems;*/
-
-        // Ensure square elements, vertical number for best fit.
-        num_vert_elems = round(elem_depth/horiz_elem_size);
-        vert_elem_size = horiz_elem_size;
-
-        // TODO: change this to an assertion throw
-        if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
-                                               << next_elem_ind << ". Element size may be too big." << std::endl;
 
         elem_slip_rate = conv.cm_per_yr2m_per_sec(inner_t *trace.at(next_elem_ind).slip_rate()+(1.0-inner_t)*trace.at(cur_elem_ind).slip_rate());
         elem_aseismic = inner_t *trace.at(next_elem_ind).aseismic()+(1.0-inner_t)*trace.at(cur_elem_ind).aseismic();
@@ -675,11 +665,37 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
         elem_lame_mu = inner_t *trace.at(next_elem_ind).lame_mu()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_mu();
         elem_lame_lambda = inner_t *trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
-        // Set up the vertical step to go along the dip
+        // Ensure square elements, vertical number for best fit.
+		vert_elem_size = horiz_elem_size;
+
+        // Set up the vertical vector along the elements.
+		//      (Wilson: we no longer extrude straight columns as this misbehaved on shallow dipping curved faults)
+		// 		vert_step is the vector perpendicular to the overall trace along which elements are placed,
+		//                which obeys fault dip angle
+		//      vert_ele_vec is the vector between the top of each element and their bottom vertex,
+		//                    the angle of which is solved to maintain overall dip
         ///// Schultz: We need a right handed convention. This complies with geological convention.
         //    RIGHT HANDED CONVENTION
-        vert_step = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
-        vert_step = vert_step.rotate_around_axis(element_step_vec, M_PI-elem_dip);
+        vert_step = full_trace_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
+        vert_step = vert_step.rotate_around_axis(full_trace_vec, M_PI-elem_dip);
+        vert_step = vert_step.unit_vector();
+
+        horiz_vert_angle = vert_step.vector_angle(element_step_vec);
+
+        vert_step = vert_step*vert_elem_size/sin(horiz_vert_angle);
+
+        vert_ele_angle = asin(vert_step[2]/vert_elem_size);
+        vert_ele_vec = element_step_vec.rotate_around_axis(Vec<3>(0,0,-1), M_PI/2);
+		vert_ele_vec = vert_ele_vec.rotate_around_axis(element_step_vec, M_PI+vert_ele_angle);
+
+        // Wilson: New column generation can put squares at angles relative to dip; use the actual length
+        //          of the element along the dip direction to determine number
+        // num_vert_elems = round(elem_depth/vert_elem_size);
+        num_vert_elems = round(elem_depth/vert_step.mag());
+        // TODO: change this to an assertion throw
+		if (num_vert_elems == 0) std::cerr << "WARNING: Depth is smaller than element size in trace segment "
+											   << next_elem_ind << ". Element size may be too big." << std::endl;
+
 
         // Create each of the elements along dip
         for (ve=0; ve<num_vert_elems; ++ve) {
@@ -687,21 +703,6 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
             taper_t = 1;
 
             //Wilson: Horizontal tapering is now in ModelWorld::create_faults.
-            //double mid_t = (cur_t+next_t)/2.0;
-            /*
-            if (taper_method == "taper_full" || taper_method == "taper_renorm") {
-                double x = mid_t;
-                double z = (float(ve)+0.5)/num_vert_elems;
-                taper_t *= 4*(x-x*x)*sqrt(1-z);
-            } else if (taper_method == "taper") {
-                double inside_dist = (0.5 - fabs(0.5-mid_t));
-
-                if (inside_dist <= elem_depth) {
-                    double x = inside_dist/elem_depth;
-                    double z = (float(ve)+0.5)/num_vert_elems;
-                    taper_t *= sqrt(x)*sqrt(1-z);
-                }
-            }*/
 
             //Vertical tapering with sqrt of depth
             if (taper_method == "taper" || taper_method == "taper_full" || taper_method == "taper_renorm") {
@@ -720,8 +721,11 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
             // Set xyz for the vertices
             v0.set_xyz(cur_trace_point+vert_step*ve, base_coord);
-            v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
-            v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
+            v1.set_xyz(v0.xyz()+vert_ele_vec, base_coord);
+            v2.set_xyz(v0.xyz()+element_step_vec, base_coord);
+
+            //v1.set_xyz(cur_trace_point+vert_step*(ve+1), base_coord);
+            //v2.set_xyz(cur_trace_point+vert_step*ve+element_step_vec, base_coord);
 
             // If this element is at the top, it is a trace point.
             // Keep track for field plots with PyVQ
