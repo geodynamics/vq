@@ -557,7 +557,7 @@ void RunEvent::processStaticFailure(Simulation *sim) {
             //
             // yoder: as per request by KS, change std::isnan() --> std::isnan(); std::isnan() appears to throw an error on some platforms.
             // Eric: Probably don't need this if check
-            if (isnan(s_it->_shear_final) and isnan(s_it->_normal_final)) {
+            if (std::isnan(s_it->_shear_final) and std::isnan(s_it->_normal_final)) {
                 // note: the stress entries are initialized with nan values, but if there are cases where non nan values need to be updated,
                 // this logic should be revisited.
                 event_sweeps.setFinalStresses(sweep_num,
