@@ -35,7 +35,7 @@ bool SanityCheck::assertCFFValueCorrectness(Simulation *sim) {
         gid = sim->getGlobalBID(lid);
         double val = sim->getCFF(gid);
 
-        if (isnan(val) || fabs(val) > 1e20) {
+        if (std::isnan(val) || fabs(val) > 1e20) {
             failed_cffs.push_back(std::make_pair(gid, val));
             failed = true;
         }
@@ -53,7 +53,7 @@ bool SanityCheck::assertUpdateFieldCorrectness(Simulation *sim) {
         gid = sim->getGlobalBID(lid);
         double val = sim->getUpdateField(gid);
 
-        if (isnan(val) || fabs(val) > 1e20) {
+        if (std::isnan(val) || fabs(val) > 1e20) {
             failed_update_fields.push_back(std::make_pair(gid, val));
             failed = true;
         }
