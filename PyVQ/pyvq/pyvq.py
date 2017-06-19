@@ -2200,7 +2200,7 @@ class FieldPlotter:
 class FieldEvaluator:
     def __init__(self, geometry, event_id, event, element_slips, LLD_file):
         # LLD file contains columns of lat/lon/depth for the points we wish to evaluate
-        self.LLDdata = np.genfromtxt(LLD_file, dtype=[('lat','f8'),('lon','f8'), ('z','f8')],skip_header=4)
+        self.LLDdata = np.genfromtxt(LLD_file, dtype=[('lat','f8'),('lon','f8'), ('z','f8')],skip_header=6)
         # Set field and event data
         self.event_id = event_id
         self.LLD_file = LLD_file
@@ -2227,7 +2227,7 @@ class FieldEvaluator:
         for i in range(len(self.lons_1d)):
             self.grid_1d.append(self.convert.convert2xyz(quakelib.LatLonDepth(self.lats_1d[i],self.lons_1d[i])))
     #            
-    def compute_field(self, netCDF_arg):        
+    def compute_field(self, netCDF_arg, horizontal_arg):
         self.lame_lambda = 3.2e10
         self.lame_mu     = 3.0e10
         self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
@@ -2253,31 +2253,46 @@ class FieldEvaluator:
                                 
                 uplift_dataset = Dataset(outname, 'w', format='NETCDF4')
                 
-                uplift_dataset.createDimension('lat', len(lats))
-                uplift_dataset.createDimension('lon', len(lons))
+                uplift_dataset.createDimension('latitude', np.size(lats))
+                uplift_dataset.createDimension('longitude', np.size(lons))
                                 
-                lats_data   = uplift_dataset.createVariable('latitude', 'f4', ('lat',))
-                lons_data   = uplift_dataset.createVariable('longitude', 'f4', ('lon',))
-                uplift_data = uplift_dataset.createVariable('uplift', 'f4', ('lat','lon'))
+                lats_data   = uplift_dataset.createVariable('latitude',  'f4', ('latitude',))
+                lons_data   = uplift_dataset.createVariable('longitude', 'f4', ('longitude',))
+                uplift_data = uplift_dataset.createVariable('uplift',    'f4', ('latitude','longitude'))
+                if horizontal_arg:
+                    eastU_data  = uplift_dataset.createVariable('east U',    'f4', ('latitude','longitude'))
+                    northV_data = uplift_dataset.createVariable('north V',   'f4', ('latitude','longitude'))
                 
                 lats_data[:]     = lats
                 lons_data[:]     = lons
                 uplift_data[:,:] = uplift
-            
+                if horizontal_arg:
+                    eastU_data[:,:]  = np.zeros((np.size(lats), np.size(lons)))
+                    northV_data[:,:] = np.zeros((np.size(lats), np.size(lons)))
+                
                 uplift_dataset.close()
 
         else:
-            outname = outname+".txt"
-            outfile = open(outname,'w')
-            # Write the header with the number of points
-            outfile.write("#### number of points ####\n")
-            outfile.write("{}\n".format(len(self.field_1d)))
-            outfile.write("##########################\n")
-            for i in range(len(self.field_1d)):
-                outfile.write("{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2]))
-            outfile.close()
-            sys.stdout.write("\n---> Event displacements written to "+outname)
-            sys.stdout.write("\n")
+            if not horizontal_arg:
+                outname = outname+".txt"
+                outfile = open(outname,'w')
+                # Write the header with the number of points
+                outfile.write("#### number of points ####\n")
+                outfile.write("{}\n".format(len(self.field_1d)))
+                outfile.write("##########################\n")
+                for i in range(len(self.field_1d)):
+                    outfile.write("{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2]))
+                outfile.close()
+                sys.stdout.write("\n---> Event displacements written to "+outname)
+                sys.stdout.write("\n")
+            else:
+                outname = outname+".xyuen"
+                outfile = open(outname,'w')
+                for i in range(len(self.field_1d)):
+                    outfile.write("{}\t{}\t{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2], 0.0, 0.0))
+                outfile.close()
+                sys.stdout.write("\n---> Event displacements written to "+outname)
+                sys.stdout.write("\n")
 
 
 
@@ -3158,6 +3173,7 @@ if __name__ == "__main__":
     parser.add_argument('--small_model', required=False, action='store_true', help="Small fault model, used to specify map extent.")    
     parser.add_argument('--field_eval', required=False, action='store_true', help="Evaluate an event field at specified lat/lon. Must provide the file, --lld_file")
     parser.add_argument('--netCDF', required=False, action='store_true', help="Store field evaluation in netCDF format")
+    parser.add_argument('--horizontal', required=False, action='store_true', help="Include horizontal motion in output")
     parser.add_argument('--lld_file', required=False, help="File containing lat/lon columns to evaluate an event field.")
     
     # ---------  Greens function plotting arguments -----------
@@ -3644,7 +3660,7 @@ if __name__ == "__main__":
             sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
-        FE.compute_field(args.netCDF)
+        FE.compute_field(args.netCDF, args.horizontal)
     if args.greens:
         # Set default values
         if args.dip is None: sys.exit("Must specify --dip")
