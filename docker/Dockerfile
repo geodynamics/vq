@@ -47,4 +47,4 @@ RUN cd vq-3.1.0 \
 
 COPY entrypoint.sh /etc
 
-ENTRYPOINT ["/etc/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/etc/entrypoint.sh"]
