@@ -39,12 +39,14 @@ ADD vq-3.1.0.tar.gz /home/virtualquake/
 RUN cd vq-3.1.0 \
   && mkdir -p build \
   && cd build \
-  && cmake -DGeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
-    -DGeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" .. \
+  && cmake \
+    -DGeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
+    -DGeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
+    .. \
   && cmake --build . -- all  \
   && cmake --build . -- install \
   && mkdir /home/virtualquake/external_volume
 
 COPY entrypoint.sh /etc
 
-ENTRYPOINT ["/bin/sh", "/etc/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/etc/entrypoint.sh"]
