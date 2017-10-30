@@ -1432,7 +1432,6 @@ class TracePlotter:
         sys.stdout.flush()
 
         
-        
 class FieldPlotter:
     def __init__(self, geometry, field_type, element_slips=None, event_id=None, event=None,
                 cbar_max=None, levels=None, g0=None, wavelength=0.3):
@@ -2243,12 +2242,21 @@ class FieldEvaluator:
                 lats = []
                 lons = []
                 uplift = []
+                eastU = []
+                northV = []
                 for i, lon in enumerate(self.lons_1d):
                     if self.lats_1d[i] not in lats: lats.append(self.lats_1d[i])
                     if lon not in lons: lons.append(lon)
+                    eastU.append(self.field_1d[i][0])
+                    northV.append(self.field_1d[i][1])
                     uplift.append(self.field_1d[i][2])
                 
+                eastU = np.array(eastU)
+                northV = np.array(northV)
                 uplift = np.array(uplift)
+                
+                eastU = np.reshape(eastU, (np.size(lats), np.size(lons)))
+                northV = np.reshape(northV, (np.size(lats), np.size(lons)))
                 uplift = np.reshape(uplift, (np.size(lats), np.size(lons)))
                                 
                 uplift_dataset = Dataset(outname, 'w', format='NETCDF4')
@@ -2267,8 +2275,8 @@ class FieldEvaluator:
                 lons_data[:]     = lons
                 uplift_data[:,:] = uplift
                 if horizontal_arg:
-                    eastU_data[:,:]  = np.zeros((np.size(lats), np.size(lons)))
-                    northV_data[:,:] = np.zeros((np.size(lats), np.size(lons)))
+                    eastU_data[:,:]  = eastU #np.zeros((np.size(lats), np.size(lons)))
+                    northV_data[:,:] = northV #np.zeros((np.size(lats), np.size(lons)))
                 
                 uplift_dataset.close()
 
@@ -2289,7 +2297,7 @@ class FieldEvaluator:
                 outname = outname+".xyuen"
                 outfile = open(outname,'w')
                 for i in range(len(self.field_1d)):
-                    outfile.write("{}\t{}\t{}\t{}\t{}\n".format(self.lats_1d[i], self.lons_1d[i], self.field_1d[i][2], 0.0, 0.0))
+                    outfile.write("{}\t{}\t{}\t{}\t{}\n".format(self.lons_1d[i], self.lats_1d[i], self.field_1d[i][2], self.field_1d[i][0], self.field_1d[i][1]))
                 outfile.close()
                 sys.stdout.write("\n---> Event displacements written to "+outname)
                 sys.stdout.write("\n")
@@ -3648,12 +3656,26 @@ if __name__ == "__main__":
         FP = FieldPlotter(geometry, args.field_type, element_slips=ele_slips, event=event, event_id=args.event_id, cbar_max=cbar_max, levels=levels, g0=args.g, wavelength=args.wavelength)
         FP.compute_field(cutoff=1000)
         FP.plot_field(output_file=filename, angles=angles, mask = not args.no_mask)
+        
     if args.field_eval:
         filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id, args.wavelength)
-        sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
-        sys.stdout.flush()
-        ele_slips = events[0].get_event_element_slips(args.event_id)
-        event = events[0]._events[args.event_id]
+        if args.event_id is None:
+            element_ids = geometry.model.getElementIDs()
+            ele_slips = {}
+            if args.uniform_slip is None: uniform_slip = 5.0
+            else: uniform_slip = args.uniform_slip
+            sys.stdout.write(" Computing field for uniform slip {}m :".format(int(uniform_slip)))
+            sys.stdout.flush()
+            #
+            for ele_id in element_ids:
+                ele_slips[ele_id] = uniform_slip
+            event = None
+        else:
+            sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
+            sys.stdout.flush()
+            ele_slips = events[0].get_event_element_slips(args.event_id)
+            event = events[0]._events[args.event_id]                
+        
         if len(ele_slips.keys()) == 0:
             raise BaseException("\nError in processing slips.")
         else:
@@ -3661,6 +3683,7 @@ if __name__ == "__main__":
         sys.stdout.flush()
         FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
         FE.compute_field(args.netCDF, args.horizontal)
+        
     if args.greens:
         # Set default values
         if args.dip is None: sys.exit("Must specify --dip")
