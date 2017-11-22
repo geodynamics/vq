@@ -1891,7 +1891,7 @@ class FieldPlotter:
      
         # FIGURE 1 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
         buf = np.roll ( buf, 3, axis = 2 )
-        im1 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        im1 = Image.frombytes( "RGBA", ( w ,h ), buf.tostring( ) )
         
         # FIGURE 2 draw the renderer
         fig2.canvas.draw()
@@ -1903,7 +1903,7 @@ class FieldPlotter:
      
         # FIGURE 2 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
         buf = np.roll ( buf, 3, axis = 2 )
-        im2 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+        im2 = Image.frombytes( "RGBA", ( w ,h ), buf.tostring( ) )
         
         if self.field_type == 'displacement' or self.field_type == 'insar':
             # FIGURE 3 draw the renderer for the sea mask
@@ -1915,7 +1915,7 @@ class FieldPlotter:
      
             # FIGURE 3 canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
             buf = np.roll ( buf, 3, axis = 2 )
-            im3 = Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
+            im3 = Image.frombytes( "RGBA", ( w ,h ), buf.tostring( ) )
             mask = im3.convert('L')
         
         # Clear all three figures
