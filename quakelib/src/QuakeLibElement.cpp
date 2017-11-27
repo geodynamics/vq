@@ -458,8 +458,8 @@ quakelib::VectorList quakelib::SlipMap::displacements(const VectorList &points, 
 
                 displacement = block_okada.calc_displacement_vector(quakelib::Vec<3>(xp,yp,0.0), c, dip, L, W, US, UD, UT, lambda, mu);
 
-                dx =  displacement[0] * strike_sin + displacement[1] * strike_cos;
-                dy = -displacement[0] * strike_cos + displacement[1] * strike_sin;
+                dx =  displacement[0] * strike_sin - displacement[1] * strike_cos;
+                dy =  displacement[0] * strike_cos + displacement[1] * strike_sin;
                 dz =  displacement[2];
 
             }
