@@ -647,7 +647,9 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
         double          inner_t;
         // And the element and inner_t corresponding to it
-        spline.get_element(cur_t, next_elem_ind, inner_t);
+        spline.get_element(cur_t, cur_elem_ind, inner_t);
+
+        next_elem_ind = cur_elem_ind + 1;
 
         // Mark the element corresponding to this point as having been used
         unused_trace_pts.erase(next_elem_ind);
@@ -659,10 +661,15 @@ void quakelib::ModelWorld::create_section(std::vector<unsigned int> &unused_trac
 
 
         elem_slip_rate = conv.cm_per_yr2m_per_sec(inner_t *trace.at(next_elem_ind).slip_rate()+(1.0-inner_t)*trace.at(cur_elem_ind).slip_rate());
+
         elem_aseismic = inner_t *trace.at(next_elem_ind).aseismic()+(1.0-inner_t)*trace.at(cur_elem_ind).aseismic();
+
         elem_dip = conv.deg2rad(inner_t *trace.at(next_elem_ind).dip()+(1.0-inner_t)*trace.at(cur_elem_ind).dip());
+
         elem_rake = conv.deg2rad(inner_t *trace.at(next_elem_ind).rake()+(1.0-inner_t)*trace.at(cur_elem_ind).rake());
+
         elem_lame_mu = inner_t *trace.at(next_elem_ind).lame_mu()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_mu();
+
         elem_lame_lambda = inner_t *trace.at(next_elem_ind).lame_lambda()+(1.0-inner_t)*trace.at(cur_elem_ind).lame_lambda();
 
         // Ensure square elements, vertical number for best fit.
