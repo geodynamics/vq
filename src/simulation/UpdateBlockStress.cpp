@@ -98,7 +98,7 @@ void UpdateBlockStress::init(SimFramework *_sim) {
     // And update the slip deficit on each process to take this into account
     for (gid=0; gid<sim->numGlobalBlocks(); ++gid) {
         // If we haven't loaded slip deficits, updateField is NaN so set slip deficit to zero in that case
-        sim->setSlipDeficit(gid, std::isnan(sim->getUpdateField(gid)) ? 0.0 : sim->getUpdateField(gid));
+        sim->setSlipDeficit(gid, isnan(sim->getUpdateField(gid)) ? 0.0 : sim->getUpdateField(gid));
         //std::cout << gid << "  slip deficit: " << sim->getSlipDeficit(gid) << std::endl;
     }
 

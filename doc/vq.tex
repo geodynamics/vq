@@ -42,7 +42,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Lyx Title Page
 \title{Virtual Quake User Manual}
 \author{John M. Wilson\\Kasey W. Schultz\\Eric M. Heien\\Michael K. Sachs\\Mark R. Yoder\\John B. Rundle\\Donald L. Turcotte\\\\ \copyright University of California, Davis\\
-Version 3.1.0}
+Version 3.1.1}
 %\date{\noindent \today}
 
 
@@ -107,7 +107,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {3.1.0}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {3.1.1}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -193,16 +193,19 @@ is essential that you recognize these individuals in the normal scientific
 practice by citing the appropriate peer reviewed papers and making
 appropriate acknowledgements. 
 
-To cite this software:
+To cite the Virtual Quake project:
 \begin{itemize}
-\item Wilson J.M., Schultz K.W., Heien E.M., Sachs M.K., Yoder M.R., Rundle J.B., Turcotte D.L. (2017), Virtual Quake v3.1.0 [software], Computational Infrastructure for Geodynamics, Available from: geodynamics.org, doi: 10.5281/zenodo.569592, url: \url{https://geodynamics.org/cig/software/vq/}
+\item Wilson J.M., Schultz K.W., Heien E.M., Sachs M.K., Yoder M.R., Rundle J.B., Turcotte D.L. (2017), Virtual Quake [software], Computational Infrastructure for Geodynamics, Available from: geodynamics.org, doi: 10.5281/zenodo.797896, url: \url{https://geodynamics.org/cig/software/vq/}
 \end{itemize}
+
+To cite a specific version of the software, please see the citation builder for that version at \url{https://geodynamics.org/cig/software/vq/} 
 
 Additionally, the Virtual Quake development team asks that you cite 
 the following:
 \begin{itemize}
+\item Schultz, K. W. and Yoder, M. R. and Wilson, J. M. and Heien, E. M. and Sachs, M. K. and Rundle, J. B. and Turcotte, D. L. (2017) "Parametrizing physics-based earthquake simulations", Pure Appl. Geophys.  \href{https://doi.org/10.1007/s00024-016-1428-3}{doi:10.1007/s00024-016-1428-3}
 \item Schultz, K. W. and Sachs, M. K. and Heien, E. M. and Rundle, J. B. and Turcotte, D. L. and Donnellan, A. (2016) "Simulating Gravity Changes in Topologically Realistic Driven Earthquake Fault Systems: First Results", Pure Appl. Geophys. \href{http://dx.doi.org/10.1007/s00024-014-0926-4}{doi:10.1007/s00024-014-0926-4}
-\item Schultz, K. W. and Sachs, M. K. and Heien, E. M. and Yoder, M. R. and Rundle, J. B. and Turcotte, D. L. and Donnellan, A. (2015) "Virtual Quake: Statistics, Co-Seismic Deformations and Gravity Changes for Driven Earthquake Fault Systems,", International Association of Geodesy Symposia \href{http://dx.doi.org/10.1007/1345_2015_134}{doi:10.1007/1345\_2015\_134}
+\item Schultz, K. W. and Sachs, M. K. and Heien, E. M. and Yoder, M. R. and Rundle, J. B. and Turcotte, D. L. and Donnellan, A. (2015) "Virtual Quake: Statistics, Co-Seismic Deformations and Gravity Changes for Driven Earthquake Fault Systems", International Association of Geodesy Symposia \href{http://dx.doi.org/10.1007/1345_2015_134}{doi:10.1007/1345\_2015\_134}
 \item Eric M. Heien, Michael Sachs, "Understanding Long-Term Earthquake Behavior through Simulation," Computing in Science and Engineering, vol. 14, no. 5, pp. 10-20, Sept.-Oct. 2012, \href{http://dx.doi.org/10.1109/MCSE.2012.39}{doi:10.1109/MCSE.2012.39}
 \item Sachs, M.K., Heien, E.M., Turcotte, D.L., Yikilmaz, M.B., Rundle,
 J.B., Kellogg, L.H. ''Virtual California Earthquake Simulator''
@@ -212,7 +215,7 @@ Seismological Research Letters, November/December 2012, v. 83, p.
 
 And to cite the manual:
 \begin{itemize}
-\item Wilson J.M., Schultz K.W., Heien E.M., Sachs M.K., Yoder M.R., Rundle J.B., Turcotte D.L. (2017), Virtual Quake User Manual, Version 3.1.0. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{https://geodynamics.org/cig/software/vq/vq_manual_3.1.0.pdf}{https://geodynamics.org/cig/software/vq/vq\_manual\_3.1.0.pdf}
+\item Wilson J.M., Schultz K.W., Heien E.M., Sachs M.K., Yoder M.R., Rundle J.B., Turcotte D.L. (2017), Virtual Quake User Manual, Version 3.1.1. Davis, California, USA: Computational Infrastructure for Geodynamics. URL:  \href{https://geodynamics.org/cig/software/vq/vq_manual_3.1.1.pdf}{https://geodynamics.org/cig/software/vq/vq\_manual\_3.1.1.pdf}
 \end{itemize}
 
 The developers also request that in your oral presentations and in
@@ -375,10 +378,9 @@ required for the model, are derived from paleoseismic event recurrence
 times.
 
 
-\subsection{Current California Fault Model}
+\subsection{Included California Fault Model}
 
-The full model for the California fault system that we currently use
-is based on the ALLCAL2 fault model, shown in Figure \ref{fig:UCERF2_google_earth}.
+The full model for the California fault system that is included with VQ is based on the ALLCAL2 fault model, shown in Figure \ref{fig:UCERF2_google_earth}.
 A detailed description of the ALLCAL2 model is at \url{http://scec.usc.edu/research/eqsims/documentation.html},
 and description of file formats is in \cite{Barall01112012}. The
 model includes 181 fault sections roughly corresponding to known faults
@@ -1009,13 +1011,9 @@ the same simulated earthquake as in Figure \ref{fig:Displacement_field}. }
 
 \section{Introduction}
 
-Virtual Quake and QuakeLib have been tested on Linux, Mac OS
-X and several other UNIX based platforms. Virtual Quake has also
-been successfully run in parallel on several XSEDE systems and commodity
-cluster systems. You should have no problems compiling, installing,
-and running Virtual Quake on most Unix-like systems. Virtual
-Quake is currently only available as a source package that users
-must compile on their own. The following sections will lead you through
+Virtual Quake is available in two forms: as a source package that users can compile on their own, and as a Docker image which is pre-compiled within a controlled container environment. Users interested in making modifications to the source of VQ should compile from source, while the Docker image is more likely to run without issue on a wide variety of systems, with no system requirements other than Docker itself.  For most users, the Docker image is the recommended usage method.
+
+The following sections will lead you through
 the installation process.
 
 
@@ -1027,7 +1025,13 @@ at the Geodynamics Mail Lists web page \url{http://geodynamics.org/cig/about/mai
 For bugs found in the manual or source code, or to make feature requests please use the Github issue tracker at \url{https://github.com/geodynamics/vq/issues}.
 
 
-\section{System Requirements}
+\section{Compiling from Source}
+\subsection{System Requirements}
+
+Virtual Quake and QuakeLib have been tested on Linux, Mac OS
+X and several other UNIX based platforms. Virtual Quake has also
+been successfully run in parallel on several XSEDE systems and commodity
+cluster systems. 
 
 Installation of Virtual Quake requires a C++ compiler.  Other requirements are the
 headers and development libraries for
@@ -1040,7 +1044,7 @@ headers and development libraries for
 You must also have Python 2.7 or greater installed, with h5py.
 
 
-\section{Obtaining Source}
+\subsection{Obtaining Source}
 
 To obtain the latest official release of Virtual Quake, go to the Geodynamics software package
 web page \url{http://geodynamics.org/cig/software/vq}, download the source
@@ -1054,7 +1058,7 @@ To get the latest development version of Virtual Quake, use git to make a copy o
 $ git clone --recursive https://github.com/geodynamics/vq
 \end{verbatim}
 
-\section{\label{sec:Install}Installation Procedure}
+\subsection{\label{sec:Install}Installation Procedure}
 
 After unpacking the source, use the following procedure to install
 the Virtual Quake executable as well as the QuakeLib library
@@ -1085,7 +1089,7 @@ run a Virtual Quake simulation, and the mesher program can create
 fault models as described in Section \ref{sec:building_faults}.
 
 
-\subsection{Mac OS X}
+\subsubsection{Mac OS X}
 
 If you have a third party installation of python (e.g. from Homebrew
 or MacPorts) Virtual Quake will build and install, but the Python
@@ -1099,7 +1103,7 @@ cmake -DPYTHON_EXECUTABLE=/.../python \
 
 Be sure to change the paths to whatever is appropriate on your system.
 
-\subsection{Install Locations}
+\subsubsection{Install Locations}
 
 QuakeLib libraries will be installed in standard library directories
 based on your system configuration. CMake will generate a file named
@@ -1108,7 +1112,7 @@ the locations of installed files. The Virtual Quake binary is at
 \texttt{build/src/vq}.
 
 
-\subsection{Selecting a Compiler --- Multiprocessing\label{sec:Selecting-a-Compiler-Multiproc}}
+\subsubsection{Selecting a Compiler --- Multiprocessing\label{sec:Selecting-a-Compiler-Multiproc}}
 
 Depending on the machine used to run VQ, you may need to change which
 compiler CMake uses to compile VQ. For example, if the user wants
@@ -1123,28 +1127,6 @@ $ CC=mpicc CXX=mpicxx cmake ..
 $ make
 \end{verbatim}
 
-\subsection{Additional Tools}
-
-While the following software is not necessary for the normal operation
-of Virtual Quake, you may find it useful for accessing Virtual
-Quake data in HDF5 files.
-
-%
-%\subsubsection{NumPy}
-%
-%NumPy is an extension to Python which adds support for multi-dimensional
-%arrays for use in scientific computing. You may download NumPy from
-%the NumPy home page \url{numpy.scipy.org}. To compile and install
-%this extension, download it and issue the following commands after
-%extracting it:
-%\begin{verbatim}
-%\$ cd~numpy-1.0
-%\$~python~setup.py~install~-{}-prefix=\$HOME/cig
-%\end{verbatim}
-%Alternatively, under Debian Linux you can install the \texttt{python-numpy}
-%package. On Gentoo Linux, NumPy is available in the \texttt{dev-python/numpy}
-%build.
-%
 
 %\subsubsection{PyTables}
 %
@@ -1159,8 +1141,43 @@ Quake data in HDF5 files.
 \subsubsection{HDFView}
 
 HDFView is a visual tool written in Java for browsing and editing
-HDF5 files. You may download it from the HDFView home page \url{hdf.ncsa.uiuc.edu/hdf-java-html/hdfview}.
+HDF5 files. While it is not necessary for the normal operation
+of Virtual Quake, you may find it useful for accessing Virtual
+Quake data in HDF5 files.  You may download it from the HDFView home page \url{hdf.ncsa.uiuc.edu/hdf-java-html/hdfview}.
 
+\section{Docker Image}
+
+\subsection{Initial Setup}
+All instructions for Virtual Quake Docker image setup can be found at the VQ Docker Hub,  \url{https://hub.docker.com/r/geodynamics/virtualquake/}.
+
+
+The only requirement of the host system for running the Docker image of Virtual Quake is Docker itself, which can be downloaded from \url{https://www.docker.com/products/docker}.
+
+Once the Docker client is running on your machine, download the Virtual Quake image with 
+
+\begin{verbatim}
+$ docker pull geodynamics/virtualquake:3.1.1
+\end{verbatim}
+
+\subsection{Running a Container}
+First, determine a directory on your computer (The "host" computer) in which to store all simulation files. These will include any fault model files, simulation outputs, and PyVQ plots.
+
+To allow the VQ container to access these files, include the full path of the chosen directory in the indicated spot in the \verb|docker run| command. Since Docker works slightly differently on Mac and Linux, use the appropriate command for your machine:
+\begin{itemize}
+\item For Linux: 
+\begin{verbatim}
+$ docker run --rm -v <full path to host directory>:/home/virtualquake/external_volume 
+         -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -it geodynamics/virtualquake:3.1.1
+\end{verbatim}
+\item For Mac: 
+\begin{verbatim}
+$ docker run --rm -v <full path to host directory>:/home/virtualquake/external_volume 
+         -it geodynamics/virtualquake:3.1.1
+\end{verbatim}
+\end{itemize}
+
+\subsection{Running Simulations}
+After executing the \verb|docker run| command, you'll be dropped into a terminal running inside the container, in a directory with access to all the files in the host directory you chose. The VQ fault mesher, simulator, and PyVQ analysis tools are located in the \verb|~/vq-3.1.0| directory inside the container, and can be accessed and used normally while in the container terminal.  Upon exiting the container terminal, the container will shut down, but all files stored and modified in the host directory will remain.
 
 \chapter{Running VQ\label{cha:Running_VQ}}
 
@@ -1272,7 +1289,7 @@ Figure \ref{fig:dynamictriggertune} shows the effect of a changing dynamic trigg
 
 \begin{figure}
 \includegraphics[width=0.7\textwidth]{graphics/dynamic_trigger_tuning.png}
-\caption{With the stress drop factor set to 0.7, this is the effect of tuning the dynamic trigger factor $eta$ on the frequency-magnitude distribution. These are 10,000 year simulations of the UCERF3 fault model compared to observed California earthquake rates and 95\% confidence bounds in red.}\label{fig:dynamictriggertune}
+\caption{With the stress drop factor set to 0.7, this is the effect of tuning the dynamic trigger factor $\eta$ on the frequency-magnitude distribution. These are 10,000 year simulations of the UCERF3 fault model compared to observed California earthquake rates and 95\% confidence bounds in red.}\label{fig:dynamictriggertune}
 \end{figure}
 
 \begin{figure}
@@ -1558,7 +1575,7 @@ the following sections.
 
 \subsection{Using the Mesher}
 
-The mesher is called on the command line.  The following runtime options are supported:
+The mesher is called on the command line.  See Appendix \ref{cha:Appendix-C:Mesher_Parameters} for all supported runtime options.
 
 \begin{verbatim}
 ./mesher [options]
