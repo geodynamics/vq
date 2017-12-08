@@ -34,9 +34,9 @@ RUN groupadd \
 
 WORKDIR /home/virtualquake
 
-ADD vq-3.1.0.tar.gz /home/virtualquake/
+ADD vq-3.1.1.tar.gz /home/virtualquake/
 
-RUN cd vq-3.1.0 \
+RUN cd vq-3.1.1 \
   && mkdir -p build \
   && cd build \
   && cmake \
