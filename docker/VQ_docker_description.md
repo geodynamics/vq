@@ -20,13 +20,13 @@ For Mac: `docker run --rm -v <full path to host directory>:/home/virtualquake/ex
 After executing the `docker run` command, you'll be dropped into a terminal running inside the container, in a directory with access to all the files in the host directory you chose.  The VQ fault mesher, simulator, and PyVQ analysis tools are located in the `~/vq-3.1.0` directory.
 
 To run the mesher:
-`~/vq-3.1.0/build/src/mesher <options>`
+`~/vq-3.1.1/build/src/mesher <options>`
 
 VQ simulation:
-`~/vq-3.1.0/build/src/vq ./<parameter file>`
+`~/vq-3.1.1/build/src/vq ./<parameter file>`
 
 PyVQ tools:
-`python ~/vq-3.1.0/PyVQ/pyvq/pyvq.py <options>`
+`python ~/vq-3.1.1/PyVQ/pyvq/pyvq.py <options>`
 
 For guidance on creating fault models, running simulations, and performing analyses (as well as available options and parameters for these tools), please reference the Virtual Quake manual, available at 
 <https://geodynamics.org/cig/software/vq/>
