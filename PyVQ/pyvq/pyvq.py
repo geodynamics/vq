@@ -11,6 +11,7 @@ import quakelib
 import gc
 import operator
 import os
+import json
 
 scipy_available = True
 try:
@@ -199,12 +200,24 @@ class SaveFile:
             wave = ""
         else:
             wave = "_"+str(int(round(wavelength*100,0)))+"cm"
+            
         if uniform_slip is None and event_id is not None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
         elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type   
         else:
             raise BaseException("\nMust specify either uniform_slip or event_id")
+    
+    def field_eval(self, lld_file, field_type, uniform_slip, event_id, slipmap_file):
+
+        if event_id is not None and uniform_slip is None and slipmap_file is None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type+"_event"+str(event_id)
+        elif event_id is None and uniform_slip is not None and slipmap_file is None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type+"_uniform"+str(int(uniform_slip))+"m"
+        elif event_id is None and uniform_slip is None and slipmap_file is not None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+Sos.path.split(slipmap_file)[1].split(".")[0]
+        else:
+            raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
             
     def greens_plot(self, name, field_type, slip):
         return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m"+self.file_type
@@ -2226,11 +2239,14 @@ class FieldEvaluator:
         for i in range(len(self.lons_1d)):
             self.grid_1d.append(self.convert.convert2xyz(quakelib.LatLonDepth(self.lats_1d[i],self.lons_1d[i])))
     #            
-    def compute_field(self, netCDF_arg, horizontal_arg):
+    def compute_field(self, netCDF_arg, horizontal_arg, output_file=None):
         self.lame_lambda = 3.2e10
         self.lame_mu     = 3.0e10
         self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
-        outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)
+        if output_file == None:
+            outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)
+        else:
+            outname = os.path.splitext(output_file)[0]
         
         #move file extension inside these
         if netCDF_arg:
@@ -3170,6 +3186,7 @@ if __name__ == "__main__":
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
+    parser.add_argument('--slipmap_file', required=False, help="JSON file defining slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
     parser.add_argument('--wavelength', type=float, required=False,
@@ -3658,8 +3675,8 @@ if __name__ == "__main__":
         FP.plot_field(output_file=filename, angles=angles, mask = not args.no_mask)
         
     if args.field_eval:
-        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id, args.wavelength)
-        if args.event_id is None:
+        filename = SaveFile().field_eval(args.lld_file, "dispField", args.uniform_slip, args.event_id, args.slipmap_file)
+        if args.event_id is None and args.uniform_slip:
             element_ids = geometry.model.getElementIDs()
             ele_slips = {}
             if args.uniform_slip is None: uniform_slip = 5.0
@@ -3670,6 +3687,13 @@ if __name__ == "__main__":
             for ele_id in element_ids:
                 ele_slips[ele_id] = uniform_slip
             event = None
+        elif args.event_id is None and args.slipmap_file:
+            ele_slips = {}
+            with open(args.slipmap_file, "r") as opened_slipmap:
+                slipmap_json = json.load(opened_slipmap)
+            for ele_id in slipmap_json:
+                ele_slips[int(ele_id)] = slipmap_json[ele_id]
+            event = None
         else:
             sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
             sys.stdout.flush()
@@ -3679,10 +3703,10 @@ if __name__ == "__main__":
         if len(ele_slips.keys()) == 0:
             raise BaseException("\nError in processing slips.")
         else:
-            sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
+            sys.stdout.write(" Loaded slips for {} elements :\n".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
-        FE.compute_field(args.netCDF, args.horizontal)
+        FE.compute_field(args.netCDF, args.horizontal, output_file=filename)
         
     if args.greens:
         # Set default values
