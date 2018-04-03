@@ -11,6 +11,7 @@ import quakelib
 import gc
 import operator
 import os
+import json
 
 scipy_available = True
 try:
@@ -199,12 +200,24 @@ class SaveFile:
             wave = ""
         else:
             wave = "_"+str(int(round(wavelength*100,0)))+"cm"
+            
         if uniform_slip is None and event_id is not None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
         elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type   
         else:
             raise BaseException("\nMust specify either uniform_slip or event_id")
+    
+    def field_eval(self, lld_file, field_type, uniform_slip, event_id, slipmap_file):
+
+        if event_id is not None and uniform_slip is None and slipmap_file is None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type+"_event"+str(event_id)
+        elif event_id is None and uniform_slip is not None and slipmap_file is None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type+"_uniform"+str(int(uniform_slip))+"m"
+        elif event_id is None and uniform_slip is None and slipmap_file is not None:
+            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+Sos.path.split(slipmap_file)[1].split(".")[0]
+        else:
+            raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
             
     def greens_plot(self, name, field_type, slip):
         return "greens_"+field_type+"_"+name+"_slip"+str(int(slip))+"m"+self.file_type
@@ -640,7 +653,7 @@ def read_events_h5(sim_file, event_numbers=None):
         if isinstance(event_numbers, int): 
             events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] == event_numbers, events)), dtype=events.dtype)
         else:
-            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)	
+            events = np.core.records.fromarrays(zip(*filter(lambda x: x['event_number'] in event_numbers, events)), dtype=events.dtype)    
     return events
 
 def read_all_sweeps_h5(sim_file, block_ids=None):
@@ -650,7 +663,7 @@ def read_all_sweeps_h5(sim_file, block_ids=None):
     # If block_id specified, only return those sweeps for that block
     if block_ids is not None:
         d_type = sweeps.dtype
-        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)    
     return sweeps
 
 def parse_all_sweeps_h5(sim_file=None, block_id=None, do_print=True, sweeps=None):
@@ -676,7 +689,7 @@ def read_sweeps_h5(sim_file, event_number=0, block_ids=None):
     # If block_id specified, only return those sweeps for that block
     if block_ids is not None:
         d_type = sweeps.dtype
-        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)	
+        sweeps = np.core.records.fromarrays(zip(*filter(lambda x: x['block_id'] in block_ids, sweeps)), dtype=d_type)    
     return sweeps
 
 def parse_sweeps_h5(sim_file=None, block_id=None, event_number=0, do_print=True, sweeps=None):
@@ -800,20 +813,40 @@ class Events:
         slips = [self._events[evnum].calcMeanSlip() for evnum in evnums]
         triggers = [self._events[evnum].getEventTrigger() for evnum in evnums]
         trigger_fault_names = [geometry.model.section( geometry.model.element(triggerID).section_id() ).name() for triggerID in triggers]
+        latbounds = []
+        lonbounds = []
+        altbounds = []
+        for evnum in evnums:
+            involved_elements = self._events[evnum].getInvolvedElements()
+            involved_lats = []
+            involved_lons = []
+            involved_alts = []
+            for el_id in involved_elements:
+                involved_element = geometry.model.element(el_id)
+                for i in [0,1,2]:
+                    vert_lld = geometry.model.vertex(involved_element.vertex(i)).lld()
+                    involved_lats.append(vert_lld.lat())
+                    involved_lons.append(vert_lld.lon())
+                    involved_alts.append(vert_lld.altitude())
+            latbounds.append((min(involved_lats), max(involved_lats)))
+            lonbounds.append((min(involved_lons), max(involved_lons)))
+            altbounds.append((min(involved_alts), max(involved_alts)))
         if min(slips) > 1e-4:
-            sys.stdout.write("==============================================================================\n")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault\n")
-            sys.stdout.write("------------------------------------------------------------------------------\n")
+            sys.stdout.write("\n========================================================================================================================================================\n")
+            sys.stdout.write("evid\tyear\tmag\tarea[km^2]\tslip[m]\ttrigger\ttrigger fault\t\tlat bounds\t\tlon bounds\t\talt bounds\n")
+            sys.stdout.write("---------------------------------------------------------------------------------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4f}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
-            sys.stdout.write("------------------------------------------------------------------------------\n")
+                sys.stdout.write("{}\t{:>.1f}\t{:>.3f}\t{:>.4f}\t\t{:>.4f}\t{}\t{}\t({:.4f}, {:.4f})\t({:.4f}, {:.4f})\t({:.4f}, {:.4f})\n".format(
+                evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k], latbounds[k][0], latbounds[k][1], lonbounds[k][0], lonbounds[k][1], altbounds[k][0], altbounds[k][1]))
+            sys.stdout.write("---------------------------------------------------------------------------------------------------------------------------------------------------------\n")
         else:
-            sys.stdout.write("==============================================================================\n")
-            sys.stdout.write("evid\tyear\t\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault\n")
-            sys.stdout.write("------------------------------------------------------------------------------\n")
+            sys.stdout.write("\n========================================================================================================================================================\n")
+            sys.stdout.write("evid\tyear\tmag\tarea[km^2]\tslip[m]\t\ttrigger\ttrigger fault\t\tlat bounds\t\tlon bounds\t\talt bounds\n")
+            sys.stdout.write("---------------------------------------------------------------------------------------------------------------------------------------------------------\n")
             for k in range(len(evnums)):
-                sys.stdout.write("{}\t{:>.1f}\t\t{:>.3f}\t{:>.4f}\t{:>.4e}\t{}\t{}\n".format(evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k]))
-            sys.stdout.write("------------------------------------------------------------------------------\n")
+                sys.stdout.write("{}\t{:>.1f}\t{:>.3f}\t{:>.4f}\t\t{:>.4e}\t{}\t{}\t({:.4f}, {:.4f})\t({:.4f}, {:.4f})\t({:.4f}, {:.4f})\n".format(
+                evnums[k],times[k],mags[k],areas[k]*pow(10,-6),slips[k],triggers[k], trigger_fault_names[k], latbounds[k][0], latbounds[k][1], lonbounds[k][0], lonbounds[k][1], altbounds[k][0], altbounds[k][1]))
+            sys.stdout.write("---------------------------------------------------------------------------------------------------------------------------------------------------------\n")
             
     def largest_event_summary(self, num_events, geometry):
         evnums = self.get_ids_largest_events(num_events)
@@ -909,7 +942,7 @@ class Sweeps:
                     plt.plot(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
                 else:
                     plt.semilogy(rws['sweep_number'], rws['shear_change'], '.-', label=block_id)
-		plt.plot([min(self.sweep_data['sweep_number']), max(self.sweep_data['sweep_number'])], [0., 0.], 'k-')
+        plt.plot([min(self.sweep_data['sweep_number']), max(self.sweep_data['sweep_number'])], [0., 0.], 'k-')
         if len(block_ids) <= 10:
             plt.legend(loc='best', numpoints=1,fontsize=8,ncol=3,handlelength=2,handletextpad=1)
         if shear: 
@@ -2226,11 +2259,14 @@ class FieldEvaluator:
         for i in range(len(self.lons_1d)):
             self.grid_1d.append(self.convert.convert2xyz(quakelib.LatLonDepth(self.lats_1d[i],self.lons_1d[i])))
     #            
-    def compute_field(self, netCDF_arg, horizontal_arg):
+    def compute_field(self, netCDF_arg, horizontal_arg, output_file=None):
         self.lame_lambda = 3.2e10
         self.lame_mu     = 3.0e10
         self.field_1d    = self.slip_map.displacements(self.grid_1d, self.lame_lambda, self.lame_mu, 1e9)
-        outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)
+        if output_file == None:
+            outname = self.LLD_file.split(".tx")[0]+"_dispField_event"+str(self.event_id)
+        else:
+            outname = os.path.splitext(output_file)[0]
         
         #move file extension inside these
         if netCDF_arg:
@@ -3065,7 +3101,9 @@ if __name__ == "__main__":
             help="Name of stress index file to use in analysis.")
     parser.add_argument('--stress_file', required=False,
             help="Name of stress file to use in analysis.")
-    parser.add_argument('--summary', type=int, required=False,
+    parser.add_argument('--event_summary', action='store_true', required=False,
+            help="Print event summary for given --event_id")
+    parser.add_argument('--large_summary', type=int, required=False,
             help="Specify the number of largest magnitude EQs to summarize.")
     parser.add_argument('--combine_file', required=False,
             help="Name of events hdf5 file to combine with event_file.")
@@ -3170,6 +3208,7 @@ if __name__ == "__main__":
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
+    parser.add_argument('--slipmap_file', required=False, help="JSON file defining slip for each element in the model_file, in meters.")
     parser.add_argument('--angles', type=float, nargs='+', required=False,
             help="Observing angles (azimuth, elevation) for InSAR or displacement plots, in degrees.")
     parser.add_argument('--wavelength', type=float, required=False,
@@ -3458,11 +3497,18 @@ if __name__ == "__main__":
     #if args.label: assert(len(args.label)==len(events))
     
     # Print out event summary data if requested
-    if args.summary:
+    if args.event_summary:
+        if args.model_file is None: raise BaseException("\nMust specify --model_file for summary.")
+        if args.event_id is None: raise BaseException("\nMust specify --event_id")
+        for i, event in enumerate(events):        
+            sys.stdout.write("\n Event summary for: "+ args.event_file[i])
+            event.event_summary([args.event_id], geometry)
+        
+    if args.large_summary:
         if args.model_file is None: raise BaseException("\nMust specify --model_file for summary.")
         for i, event in enumerate(events):        
             sys.stdout.write("\n Event summary for: "+ args.event_file[i])
-            event.largest_event_summary(args.summary, geometry)
+            event.largest_event_summary(args.large_summary, geometry)
 
     if args.event_elements:
         if args.event_id is None: raise BaseException("\nMust specify --event_id")
@@ -3658,8 +3704,8 @@ if __name__ == "__main__":
         FP.plot_field(output_file=filename, angles=angles, mask = not args.no_mask)
         
     if args.field_eval:
-        filename = SaveFile().field_plot(args.model_file, "displacement", args.uniform_slip, args.event_id, args.wavelength)
-        if args.event_id is None:
+        filename = SaveFile().field_eval(args.lld_file, "dispField", args.uniform_slip, args.event_id, args.slipmap_file)
+        if args.event_id is None and args.uniform_slip:
             element_ids = geometry.model.getElementIDs()
             ele_slips = {}
             if args.uniform_slip is None: uniform_slip = 5.0
@@ -3670,6 +3716,13 @@ if __name__ == "__main__":
             for ele_id in element_ids:
                 ele_slips[ele_id] = uniform_slip
             event = None
+        elif args.event_id is None and args.slipmap_file:
+            ele_slips = {}
+            with open(args.slipmap_file, "r") as opened_slipmap:
+                slipmap_json = json.load(opened_slipmap)
+            for ele_id in slipmap_json:
+                ele_slips[int(ele_id)] = slipmap_json[ele_id]
+            event = None
         else:
             sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
             sys.stdout.flush()
@@ -3679,10 +3732,10 @@ if __name__ == "__main__":
         if len(ele_slips.keys()) == 0:
             raise BaseException("\nError in processing slips.")
         else:
-            sys.stdout.write(" Loaded slips for {} elements :".format(len(ele_slips.keys()))) 
+            sys.stdout.write(" Loaded slips for {} elements :\n".format(len(ele_slips.keys()))) 
         sys.stdout.flush()
         FE = FieldEvaluator(geometry, args.event_id, event, ele_slips, args.lld_file)
-        FE.compute_field(args.netCDF, args.horizontal)
+        FE.compute_field(args.netCDF, args.horizontal, output_file=filename)
         
     if args.greens:
         # Set default values
