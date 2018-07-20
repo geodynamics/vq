@@ -21,7 +21,7 @@ pipeline {
   stages {
     stage ("Prepare Environment") {
       steps {
-        container('ubuntu1804'){
+        container('ubuntu1804') {
           sh '''
             apt update
             apt install \
@@ -48,7 +48,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        container('ubuntu1804'){
+        container('ubuntu1804') {
           sh '''
             mkdir build
             cd build
@@ -60,11 +60,12 @@ pipeline {
             ninja
           '''
         }
+      }
     }
 
     stage('Test') {
       steps {
-        container('ubuntu1804'){
+        container('ubuntu1804') {
           sh '''
             cd build
             ctest
