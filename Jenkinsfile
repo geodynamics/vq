@@ -24,7 +24,7 @@ pipeline {
         container('ubuntu1804') {
           sh '''
             apt update
-            apt install \
+            apt install --yes \
               build-essential \
               cmake \
               doxygen \
