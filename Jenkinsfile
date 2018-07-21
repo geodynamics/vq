@@ -6,8 +6,8 @@ pipeline {
       //cloud 'kubernetes'
       label 'mypod'
       containerTemplate {
-        name 'ubuntu1804'
-        image 'ubuntu:18.04'
+        name 'ubuntu1604'
+        image 'ubuntu:16.04'
         ttyEnabled true
         command 'cat'
       }
@@ -26,7 +26,7 @@ pipeline {
   stages {
     stage ("Prepare Environment") {
       steps {
-        container('ubuntu1804') {
+        container('ubuntu1604') {
           sh 'apt update'
           sh '''
             apt install --yes \
@@ -54,7 +54,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        container('ubuntu1804') {
+        container('ubuntu1604') {
           sh 'mkdir build'
           sh '''
             cd build
@@ -74,7 +74,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        container('ubuntu1804') {
+        container('ubuntu1604') {
           sh '''
             cd build
             ctest
