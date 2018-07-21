@@ -56,15 +56,18 @@ pipeline {
       steps {
         container('ubuntu1804') {
           sh 'mkdir build'
-          sh 'cd build'
           sh '''
+            cd build
             cmake \
               -G "Ninja" \
               -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
               -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
               ..
            '''
-           sh 'ninja'
+           sh '''
+             cd build
+             ninja
+           '''
         }
       }
     }
@@ -72,8 +75,10 @@ pipeline {
     stage('Test') {
       steps {
         container('ubuntu1804') {
-          sh 'cd build'
-          sh 'ctest'
+          sh '''
+            cd build
+            ctest
+          '''
         }
       } 
     }
