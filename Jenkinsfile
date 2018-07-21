@@ -33,6 +33,7 @@ pipeline {
               build-essential \
               cmake \
               doxygen \
+              git \
               libgeographic-dev \
               libgomp1 \
               libopenmpi-dev \
