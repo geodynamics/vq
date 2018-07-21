@@ -27,8 +27,8 @@ pipeline {
     stage ("Prepare Environment") {
       steps {
         container('ubuntu1804') {
+          sh 'apt update'
           sh '''
-            apt update
             apt install --yes \
               build-essential \
               cmake \
@@ -54,16 +54,16 @@ pipeline {
     stage('Build') {
       steps {
         container('ubuntu1804') {
+          sh 'mkdir build'
+          sh 'cd build'
           sh '''
-            mkdir build
-            cd build
             cmake \
               -G "Ninja" \
               -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
               -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
               ..
-            ninja
-          '''
+           '''
+           sh 'ninja'
         }
       }
     }
@@ -71,10 +71,8 @@ pipeline {
     stage('Test') {
       steps {
         container('ubuntu1804') {
-          sh '''
-            cd build
-            ctest
-          '''
+          sh 'cd build'
+          sh 'ctest'
         }
       } 
     }
