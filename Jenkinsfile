@@ -84,7 +84,6 @@ pipeline {
       post {
         always {
           container('ubuntu1604') {
-            sh 'ls -AXR build/Testing'
             xunit testTimeMargin: '3000',
               thresholdMode: 1,
               thresholds: [failed(), skipped()],
