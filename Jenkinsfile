@@ -77,10 +77,19 @@ pipeline {
         container('ubuntu1604') {
           sh '''
             cd build
-            ctest
+            ctest --no-compress-output
           '''
         }
-      } 
+      }
+      post {
+        always {
+          container('ubuntu1604') {
+            xunit tools: [
+              CTest(pattern: 'build/Testing/**/*.xml')
+            ]
+          }
+        }
+      }
     }
   }
 }
