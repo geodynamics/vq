@@ -23,10 +23,10 @@ pipeline {
     timeout(time: 4, unit: 'HOURS') 
   }
 
-  stages {
-    stage ("Prepare Environment") {
-      steps {
-        container('ubuntu1604') {
+  container('ubuntu1604') {
+    stages {
+      stage ("Prepare Environment") {
+        steps {
           sh 'apt update'
           sh '''
             apt install --yes \
@@ -50,37 +50,32 @@ pipeline {
           '''
         }
       }
-    }
 
     stage('Build') {
       steps {
-        container('ubuntu1604') {
-          sh 'mkdir build'
-          sh '''
-            cd build
-            cmake \
-              -G "Ninja" \
-              -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
-              -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
-              ..
-           '''
-           sh '''
-             cd build
-             ninja
-           '''
-        }
+        sh 'mkdir build'
+        sh '''
+          cd build
+          cmake \
+            -G "Ninja" \
+            -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
+            -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
+            ..
+         '''
+         sh '''
+           cd build
+           ninja
+         '''
       }
     }
 
     stage('Test') {
       steps {
-        container('ubuntu1604') {
-          sh '''
-            cd build
-            ctest
-          '''
-        }
-      } 
-    }
+        sh '''
+          cd build
+          ctest
+        '''
+      }
+    } 
   }
 }
