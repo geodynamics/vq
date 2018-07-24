@@ -84,9 +84,10 @@ pipeline {
       post {
         always {
           container('ubuntu1604') {
-            xunit tools: [
-              CTest(pattern: 'build/Testing/**/*.xml')
-            ]
+            xunit testTimeMargin: '3000',
+              thresholdMode: 1,
+              thresholds: [failed(), skipped()],
+              tools: [CTest(pattern: 'build/Testing/**/*.xml')]
           }
         }
       }
