@@ -51,31 +51,30 @@ pipeline {
         }
       }
 
-      stage('Build') {
-        steps {
-          sh 'mkdir build'
-          sh '''
-            cd build
-            cmake \
-              -G "Ninja" \
-              -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
-              -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
-              ..
-           '''
-           sh '''
-             cd build
-             ninja
-           '''
-        }
+    stage('Build') {
+      steps {
+        sh 'mkdir build'
+        sh '''
+          cd build
+          cmake \
+            -G "Ninja" \
+            -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
+            -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
+            ..
+         '''
+         sh '''
+           cd build
+           ninja
+         '''
       }
+    }
 
-      stage('Test') {
-        steps {
-          sh '''
-            cd build
-            ctest
-          '''
-        }
+    stage('Test') {
+      steps {
+        sh '''
+          cd build
+          ctest
+        '''
       }
     } 
   }
