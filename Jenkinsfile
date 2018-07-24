@@ -77,14 +77,14 @@ pipeline {
         container('ubuntu1604') {
           sh '''
             cd build
-            ctest --no-compress-output
+            ctest --no-compress-output -T Test
           '''
         }
       }
       post {
         always {
           container('ubuntu1604') {
-            sh 'ls -AX . build'
+            sh 'ls -AXR build/Testing'
             xunit testTimeMargin: '3000',
               thresholdMode: 1,
               thresholds: [failed(), skipped()],
