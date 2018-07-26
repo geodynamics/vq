@@ -48,7 +48,7 @@ pipeline {
               python-mpltoolkits.basemap \
               swig
           '''
-          sh '''sed -i '79s/${MPIEXEC}/${MPIEXEC} --allow-run-as-root/' examples/CMakeLists.txt'''
+          sh '''sed -i '/[(79),(227),(239)]/s/${MPIEXEC}/${MPIEXEC} --allow-run-as-root/' examples/CMakeLists.txt'''
         }
       }
     }
