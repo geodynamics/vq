@@ -94,4 +94,9 @@ pipeline {
       }
     }
   }
+  post {
+    cleanup {
+      deleteDir()
+    }
+  }
 }
