@@ -3,8 +3,6 @@
 pipeline {
   agent {
     kubernetes {
-      //cloud 'kubernetes'
-      label 'mypod'
       containerTemplate {
         name 'ubuntu1604'
         image 'ubuntu:16.04'
