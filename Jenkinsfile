@@ -14,11 +14,6 @@ pipeline {
     }
   }
 
-  environment {
-    DEBIAN_FRONTEND = 'noninteractive'
-    DEBCONF_NONINTERACTIVE_SEEN = 'true'
-  }
-
   options {
     timeout(time: 4, unit: 'HOURS')
   }
