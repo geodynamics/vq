@@ -6,8 +6,8 @@ pipeline {
       //cloud 'kubernetes'
       label 'mypod'
       containerTemplate {
-        name 'ubuntu1604'
-        image 'ubuntu:16.04'
+        name 'buildenv-xenial'
+        image 'geodynamics/virtualquake-buildenv-xenial:latest'
         ttyEnabled true
         command 'cat'
       }
@@ -20,34 +20,13 @@ pipeline {
   }
 
   options {
-    timeout(time: 4, unit: 'HOURS') 
+    timeout(time: 4, unit: 'HOURS')
   }
 
   stages {
     stage ("Prepare Environment") {
       steps {
-        container('ubuntu1604') {
-          sh 'apt update'
-          sh '''
-            apt install --yes \
-              build-essential \
-              cmake \
-              doxygen \
-              git \
-              libgeographic-dev \
-              libgomp1 \
-              libopenmpi-dev \
-              openmpi-bin \
-              openmpi-common \
-              libhdf5-openmpi-dev \
-              libpython2.7-dev \
-              ninja-build \
-              python2.7 \
-              python-h5py \
-              python-matplotlib \
-              python-mpltoolkits.basemap \
-              swig
-          '''
+        container('buildenv-xenial') {
           sh '''sed -i '/[(79),(227),(239)]/s/${MPIEXEC}/${MPIEXEC} --allow-run-as-root/' examples/CMakeLists.txt'''
         }
       }
@@ -55,7 +34,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        container('ubuntu1604') {
+        container('buildenv-xenial') {
           sh 'mkdir build'
           sh '''
             cd build
@@ -75,7 +54,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        container('ubuntu1604') {
+        container('buildenv-xenial') {
           sh '''
             cd build
             ctest --no-compress-output -T Test
@@ -84,7 +63,7 @@ pipeline {
       }
       post {
         always {
-          container('ubuntu1604') {
+          container('buildenv-xenial') {
             xunit testTimeMargin: '3000',
               thresholdMode: 1,
               thresholds: [failed(), skipped()],
