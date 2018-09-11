@@ -1,8 +1,9 @@
 FROM ubuntu:bionic
 
-RUN DEBIAN_FRONTEND='noninteractive' \
+RUN apt update && \
+  DEBIAN_FRONTEND='noninteractive' \
   DEBCONF_NONINTERACTIVE_SEEN='true' \
-  apt update && apt install --yes \
+  apt install --yes \
   build-essential \
   cmake \
   doxygen \
