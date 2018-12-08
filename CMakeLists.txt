@@ -14,9 +14,9 @@
 #   create source package for distribution
 ############################################################
 # The name of our project is "VQ". CMakeLists files in this project can
-# refer to the root source directory of the project as ${VQ_SOURCE_DIR} and 
-# to the root binary directory of the project as ${VQ_BINARY_DIR}. 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6) 
+# refer to the root source directory of the project as ${VQ_SOURCE_DIR} and
+# to the root binary directory of the project as ${VQ_BINARY_DIR}.
+CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 PROJECT (VQ)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/quakelib/cmake/)
@@ -127,7 +127,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/quakelib/)
 
 # Recurse into the "quakelib" and "src" subdirectories.
-ADD_SUBDIRECTORY(quakelib) 
+ADD_SUBDIRECTORY(quakelib)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples)
-

@@ -1,4 +1,4 @@
-# Make sure the compiler can find include files from the quakelib library. 
+# Make sure the compiler can find include files from the quakelib library.
 INCLUDE_DIRECTORIES(${VQ_SOURCE_DIR}/quakelib/src)
 
 # Set VQ source directories
@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES (${VQ_IO_DIR})
 INCLUDE_DIRECTORIES (${VQ_MISC_DIR})
 INCLUDE_DIRECTORIES (${VQ_SIM_DIR})
 
-# Make sure the linker can find the quakelib library once it is built. 
+# Make sure the linker can find the quakelib library once it is built.
 LINK_DIRECTORIES (${VQ_BINARY_DIR}/quakelib)
 
 # Define sets of the source files
@@ -109,8 +109,6 @@ IF(MPI_C_FOUND)
 ENDIF(MPI_C_FOUND)
 
 IF(HDF5_FOUND)
-    TARGET_LINK_LIBRARIES (vq ${HDF5_LIBRARIES})
-    TARGET_LINK_LIBRARIES (mesher ${HDF5_LIBRARIES})
+    TARGET_LINK_LIBRARIES (vq ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+    TARGET_LINK_LIBRARIES (mesher ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 ENDIF(HDF5_FOUND)
-
-
