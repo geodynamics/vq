@@ -12,21 +12,11 @@ pipeline {
       parallel {
         stage('Xenial') {
           agent {
-            kubernetes {
-              label 'mypod'
-              yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-    - name: 'buildenv-xenial'
-      image: 'geodynamics/virtualquake-buildenv-xenial:latest'
-      command:
-      - 'cat'
-      tty: true
-"""
+            docker {
+              image 'geodynamics/virtualquake-buildenv-xenial:latest'
             }
           }
+
           stages {
             stage('Prepare Environment (Xenial)') {
               steps {
@@ -81,21 +71,11 @@ spec:
 
         stage('Bionic') {
           agent {
-            kubernetes {
-              label 'mypod'
-              yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-    - name: 'buildenv-bionic'
-      image: 'geodynamics/virtualquake-buildenv-bionic:latest'
-      command:
-      - 'cat'
-      tty: true
-"""
+            docker {
+              image 'geodynamics/virtualquake-buildenv-bionic:latest'
             }
           }
+
           stages {
             stage('Prepare Environment (Bionic)') {
               steps {
