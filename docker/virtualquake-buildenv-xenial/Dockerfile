@@ -10,10 +10,8 @@ RUN apt update && \
   git \
   libgeographic-dev \
   libgomp1 \
-  libopenmpi-dev \
-  openmpi-bin \
-  openmpi-common \
-  libhdf5-openmpi-dev \
+  libhdf5-mpich-dev \
+  libmpich-dev \
   libpython2.7-dev \
   ninja-build \
   python2.7 \
