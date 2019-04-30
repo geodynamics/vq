@@ -65,12 +65,6 @@ pipeline {
           }
 
           stages {
-            stage('Prepare Environment (Bionic)') {
-              steps {
-                sh '''sed -i '/[(79),(227),(239)]/s/${MPIEXEC}/${MPIEXEC} --allow-run-as-root/' examples/CMakeLists.txt'''
-              }
-            }
-
             stage('Build (Bionic)') {
               steps {
                 sh 'mkdir build'
