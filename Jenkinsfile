@@ -14,6 +14,7 @@ pipeline {
           agent {
             docker {
               image 'geodynamics/virtualquake-buildenv-xenial:latest'
+              alwaysPull true
             }
           }
 
@@ -65,6 +66,7 @@ pipeline {
           agent {
             docker {
               image 'geodynamics/virtualquake-buildenv-bionic:latest'
+              alwaysPull true
             }
           }
 
