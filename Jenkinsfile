@@ -19,12 +19,6 @@ pipeline {
           }
 
           stages {
-            stage('Prepare Environment (Xenial)') {
-              steps {
-                sh '''sed -i '/[(79),(227),(239)]/s/${MPIEXEC}/${MPIEXEC} --allow-run-as-root/' examples/CMakeLists.txt'''
-              }
-            }
-
             stage('Build (Xenial)') {
               steps {
                 sh 'mkdir build'
