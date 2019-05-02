@@ -192,7 +192,7 @@ class SaveFile:
 
         return plot_type+add+"_"+event_file.split(".")[0]+self.file_type
         
-    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength):
+    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength, slipmap_file):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
@@ -201,12 +201,14 @@ class SaveFile:
         else:
             wave = "_"+str(int(round(wavelength*100,0)))+"cm"
             
-        if uniform_slip is None and event_id is not None:
+        if event_id is not None and uniform_slip is None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
-        elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type   
+        elif event_id is None and uniform_slip is not None:
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
+        elif event_id is None and uniform_slip is None and slipmap_file is not None:
+            return model_file.split(".")[0]++"_"+field_type++"_"+os.path.split(slipmap_file)[1].split(".")[0]+wave+self.file_type
         else:
-            raise BaseException("\nMust specify either uniform_slip or event_id")
+            raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
     
     def field_eval(self, lld_file, field_type, uniform_slip, event_id, slipmap_file):
 
@@ -215,7 +217,7 @@ class SaveFile:
         elif event_id is None and uniform_slip is not None and slipmap_file is None:
             return os.path.splitext(lld_file)[0]+"_"+field_type+"_uniform"+str(int(uniform_slip))+"m"
         elif event_id is None and uniform_slip is None and slipmap_file is not None:
-            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+Sos.path.split(slipmap_file)[1].split(".")[0]
+            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+os.path.split(slipmap_file)[1].split(".")[0]
         else:
             raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
             
@@ -3662,12 +3664,12 @@ if __name__ == "__main__":
             for event_set in events:
                 ProbabilityPlot().print_prob_table(args.t0, args.t, args.magnitudes, event_set)
     if args.field_plot:
-        type = args.field_type.lower()
+        lowered_field_type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
         if args.levels: levels = args.levels
         else: levels = None
-        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id, args.wavelength)
+        filename = SaveFile().field_plot(args.model_file, lowered_field_type, args.uniform_slip, args.event_id, args.wavelength, args.slipmap_file)
         if args.no_mask is None: args.no_mask=False
         if args.angles: 
             if len(args.angles) != 2:
@@ -3683,6 +3685,13 @@ if __name__ == "__main__":
             sys.stdout.write(" Computing field for uniform slip {}m :".format(int(uniform_slip)))
             for ele_id in element_ids:
                 ele_slips[ele_id] = uniform_slip
+            event = None
+        elif args.event_id is None and args.slipmap_file:
+            ele_slips = {}
+            with open(args.slipmap_file, "r") as opened_slipmap:
+                slipmap_json = json.load(opened_slipmap)
+            for ele_id in slipmap_json:
+                ele_slips[int(ele_id)] = slipmap_json[ele_id]
             event = None
         else:
             sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
