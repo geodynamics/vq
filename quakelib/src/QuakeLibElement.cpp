@@ -481,7 +481,8 @@ quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, 
 	quakelib::FloatList coulomb_changes;
 	Okada block_okada;
 	double coulomb_change;
-	double slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, x, y, xp, yp, dx, dy, dz;
+	double slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, xp3, yp3;
+	double x, y, xp, yp, zp, dx, dy, dz;
 
 	quakelib::Tensor<3U, 3U> stress_tensor;
 	quakelib::Vec<3> rake_vec, normal_vec, xy_projected_source_normal, rot_axis, mrake_vec, mnormal_vec, stress_vec;
@@ -505,10 +506,10 @@ quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, 
 		friction = 0.4;
 
 		normal_vec = involved_elements[ele_id].normal();
-		rake_vec = involved_elements[ele_id].rake();
+		rake_vec = involved_elements[ele_id].rake_vector();
 
-		rake_cos = cos(rake_vec);
-		rake_sin = sin(rake_vec);
+		rake_cos = cos(involved_elements[ele_id].rake());
+		rake_sin = sin(involved_elements[ele_id].rake());
 
 
 		if (fabs(rake_cos) < TRIG_TOLERANCE) {
