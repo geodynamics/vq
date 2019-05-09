@@ -1492,6 +1492,11 @@ class FieldPlotter:
             self.cutoff_min = 20.0
             self.cutoff_p2_size = 65.0
             self.cutoff_p2 = 90.0
+        elif self.field_type == 'coulomb':
+            self.cutoff_min_size = 20.0
+            self.cutoff_min = 20.0
+            self.cutoff_p2_size = 65.0
+            self.cutoff_p2 = 90.0
         elif self.field_type == 'displacement' or self.field_type == 'insar':
             self.look_azimuth = None
             self.look_elevation = None
@@ -1640,7 +1645,7 @@ class FieldPlotter:
             elif self.field_type == 'geoid':
                 self.dmc['cb_fontsize'] = 16.0
                 
-        if self.field_type == 'displacement' or self.field_type == 'insar':
+        if self.field_type == 'displacement' or self.field_type == 'insar' or self.field_type == 'coulomb':
             self.dmc['boundary_color_f'] = '#ffffff'
             self.dmc['coastline_color_f'] = '#ffffff'
             if self.levels is None:
@@ -1770,7 +1775,10 @@ class FieldPlotter:
                 self.dY[it.multi_index] = disp[it.multi_index][1]
                 self.dZ[it.multi_index] = disp[it.multi_index][2]
                 it.iternext()
-                
+        elif self.field_type == "coulomb":
+            sys.stdout.write(" Computing Coulomb failure function change field :")
+            self.field_1d = self.slip_map.coulomb_change(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))        
         sys.stdout.flush()
         
     def plot_str(self):
@@ -3206,7 +3214,7 @@ if __name__ == "__main__":
     # ---------  Field plotting arguments -----------
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
-    parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
+    parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid, coulomb")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
@@ -3355,8 +3363,8 @@ if __name__ == "__main__":
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid" and type != "satellite_gravity":
-            raise BaseException("\nField type is one of gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid" and type != "satellite_gravity" and type != "coulomb":
+            raise BaseException("\nField type is one of gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid, coulomb")
             
     # Pre-check for probability table evaluation. We need the same number of --t0 arguments as --magnitudes
     if args.t0 or args.magnitudes:
