@@ -40,6 +40,9 @@
 // This will result in a smallest calculated displacement of ~0.0001 m
 #define DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS                46.5
 
+// This will result in a smallest calculated CFF change TODO: figure out what this actually relates to
+#define DIST_SQRT_AREA_RATIO_CUTOFF_COULOMB		               10.0
+
 // This will result in a smallest calculated gravity change of ~4e-9
 #define DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY               8.0
 
@@ -401,6 +404,7 @@ namespace quakelib {
                     add_element(involved_elements[i]);
             };
             VectorList displacements(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_DISPLACEMENTS);
+			FloatList coulomb_change(const VectorList &points, const float &lambda, const float &mu, const float &cutoff= DIST_SQRT_AREA_RATIO_CUTOFF_COULOMB);
             FloatList gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY, bool free_air = true);
             FloatList dilat_gravity_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_GRAVITY);
             FloatList potential_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff=DIST_SQRT_AREA_RATIO_CUTOFF_POTENTIAL);

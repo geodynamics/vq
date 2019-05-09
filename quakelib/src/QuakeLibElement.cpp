@@ -476,7 +476,131 @@ quakelib::VectorList quakelib::SlipMap::displacements(const VectorList &points, 
     return displacements;
 }
 
+// CFF change field assuming plane and rake of source element
+quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
+	quakelib::FloatList coulomb_changes;
+	Okada block_okada;
+	double coulomb_change;
+	double slip, US, UD, UT, L, W, c, rake_cos, rake_sin, strike_cos, strike_sin, dip, strike, xp0, yp0, x, y, xp, yp, dx, dy, dz;
 
+	quakelib::Tensor<3U, 3U> stress_tensor;
+	quakelib::Vec<3> rake_vec, normal_vec, xy_projected_source_normal, rot_axis, mrake_vec, mnormal_vec, stress_vec;
+	double theta, shear_stress, normal_stress, friction;
+
+	if (lambda <= 0 || mu <= 0) {
+		throw std::invalid_argument("Lambda and mu must be greater than zero.");
+	}
+
+	for (VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
+		coulomb_changes.push_back(0.0);
+	}
+
+	for (SlippedElementList::size_type ele_id = 0; ele_id != involved_elements.size(); ele_id++) {
+		slip = involved_elements[ele_id].slip();
+		c = fabs(involved_elements[ele_id].max_depth());
+		
+		// Instead of trying to use the same friction as is calculated in a simulation (stress drop/rhogd), 
+		//   we draw from the USGS Coulomb software and assume 0.4, their choice for strike slip or unknown faults. Based partly
+		//   on Parsons (1999)
+		friction = 0.4;
+
+		normal_vec = involved_elements[ele_id].normal();
+		rake_vec = involved_elements[ele_id].rake();
+
+		rake_cos = cos(rake_vec);
+		rake_sin = sin(rake_vec);
+
+
+		if (fabs(rake_cos) < TRIG_TOLERANCE) {
+			rake_cos = 0.0;
+		}
+
+		if (fabs(rake_sin) < TRIG_TOLERANCE) {
+			rake_sin = 0.0;
+		}
+
+		US = slip * rake_cos;
+		UD = slip * rake_sin;
+		UT = 0.0;
+
+		L = (involved_elements[ele_id].vert(2) - involved_elements[ele_id].vert(0)).mag();
+		W = (involved_elements[ele_id].vert(1) - involved_elements[ele_id].vert(0)).mag();
+
+		dip = involved_elements[ele_id].dip();
+		strike = involved_elements[ele_id].strike();
+
+		strike_cos = cos(strike);
+		strike_sin = sin(strike);
+
+		if (fabs(strike_cos) < TRIG_TOLERANCE) {
+			strike_cos = 0.0;
+		}
+
+		if (fabs(strike_sin) < TRIG_TOLERANCE) {
+			strike_sin = 0.0;
+		}
+
+		xp0 = involved_elements[ele_id].vert(1)[0];
+		yp0 = involved_elements[ele_id].vert(1)[1];
+
+		xp3 = involved_elements[ele_id].implicit_vert()[0];
+		yp3 = involved_elements[ele_id].implicit_vert()[1];
+
+		for (VectorList::size_type point_id = 0; point_id != points.size(); point_id++) {
+			x = points[point_id][0];
+			y = points[point_id][1];
+
+			//if (pow(x-event_center()[0], 2) + pow(y-event_center()[1], 2) > pow( event_radius() * cutoff ,2) ) {
+			// Gotta figure the cutoff for gravity changes out
+
+			if (sqrt(pow((x - (xp0 + xp3) / 2.0), 2) + pow((y - (yp0 + yp3) / 2.0), 2)) / sqrt(L*W) > (cutoff + slip - 1.0)) {
+				coulomb_change = 0.0;
+			}
+			else {
+
+				xp = (x - xp0) * strike_sin + (y - yp0) * strike_cos;
+				yp = -(x - xp0) * strike_cos + (y - yp0) * strike_sin;
+
+				// CHANGE this to enable calculations below z=0
+				zp = 0.0;
+
+				stress_tensor = block_okada.calc_stress_tensor(quakelib::Vec<3>(xp, yp, zp), c, dip, L, W, US, UD, UT, lambda, mu);
+
+				// now we need to perform a 2d rotation in the x-y plane so that the new x axis
+				// aligns with the pt3-pt2 vector of the source block. this is okada's coord sys
+				xy_projected_source_normal[0] = normal_vec[0];
+				xy_projected_source_normal[1] = normal_vec[1];
+				xy_projected_source_normal[2] = 0.0;
+
+				theta = xy_projected_source_normal.vector_angle(quakelib::Vec<3>(0.0, -1.0, 0.0));
+
+				if (normal_vec[0] >= 0.0) {
+					rot_axis = quakelib::Vec<3>(0.0, 0.0, 1.0);
+				}
+				else {
+					rot_axis = quakelib::Vec<3>(0.0, 0.0, -1.0);
+				}
+
+				mnormal_vec = normal_vec.rotate_around_axis(rot_axis, theta);
+				mrake_vec = rake_vec.rotate_around_axis(rot_axis, theta);
+
+
+				stress_vec = stress_tensor * mnormal_vec;
+
+				shear_stress = stress_vec.dot_product(mrake_vec);
+				normal_stress = stress_vec.dot_product(mnormal_vec);
+
+				coulomb_change = stress_vec.dot_product(mrake_vec) - friction * stress_vec.dot_product(mnormal_vec);
+			}
+
+			//std::cout << coulomb_change << std::endl;
+
+			coulomb_changes[point_id] += coulomb_change;
+		}
+	}
+
+	return coulomb_changes;
+}
 
 //The changes in gravitational potential (Okubo 1992)
 quakelib::FloatList quakelib::SlipMap::potential_changes(const VectorList &points, const float &lambda, const float &mu, const float &cutoff) {
