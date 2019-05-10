@@ -562,8 +562,9 @@ quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, 
 				xp = (x - xp0) * strike_sin + (y - yp0) * strike_cos;
 				yp = -(x - xp0) * strike_cos + (y - yp0) * strike_sin;
 
-				// CHANGE this to enable calculations below z=0
-				zp = 0.0;
+
+				// This controls the depth at which the CFF field is calculated
+				zp = involved_elements[ele_id].center()[2];
 
 				stress_tensor = block_okada.calc_stress_tensor(quakelib::Vec<3>(xp, yp, zp), c, dip, L, W, US, UD, UT, lambda, mu);
 
