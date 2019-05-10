@@ -562,6 +562,7 @@ quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, 
 				xp = (x - xp0) * strike_sin + (y - yp0) * strike_cos;
 				yp = -(x - xp0) * strike_cos + (y - yp0) * strike_sin;
 
+
 				// This controls the depth at which the CFF field is calculated
 				zp = involved_elements[ele_id].center()[2];
 
