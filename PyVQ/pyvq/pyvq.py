@@ -1487,12 +1487,7 @@ class FieldPlotter:
         # Define how the cutoff value scales if it is not explitly set.
         # Cutoff is the max distance away from elements to compute
         # the field given in units of element length.
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
-            self.cutoff_min_size = 20.0
-            self.cutoff_min = 20.0
-            self.cutoff_p2_size = 65.0
-            self.cutoff_p2 = 90.0
-        elif self.field_type == 'coulomb':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb':
             self.cutoff_min_size = 20.0
             self.cutoff_min = 20.0
             self.cutoff_p2_size = 65.0
@@ -1633,8 +1628,11 @@ class FieldPlotter:
                 cbar_max = 0.002
             elif self.field_type == 'geoid':
                 cbar_max = 0.00015
-                
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid'  or self.field_type == 'satellite_gravity':
+            elif self.field_type == 'coulomb':
+                cbar_max = 10e5
+            
+        if (self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or 
+             self.field_type == 'geoid'  or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb'):
             self.dmc['cmap'] = plt.get_cmap('seismic')
             self.dmc['cbar_min'] = -cbar_max
             self.dmc['cbar_max'] = cbar_max
@@ -1644,8 +1642,10 @@ class FieldPlotter:
                 self.dmc['cb_fontsize'] = 16.0
             elif self.field_type == 'geoid':
                 self.dmc['cb_fontsize'] = 16.0
+            elif self.field_type == 'coulomb':
+                self.dmc['cb_fontsize'] = 16.0
                 
-        if self.field_type == 'displacement' or self.field_type == 'insar' or self.field_type == 'coulomb':
+        if self.field_type == 'displacement' or self.field_type == 'insar':
             self.dmc['boundary_color_f'] = '#ffffff'
             self.dmc['coastline_color_f'] = '#ffffff'
             if self.levels is None:
@@ -1757,6 +1757,10 @@ class FieldPlotter:
             # To convert from potential to geoid height, divide by mean surface gravity
             self.field /= -1*self.g0
             sys.stdout.write(" g0 {} :".format(self.g0))
+        elif self.field_type == "coulomb":
+            sys.stdout.write(" Computing Coulomb failure function change field :")
+            self.field_1d = self.slip_map.coulomb_change(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))  
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
                 sys.stdout.write(" Computing displacement field :")
@@ -1774,11 +1778,7 @@ class FieldPlotter:
                 self.dX[it.multi_index] = disp[it.multi_index][0]
                 self.dY[it.multi_index] = disp[it.multi_index][1]
                 self.dZ[it.multi_index] = disp[it.multi_index][2]
-                it.iternext()
-        elif self.field_type == "coulomb":
-            sys.stdout.write(" Computing Coulomb failure function change field :")
-            self.field_1d = self.slip_map.coulomb_change(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
-            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))        
+                it.iternext()      
         sys.stdout.flush()
         
     def plot_str(self):
@@ -1807,7 +1807,7 @@ class FieldPlotter:
                 self.look_elevation = 40.0*np.pi/180.0
             sys.stdout.write("Displacements projected along azimuth={:.1f}deg and elevation={:.1f}deg : ".format(self.look_azimuth*180.0/np.pi, self.look_elevation*180.0/np.pi))
             
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb':
             cmap            = self.dmc['cmap']
             water_color     = self.dmc['water_color']
             boundary_color  = self.dmc['boundary_color']
@@ -2212,6 +2212,8 @@ class FieldPlotter:
                 cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
             elif self.field_type == 'geoid':
                 cb_title = 'Geoid height change [cm]'
+            elif self.field_type == 'coulomb':
+                cb_title = 'Change in Coulomb Failure Function [pa]'
             # Make first and last ticks on colorbar be <MIN and >MAX.
             # Values of colorbar min/max are set in FieldPlotter init.
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
