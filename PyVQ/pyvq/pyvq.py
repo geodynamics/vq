@@ -1629,7 +1629,7 @@ class FieldPlotter:
             elif self.field_type == 'geoid':
                 cbar_max = 0.00015
             elif self.field_type == 'coulomb':
-                cbar_max = 10e5
+                cbar_max = 1e5
             
         if (self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or 
              self.field_type == 'geoid'  or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb'):
