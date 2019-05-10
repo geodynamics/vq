@@ -563,7 +563,7 @@ quakelib::FloatList quakelib::SlipMap::coulomb_change(const VectorList &points, 
 				yp = -(x - xp0) * strike_cos + (y - yp0) * strike_sin;
 
 				// CHANGE this to enable calculations below z=0
-				zp = 0.0;
+				zp = involved_elements[ele_id].center()[2];
 
 				stress_tensor = block_okada.calc_stress_tensor(quakelib::Vec<3>(xp, yp, zp), c, dip, L, W, US, UD, UT, lambda, mu);
 
