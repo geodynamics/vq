@@ -192,7 +192,7 @@ class SaveFile:
 
         return plot_type+add+"_"+event_file.split(".")[0]+self.file_type
         
-    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength):
+    def field_plot(self, model_file, field_type, uniform_slip, event_id, wavelength, slipmap_file):
         # Remove any folders in front of model_file name
         if len(model_file.split("/")) > 1:
             model_file = model_file.split("/")[-1]
@@ -201,12 +201,14 @@ class SaveFile:
         else:
             wave = "_"+str(int(round(wavelength*100,0)))+"cm"
             
-        if uniform_slip is None and event_id is not None:
+        if event_id is not None and uniform_slip is None:
             return model_file.split(".")[0]+"_"+field_type+"_event"+str(event_id)+wave+self.file_type
-        elif uniform_slip is not None and event_id is None:
-            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type   
+        elif event_id is None and uniform_slip is not None:
+            return model_file.split(".")[0]+"_"+field_type+"_uniform_slip"+str(int(uniform_slip))+"m"+wave+self.file_type
+        elif event_id is None and uniform_slip is None and slipmap_file is not None:
+            return model_file.split(".")[0]++"_"+field_type++"_"+os.path.split(slipmap_file)[1].split(".")[0]+wave+self.file_type
         else:
-            raise BaseException("\nMust specify either uniform_slip or event_id")
+            raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
     
     def field_eval(self, lld_file, field_type, uniform_slip, event_id, slipmap_file):
 
@@ -215,7 +217,7 @@ class SaveFile:
         elif event_id is None and uniform_slip is not None and slipmap_file is None:
             return os.path.splitext(lld_file)[0]+"_"+field_type+"_uniform"+str(int(uniform_slip))+"m"
         elif event_id is None and uniform_slip is None and slipmap_file is not None:
-            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+Sos.path.split(slipmap_file)[1].split(".")[0]
+            return os.path.splitext(lld_file)[0]+"_"+field_type++"_"+os.path.split(slipmap_file)[1].split(".")[0]
         else:
             raise BaseException("\nMust specify either uniform_slip, event_id, or slipmap_file")
             
@@ -1485,7 +1487,7 @@ class FieldPlotter:
         # Define how the cutoff value scales if it is not explitly set.
         # Cutoff is the max distance away from elements to compute
         # the field given in units of element length.
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb':
             self.cutoff_min_size = 20.0
             self.cutoff_min = 20.0
             self.cutoff_p2_size = 65.0
@@ -1626,8 +1628,11 @@ class FieldPlotter:
                 cbar_max = 0.002
             elif self.field_type == 'geoid':
                 cbar_max = 0.00015
-                
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid'  or self.field_type == 'satellite_gravity':
+            elif self.field_type == 'coulomb':
+                cbar_max = 10e5
+            
+        if (self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or 
+             self.field_type == 'geoid'  or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb'):
             self.dmc['cmap'] = plt.get_cmap('seismic')
             self.dmc['cbar_min'] = -cbar_max
             self.dmc['cbar_max'] = cbar_max
@@ -1636,6 +1641,8 @@ class FieldPlotter:
             elif self.field_type == 'potential':
                 self.dmc['cb_fontsize'] = 16.0
             elif self.field_type == 'geoid':
+                self.dmc['cb_fontsize'] = 16.0
+            elif self.field_type == 'coulomb':
                 self.dmc['cb_fontsize'] = 16.0
                 
         if self.field_type == 'displacement' or self.field_type == 'insar':
@@ -1750,6 +1757,10 @@ class FieldPlotter:
             # To convert from potential to geoid height, divide by mean surface gravity
             self.field /= -1*self.g0
             sys.stdout.write(" g0 {} :".format(self.g0))
+        elif self.field_type == "coulomb":
+            sys.stdout.write(" Computing Coulomb failure function change field :")
+            self.field_1d = self.slip_map.coulomb_change(self.grid_1d, self.lame_lambda, self.lame_mu, cutoff)
+            self.field = np.array(self.field_1d).reshape((self.lats_1d.size,self.lons_1d.size))  
         elif self.field_type == "displacement" or self.field_type == "insar":
             if self.field_type == "displacement": 
                 sys.stdout.write(" Computing displacement field :")
@@ -1767,8 +1778,7 @@ class FieldPlotter:
                 self.dX[it.multi_index] = disp[it.multi_index][0]
                 self.dY[it.multi_index] = disp[it.multi_index][1]
                 self.dZ[it.multi_index] = disp[it.multi_index][2]
-                it.iternext()
-                
+                it.iternext()      
         sys.stdout.flush()
         
     def plot_str(self):
@@ -1797,7 +1807,7 @@ class FieldPlotter:
                 self.look_elevation = 40.0*np.pi/180.0
             sys.stdout.write("Displacements projected along azimuth={:.1f}deg and elevation={:.1f}deg : ".format(self.look_azimuth*180.0/np.pi, self.look_elevation*180.0/np.pi))
             
-        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity':
+        if self.field_type == 'gravity' or self.field_type == 'dilat_gravity' or self.field_type == 'potential' or self.field_type == 'geoid' or self.field_type == 'satellite_gravity' or self.field_type == 'coulomb':
             cmap            = self.dmc['cmap']
             water_color     = self.dmc['water_color']
             boundary_color  = self.dmc['boundary_color']
@@ -2202,6 +2212,8 @@ class FieldPlotter:
                 cb_title = r'Gravitational potential changes [$m^2$/$s^2$]'
             elif self.field_type == 'geoid':
                 cb_title = 'Geoid height change [cm]'
+            elif self.field_type == 'coulomb':
+                cb_title = 'Change in Coulomb Failure Function [pa]'
             # Make first and last ticks on colorbar be <MIN and >MAX.
             # Values of colorbar min/max are set in FieldPlotter init.
             cb_tick_labs    = [item.get_text() for item in cb_ax.get_xticklabels()]
@@ -3204,7 +3216,7 @@ if __name__ == "__main__":
     # ---------  Field plotting arguments -----------
     parser.add_argument('--field_plot', required=False, action='store_true',
             help="Plot surface field for a specified event, e.g. gravity changes or displacements.")
-    parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
+    parser.add_argument('--field_type', required=False, help="Field type: gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid, coulomb")
     parser.add_argument('--colorbar_max', required=False, type=float, help="Max unit for colorbar")
     parser.add_argument('--event_id', required=False, type=int, help="Event number for plotting event fields")
     parser.add_argument('--uniform_slip', required=False, type=float, help="Amount of slip for each element in the model_file, in meters.")
@@ -3353,8 +3365,8 @@ if __name__ == "__main__":
     # Check that field_type is one of the supported types
     if args.field_type:
         type = args.field_type.lower()
-        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid" and type != "satellite_gravity":
-            raise BaseException("\nField type is one of gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid")
+        if type != "gravity" and type != "dilat_gravity" and type != "displacement" and type != "insar" and type!= "potential" and type != "geoid" and type != "satellite_gravity" and type != "coulomb":
+            raise BaseException("\nField type is one of gravity, satellite_gravity, dilat_gravity, displacement, insar, potential, geoid, coulomb")
             
     # Pre-check for probability table evaluation. We need the same number of --t0 arguments as --magnitudes
     if args.t0 or args.magnitudes:
@@ -3662,12 +3674,12 @@ if __name__ == "__main__":
             for event_set in events:
                 ProbabilityPlot().print_prob_table(args.t0, args.t, args.magnitudes, event_set)
     if args.field_plot:
-        type = args.field_type.lower()
+        lowered_field_type = args.field_type.lower()
         if args.colorbar_max: cbar_max = args.colorbar_max
         else: cbar_max = None
         if args.levels: levels = args.levels
         else: levels = None
-        filename = SaveFile().field_plot(args.model_file, type, args.uniform_slip, args.event_id, args.wavelength)
+        filename = SaveFile().field_plot(args.model_file, lowered_field_type, args.uniform_slip, args.event_id, args.wavelength, args.slipmap_file)
         if args.no_mask is None: args.no_mask=False
         if args.angles: 
             if len(args.angles) != 2:
@@ -3683,6 +3695,13 @@ if __name__ == "__main__":
             sys.stdout.write(" Computing field for uniform slip {}m :".format(int(uniform_slip)))
             for ele_id in element_ids:
                 ele_slips[ele_id] = uniform_slip
+            event = None
+        elif args.event_id is None and args.slipmap_file:
+            ele_slips = {}
+            with open(args.slipmap_file, "r") as opened_slipmap:
+                slipmap_json = json.load(opened_slipmap)
+            for ele_id in slipmap_json:
+                ele_slips[int(ele_id)] = slipmap_json[ele_id]
             event = None
         else:
             sys.stdout.write(" Processing event {}, M={:.2f} : ".format(args.event_id, events[0]._events[args.event_id].getMagnitude()))
