@@ -1,0 +1,31 @@
+name: linux
+
+on: [push, pull_request]
+
+# always only run a single (the newest) instance per PR
+concurrency:
+  group: ${{ github.actor }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  job:
+    name: build
+    runs-on: [ubuntu-latest]
+    container:
+      image: geodynamics/virtualquake-buildenv-bionic:latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake \
+          -G "Ninja" \
+          -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
+          -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
+          ..
+        ninja
+    - name: test
+      run: |
+        cd build
+        ctest --no-compress-output --output-on-failure -T Test
