@@ -1,0 +1,43 @@
+name: linux
+
+on: [push, pull_request]
+
+# always only run a single (the newest) instance per PR
+concurrency:
+  group: ${{ github.actor }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Avoid a warning
+  OMPI_MCA_btl_base_warn_component_unused: 0
+  # Prevent slowdown when oversubscribing (e.g. 4 ranks of 2 cores)
+  OMPI_MCA_mpi_yield_when_idle: 1
+  OMPI_MCA_rmaps_base_oversubscribe: 1
+  # Allow run as root
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+  # Fix OpenMPI issue in Docker : https://github.com/open-mpi/ompi/issues/4948
+  OMPI_MCA_btl_vader_single_copy_mechanism: none
+
+jobs:
+  job:
+    name: build
+    runs-on: [ubuntu-latest]
+    container:
+      image: geodynamics/virtualquake-buildenv-bionic:latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake \
+          -G "Ninja" \
+          -D GeographicLib_INCLUDE_DIRS="/usr/include/GeographicLib" \
+          -D GeographicLib_LIBRARY_DIRS="/usr/lib/x86_64-linux-gnu/" \
+          ..
+        ninja
+    - name: test
+      run: |
+        cd build
+        ctest --no-compress-output --output-on-failure -T Test
